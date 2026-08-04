@@ -47,7 +47,7 @@ public abstract class CheckoutStagePageController : PageController {
     }
 
     public override async Task<IActionResult> Index(CancellationToken cancellationToken) {
-        var checkout = await _checkoutAccessor.GetOrCreateAsync(CancellationToken.None, true);
+        var checkout = await _checkoutAccessor.GetOrCreateAsync(refreshCulture: true);
 
         string redirectUrl = null;
 

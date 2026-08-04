@@ -1,5 +1,6 @@
 using Humanizer;
 using N3O.Umbraco.Content;
+using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Financial;
 using N3O.Umbraco.Giving.Allocations;
@@ -26,13 +27,16 @@ public class CheckoutWebhookTransform : WebhookTransform {
         AliasHelper<PaymentMethodSettingsContent<IPaymentMethodSettings>>.PropertyAlias(x => x.RestrictCollectionDaysTo);
 
     private readonly IContentCache _contentCache;
+    private readonly ICultureAccessor _cultureAccessor;
     private readonly IPriceCalculator _priceCalculator;
 
     public CheckoutWebhookTransform(IJsonProvider jsonProvider,
                                     IContentCache contentCache,
+                                    ICultureAccessor cultureAccessor,
                                     IPriceCalculator priceCalculator)
         : base(jsonProvider) {
         _contentCache = contentCache;
+        _cultureAccessor = cultureAccessor;
         _priceCalculator = priceCalculator;
     }
 
@@ -111,7 +115,8 @@ public class CheckoutWebhookTransform : WebhookTransform {
     }
     
     private void TransformTags(Entities.Checkout checkout, JObject jObject) {
-        var language = LocalizationSettings.GetLanguageName(checkout.Culture) ?? Site.Language;
+        var language = LocalizationSettings.GetLanguageName(_cultureAccessor.GetCulture(checkout.Culture)) ??
+                       Site.Language;
 
         if (language.HasValue()) {
             AddTag(jObject, "SiteLanguageTag", language);

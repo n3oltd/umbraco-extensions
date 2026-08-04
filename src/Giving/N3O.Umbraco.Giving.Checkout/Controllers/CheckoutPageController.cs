@@ -50,7 +50,8 @@ public class CheckoutPageController : PageController {
         if (_queryStringAccessor.Has("framed")) {
             return CurrentTemplate(new ContentModel(CurrentPage));
         } else {
-            var checkout = await _checkoutAccessor.GetOrCreateAsync(cancellationToken, true);
+            var checkout = await _checkoutAccessor.GetOrCreateAsync(refreshCulture: true,
+                                                                   cancellationToken: cancellationToken);
 
             string url;
 

@@ -51,8 +51,8 @@ public class CheckoutAccessor : ICheckoutAccessor {
         return checkout;
     }
     
-    public async Task<Entities.Checkout> GetOrCreateAsync(CancellationToken cancellationToken,
-                                                          bool refreshCulture = false) {
+    public async Task<Entities.Checkout> GetOrCreateAsync(bool refreshCulture = false,
+                                                          CancellationToken cancellationToken = default) {
         var checkoutId = _checkoutIdAccessor.GetId();
         
         using (await _locker.LockAsync(checkoutId.ToString(), cancellationToken)) {
@@ -71,7 +71,9 @@ public class CheckoutAccessor : ICheckoutAccessor {
 
                     await _repository.InsertAsync(checkout);
                 }
-            } else if (refreshCulture && !_cultureAccessor.GetCulture().EqualsInvariant(checkout.Culture)) {
+            } else if (refreshCulture &&
+                       !checkout.IsComplete &&
+                       !_cultureAccessor.GetCulture().EqualsInvariant(checkout.Culture)) {
                 checkout.UpdateCulture(_cultureAccessor);
 
                 await _repository.UpdateAsync(checkout, RevisionBehaviour.Unchanged);

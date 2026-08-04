@@ -18,7 +18,7 @@ public class GetOrBeginCheckoutHandler : IRequestHandler<GetOrBeginCheckoutComma
     }
     
     public async Task<CheckoutRes> Handle(GetOrBeginCheckoutCommand req, CancellationToken cancellationToken) {
-        var checkout = await _checkoutAccessor.GetOrCreateAsync(cancellationToken);
+        var checkout = await _checkoutAccessor.GetOrCreateAsync(cancellationToken: cancellationToken);
         
         var res = checkout.IfNotNull(_mapper.Map<Entities.Checkout, CheckoutRes>);
 
