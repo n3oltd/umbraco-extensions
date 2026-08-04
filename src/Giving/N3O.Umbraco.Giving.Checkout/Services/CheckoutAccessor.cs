@@ -1,6 +1,7 @@
 using AsyncKeyedLock;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Entities;
+using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Giving.Cart;
 using N3O.Umbraco.Lookups;
 using N3O.Umbraco.References;
@@ -12,6 +13,7 @@ namespace N3O.Umbraco.Giving.Checkout;
 
 public class CheckoutAccessor : ICheckoutAccessor {
     private readonly ICheckoutIdAccessor _checkoutIdAccessor;
+    private readonly ICultureAccessor _cultureAccessor;
     private readonly AsyncKeyedLocker<string> _locker;
     private readonly IRepository<Entities.Checkout> _repository;
     private readonly Lazy<ICartAccessor> _cartAccessor;
@@ -20,6 +22,7 @@ public class CheckoutAccessor : ICheckoutAccessor {
     private readonly Lazy<IRemoteIpAddressAccessor> _remoteIpAddressAccessor;
 
     public CheckoutAccessor(ICheckoutIdAccessor checkoutIdAccessor,
+                            ICultureAccessor cultureAccessor,
                             AsyncKeyedLocker<string> locker,
                             IRepository<Entities.Checkout> repository,
                             Lazy<ICartAccessor> cartAccessor,
@@ -27,6 +30,7 @@ public class CheckoutAccessor : ICheckoutAccessor {
                             Lazy<ILookups> lookups,
                             Lazy<IRemoteIpAddressAccessor> remoteIpAddressAccessor) {
         _checkoutIdAccessor = checkoutIdAccessor;
+        _cultureAccessor = cultureAccessor;
         _locker = locker;
         _repository = repository;
         _cartAccessor = cartAccessor;
@@ -47,7 +51,8 @@ public class CheckoutAccessor : ICheckoutAccessor {
         return checkout;
     }
     
-    public async Task<Entities.Checkout> GetOrCreateAsync(CancellationToken cancellationToken) {
+    public async Task<Entities.Checkout> GetOrCreateAsync(CancellationToken cancellationToken,
+                                                          bool refreshCulture = false) {
         var checkoutId = _checkoutIdAccessor.GetId();
         
         using (await _locker.LockAsync(checkoutId.ToString(), cancellationToken)) {
@@ -58,6 +63,7 @@ public class CheckoutAccessor : ICheckoutAccessor {
 
                 if (!cart.IsEmpty()) {
                     checkout = await Entities.Checkout.CreateAsync(_counters.Value,
+                                                                   _cultureAccessor,
                                                                    _lookups.Value,
                                                                    _remoteIpAddressAccessor.Value,
                                                                    checkoutId,
@@ -65,6 +71,10 @@ public class CheckoutAccessor : ICheckoutAccessor {
 
                     await _repository.InsertAsync(checkout);
                 }
+            } else if (refreshCulture && !_cultureAccessor.GetCulture().EqualsInvariant(checkout.Culture)) {
+                checkout.UpdateCulture(_cultureAccessor);
+
+                await _repository.UpdateAsync(checkout, RevisionBehaviour.Unchanged);
             }
 
             return checkout;

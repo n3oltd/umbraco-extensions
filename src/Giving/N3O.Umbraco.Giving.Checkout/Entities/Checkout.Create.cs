@@ -12,6 +12,7 @@ namespace N3O.Umbraco.Giving.Checkout.Entities;
 
 public partial class Checkout {
     public static async Task<Checkout> CreateAsync(ICounters counters,
+                                                   ICultureAccessor cultureAccessor,
                                                    ILookups lookups,
                                                    IRemoteIpAddressAccessor remoteIpAddressAccessor,
                                                    EntityId id,
@@ -20,6 +21,7 @@ public partial class Checkout {
 
         checkout.CartRevisionId = cart.RevisionId;
         checkout.Reference = await counters.NextAsync<CheckoutReferenceType>();
+        checkout.Culture = cultureAccessor.GetCulture();
         checkout.Currency = cart.Currency;
         checkout.Donation = new DonationCheckout(cart.Donation.Allocations, cart.Currency);
         checkout.RegularGiving = new RegularGivingCheckout(cart.RegularGiving.Allocations, cart.Currency);
