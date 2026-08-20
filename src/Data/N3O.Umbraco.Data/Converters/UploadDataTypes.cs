@@ -12,6 +12,8 @@ public static class UploadDataTypes {
         Register(UmbracoPropertyEditors.Aliases.ImageCropper);
         Register(UmbracoPropertyEditors.Aliases.MediaPicker3);
         Register(UmbracoPropertyEditors.Aliases.UploadField);
+        Register(UmbracoPropertyEditors.Aliases.ImageCropper);
+        Register(UmbracoPropertyEditors.Aliases.MediaPicker3);
     }
     
     public static bool Contains(string editorAlias) {
