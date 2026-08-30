@@ -2,8 +2,8 @@ using N3O.Umbraco.Data.Models;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.ValueConverters;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
+using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
 
@@ -23,8 +23,8 @@ public class ImportDataEditorValueConverter : PropertyValueConverter {
         
         if (source is string str) {
             json = str;
-        } else if (source is JObject jObject) {
-            json = jObject.ToString();
+        } else if (source is JsonNode jsonNode) {
+            json = jsonNode.ToJsonString();
         }
 
         if (json.HasValue()) {
