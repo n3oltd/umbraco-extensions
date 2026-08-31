@@ -8,16 +8,11 @@ using System.Text.Json.Nodes;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.Blocks;
 using static Umbraco.Cms.Core.Constants.PropertyEditors;
-
-// Aliased because Constants alone binds to N3O.Umbraco.Constants from inside this namespace, and qualifying it
-// does not help either: Umbraco resolves to N3O.Umbraco.
 using UdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
 
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class BlockItemDataExtensions {
-    // The backoffice posts property values as parsed JSON, but value converters read the stored string form.
-    // Umbraco's JsonObjectConverter decides what each parsed shape is, hence the branches below.
     public static void FormatBlockData(this List<BlockItemData> blockData) {
         foreach (var contentData in blockData.OrEmpty()) {
             foreach (var value in contentData.Values.OrEmpty()) {
@@ -33,8 +28,6 @@ public static class BlockItemDataExtensions {
                        : value;
         }
 
-        // MultipleTextStringValueConverter splits on newlines rather than reading JSON. The lines arrive as a
-        // List<string> at the top level and as a JsonArray inside a nested block's raw JSON.
         if (editorAlias == Aliases.MultipleTextstring) {
             if (value is IEnumerable<string> lines) {
                 return string.Join("\r\n", lines);
@@ -43,16 +36,12 @@ public static class BlockItemDataExtensions {
             return value is JsonArray nodes ? string.Join("\r\n", nodes.Select(x => x?.ToString())) : value;
         }
 
-        // The picker posts entity references but stores comma separated udis, which is the translation
-        // MultiNodeTreePickerPropertyValueEditor.FromEditor performs on save.
         if (editorAlias == Aliases.MultiNodeTreePicker) {
             return value is JsonArray references
                        ? string.Join(",", references.Select(GetUdi).Where(x => x.HasValue()))
                        : value;
         }
 
-        // A nested block editor's own property values are posted in the editor shape too, so they need the same
-        // treatment before the outer value is written back out as a string.
         if (value is JsonObject blockValue && blockValue.ContainsKey("contentData")) {
             FormatNestedBlockData(blockValue);
         }
@@ -61,8 +50,6 @@ public static class BlockItemDataExtensions {
             return node.ToJsonString();
         }
 
-        // Every editor that posts an array of scalars, such as a checkbox list or a tag picker, is a List<T>
-        // rather than a JsonNode, and its converter reads the stored JSON form.
         if (value is IEnumerable and not string) {
             return JsonSerializer.Serialize(value);
         }
@@ -70,8 +57,6 @@ public static class BlockItemDataExtensions {
         return value;
     }
 
-    // Nested values carry their own editorAlias, which is what identifies them this far down: the property types
-    // resolved for the outer blocks only describe the outer blocks.
     private static void FormatNestedBlockData(JsonObject blockValue) {
         var elements = new[] { "contentData", "settingsData" }.SelectMany(x => blockValue[x] as JsonArray ?? [])
                                                               .OfType<JsonObject>();
