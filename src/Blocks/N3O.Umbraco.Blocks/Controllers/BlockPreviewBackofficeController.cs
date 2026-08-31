@@ -55,7 +55,6 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         _logger = logger;
     }
 
-    // Every block in a grid previews from the same grid value, so the whole batch is sent and converted once.
     [HttpPost("previewGridBlocks")]
     public async Task<ActionResult<PreviewBlocksRes>> PreviewGridBlocks(
         [FromQuery(Name = "nodeKey")] Guid? contentId,
@@ -143,9 +142,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         }
     }
 
-    // The body is read as raw JSON rather than model bound. BlockValue.Layout is typed as an interface, which
-    // MVC's System.Text.Json formatter cannot deserialize; Umbraco's own IJsonSerializer carries the
-    // JsonBlockValueConverter that can.
+    // Not model bound: BlockValue.Layout is typed as an interface, which MVC's formatter cannot deserialize
+    // but Umbraco's IJsonSerializer can.
     private async Task<PreviewBlocksReq> ReadRequestAsync() {
         using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true)) {
             var json = await reader.ReadToEndAsync();

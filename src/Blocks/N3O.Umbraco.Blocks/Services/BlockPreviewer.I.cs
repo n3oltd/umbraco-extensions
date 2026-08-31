@@ -6,12 +6,9 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 namespace N3O.Umbraco.Blocks;
 
 public interface IBlockPreviewer {
-    // The content is the page the block is being previewed on. It is passed rather than just its type alias
-    // because converting the grid value needs it as the property's owner: from v15 a block value carries expose
-    // entries, and aligning those reads owner.ContentType.Variations. The property alias comes from the editor
-    // rather than being assumed, as a document type can hold more than one block grid under different names.
-    // The block editor data is converted once for the whole document and the same instance is passed for every
-    // block on it, so an implementation must treat it as read only.
+    // content is the page being previewed on, needed as the property owner because aligning a block value's
+    // expose entries reads owner.ContentType.Variations from v15. blockEditorData is converted once per
+    // document and shared across every block on it, so an implementation must treat it as read only.
     Task<string> PreviewBlockAsync(Guid blockId,
                                    IPublishedContent content,
                                    string propertyAlias,

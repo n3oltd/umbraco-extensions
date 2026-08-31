@@ -16,10 +16,8 @@ using UdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class BlockItemDataExtensions {
-    // The backoffice posts block property values as parsed JSON, but property value converters read the stored
-    // form, which is a string. Umbraco's JsonObjectConverter decides what "parsed" means: an object becomes a
-    // JsonObject, an array of objects a JsonArray, an array of same typed scalars a List<T>, and an empty array
-    // null.
+    // The backoffice posts property values as parsed JSON, but value converters read the stored string form.
+    // Umbraco's JsonObjectConverter decides what each parsed shape is, hence the branches below.
     public static void FormatBlockData(this List<BlockItemData> blockData) {
         foreach (var contentData in blockData.OrEmpty()) {
             foreach (var value in contentData.Values.OrEmpty()) {

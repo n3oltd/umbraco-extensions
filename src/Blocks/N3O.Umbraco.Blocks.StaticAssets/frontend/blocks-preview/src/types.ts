@@ -3,17 +3,13 @@ export type PreviewState =
     | { status: 'ready'; markup: string }
     | { status: 'error'; message: string };
 
-// What the coordinator needs from a block to preview it, and where to put the result.
 export interface PreviewEntry {
     contentKey: string;
-    // Identifies this block's current data. Two renders of the same fingerprint produce the same markup, so a
-    // block whose fingerprint has not moved since it last rendered is left alone.
+    // Same fingerprint means same markup, so a block whose fingerprint has not moved is left alone.
     fingerprint(): string;
     receive(state: PreviewState): void;
 }
 
-// What the server answers with. A block it could not render is still given markup — an error banner — so it
-// has to name those blocks separately for the coordinator to avoid remembering a banner as a preview.
 export interface PreviewResponse {
     markup: Record<string, string>;
     failed: string[];
@@ -22,8 +18,7 @@ export interface PreviewResponse {
 export interface PreviewRequestContext {
     nodeKey: string | null;
     documentTypeKey: string | null;
-    // Which property holds the grid. A document type can have more than one block grid, and they are not all
-    // called the same thing, so the server cannot infer it from the document alone.
+    // A document type can hold more than one block grid, so the server cannot infer this.
     propertyAlias: string | null;
     culture: string;
 }

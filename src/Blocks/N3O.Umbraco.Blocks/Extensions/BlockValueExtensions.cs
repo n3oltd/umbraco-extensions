@@ -10,8 +10,7 @@ using Umbraco.Cms.Core.Services;
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class BlockValueExtensions {
-    // Converting the value walks the layout to collect the content and settings references, which is what
-    // identifies each block. Cleaning then attaches the property types those references point at.
+    // Mutates blockValue: the converter backfills keys, clears the legacy raw values and rewrites Expose.
     public static BlockEditorData<BlockGridValue, BlockGridLayoutItem> ToEditorData(
         this BlockGridValue blockValue,
         IJsonSerializer jsonSerializer,
@@ -54,8 +53,7 @@ public static class BlockValueExtensions {
         blockEditorData.BlockValue.ContentData.RemoveAll(x => !x.ContentTypeAlias.HasValue());
         blockEditorData.BlockValue.SettingsData.RemoveAll(x => !x.ContentTypeAlias.HasValue());
 
-        // Formatting needs the property types resolved above, and a settings element renders through the same
-        // value converters as content.
+        // Must follow the resolve above, which is what supplies the property types formatting reads.
         blockEditorData.BlockValue.ContentData.FormatBlockData();
         blockEditorData.BlockValue.SettingsData.FormatBlockData();
 
@@ -71,8 +69,6 @@ public static class BlockValueExtensions {
         }
     }
 
-    // A block's values arrive keyed by alias only. Each is matched to its property type so that downstream value
-    // converters have the data type to convert against, and any value whose property no longer exists is dropped.
     private static void ResolveBlockItemData(BlockItemData block,
                                              IReadOnlyDictionary<Guid, IContentType> contentTypes,
                                              IDictionary<Guid, Dictionary<string, IPropertyType>> propertyTypes) {

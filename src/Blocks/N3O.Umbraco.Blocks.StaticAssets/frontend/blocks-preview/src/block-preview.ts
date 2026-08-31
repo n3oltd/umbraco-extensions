@@ -15,8 +15,7 @@ import type { PreviewEntry, PreviewState } from './types';
 
 const elementName = 'n3o-block-preview';
 
-// A page can hold dozens of blocks and only a handful are on screen. Rendering starts once a block is close to
-// being scrolled to, so opening a document costs previews for what is being looked at rather than for all of it.
+// Only blocks near the viewport are previewed, so opening a document does not render all of it.
 const visibilityMargin = '400px';
 
 const hostStyles = `
@@ -159,8 +158,6 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         });
     }
 
-    // Two renders of the same data give the same markup, so this is what lets an unrelated edit elsewhere on
-    // the page leave this block's existing preview alone.
     fingerprint(): string {
         return JSON.stringify([this.#content, this.#settings, this.#layout]);
     }
@@ -240,12 +237,10 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         }
     }
 
-    // The block's action bar (edit, settings, copy, delete) only appears on hover. That reads well over the
-    // compact default card, but our view fills the block, so it is easy to miss. The bar belongs to the entry,
-    // which is this element's shadow host, so the opacity it reads is set there.
+    // The action bar only appears on hover, which is easy to miss once our view fills the block. The opacity
+    // belongs to the entry, and the view is mounted through an extension slot, so the entry is several shadow
+    // roots up rather than this element's immediate host.
     #revealActions(): void {
-        // The view is mounted through an extension slot, so the entry is several shadow roots up rather than
-        // this element's immediate host.
         let node: Node = this;
 
         while (true) {

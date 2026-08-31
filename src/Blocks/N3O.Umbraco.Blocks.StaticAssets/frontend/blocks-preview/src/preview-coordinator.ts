@@ -64,11 +64,9 @@ export class PreviewCoordinator {
 
         this.#context = context;
 
-        // The whole request context is what the markup is rendered against, so changing any of it invalidates
-        // every block, not just the ones being edited.
+        // The markup is rendered against the whole context, so any change invalidates every block. Whatever is
+        // in flight was rendered against the old context, so its reply must not be applied.
         if (changed) {
-            // Whatever is in flight was rendered against the context being replaced, so its reply must not be
-            // applied. The blocks go back in the queue below.
             this.#inFlight?.abort();
             this.#rendered.clear();
 
