@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Dev;
@@ -110,7 +111,10 @@ public abstract class CmsStartup {
         staticFileOptions.OnPrepareResponse = ctx => {
             configured?.Invoke(ctx);
 
-            if (ctx.Context.Request.Path.StartsWithSegments("/App_Plugins")) {
+            // Left alone if the site has already said what it wants, so configuring this is still the site's
+            // to do; this only supplies the default the plugins need.
+            if (ctx.Context.Request.Path.StartsWithSegments("/App_Plugins") &&
+                !ctx.Context.Response.Headers.ContainsKey(HeaderNames.CacheControl)) {
                 ctx.Context.Response.Headers.CacheControl = "no-cache";
             }
         };

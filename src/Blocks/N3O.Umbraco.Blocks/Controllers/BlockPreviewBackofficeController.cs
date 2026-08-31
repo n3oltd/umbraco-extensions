@@ -55,23 +55,24 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         _logger = logger;
     }
 
-    // Previews are requested for a whole document at once. Every block on a page previews from the same grid
-    // value, so sending and converting it once is the difference between one request and one conversion for the
-    // document and one of each per block.
+    // Every block in a grid previews from the same grid value, so the whole batch is sent and converted once.
     [HttpPost("previewGridBlocks")]
-    public async Task<IActionResult> PreviewGridBlocks([FromQuery(Name = "nodeKey")] Guid? contentId,
-                                                       [FromQuery(Name = "documentTypeKey")] Guid? contentTypeId,
-                                                       [FromQuery] string propertyAlias,
-                                                       [FromQuery] string culture) {
-        var req = await ReadRequestAsync();
-
-        if (req?.BlockKeys.HasAny() != true) {
-            return Ok(new Dictionary<string, string>());
-        }
-
-        var blockKeys = req.BlockKeys.Distinct().ToList();
+    public async Task<ActionResult<PreviewBlocksRes>> PreviewGridBlocks(
+        [FromQuery(Name = "nodeKey")] Guid? contentId,
+        [FromQuery(Name = "documentTypeKey")] Guid? contentTypeId,
+        [FromQuery] string propertyAlias,
+        [FromQuery] string culture) {
+        var blockKeys = new List<Guid>();
 
         try {
+            var req = await ReadRequestAsync();
+
+            if (!req.HasAny(x => x.BlockKeys)) {
+                return GetRes(new Dictionary<string, string>(), []);
+            }
+
+            blockKeys = req.BlockKeys.Distinct().ToList();
+
             var publishedContent = GetPublishedContent(contentId, contentTypeId);
 
             if (publishedContent == null) {
@@ -88,17 +89,20 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             }
 
             var markup = new Dictionary<string, string>();
+            var failed = new List<string>();
 
             foreach (var blockKey in blockKeys) {
-                markup[blockKey.ToString()] = await PreviewBlockAsync(blockKey,
-                                                                      publishedContent,
-                                                                      propertyAlias,
-                                                                      blockEditorData);
+                var preview = await PreviewBlockAsync(blockKey, publishedContent, propertyAlias, blockEditorData);
+
+                markup[blockKey.ToString()] = preview.Markup;
+
+                if (preview.Failed) {
+                    failed.Add(blockKey.ToString());
+                }
             }
 
-            return Ok(markup);
+            return GetRes(markup, failed);
         } catch (Exception ex) {
-            // Anything thrown out here applies to the request as a whole, so every block shows the same banner.
             var banner = ex is BlockPreviewException previewException
                              ? previewException.Markup
                              : new BlockPreviewErrorException(ex.Message).Markup;
@@ -107,40 +111,47 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
                 _logger.LogError(ex, "Failed to preview blocks for {NodeKey}", contentId);
             }
 
-            return Ok(blockKeys.ToDictionary(x => x.ToString(), _ => banner));
+            return GetRes(blockKeys.ToDictionary(x => x.ToString(), _ => banner),
+                          blockKeys.Select(x => x.ToString()).ToList());
         }
     }
 
-    // One block failing to render says nothing about the rest, so each is caught on its own and the others
-    // still return markup.
-    private async Task<string> PreviewBlockAsync(Guid blockKey,
-                                                 IPublishedContent content,
-                                                 string propertyAlias,
-                                                 BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
+    private static PreviewBlocksRes GetRes(Dictionary<string, string> markup, IEnumerable<string> failed) {
+        var res = new PreviewBlocksRes();
+        res.Markup = markup;
+        res.Failed = failed;
+
+        return res;
+    }
+
+    private async Task<(string Markup, bool Failed)> PreviewBlockAsync(
+        Guid blockKey,
+        IPublishedContent content,
+        string propertyAlias,
+        BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
         try {
             var markup = await _blockPreviewer.PreviewBlockAsync(blockKey, content, propertyAlias, blockEditorData);
 
-            return markup.CleanUpMarkupForPreview();
+            return (markup.CleanUpMarkupForPreview(), false);
         } catch (BlockPreviewException ex) {
-            return ex.Markup;
+            return (ex.Markup, true);
         } catch (Exception ex) {
             // The banner carries only the message, so without this the stack trace of a failing block is lost.
             _logger.LogError(ex, "Failed to preview block {BlockKey}", blockKey);
 
-            return new BlockPreviewErrorException(ex.Message).Markup;
+            return (new BlockPreviewErrorException(ex.Message).Markup, true);
         }
     }
 
     // The body is read as raw JSON rather than model bound. BlockValue.Layout is typed as an interface, which
     // MVC's System.Text.Json formatter cannot deserialize; Umbraco's own IJsonSerializer carries the
-    // JsonBlockValueConverter that can. Binding would therefore throw in the formatter, before this action runs,
-    // where the catch above could not turn it into an error banner.
+    // JsonBlockValueConverter that can.
     private async Task<PreviewBlocksReq> ReadRequestAsync() {
-        using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+        using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true)) {
+            var json = await reader.ReadToEndAsync();
 
-        var json = await reader.ReadToEndAsync();
-
-        return json.HasValue() ? _jsonSerializer.Deserialize<PreviewBlocksReq>(json) : null;
+            return json.HasValue() ? _jsonSerializer.Deserialize<PreviewBlocksReq>(json) : null;
+        }
     }
 
     private async Task SetupPublishedRequest(IPublishedContent content = null) {

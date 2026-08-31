@@ -1,20 +1,25 @@
 using N3O.Umbraco.Extensions;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.Blocks;
 using static Umbraco.Cms.Core.Constants.PropertyEditors;
+
+// Aliased because Constants alone binds to N3O.Umbraco.Constants from inside this namespace, and qualifying it
+// does not help either: Umbraco resolves to N3O.Umbraco.
 using UdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
 
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class BlockItemDataExtensions {
     // The backoffice posts block property values as parsed JSON, but property value converters read the stored
-    // form, which is a string. Umbraco's serializer is System.Text.Json from v14, so those values arrive as
-    // JsonNode: the Newtonsoft types this used to test for no longer occur and every structured value was
-    // reaching the converters unchanged.
+    // form, which is a string. Umbraco's JsonObjectConverter decides what "parsed" means: an object becomes a
+    // JsonObject, an array of objects a JsonArray, an array of same typed scalars a List<T>, and an empty array
+    // null.
     public static void FormatBlockData(this List<BlockItemData> blockData) {
         foreach (var contentData in blockData.OrEmpty()) {
             foreach (var value in contentData.Values.OrEmpty()) {
@@ -25,14 +30,19 @@ public static class BlockItemDataExtensions {
 
     private static object FormatValue(string editorAlias, object value) {
         if (editorAlias == Aliases.ContentPicker) {
-            return Guid.TryParse(value?.ToString(), out var contentKey)
+            return Guid.TryParse(value?.ToString(), out var contentKey) && contentKey != Guid.Empty
                        ? Udi.Create(UdiEntityType.Document, contentKey).UriValue.ToString()
                        : value;
         }
 
-        // MultipleTextStringValueConverter splits on newlines rather than reading JSON.
+        // MultipleTextStringValueConverter splits on newlines rather than reading JSON. The lines arrive as a
+        // List<string> at the top level and as a JsonArray inside a nested block's raw JSON.
         if (editorAlias == Aliases.MultipleTextstring) {
-            return value is JsonArray lines ? string.Join("\r\n", lines.Select(GetLine)) : value;
+            if (value is IEnumerable<string> lines) {
+                return string.Join("\r\n", lines);
+            }
+
+            return value is JsonArray nodes ? string.Join("\r\n", nodes.Select(x => x?.ToString())) : value;
         }
 
         // The picker posts entity references but stores comma separated udis, which is the translation
@@ -49,7 +59,17 @@ public static class BlockItemDataExtensions {
             FormatNestedBlockData(blockValue);
         }
 
-        return value is JsonNode node and (JsonObject or JsonArray) ? node.ToJsonString() : value;
+        if (value is JsonNode node and (JsonObject or JsonArray)) {
+            return node.ToJsonString();
+        }
+
+        // Every editor that posts an array of scalars, such as a checkbox list or a tag picker, is a List<T>
+        // rather than a JsonNode, and its converter reads the stored JSON form.
+        if (value is IEnumerable and not string) {
+            return JsonSerializer.Serialize(value);
+        }
+
+        return value;
     }
 
     // Nested values carry their own editorAlias, which is what identifies them this far down: the property types
@@ -74,19 +94,14 @@ public static class BlockItemDataExtensions {
         if (reference is JsonObject entity &&
             entity.TryGetPropertyValue("type", out var entityType) &&
             entity.TryGetPropertyValue("unique", out var unique) &&
-            Guid.TryParse(unique?.ToString(), out var key)) {
-            return Udi.Create(entityType?.ToString(), key).UriValue.ToString();
+            Guid.TryParse(unique?.ToString(), out var key) &&
+            key != Guid.Empty) {
+            // Parsed rather than created because Udi.Create throws on an entity type Umbraco does not know, and
+            // this pass runs once for the whole grid, so one unconvertible reference would otherwise replace
+            // every block on the page with an error banner.
+            return UdiParser.TryParse($"umb://{entityType}/{key:N}", out var udi) ? udi.ToString() : null;
         }
 
         return null;
-    }
-
-    // A line was stored as { value: "..." } before v14 and is a plain string now.
-    private static string GetLine(JsonNode line) {
-        if (line is JsonObject wrapper) {
-            return wrapper.TryGetPropertyValue("value", out var text) ? text?.ToString() : null;
-        }
-
-        return line?.ToString();
     }
 }

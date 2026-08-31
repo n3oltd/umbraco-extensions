@@ -10,6 +10,8 @@ public interface IBlockPreviewer {
     // because converting the grid value needs it as the property's owner: from v15 a block value carries expose
     // entries, and aligning those reads owner.ContentType.Variations. The property alias comes from the editor
     // rather than being assumed, as a document type can hold more than one block grid under different names.
+    // The block editor data is converted once for the whole document and the same instance is passed for every
+    // block on it, so an implementation must treat it as read only.
     Task<string> PreviewBlockAsync(Guid blockId,
                                    IPublishedContent content,
                                    string propertyAlias,

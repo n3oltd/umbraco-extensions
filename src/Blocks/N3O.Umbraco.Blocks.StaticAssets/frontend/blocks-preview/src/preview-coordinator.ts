@@ -1,6 +1,6 @@
 import type { UmbBlockManagerContext } from '@umbraco-cms/backoffice/block';
 import type { AuthFetch } from '@n3oltd/backoffice-core';
-import type { PreviewEntry, PreviewRequestContext } from './types';
+import type { PreviewEntry, PreviewRequestContext, PreviewResponse } from './types';
 
 const previewEndpoint = '/umbraco/backoffice/api/blockPreviewBackoffice/previewGridBlocks';
 const editDebounceMs = 500;
@@ -27,6 +27,15 @@ export class PreviewCoordinator {
     }
 
     register(entry: PreviewEntry): void {
+        const existing = this.#entries.get(entry.contentKey);
+
+        // Moving a block between areas tears its element down and builds a new one, and the old element
+        // unregisters after the new one has registered. What was remembered about the key describes markup
+        // the element that has gone was showing, so the new one must not be treated as already rendered.
+        if (existing && existing !== entry) {
+            this.#rendered.delete(entry.contentKey);
+        }
+
         this.#entries.set(entry.contentKey, entry);
     }
 
@@ -39,7 +48,12 @@ export class PreviewCoordinator {
     }
 
     setAuthFetch(authFetch: AuthFetch | null): void {
-        this.#authFetch = authFetch;
+        // Every block pushes its own auth context into this one shared field, and the mixin reports null both
+        // before the context resolves and when an element disconnects. A block being dragged or deleted must
+        // not take the token away from the blocks that remain.
+        if (authFetch) {
+            this.#authFetch = authFetch;
+        }
     }
 
     setContext(context: PreviewRequestContext): void {
@@ -50,9 +64,12 @@ export class PreviewCoordinator {
 
         this.#context = context;
 
-        // The node and culture are what the markup is rendered against, so changing either invalidates every
-        // block, not just the ones being edited.
+        // The whole request context is what the markup is rendered against, so changing any of it invalidates
+        // every block, not just the ones being edited.
         if (changed) {
+            // Whatever is in flight was rendered against the context being replaced, so its reply must not be
+            // applied. The blocks go back in the queue below.
+            this.#inFlight?.abort();
             this.#rendered.clear();
 
             for (const key of this.#entries.keys()) {
@@ -77,6 +94,9 @@ export class PreviewCoordinator {
     }
 
     async #flush(): Promise<void> {
+        // Batches are sent one at a time and a flush arriving during one is folded into the next, rather than
+        // superseding it: the blocks already sent have been taken out of the queue, so cancelling their request
+        // would leave them waiting for a reply that never comes.
         if (this.#inFlight) {
             this.#flushAgain = true;
 
@@ -88,8 +108,6 @@ export class PreviewCoordinator {
             .filter((entry): entry is PreviewEntry => !!entry)
             .filter((entry) => this.#rendered.get(entry.contentKey) !== entry.fingerprint());
 
-        this.#pending.clear();
-
         if (!due.length || !this.#authFetch) {
             return;
         }
@@ -99,6 +117,10 @@ export class PreviewCoordinator {
         if (!blockValue) {
             return;
         }
+
+        // Cleared only once the request is going out, so a flush arriving before the auth token resolves or
+        // before the block manager has layouts leaves the blocks queued instead of dropping them.
+        this.#pending.clear();
 
         // Captured before the request so a block edited while it is in flight is not recorded as rendered at
         // its new fingerprint.
@@ -125,35 +147,63 @@ export class PreviewCoordinator {
                 throw new Error(`Preview request failed with status ${response.status}`);
             }
 
-            const markup: Record<string, string> = await response.json();
+            const preview: PreviewResponse = await response.json();
+            const failed = new Set(preview.failed ?? []);
 
             for (const entry of due) {
-                const blockMarkup = markup[entry.contentKey];
+                const blockMarkup = preview.markup?.[entry.contentKey];
 
-                if (typeof blockMarkup === 'string') {
-                    this.#rendered.set(entry.contentKey, fingerprints.get(entry.contentKey)!);
-                    entry.receive({ status: 'ready', markup: blockMarkup });
-                } else {
-                    entry.receive({ status: 'error', message: previewFailedMessage });
+                if (typeof blockMarkup !== 'string') {
+                    this.#retry(entry);
+
+                    continue;
                 }
+
+                // A block the server could not render is answered with banner markup, which is why it has to
+                // say which those were. Recording one as rendered would pin the banner until the block is
+                // edited or the document reloaded.
+                if (failed.has(entry.contentKey)) {
+                    this.#rendered.delete(entry.contentKey);
+                    this.#pending.add(entry.contentKey);
+                } else {
+                    this.#rendered.set(entry.contentKey, fingerprints.get(entry.contentKey)!);
+                }
+
+                entry.receive({ status: 'ready', markup: blockMarkup });
             }
         } catch (error) {
-            if (!abort.signal.aborted) {
+            if (abort.signal.aborted) {
+                // Cancelled rather than failed, so the blocks are queued again for the flush that cancelled it.
+                for (const entry of due) {
+                    this.#pending.add(entry.contentKey);
+                }
+            } else {
                 console.error('Block preview failed', error);
 
                 for (const entry of due) {
-                    this.#rendered.delete(entry.contentKey);
-                    entry.receive({ status: 'error', message: previewFailedMessage });
+                    this.#retry(entry);
                 }
             }
         } finally {
-            this.#inFlight = undefined;
+            if (this.#inFlight === abort) {
+                this.#inFlight = undefined;
+            }
 
             if (this.#flushAgain) {
                 this.#flushAgain = false;
+
                 this.#schedule(0);
             }
         }
+    }
+
+    // Queued again but deliberately not rescheduled, so the next edit, scroll or context change tries again
+    // rather than this spinning against a server that is failing.
+    #retry(entry: PreviewEntry): void {
+        this.#rendered.delete(entry.contentKey);
+        this.#pending.add(entry.contentKey);
+
+        entry.receive({ status: 'error', message: previewFailedMessage });
     }
 
     #buildBlockValue() {

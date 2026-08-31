@@ -12,6 +12,13 @@ export interface PreviewEntry {
     receive(state: PreviewState): void;
 }
 
+// What the server answers with. A block it could not render is still given markup — an error banner — so it
+// has to name those blocks separately for the coordinator to avoid remembering a banner as a preview.
+export interface PreviewResponse {
+    markup: Record<string, string>;
+    failed: string[];
+}
+
 export interface PreviewRequestContext {
     nodeKey: string | null;
     documentTypeKey: string | null;

@@ -182,6 +182,11 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         this.#render();
         this.#revealActions();
 
+        // Sorting a block relocates its element, which disconnects and reconnects the same instance and so
+        // takes it out of the coordinator. Rejoining here is what stops a dragged block being left with no
+        // route back: the contexts have already resolved, so nothing else would register it again.
+        this.#join();
+
         this.#observer ??= new IntersectionObserver((entries) => {
             this.#visible = entries.some((x) => x.isIntersecting);
 
@@ -243,7 +248,7 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         // this element's immediate host.
         let node: Node = this;
 
-        while (node) {
+        while (true) {
             const root = node.getRootNode();
             const host = root instanceof ShadowRoot ? root.host : null;
 

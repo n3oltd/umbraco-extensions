@@ -7,18 +7,15 @@ using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
 
-using GridEditorData =
-    Umbraco.Cms.Core.Models.Blocks.BlockEditorData<Umbraco.Cms.Core.Models.Blocks.BlockGridValue,
-                                                  Umbraco.Cms.Core.Models.Blocks.BlockGridLayoutItem>;
-
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class BlockValueExtensions {
     // Converting the value walks the layout to collect the content and settings references, which is what
     // identifies each block. Cleaning then attaches the property types those references point at.
-    public static GridEditorData ToEditorData(this BlockGridValue blockValue,
-                                              IJsonSerializer jsonSerializer,
-                                              IContentTypeService contentTypeService) {
+    public static BlockEditorData<BlockGridValue, BlockGridLayoutItem> ToEditorData(
+        this BlockGridValue blockValue,
+        IJsonSerializer jsonSerializer,
+        IContentTypeService contentTypeService) {
         if (blockValue == null) {
             return null;
         }
@@ -28,7 +25,9 @@ public static class BlockValueExtensions {
         return Clean(blockEditorData, contentTypeService);
     }
 
-    private static GridEditorData Clean(GridEditorData blockEditorData, IContentTypeService contentTypeService) {
+    private static BlockEditorData<BlockGridValue, BlockGridLayoutItem> Clean(
+        BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData,
+        IContentTypeService contentTypeService) {
         if (blockEditorData.BlockValue.ContentData.Count == 0) {
             blockEditorData.BlockValue.SettingsData.Clear();
 
@@ -49,24 +48,26 @@ public static class BlockValueExtensions {
         var contentTypes = contentTypeService.GetMany(contentTypeKeys).ToDictionary(x => x.Key);
         var propertyTypes = new Dictionary<Guid, Dictionary<string, IPropertyType>>();
 
-        Resolve(blockEditorData.BlockValue.ContentData, contentKeys);
-        Resolve(blockEditorData.BlockValue.SettingsData, settingsKeys);
+        Resolve(blockEditorData.BlockValue.ContentData, contentKeys, contentTypes, propertyTypes);
+        Resolve(blockEditorData.BlockValue.SettingsData, settingsKeys, contentTypes, propertyTypes);
 
         blockEditorData.BlockValue.ContentData.RemoveAll(x => !x.ContentTypeAlias.HasValue());
         blockEditorData.BlockValue.SettingsData.RemoveAll(x => !x.ContentTypeAlias.HasValue());
 
-        // Formatting is done here rather than left to the caller because it needs the property types resolved
-        // above, and it applies to settings exactly as it does to content: a settings element renders through
-        // the same value converters.
+        // Formatting needs the property types resolved above, and a settings element renders through the same
+        // value converters as content.
         blockEditorData.BlockValue.ContentData.FormatBlockData();
         blockEditorData.BlockValue.SettingsData.FormatBlockData();
 
         return blockEditorData;
+    }
 
-        void Resolve(List<BlockItemData> blocks, HashSet<Guid> referencedKeys) {
-            foreach (var block in blocks.Where(x => x.Key != Guid.Empty && referencedKeys.Contains(x.Key))) {
-                ResolveBlockItemData(block, contentTypes, propertyTypes);
-            }
+    private static void Resolve(List<BlockItemData> blocks,
+                                HashSet<Guid> referencedKeys,
+                                IReadOnlyDictionary<Guid, IContentType> contentTypes,
+                                IDictionary<Guid, Dictionary<string, IPropertyType>> propertyTypes) {
+        foreach (var block in blocks.Where(x => x.Key != Guid.Empty && referencedKeys.Contains(x.Key))) {
+            ResolveBlockItemData(block, contentTypes, propertyTypes);
         }
     }
 
@@ -90,11 +91,12 @@ public static class BlockValueExtensions {
 
         foreach (var value in sourceValues) {
             if (contentTypePropertyTypes.TryGetValue(value.Alias, out var propertyType)) {
-                block.Values.Add(new BlockPropertyValue {
-                    Alias = value.Alias,
-                    Value = value.Value,
-                    PropertyType = propertyType
-                });
+                var blockPropertyValue = new BlockPropertyValue();
+                blockPropertyValue.Alias = value.Alias;
+                blockPropertyValue.Value = value.Value;
+                blockPropertyValue.PropertyType = propertyType;
+
+                block.Values.Add(blockPropertyValue);
             }
         }
 
