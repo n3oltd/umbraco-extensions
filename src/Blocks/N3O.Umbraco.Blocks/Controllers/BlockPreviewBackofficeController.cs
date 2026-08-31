@@ -135,15 +135,12 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         } catch (BlockPreviewException ex) {
             return (ex.Markup, true);
         } catch (Exception ex) {
-            // The banner carries only the message, so without this the stack trace of a failing block is lost.
             _logger.LogError(ex, "Failed to preview block {BlockKey}", blockKey);
 
             return (new BlockPreviewErrorException(ex.Message).Markup, true);
         }
     }
 
-    // Not model bound: BlockValue.Layout is typed as an interface, which MVC's formatter cannot deserialize
-    // but Umbraco's IJsonSerializer can.
     private async Task<PreviewBlocksReq> ReadRequestAsync() {
         using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true)) {
             var json = await reader.ReadToEndAsync();
@@ -165,8 +162,6 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         context.PublishedRequest = requestBuilder.Build();
     }
 
-    // A document that has never been published is not in the published cache, so it cannot be routed against
-    // itself. Any published document of the same type will do, as the preview only needs a page to render in.
     private IPublishedContent GetPublishedContent(Guid? contentId, Guid? contentTypeId) {
         var content = contentId.IfNotNull(x => _contentLocator.ById(x));
 
