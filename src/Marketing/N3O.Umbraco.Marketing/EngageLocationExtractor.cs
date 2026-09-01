@@ -15,6 +15,8 @@ public class EngageLocationExtractor : IRawPageviewLocationExtractor {
     }
 
     public ILocation Extract(IRawPageview rawPageview) {
+        // Engage extracts synchronously, so the lookup is blocked on rather than awaited. It runs on the request
+        // that is being recorded, and the provider caches per address, so it reaches the service once per visitor.
         var geoLookupResult = _ipGeoLocationProvider.GeoLocateAsync().GetAwaiter().GetResult();
 
         if (!geoLookupResult.Success) {

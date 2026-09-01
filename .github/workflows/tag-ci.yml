@@ -64,9 +64,8 @@ jobs:
           # Create + push tag with the default Actions token (github.token). This
           # push will not retrigger the `push: tags:` branch of this workflow
           # (GitHub blocks default-token-authored events from triggering workflows),
-          # which is
-          # fine — downstream jobs in this same run consume the version via
-          # needs.prepare.outputs.version.
+          # which is fine — downstream jobs in this same run consume the version
+          # via needs.prepare.outputs.version.
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git tag "$NEXT_TAG"
