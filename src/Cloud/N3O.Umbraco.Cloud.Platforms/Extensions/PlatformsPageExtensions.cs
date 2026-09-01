@@ -24,7 +24,10 @@ public static class PlatformsPageExtensions {
         } else if (page.Kind == PublishedFileKinds.CrowdfunderPage) {
             return page.Content[nameof(PublishedCrowdfunderPage.Crowdfunder).Camelize()]?[nameof(PublishedCrowdfunderPage.Crowdfunder.CampaignId).Camelize()]?.ToString();
         } else if (page.Kind == PublishedFileKinds.CrowdfundingCampaignPage) {
-            return page.Content[nameof(PublishedCrowdfundingCampaignPage.CrowdfundingCampaign).Camelize()]?[nameof(PublishedCrowdfundingCampaignPage.CrowdfundingCampaign.CampaignId).Camelize()]?.ToString();
+            var campaign = nameof(PublishedCrowdfundingCampaignPage.CrowdfundingCampaign).Camelize();
+            var campaignId = nameof(PublishedCrowdfundingCampaignPage.CrowdfundingCampaign.CampaignId).Camelize();
+
+            return page.Content[campaign]?[campaignId]?.ToString();
         } else if (page.Kind == PublishedFileKinds.OfferingPage) {
             return page.Content[nameof(PublishedOfferingPage.Offering).Camelize()]?[nameof(PublishedOfferingPage.Offering.Campaign).Camelize()]?[nameof(PublishedOfferingPage.Offering.Campaign.Id).Camelize()]?.ToString();
         } else {
