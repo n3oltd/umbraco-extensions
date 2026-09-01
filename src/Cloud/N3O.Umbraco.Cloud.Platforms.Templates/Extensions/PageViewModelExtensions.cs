@@ -42,9 +42,11 @@ public static class PageViewModelExtensions {
 
     public static PublishedCrowdfundingCampaignPage CrowdfundingCampaignPage(this IPageViewModel pageViewModel,
                                                                              IJsonProvider jsonProvider) {
+        var kind = CrowdfundingPublishedFileKind.CrowdfundingCampaignPage;
+
         return PublishedFile<PublishedCrowdfundingCampaignPage, CrowdfundingPublishedFileKind>(pageViewModel,
-                                                                                               jsonProvider,
-                                                                                               CrowdfundingPublishedFileKind.CrowdfundingCampaignPage);
+                                                                                              jsonProvider,
+                                                                                              kind);
     }
 
     public static NisabMergeModel Nisab(this IPageViewModel pageViewModel, IJsonProvider jsonProvider) {
