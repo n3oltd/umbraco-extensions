@@ -2,7 +2,6 @@ using N3O.Umbraco.Extensions;
 using N3O.Umbraco.SerpEditor.Models;
 using N3O.Umbraco.ValueConverters;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
@@ -19,13 +18,7 @@ public class SerpEditorValueConverter : PropertyValueConverter {
                                                        object source,
                                                        bool preview) {
         SerpEntry entry;
-        string json = null;
-        
-        if (source is string str) {
-            json = str;
-        } else if (source is JObject jObject) {
-            json = jObject.ToString();
-        }
+        var json = source.ToSourceValueJson();
 
         if (json.HasValue()) {
             entry = JsonConvert.DeserializeObject<SerpEntry>(json);

@@ -1,5 +1,6 @@
 using N3O.Umbraco.EditorJs.Extensions;
 using N3O.Umbraco.EditorJs.Models;
+using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Json;
 using N3O.Umbraco.Markup;
 using System;
@@ -34,11 +35,7 @@ public class EditorJsValueConverter : PropertyValueConverterBase {
                                                        IPublishedPropertyType propertyType,
                                                        object source,
                                                        bool preview) {
-        if (source is string strValue) {
-            return strValue;
-        } else {
-            return null;
-        }
+        return source.ToSourceValueJson();
     }
 
     public override object ConvertIntermediateToObject(IPublishedElement owner,

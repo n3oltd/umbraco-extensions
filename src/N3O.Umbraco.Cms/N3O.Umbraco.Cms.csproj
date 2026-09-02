@@ -47,4 +47,11 @@
             <Pack>True</Pack>
         </None>
     </ItemGroup>
+    <ItemGroup>
+        <!-- Umbraco's targets emit one of these dev-time schema files per referenced Umbraco package. As a
+             library we must not flow ours into a consumer's publish output: the consumer generates its own
+             set at the same relative paths, and publish then fails with NETSDK1152. -->
+        <Content Remove="appsettings-schema*.json" />
+        <Content Remove="umbraco-package-schema.json" />
+    </ItemGroup>
 </Project>
