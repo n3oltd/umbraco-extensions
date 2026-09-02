@@ -24,8 +24,7 @@ FROM umbracoEngageAnalyticsPageview pv
 INNER JOIN umbracoEngageAnalyticsPage p ON p.id = pv.pageId
 WHERE p.domain = @0 OR p.domain = @1";
 
-    private const string GoalsSql = @"
-;WITH CandidateSessions AS (
+    private const string GoalsSql = @";WITH CandidateSessions AS (
     SELECT DISTINCT pv.sessionId
     FROM umbracoEngageAnalyticsPageview pv
     WHERE pv.timestamp >= @0 AND pv.timestamp < @1
@@ -56,8 +55,7 @@ WHERE v.visitorType = 0
   AND (p.domain = @2 OR p.domain = @3)
   AND s.id IN (SELECT sessionId FROM CandidateSessions)";
 
-    private const string SessionsSql = @"
-;WITH CandidateSessions AS (
+    private const string SessionsSql = @";WITH CandidateSessions AS (
     SELECT DISTINCT pv.sessionId
     FROM umbracoEngageAnalyticsPageview pv
     WHERE pv.timestamp >= @0 AND pv.timestamp < @1
