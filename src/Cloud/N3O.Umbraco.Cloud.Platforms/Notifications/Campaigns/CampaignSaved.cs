@@ -35,7 +35,7 @@ public class CampaignSaved : INotificationAsyncHandler<ContentSavedNotification>
     }
 
     private void SyncCrowdfunderNames(Guid campaignKey, string campaignName) {
-        var crowdfunders = _contentLocator.Value.All<CrowdfunderContent>(x => x.Campaign?.Key == campaignKey);
+        var crowdfunders = _contentLocator.Value.All<CrowdfunderContent>(x => x.Campaign?.Id == campaignKey.ToString());
 
         foreach (var crowdfunder in crowdfunders) {
             if (!crowdfunder.Content().Name.EqualsInvariant(campaignName)) {

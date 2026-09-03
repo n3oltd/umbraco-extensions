@@ -1,7 +1,9 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System;
+using System.Linq;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
@@ -10,11 +12,20 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
-    public static Guid? GetCrowdfunderCampaignKey(this IContent content) {
+    public static Guid? GetCrowdfunderCampaignKey(this IContent content, IContentHelper contentHelper) {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
-        var value = content.GetValue<string>(alias);
+        var contentProperties = contentHelper.GetContentProperties(content);
+        var campaign = contentHelper.GetDataListValue<Campaign>(contentProperties, alias);
 
-        if (UdiParser.TryParse(value, out GuidUdi udi)) {
+        if (Guid.TryParse(campaign?.Id, out var campaignKey)) {
+            return campaignKey;
+        }
+
+        // TODO Delete once every crowdfunder has been re-saved: the campaign picker was a content picker
+        // before it became a data list, so a node saved before the change still holds a document udi.
+        var property = content.Properties.Single(x => x.Alias == alias);
+
+        if (UdiParser.TryParse(property.GetValue()?.ToString(), out GuidUdi udi)) {
             return udi.Guid;
         }
 
