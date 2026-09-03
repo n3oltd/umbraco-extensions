@@ -13,6 +13,10 @@ public static class PublishedContentExtensions {
         return content.Descendants().Where(x => x.IsComposedOf(AliasHelper<T>.ContentTypeAlias())).As<T>();
     }
 
+    public static bool IsOffering(this IPublishedContent content, string alias) {
+        return content.ContentType.CompositionAliases.Contains(alias);
+    }
+
     public static bool IsPlatformsPage(this IPublishedContent content, IContentCache contentCache) {
         if (content == null) {
             return false;

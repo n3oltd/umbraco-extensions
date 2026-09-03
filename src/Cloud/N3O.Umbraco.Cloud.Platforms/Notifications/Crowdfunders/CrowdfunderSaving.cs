@@ -1,6 +1,11 @@
-﻿using N3O.Umbraco.Cloud.Platforms.Extensions;
+﻿using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
+using N3O.Umbraco.Cloud.Platforms.Lookups;
+using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Lookups;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Events;
@@ -14,9 +19,18 @@ public class CrowdfunderSaving : INotificationAsyncHandler<ContentSavingNotifica
     private const int PageSize = 100;
 
     private readonly IContentService _contentService;
+    private readonly IContentLocator _contentLocator;
+    private readonly IContentHelper _contentHelper;
+    private readonly ILookups _lookups;
 
-    public CrowdfunderSaving(IContentService contentService) {
+    public CrowdfunderSaving(IContentService contentService,
+                             IContentLocator contentLocator,
+                             ILookups lookups,
+                             IContentHelper contentHelper) {
         _contentService = contentService;
+        _contentLocator = contentLocator;
+        _lookups = lookups;
+        _contentHelper = contentHelper;
     }
 
     public Task HandleAsync(ContentSavingNotification notification, CancellationToken cancellationToken) {
@@ -25,9 +39,24 @@ public class CrowdfunderSaving : INotificationAsyncHandler<ContentSavingNotifica
                 continue;
             }
 
-            var campaignKey = content.GetCrowdfunderCampaignKey();
+            var campaignKey = content.GetCrowdfunderCampaignKey(_contentHelper);
 
             if (campaignKey == null) {
+                continue;
+            }
+
+            var campaignId = campaignKey.Value.ToString();
+            var offeringIds = _lookups.GetAll<Offering>()
+                                      .Where(x => x.CampaignId == campaignId)
+                                      .Select(x => x.Id)
+                                      .ToList();
+
+            if (_contentLocator.All(x => x.IsOffering(AliasHelper<OfferingContent>.ContentTypeAlias()))
+                               .As<OfferingContent>()
+                               .Where(x => offeringIds.Contains(x.Key.ToString()))
+                               .None(x => x.AllowCrowdfunding)) {
+                notification.CancelWithError("No offering allows crowdfunding for the selected campaign");
+
                 continue;
             }
 
@@ -58,7 +87,7 @@ public class CrowdfunderSaving : INotificationAsyncHandler<ContentSavingNotifica
                                                       null);
 
             foreach (var other in page) {
-                if (other.Key != crowdfunder.Key && other.GetCrowdfunderCampaignKey() == campaignKey) {
+                if (other.Key != crowdfunder.Key && other.GetCrowdfunderCampaignKey(_contentHelper) == campaignKey) {
                     return true;
                 }
             }

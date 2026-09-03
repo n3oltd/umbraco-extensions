@@ -21,7 +21,7 @@ public class CrowdfunderWebhookBodyReqMapping : IMapDefinition {
 
     // Umbraco.Code.MapAll
     private void Map(CrowdfunderContent src, CrowdfundingCampaignWebhookBodyReq dest, MapperContext ctx) {
-        dest.CampaignId = src.Campaign.Key.ToString();
+        dest.CampaignId = src.Campaign.Id;
         dest.Action = WebhookSyncAction.AddOrUpdate;
 
         dest.AddOrUpdate = GetCrowdfundingCampaignReq(src, ctx);
