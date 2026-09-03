@@ -14,12 +14,17 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
+        builder.Components().Append<PlatformsSchemaComponent>();
+
         builder.Services.AddOpenApiDocument(PlatformsConstants.BackOfficeApiName);
         builder.Services.AddOpenApiDocument(PlatformsConstants.DevToolsApiName);
         builder.Services.AddSingleton<ICampaignAccessor, CampaignAccessor>();
         builder.Services.AddSingleton<ICampaignIdAccessor, CampaignIdAccessor>();
         builder.Services.AddSingleton<INisab, Nisab>();
+        builder.Services.AddTransient<IPlatformsContentTypeSeeder, PlatformsContentTypeSeeder>();
+        builder.Services.AddTransient<IPlatformsDataTypeSeeder, PlatformsDataTypeSeeder>();
         builder.Services.AddSingleton<IPlatformsPageAccessor, PlatformsPageAccessor>();
+        builder.Services.AddTransient<IPlatformsSchemaAudit, PlatformsSchemaAudit>();
         builder.Services.AddSingleton<ITagHelperComponent, PlatformsTagHelperComponent>();
         
         builder.Services.AddScoped<PlatformsCdnFailureMiddleware>();
