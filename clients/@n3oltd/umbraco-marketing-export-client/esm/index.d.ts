@@ -15,6 +15,7 @@ export declare class MarketingExportClient {
 export interface DailyRes {
     goals?: GoalRow[] | undefined;
     traffic?: TrafficRow[] | undefined;
+    users?: UserRow[] | undefined;
 }
 export interface GoalRow {
     campaign?: string | undefined;
@@ -35,6 +36,10 @@ export interface TrafficRow {
     referrer?: string | undefined;
     sessions?: number;
     source?: string | undefined;
+}
+export interface UserRow {
+    count?: number;
+    date?: string | undefined;
 }
 export interface ProblemDetails {
     type?: string | undefined;
