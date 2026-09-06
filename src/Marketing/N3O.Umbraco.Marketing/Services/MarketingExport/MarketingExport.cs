@@ -18,6 +18,11 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Marketing.Services;
 
 public class MarketingExport : IMarketingExport {
+    // Umbraco Engage seeds this visitor and reassigns sessions to it, both when a visitor denies
+    // analytics consent and when a session passes the anonymization horizon. It carries
+    // visitorType 0 like a person, so the bot filter does not exclude it
+    private const string AnonymousVisitorExternalId = "11111111-1111-1111-1111-111111111111";
+
     private const string AnyPageviewsSql = @"
 SELECT TOP 1 1
 FROM umbracoEngageAnalyticsPageview pv
@@ -85,7 +90,8 @@ SELECT s.id AS SessionId,
        pv.utmCampaign AS Campaign,
        rp.domain AS ReferrerDomain,
        fp.pageviews AS Pageviews,
-       CASE WHEN vfs.sessionId = s.id THEN 1 ELSE 0 END AS IsNewVisitor
+       CASE WHEN vfs.sessionId = s.id THEN 1 ELSE 0 END AS IsNewVisitor,
+       CASE WHEN v.externalId = @4 THEN 1 ELSE 0 END AS IsAnonymousVisitor
 FROM umbracoEngageAnalyticsSession s
 INNER JOIN SessionFirstPageview fp ON fp.sessionId = s.id
 INNER JOIN umbracoEngageAnalyticsPageview pv ON pv.id = fp.pageviewId
@@ -136,15 +142,17 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
         List<GoalCompletionRow> goalRows;
 
         using (var db = _umbracoDatabaseFactory.CreateDatabase()) {
-            var args = new object[] { fromUtc, toUtc, host, ToggleWww(host) };
+            var goalArgs = new object[] { fromUtc, toUtc, host, ToggleWww(host) };
+            var sessionArgs = new object[] { fromUtc, toUtc, host, ToggleWww(host), AnonymousVisitorExternalId };
 
-            sessionRows = await db.FetchAsync<SessionRow>(SessionsSql, args, cancellationToken);
-            goalRows = await db.FetchAsync<GoalCompletionRow>(GoalsSql, args, cancellationToken);
+            sessionRows = await db.FetchAsync<SessionRow>(SessionsSql, sessionArgs, cancellationToken);
+            goalRows = await db.FetchAsync<GoalCompletionRow>(GoalsSql, goalArgs, cancellationToken);
         }
 
         var res = new DailyRes();
         res.Goals = ToGoalRows(goalRows, zone, from, to);
         res.Traffic = ToTrafficRows(sessionRows, zone, from, to);
+        res.Users = ToUserRows(sessionRows, zone, from, to);
 
         return res;
     }
@@ -262,11 +270,35 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
             row.Campaign = group.Key.Campaign;
             row.Date = LocalDatePattern.Iso.Format(group.Key.Date);
             row.Medium = group.Key.Medium;
-            row.NewUsers = group.Where(x => x.Row.IsNewVisitor).Select(x => x.Row.VisitorId).Distinct().Count();
+            row.NewUsers = group.Where(x => x.Row.IsNewVisitor && !x.Row.IsAnonymousVisitor)
+                                .Select(x => x.Row.VisitorId)
+                                .Distinct()
+                                .Count();
             row.Pageviews = group.Sum(x => x.Row.Pageviews);
             row.Referrer = group.Key.Referrer;
             row.Sessions = group.Select(x => x.Row.SessionId).Distinct().Count();
             row.Source = group.Key.Source;
+
+            yield return row;
+        }
+    }
+
+    // A distinct count cannot be summed, so this carries no channel dimension: a consumer folding
+    // rows onto a coarser channel would count a visitor once for each channel they arrived by
+    private static IEnumerable<UserRow> ToUserRows(IEnumerable<SessionRow> rows,
+                                                   DateTimeZone zone,
+                                                   LocalDate from,
+                                                   LocalDate to) {
+        var dated = rows.Where(x => !x.IsAnonymousVisitor)
+                        .Select(x => new { Date = ToLocalDate(x.Timestamp, zone), Row = x })
+                        .Where(x => x.Date >= from && x.Date <= to);
+
+        var grouped = dated.GroupBy(x => x.Date);
+
+        foreach (var group in grouped) {
+            var row = new UserRow();
+            row.Count = group.Select(x => x.Row.VisitorId).Distinct().Count();
+            row.Date = LocalDatePattern.Iso.Format(group.Key);
 
             yield return row;
         }
