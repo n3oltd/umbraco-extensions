@@ -2,9 +2,12 @@
 using N3O.Umbraco.ContentTypes;
 using N3O.Umbraco.Extensions;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
+using Descriptions = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Descriptions;
 using Folders = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Folders;
 using Groups = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Groups;
+using Names = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Names;
 using Shared = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.SharedDataTypes;
+using Tabs = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Tabs;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -97,28 +100,29 @@ public partial class PlatformsContentTypeSeeder {
         designer.Save();
     }
 
-    private void SeedCrowdfunder() {
-        var designer = _contentTypeEditor.NewDocument<CrowdfunderContent>();
+    private void SeedCrowdfundingCampaign() {
+        var designer = _contentTypeEditor.NewDocument<CrowdfundingCampaignContent>();
 
-        designer.SetName("Crowdfunder");
+        designer.SetName(Names.CrowdfundingCampaign);
         designer.SetIcon("icon-target color-black");
-        designer.InFolder(Folders.Platforms, Folders.Crowdfunders);
+        designer.InFolder(Folders.Platforms, Folders.CrowdfundingCampaigns);
         designer.WithDeterministicId();
 
-        designer.Tab("Crowdfunder")
-                .ContentPicker(x => x.Campaign)
-                .DataType(Shared.ContentPicker)
+        designer.Tab(Tabs.CrowdfundingCampaign)
+                .ContentmentDataList(x => x.Campaign)
+                .DataType(DataTypeNames.CampaignsSingle)
                 .Mandatory()
-                .Description("The campaign this crowdfunder raises for");
+                .Description(Descriptions.CrowdfundingCampaignCampaign);
 
         designer.Save();
     }
 
-    private void SeedCrowdfunders() {
-        var designer = _contentTypeEditor.NewDocument("Crowdfunders", PlatformsConstants.CrowdfundingCampaigns.Alias);
+    private void SeedCrowdfundingCampaigns() {
+        var designer = _contentTypeEditor.NewDocument(Names.CrowdfundingCampaigns,
+                                                      PlatformsConstants.CrowdfundingCampaigns.Alias);
 
         designer.SetIcon("icon-file-cabinet color-black");
-        designer.InFolder(Folders.Platforms, Folders.Crowdfunders);
+        designer.InFolder(Folders.Platforms, Folders.CrowdfundingCampaigns);
         designer.WithDeterministicId();
         designer.AllowChildren(PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Alias);
 

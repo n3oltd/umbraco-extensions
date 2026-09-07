@@ -49,7 +49,11 @@ public class CampaignContent : UmbracoContent<CampaignContent> {
                                                                                            $"{Key}.json",
                                                                                            JsonSerializers.Simple)
                                          .GetAwaiter().GetResult();
-        
+
+        if (publishedCampaign == null) {
+            throw new ResourceNotFoundException(nameof(PublishedCampaign), Key.ToString());
+        }
+
         platformsContribution.Campaign = new CampaignInfoReq();
         platformsContribution.Campaign.Id = publishedCampaign.Id;
         platformsContribution.Campaign.Reference = publishedCampaign.Reference;

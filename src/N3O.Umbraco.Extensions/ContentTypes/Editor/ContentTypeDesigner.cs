@@ -320,6 +320,10 @@ public abstract class ContentTypeDesigner : IContentTypeDesigner {
 
         contentType ??= _contentTypeService.Get(Alias);
 
+        if (contentType != null && _id.HasValue() && contentType.Key != _id.GetValueOrThrow()) {
+            throw new ContentTypeKeyMismatchException(Alias, _id.GetValueOrThrow(), contentType.Key);
+        }
+
         return contentType;
     }
 

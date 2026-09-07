@@ -4,6 +4,7 @@ using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.DataTypes;
 using N3O.Umbraco.Extensions;
 using System;
+using DataTypeKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypeKeys;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
 using Folders = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Folders;
 using QurbaniItemDataSource = N3O.Umbraco.Giving.Allocations.Lookups.QurbaniItemDataSource;
@@ -24,6 +25,7 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
     public void Seed() {
         Seed(DataTypeNames.AnalyticsTagsList, SeedAnalyticsTagsList);
         Seed(DataTypeNames.CampaignsMultiple, SeedCampaigns);
+        Seed(DataTypeNames.CampaignsSingle, SeedCampaign);
         Seed(DataTypeNames.DonateButtonAction, SeedDonateButtonAction);
         Seed(DataTypeNames.ECommerceStage, SeedECommerceStage);
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
@@ -49,6 +51,17 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
 
         designer.InFolder(Folders.Platforms);
         designer.WithDeterministicId(DataTypeNames.AnalyticsTagsList);
+
+        designer.Save();
+    }
+
+    private void SeedCampaign() {
+        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.CampaignsSingle);
+
+        designer.DataSource<CampaignDataSource>();
+        designer.Limit(1);
+        designer.InFolder(Folders.Platforms);
+        designer.WithId(DataTypeKeys.CampaignsSingle);
 
         designer.Save();
     }

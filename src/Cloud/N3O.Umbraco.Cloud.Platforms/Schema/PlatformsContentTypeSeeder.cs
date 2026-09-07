@@ -49,8 +49,8 @@ public partial class PlatformsContentTypeSeeder : IPlatformsContentTypeSeeder {
             (PlatformsConstants.Campaigns.RegularGiving, SeedRegularGivingCampaign),
             (PlatformsConstants.Offerings.CompositionAlias, SeedOffering),
             (PlatformsConstants.CrossSells.CompositionAlias, SeedCrossSell),
-            (PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Alias, SeedCrowdfunder),
-            (PlatformsConstants.CrowdfundingCampaigns.Alias, SeedCrowdfunders),
+            (PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Alias, SeedCrowdfundingCampaign),
+            (PlatformsConstants.CrowdfundingCampaigns.Alias, SeedCrowdfundingCampaigns),
             (PlatformsConstants.Qurbani.Season.Category.Alias, SeedQurbaniSeasonCategory),
             (PlatformsConstants.Qurbani.Season.Alias, SeedQurbaniSeason),
 

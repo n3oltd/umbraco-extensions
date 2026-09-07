@@ -11,11 +11,12 @@ using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.Migrations;
 using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Migrations.Upgrade;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
-public class PlatformsSchemaComponent : IComponent {
+public partial class PlatformsSchemaComponent : IComponent {
     private readonly IConfiguration _configuration;
     private readonly IContentTypeEditor _contentTypeEditor;
     private readonly Lazy<IPlatformsContentTypeSeeder> _contentTypeSeeder;
@@ -31,6 +32,7 @@ public class PlatformsSchemaComponent : IComponent {
     public PlatformsSchemaComponent(IConfiguration configuration,
                                     IContentTypeEditor contentTypeEditor,
                                     Lazy<IPlatformsContentTypeSeeder> contentTypeSeeder,
+                                    IContentTypeService contentTypeService,
                                     IDataTypeEditor dataTypeEditor,
                                     Lazy<IPlatformsDataTypeSeeder> dataTypeSeeder,
                                     Lazy<IKeyValueService> keyValueService,
@@ -38,10 +40,12 @@ public class PlatformsSchemaComponent : IComponent {
                                     Lazy<IMigrationPlanExecutor> migrationPlanExecutor,
                                     IRuntimeState runtimeState,
                                     Lazy<IPlatformsSchemaAudit> schemaAudit,
-                                    Lazy<ICoreScopeProvider> scopeProvider) {
+                                    Lazy<ICoreScopeProvider> scopeProvider,
+                                    IShortStringHelper shortStringHelper) {
         _configuration = configuration;
         _contentTypeEditor = contentTypeEditor;
         _contentTypeSeeder = contentTypeSeeder;
+        _contentTypeService = contentTypeService;
         _dataTypeEditor = dataTypeEditor;
         _dataTypeSeeder = dataTypeSeeder;
         _keyValueService = keyValueService;
@@ -50,6 +54,7 @@ public class PlatformsSchemaComponent : IComponent {
         _runtimeState = runtimeState;
         _schemaAudit = schemaAudit;
         _scopeProvider = scopeProvider;
+        _shortStringHelper = shortStringHelper;
     }
 
     public void Initialize() {
@@ -57,7 +62,7 @@ public class PlatformsSchemaComponent : IComponent {
             return;
         }
 
-        AllowCrowdfundersUnderPlatforms();
+        AllowCrowdfundingCampaignsUnderPlatforms();
 
         if (!IsEnabled()) {
             return;
@@ -65,6 +70,8 @@ public class PlatformsSchemaComponent : IComponent {
 
         _dataTypeSeeder.Value.Seed();
         _contentTypeSeeder.Value.Seed();
+
+        CorrectCrowdfundingCampaignNames();
 
         var blockers = FindMigrationBlockers();
 
@@ -90,24 +97,24 @@ public class PlatformsSchemaComponent : IComponent {
 
     public void Terminate() { }
 
-    private void AllowCrowdfundersUnderPlatforms() {
-        var crowdfunders = _contentTypeEditor.Find(PlatformsConstants.CrowdfundingCampaigns.Alias);
+    private void AllowCrowdfundingCampaignsUnderPlatforms() {
+        var crowdfundingCampaigns = _contentTypeEditor.Find(PlatformsConstants.CrowdfundingCampaigns.Alias);
         var platforms = _contentTypeEditor.Find(PlatformsConstants.Platforms.Alias);
 
-        if (crowdfunders == null ||
+        if (crowdfundingCampaigns == null ||
             platforms == null ||
-            platforms.AllowedContentTypes.OrEmpty().Any(x => x.Alias == crowdfunders.Alias)) {
+            platforms.AllowedContentTypes.OrEmpty().Any(x => x.Alias == crowdfundingCampaigns.Alias)) {
             return;
         }
 
         try {
             var designer = (IDocumentTypeDesigner) _contentTypeEditor.ForExisting(platforms.Alias);
 
-            designer.AllowChildren(crowdfunders.Alias);
+            designer.AllowChildren(crowdfundingCampaigns.Alias);
 
             designer.Save();
         } catch (Exception ex) {
-            _logger.LogError(ex, "Could not allow {Alias} under the platforms type", crowdfunders.Alias);
+            _logger.LogError(ex, "Could not allow {Alias} under the platforms type", crowdfundingCampaigns.Alias);
         }
     }
 

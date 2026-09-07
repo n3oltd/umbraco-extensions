@@ -1,4 +1,6 @@
-﻿namespace N3O.Umbraco.Cloud.Platforms;
+﻿using System;
+
+namespace N3O.Umbraco.Cloud.Platforms;
 
 public static class PlatformsSchemaConstants {
     public const string ConfigurationSection = "Platforms";
@@ -12,7 +14,7 @@ public static class PlatformsSchemaConstants {
         public const string Calculator = "Calculator";
         public const string Campaigns = "Campaigns";
         public const string CrossSells = "Cross Sells";
-        public const string Crowdfunders = "Crowdfunders";
+        public const string CrowdfundingCampaigns = "Crowdfunding Campaigns";
         public const string DonationForms = "Donation Forms";
         public const string Offerings = "Offerings";
         public const string Platforms = "Platforms";
@@ -24,6 +26,7 @@ public static class PlatformsSchemaConstants {
     public static class DataTypes {
         public const string AnalyticsTagsList = "Platforms Analytics Tags List";
         public const string CampaignsMultiple = "Platforms Campaigns Data List (0, n)";
+        public const string CampaignsSingle = "Platforms Campaigns Data List (0, 1)";
         public const string DonateButtonAction = "Platforms Donate Button Action Data List (0, 1)";
         public const string ECommerceStage = "Platforms Ecommerce Stage Data List (0, 1)";
         public const string ElementEmbedCodeLabel = "Platforms Element Embed Code Label";
@@ -31,6 +34,11 @@ public static class PlatformsSchemaConstants {
         public const string QurbaniSeasonCategoryPicker = "Platforms Qurbani Season Category Picker (0, n)";
         public const string SuggestedAmounts = "Platforms Suggested Amount Block List (0, 3)";
         public const string Summary = "Platforms Summary";
+    }
+
+    public static class DataTypeKeys {
+        // The key the sites' uSync exports hold for the type, save Muslim Hands, whose own key is matched by name
+        public static readonly Guid CampaignsSingle = new("d51913ab-a36d-4d15-9c5c-7876319e967e");
     }
 
     public static class SharedDataTypes {
@@ -73,5 +81,19 @@ public static class PlatformsSchemaConstants {
         public const string Options = "Options";
         public const string Settings = "Settings";
         public const string Suggestions = "Suggestions";
+    }
+
+    public static class Descriptions {
+        public const string CrowdfundingCampaignCampaign = "The campaign this crowdfunding campaign belongs to";
+    }
+
+    public static class Names {
+        public const string CrowdfundingCampaign = "Crowdfunding Campaign";
+        public const string CrowdfundingCampaigns = "Crowdfunding Campaigns";
+    }
+
+    public static class Tabs {
+        public const string CrowdfunderPageTemplate = "Crowdfunder Page Template";
+        public const string CrowdfundingCampaign = "Crowdfunding Campaign";
     }
 }
