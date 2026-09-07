@@ -11,23 +11,24 @@ using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Cloud.Platforms.Models;
 
-public class CrowdfunderWebhookBodyReqMapping : IMapDefinition {
-    public const string CampaignPageContentContext = nameof(CampaignPageContentContext);
+public class CrowdfundingCampaignWebhookBodyReqMapping : IMapDefinition {
+    public const string CampaignKeyContext = nameof(CampaignKeyContext);
     public const string CrowdfunderPageContentContext = nameof(CrowdfunderPageContentContext);
+    public const string CrowdfundingCampaignPageContentContext = nameof(CrowdfundingCampaignPageContentContext);
 
     public void DefineMaps(IUmbracoMapper mapper) {
-        mapper.Define<CrowdfunderContent, CrowdfundingCampaignWebhookBodyReq>((_, _) => new CrowdfundingCampaignWebhookBodyReq(), Map);
+        mapper.Define<CrowdfundingCampaignContent, CrowdfundingCampaignWebhookBodyReq>((_, _) => new CrowdfundingCampaignWebhookBodyReq(), Map);
     }
 
     // Umbraco.Code.MapAll
-    private void Map(CrowdfunderContent src, CrowdfundingCampaignWebhookBodyReq dest, MapperContext ctx) {
-        dest.CampaignId = src.Campaign.Id;
+    private void Map(CrowdfundingCampaignContent src, CrowdfundingCampaignWebhookBodyReq dest, MapperContext ctx) {
+        dest.CampaignId = ((Guid) ctx.Items[CampaignKeyContext]).ToString();
         dest.Action = WebhookSyncAction.AddOrUpdate;
 
         dest.AddOrUpdate = GetCrowdfundingCampaignReq(src, ctx);
     }
 
-    private CrowdfundingCampaignReq GetCrowdfundingCampaignReq(CrowdfunderContent src, MapperContext ctx) {
+    private CrowdfundingCampaignReq GetCrowdfundingCampaignReq(CrowdfundingCampaignContent src, MapperContext ctx) {
         var req = new CrowdfundingCampaignReq();
         req.Enable = true;
 
@@ -38,11 +39,11 @@ public class CrowdfunderWebhookBodyReqMapping : IMapDefinition {
                                    CrowdfundingSystemSchema.Sys__crowdfunderPage,
                                    CrowdfunderPageContentContext));
 
-        if (ctx.Items.ContainsKey(CampaignPageContentContext)) {
+        if (ctx.Items.ContainsKey(CrowdfundingCampaignPageContentContext)) {
             items.Add(GetStoredContent(src,
                                        ctx,
                                        CrowdfundingSystemSchema.Sys__crowdfundingCampaignPage,
-                                       CampaignPageContentContext));
+                                       CrowdfundingCampaignPageContentContext));
         }
 
         req.StoredContents = new StoredContentsReq();
@@ -51,7 +52,7 @@ public class CrowdfunderWebhookBodyReqMapping : IMapDefinition {
         return req;
     }
 
-    private StoredContentReq GetStoredContent(CrowdfunderContent src,
+    private StoredContentReq GetStoredContent(CrowdfundingCampaignContent src,
                                               MapperContext ctx,
                                               CrowdfundingSystemSchema schema,
                                               string contextKey) {
@@ -73,7 +74,9 @@ public class CrowdfunderWebhookBodyReqMapping : IMapDefinition {
         return req;
     }
 
-    private static string GetStoredContentId(Guid crowdfunderKey, string schemaAlias) {
-        return $"StoredContent_{crowdfunderKey}_{schemaAlias}".GetDeterministicHashCode(true).ToGuid().ToString();
+    private static string GetStoredContentId(Guid crowdfundingCampaignKey, string schemaAlias) {
+        return $"StoredContent_{crowdfundingCampaignKey}_{schemaAlias}".GetDeterministicHashCode(true)
+                                                                    .ToGuid()
+                                                                    .ToString();
     }
 }

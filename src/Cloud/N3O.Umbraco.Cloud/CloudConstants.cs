@@ -16,6 +16,10 @@ public static class CloudConstants {
         };
     }
 
+    public static class Configuration {
+        public const string CdnCacheSection = "CdnCache";
+    }
+
     public static class Environment {
         public static class Keys {
             public static string DataRegion = "DataRegion";

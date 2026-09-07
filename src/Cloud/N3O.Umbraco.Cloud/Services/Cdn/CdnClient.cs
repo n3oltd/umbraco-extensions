@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Models;
+using N3O.Umbraco.Cloud.Options;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Exceptions;
 using N3O.Umbraco.Extensions;
@@ -30,11 +32,15 @@ public class CdnClient : ICdnClient {
     private readonly IJsonProvider _jsonProvider;
     private readonly ILogger<CdnClient> _logger;
     private readonly HttpClient _httpClient;
+    private readonly Duration _maxAge;
+    private readonly Duration _maxRetention;
+    private readonly Duration _notFoundRetryInterval;
 
     public CdnClient(ICloudUrl cloudUrl,
                      IClock clock,
                      IJsonProvider jsonProvider,
-                     ILogger<CdnClient> logger) {
+                     ILogger<CdnClient> logger,
+                     IOptions<CdnCacheOptions> options) {
         _cloudUrl = cloudUrl;
         _clock = clock;
         _jsonProvider = jsonProvider;
@@ -42,6 +48,10 @@ public class CdnClient : ICdnClient {
 
         _httpClient = new HttpClient();
         _httpClient.Timeout = TimeSpan.FromSeconds(15);
+
+        _maxAge = Duration.FromTimeSpan(options.Value.MaxAge);
+        _notFoundRetryInterval = Duration.FromTimeSpan(options.Value.NotFoundRetryInterval);
+        _maxRetention = Duration.Max(_maxAge, _notFoundRetryInterval);
     }
 
     public async Task<string> DownloadAsync(string path, CancellationToken cancellationToken = default) {
@@ -98,7 +108,7 @@ public class CdnClient : ICdnClient {
 
         InvalidatedAt[publishedUrl] = now;
 
-        var cutoff = now - CdnDownloadResult.MaxRetention;
+        var cutoff = now - _maxRetention;
 
         foreach (var invalidation in InvalidatedAt) {
             if (invalidation.Value < cutoff) {
@@ -189,11 +199,11 @@ public class CdnClient : ICdnClient {
         try {
             var download = await GetStringRateLimitedAsync(publishedUrl, cancellationToken);
 
-            return CdnDownloadResult.ForSuccess(startedAt, download);
+            return CdnDownloadResult.ForSuccess(startedAt, download, _maxAge);
         } catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound) {
             _logger.LogDebug("CDN 404 for {PublishedUrl}", publishedUrl);
 
-            return CdnDownloadResult.ForNotFound(startedAt);
+            return CdnDownloadResult.ForNotFound(startedAt, _notFoundRetryInterval);
         } catch (Exception ex) {
             _logger.LogWarning(ex, "Could not download {PublishedUrl}", publishedUrl);
 

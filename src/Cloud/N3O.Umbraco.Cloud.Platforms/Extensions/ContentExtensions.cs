@@ -1,7 +1,7 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
-using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using Umbraco.Cms.Core;
@@ -12,24 +12,19 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
-    public static Guid? GetCrowdfunderCampaignKey(this IContent content, IContentHelper contentHelper) {
+    public static Guid? GetCampaignKey(this IContent content) {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
-        var contentProperties = contentHelper.GetContentProperties(content);
-        var campaign = contentHelper.GetDataListValue<Campaign>(contentProperties, alias);
+        var value = content.GetValue<string>(alias);
 
-        if (Guid.TryParse(campaign?.Id, out var campaignKey)) {
+        if (!value.HasValue()) {
+            return null;
+        } else if (TryGetContentPickerKey(value, out var contentPickerKey)) {
+            return contentPickerKey;
+        } else if (Guid.TryParse(GetDataListItem(value), out var campaignKey)) {
             return campaignKey;
+        } else {
+            return null;
         }
-
-        // TODO Delete once every crowdfunder has been re-saved: the campaign picker was a content picker
-        // before it became a data list, so a node saved before the change still holds a document udi.
-        var property = content.Properties.Single(x => x.Alias == alias);
-
-        if (UdiParser.TryParse(property.GetValue()?.ToString(), out GuidUdi udi)) {
-            return udi.Guid;
-        }
-
-        return null;
     }
 
     public static bool IsCampaign(this IContent content, IContentTypeService contentTypeService) {
@@ -40,7 +35,7 @@ public static class ContentExtensions {
         return HasComposition(contentTypeService, content, AliasHelper<CrossSellContent>.ContentTypeAlias());
     }
 
-    public static bool IsCrowdfunder(this IContent content) {
+    public static bool IsCrowdfundingCampaign(this IContent content) {
         return content.ContentType.Alias == PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Alias;
     }
 
@@ -80,11 +75,32 @@ public static class ContentExtensions {
         return content.ContentType.Alias.EqualsInvariant(PlatformsConstants.Zakat.Settings.Calculator.Field.Alias);
     }
 
+    private static string GetDataListItem(string value) {
+        if (value.DetectIsJson()) {
+            return (JToken.Parse(value) as JArray)?.FirstOrDefault()?.ToString();
+        } else {
+            return value;
+        }
+    }
+
     private static bool HasComposition(IContentTypeService contentTypeService,
                                        IContent content,
                                        string compositionAlias) {
         var contentType = contentTypeService.Get(content.ContentTypeId);
 
         return contentType.CompositionAliases().Contains(compositionAlias, true);
+    }
+
+    [Obsolete("Delete me once every crowdfunding campaign node has been re-saved with the data list picker")]
+    private static bool TryGetContentPickerKey(string value, out Guid contentPickerKey) {
+        if (UdiParser.TryParse(value, out GuidUdi udi)) {
+            contentPickerKey = udi.Guid;
+
+            return true;
+        } else {
+            contentPickerKey = Guid.Empty;
+
+            return false;
+        }
     }
 }
