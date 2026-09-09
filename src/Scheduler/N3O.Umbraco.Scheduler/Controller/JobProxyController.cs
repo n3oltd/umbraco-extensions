@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Hosting;
@@ -16,11 +17,16 @@ public class JobProxyController : ApiController {
     private readonly IJsonProvider _jsonProvider;
     private readonly IMediator _mediator;
     private readonly IFluentParameters _fluentParameters;
+    private readonly ILogger<JobProxyController> _logger;
 
-    public JobProxyController(IJsonProvider jsonProvider, IMediator mediator, IFluentParameters fluentParameters) {
+    public JobProxyController(IJsonProvider jsonProvider,
+                              IMediator mediator,
+                              IFluentParameters fluentParameters,
+                              ILogger<JobProxyController> logger) {
         _jsonProvider = jsonProvider;
         _mediator = mediator;
         _fluentParameters = fluentParameters;
+        _logger = logger;
     }
 
     [HttpPost("executeProxied")]
@@ -40,7 +46,9 @@ public class JobProxyController : ApiController {
 
             return Ok();
         } catch (Exception ex) {
-            return BadRequest(new { error = ex.Message, stackTrace = ex.StackTrace });
+            _logger.LogError(ex, "Proxied execution of {CommandType} failed", req.CommandType);
+
+            return BadRequest(new { error = ex.Message });
         }
     }
 
