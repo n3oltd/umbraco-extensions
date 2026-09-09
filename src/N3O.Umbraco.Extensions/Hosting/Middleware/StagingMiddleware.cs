@@ -140,7 +140,7 @@ public class StagingMiddleware : IMiddleware {
 
         if (TryReadBasicCredentials(header, out var username, out var password) &&
             username.EqualsInvariant(stagingSettings.Username) &&
-            password == stagingSettings.Password) {
+            password.EqualsSecret(stagingSettings.Password)) {
             return true;
         } else {
             return false;
