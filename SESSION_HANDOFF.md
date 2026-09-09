@@ -8,6 +8,103 @@
 
 ## Current State
 
+**2026-09-09 — AFH media migration DONE and render-verified; 4 PRs opened; `v17` CI found to have never passed.**
+
+- **✅ `site-afh` Cropper/Uploader → native media migration applied and verified.** `--target inline` (the
+  target question is now settled — see P1-4 in `V17_REMAINING_TASKS.md` for why `mediapicker` is wrong for
+  these sites). Dry-run and `--apply` reported identical figures: 50 data types, 940 property values 0 failed,
+  16,385 nested values, 5,340 legacy udi block shapes normalised, 9,523 alt texts preserved, 0 dropped.
+  Verified by **rendering**, not exit code: real ImageSharp crop URLs with `alt=` populated, plain paths for
+  uploads, `cmsContentNu` rebuilt to 3,285 rows, 0 site errors, 0 raw-JSON leaks across 5 pages. `site-mh` was
+  already migrated. **Media store untouched** and the orphaned-crop-file deletion step deliberately not run.
+- **🔴 `v17` CI has never passed — 8/8 failures at `dotnet build`, all 14 frontend projects racing on one
+  `npm ci`** into the shared `src/node_modules`. Recorded in full as **P0-7**, including why every local build
+  misses it (the `.n3o-frontend-restored` stamp is load-bearing) and the knock-on that **no `v17` package has
+  ever been published**, which silently blocks P1-5. Fix is a design decision, proposed not built.
+- **4 PRs opened into `v17`**, all assigned to Talha, each with a reverse check in its test plan:
+  **#990** CI SDK version + dead references · **#991** block element values matched on culture instead of alias
+  alone · **#992** six security defects (open redirect on sign-out, timing-unsafe secret compares, secret in a
+  cache key, stack trace to callers, permanent staging lockout + 500 on malformed auth header, response
+  headers) · **#993** telethon window compared against `BeginAt` instead of `EndAt`, `CartValidator` silently
+  emptying the basket, SERP editor showing the host instead of the page URL.
+- **Two of my own earlier claims corrected.** (1) `setup-node` on `main-ci.yml` was wrong — `origin/main` has
+  no `Directory.Build.targets`, so no npm seam. (2) The AFH ModelsBuilder regeneration and the
+  `Icon` → `MediaWithCrops` consumer fix are **both unnecessary**: the generated models already carry the
+  correct inline-target types and only the `GeneratedCodeAttribute` version string is stale.
+
+**2026-09-01 — MIGRATION AUDIT (5 parallel read-only agents, findings verified before recording). Everything below was confirmed by me directly, not taken on the agent's word.**
+
+- **🔴🔴🔴 SILENT-FAILURE CLASS — v17 block-nested property values are NOT strings, and four N3O read paths assume they are. Nothing throws; content just renders empty.** Root mechanism: an element's property source value is `BlockPropertyValue.Value` (`object`), deserialised by Umbraco's `IJsonSerializer` via **`JsonObjectConverter`**, which produces `JsonObject` for a JSON object, `JsonArray` for an array of objects, and a **`List<T>` for an array of scalars/arrays** (`src/Umbraco.Infrastructure/Serialization/JsonObjectConverter.cs:44-92`; assigned as the element source at `PropertyEditors/ValueConverters/BlockEditorConverter.cs:78,94`). Top-level document properties are unaffected because nucache defaults to **MessagePack** (`NuCacheSettings.cs:17`), which yields strings — **which is exactly why every existing verification passed.**
+  - **1. `EditorJsValueConverter` — CONFIRMED, and it is the sole outlier.** `src/Plugins/EditorJs/N3O.Umbraco.EditorJs/DataTypes/EditorJsValueConverter.cs:37-41` is `if (source is string) return strValue; else return null;`. EditorJs stores `{time, blocks, version}` → a `JsonObject` inside a block → **null**. I verified the five sibling converters all already handle it (`is string … else if (source is JsonNode jsonNode)`): `CellsValueConverter.cs:22/24`, `SerpEditorValueConverter.cs:24/26`, `TextResourceEditorValueConverter.cs:25/27`, `ImportDataEditorValueConverter.cs:24/26`, `ImportNoticesViewerValueConverter.cs:24/26`. **Consequence: an EditorJs property on any element type used in a Block List / Block Grid / Perplex block renders empty.** EditorJs is one of the five plugins the work-issue checklist still lists as never runtime-tested, so this could not have surfaced.
+  - **2. `ImageCropperExtensions.AltText` — CONFIRMED, and worse than first reported.** `src/N3O.Umbraco.Extensions/Extensions/ImageCropperExtensions.cs:45` does `GetSourceValue() as string` → null inside a block, and the method's own `catch { return null; }` would mask it anyway. This is the **only** seam for the `"altText"` member `media-migrate` writes (AFH has ~9,523 of them, the bulk inside Perplex/Block List). **I previously noted this file as "untracked, zero callers in either repo" — that was wrong: the callers live in the AFH v17 worktree, outside both repos I had grepped**, and they are all on the failing path: `site-afh-v17/…/ViewModels/Blocks/AppealsTiles2BlockViewModel.cs:34`, `Views/Blocks/ActivityCardsBlock/{Default,Alt1}.cshtml:14`, `Views/Blocks/AppealsTilesBlock/Dark.cshtml:18`, `Views/Blocks/BlogPostBlock/Default.cshtml:31`. So every one of those `alt=` attributes renders empty. Umbraco's own converter avoids this by using `source.ToString()` (`ImageCropperValueConverter.cs:50`). **And the file is still UNTRACKED in the framework repo — AFH's v17 site depends on a file that is not committed.**
+  - **3. `CellsValueConverter` misses the third shape.** Cells stores `object[][]` — an array whose items are arrays, so `JsonObjectConverter` returns a **`List<List<string>>`**, which is neither `string` nor `JsonNode`. The `is string / is JsonNode` idiom is *not* sufficient for array-valued editors; Handsontable renders empty.
+  - **4. Latent, one config line away from site-wide.** Under `Umbraco:CMS:NuCache:NuCacheSerializerType=JSON`, complex values — **including top-level ones** — come back as `JsonElement` (`PublishedCache.HybridCache/Serialization/JsonContentNestedDataSerializer.cs:52-61`), which is neither `string` nor `JsonNode`, so **all six** converters return null across the whole site. Default is MessagePack, so nothing is broken today.
+  - **➡️ One fix closes all four:** normalise with `source.ToString()` before parsing, as Umbraco's own converters do, instead of type-testing the shape.
+
+- **✅ RESOLVED 2026-09-02 (Talha): the offering Preview removal was INTENTIONAL. Not a regression — retire it properly and fix the docs.** The audit surfaced it because the feature was migrated to v17, recorded as done, and then deleted with no note anywhere: `PreviewHtml` has **0 hits on `origin/v17` and 12 on `origin/main`**. Commit **`a132ff147`** ("Forward-port v13 fixes/features into v17 (Group A + #904) (#905)") deleted **15 files**: `Handlers/GetPreviewHtmlHandler.cs`, `Queries/GetPreviewHtmlQuery.cs`, `Models/Preview/PreviewHtmlRes.cs`, `Services/PreviewHtmlGenerator{,.I}.cs`, all five `Services/Offerings/OfferingPreviewHtmlGenerator*.cs`, the whole `frontend/platforms-preview/` Lit app (4 files), and `wwwroot/App_Plugins/N3O.Umbraco.Cloud.Platforms.Preview/umbraco-package.json`.
+  - **It was not "never migrated" — the per-project branch `v17-N3O.Umbraco.Cloud.Platforms` (an ancestor of `origin/v17`) still carries all five generators.** So the sequence is: migrated → refactored → deleted by a later forward-port.
+  - **`MIGRATION_PR_TRACKER.md:85` records it as done and refactored** ("**Preview app ported React→Lit**", "`GetPreviewHtmlHandler` drops redundant `IContentTypeService`", preview visibility moved to the built-in `Umb.Condition.WorkspaceContentTypeAlias`). **The deletion is documented nowhere.** Corroborating orphan: `Models/Preview/MediaWithCropsDto.cs` survives on `v17` as the only `MediaWithCropsDto` reference — its sole consumer was a deleted generator.
+  - **Two agents disagreed on this and one was wrong.** The legacy-backoffice audit called it "a deliberate removal, not a missed migration" on the strength of the deletion commits alone; it had not checked that the per-project branch already carried the migrated feature. Treat "deleted in a forward-port commit" as *evidence of a deletion*, never as evidence of intent.
+  - **DO NOT restore it.** Talha confirmed the removal was intentional (2026-09-02). Remaining work is cleanup, not recovery: delete the orphaned `Models/Preview/MediaWithCropsDto.cs`, and mark the "Cloud.Platforms Preview app + Telethon segment-rule" line on the work#729 checklist as N/A for the Preview half (the Telethon half still stands).
+- **✅ Otherwise the forward-port surface is effectively closed.** Of 133 main-only commits (100 non-merge): ~50 ALREADY-PRESENT (files byte-identical), 11 PORTED-IN-FLIGHT on `fwd-crowdfunder-v17`/#976, ~33 repo-plumbing (covered by `601f915ce`), and the rest NOT-APPLICABLE by design. Residual file divergence was diffed by hand and is **v17-side rewrite or v17-ahead**, not missing code — notably `JobTrigger.cs` (v17 has typed `ProxyErrorRes` that `main` lacks), `SchedulerComposer.cs` (v17 replaced the OpenIddict cookie issuer with `Umbraco.Cms.Web.BackOffice.Authorization`), and #913 (v17's `CampaignEmbedCodes` gates on composition-based `IsCampaign`, which is **broader** than main's hand-maintained alias list, so `RegularGivingCampaignContent` is already covered). Two dependabot bumps are superseded — v17 pins *newer* (`AWSSDK.SimpleEmail 4.0.100.6` vs 4.0.3.8, `AngleSharp 1.5.2` vs 1.5.1). **`N3O.Umbraco.GeoIP.Cloudflare` is new on `main` and arrives with #976.**
+  - ⚠️ **Method caveat worth keeping:** a line-level diff heuristic produces many false "missing" hits (a shared added line like `using N3O.Umbraco.Extensions;` flags every commit that added it). The reliable signal is **file-level** — `git diff --name-only origin/v17 origin/main -- src`; a commit whose touched files all fall outside that set is definitively already present.
+- **🟡 Only 4 obsolete-API call sites in the whole solution, and all 4 are "Scheduled for removal in Umbraco 18"** — verified by a forced `--no-incremental` rebuild (an incremental build re-emits none, which is why an earlier sweep looked clean): `IComponent` → use `IAsyncComponent` at `src/N3O.Umbraco.Extensions/ContentFinders/FlushSpecialContentPathsComponent.cs:7`, and `Constants.Security.AllowedApplicationsClaimType` → use `IUser.Allowed…` at `src/Scheduler/N3O.Umbraco.Scheduler/Security/HangfireDashboardCookieIssuer.cs:48`. Cheap to fix now; they are the v18 breakage wave.
+- **🟡 Backoffice localization was dropped with no v17 replacement.** The v13 `lang/*.xml` files (Scheduler, WelcomeDashboard) were deleted and their keys replaced with **hardcoded English literals** — `umbraco-package.json` `"label"` values: Scheduler:13 "Scheduler", WelcomeDashboard:20 "Welcome", Data.Import:13, Data.Export:13, DynamicListViews:14 "Children". `lang/*.xml` went in v14; the replacement is the **`localization` extension type, which does exist in 17.3.5**, and a repo-wide grep for `"type": "localization"` returns **zero**. So every N3O backoffice label is English-only where v13 had a seam. No in-repo example to copy — this would be the first.
+- **🔑 WHY the property-editor alias match is load-bearing (record this, the Bellissima log only records the fix).** All 6 N3O `propertyEditorUi` manifests set `meta.propertyEditorSchemaAlias` to the backend `[DataEditor]` alias, and **no `propertyEditorSchema` is registered anywhere** — it is a frontend-only manifest type (0 hits across all of Umbraco's C#). It works solely because `DataTypeViewModelMapDefinition.cs:20` does `target.EditorUiAlias = source.EditorUiAlias ?? source.EditorAlias`, and `V_14_0_0/AddPropertyEditorUiAliasColumn` creates `propertyEditorUiAlias` **nullable and never backfills it** — so a migrated v13 data type falls back to the backend alias, which the manifests match. **Renaming any UI alias away from its `[DataEditor]` alias would silently break every migrated data type.** Consequence: schema-level `meta.settings`/`defaultData` are unavailable, which is fine — N3O puts settings on the UI manifest.
+- **🟡 Stale untracked `App_Plugins` on disk that Umbraco discovers at runtime.** `src/DemoSite/DemoSite.Web/App_Plugins/N3O.Umbraco.{Cropper,Uploader}/` survive from the copy-targets era with vendored `formstone/` + `cropperjs/`. The backend projects are gone, so these register `propertyEditorUi` extensions with no `[DataEditor]` — the "Property Editor UI not found" class — and Umbraco discovers content-root `App_Plugins`, so **anyone running DemoSite locally gets them**. `git ls-files` on that path returns 0, so this is a local `rm`, not a repo change. Same class: leftover `App_Plugins/{Scheduler,WelcomeDashboard}/lang/*.xml`.
+- **Convention drift:** `src/N3O.Umbraco.Cms/N3O.Umbraco.Cms.csproj:37` hand-wires the `ReactRuntime` `ProjectReference` while the other 8 backoffice plugins set `<N3OReactPlugin>true</N3OReactPlugin>` and get it from `src/build/N3O.Umbraco.ReactPlugin.props:7`. Cosmetic, but the props file is the single point that convention exists to protect.
+- **✅ The AngularJS/pre-Bellissima lane is clean** — zero `package.manifest`, zero `angular.module`/`.controller(`/`$scope`, zero `.html` property-editor views, and **zero** removed extension points (`IContentAppFactory`, `IDashboardSection`, `SectionAliases`, `IParameterEditor`, `ManifestFilter`, `ITree`, `SendingContentNotification`). All 17 `umbraco-package.json` are valid v17 — all 9 extension types, both condition aliases, and `forBlockEditor`/`"block-grid"` verified against the 17.3.5 clone. Every manifest asset path exists on disk **and** is produced by a build step. **Contentment is a red herring in this repo** — 6.1.4 ships `*.controller.js` filenames but targets `net10.0`/`Umbraco.Cms [17.0.0,19.0.0)` with no `package.manifest`. ⚠️ **But the sites are different:** site-afh and site-bsc carry a **fully vendored v13-era AngularJS Contentment** (~40 `.html` templates) under their own `App_Plugins/` — for them the fix is likely "delete the vendored copy, reference the v17 package", pending a decision on whether Contentment survives at all.
+
+- **⛔ RETRACTED — "uSync reads the stale v13 payload" was FALSE. I recorded it as HIGH, and on work#729, before checking the code. DemoSite was already correct.** The claim rested on the generated `appsettings-schema.usync.json`, whose `default` annotations say `RootFolder: uSync/v14/` and `Folders: uSync/Root/, uSync/v14/`. **Those annotations are stale and do not match the installed uSync 17.3.2 code.** Decompiling `uSync.BackOffice.dll`:
+  - `uSyncSettings.RootFolder` defaults to **`$"uSync/v{uSync.Version.Major}/"`** — i.e. **`uSync/v17/`** on uSync 17, not `uSync/v14/` (`:11336`).
+  - `uSyncSettings.Folders` defaults to **`Array.Empty<string>()`** (`:11342`), and a `PostConfigure` then fills it: `if (options.Folders is null or []) options.Folders = ["uSync/Root/", options.RootFolder];` (`:3032-3034`).
+  - Imports **and** exports resolve through `GetFolders()` → `FetchFolders()`, which reads **`Settings.Folders`** (plus registered `ISyncFolder`s) — `RootFolder` never appears in folder resolution itself (`:11067-11100`). `GetWorkingFolder()` is `GetFolders().Last()` (`:11085`).
+  - **So with no uSync config at all the effective folders are `["uSync/Root/", "uSync/v17/"]` and the working folder is `uSync/v17/`.** It is not orphaned — it is the live one. `uSync/v9` is only the `LegacyFolder` (`:11348`), reachable through explicit legacy paths, not a normal import.
+  - I briefly added `"RootFolder": "uSync/v17/"` to `src/DemoSite/DemoSite.Web/appsettings.json` and **reverted it** — it sets exactly what the default already computes, so it is a no-op that would have implied a bug was fixed. **Lesson: a generated schema's `default` annotation is documentation, not behaviour — read the settings class.**
+  - **What survives from that finding:** (a) `NOT_REQUIRED_TO_RUN.md:95`'s claim that a `v9/.ignore` marker makes uSync skip the folder is still **false** — no such marker exists anywhere under that tree; (b) `uSync/v9` is **174 tracked files** of v13 exports naming v14-removed editors (`MediaPickerLegacy`, `HTMLEditor`, `RichtextEditor`, six `Nested*`, a `Macros/` folder), which is dead weight worth deleting — a cleanup, **not** a live import risk; (c) neither `site-mh-v17` nor `site-afh-v17` has produced a `uSync/v17/` export yet (both still carry only `uSync/v9/`), so each site's v17 upgrade still needs a re-export after its data migration.
+- **🟡 `StaticWebAssetBasePath=/` is gated on the wrong condition.** `Directory.Build.props:9-14` applies it under `Condition="Exists('$(MSBuildProjectDirectory)\frontend')"`. Nothing is broken today (all 12 Razor-SDK projects happen to have a `frontend/`), but the two facts are unrelated: an RCL shipping only vendored/hand-written `wwwroot/App_Plugins` assets and no npm app silently gets no base path, lands under `_content/<AssemblyName>/App_Plugins/…`, and Umbraco never finds the manifest — the exact silent non-load `PACKAGING_RCL_RESEARCH.md:139-141` warns about. No project sets the property itself.
+- **🟡 The NETSDK1152 fix recorded at `PACKAGING_RCL_RESEARCH.md:38` is not in the code.** No `Content Remove` / `appsettings-schema` / `umbraco-package-schema` reference exists in any `.csproj`/`.props`/`.targets`, yet all three generated JSONs sit in `src/N3O.Umbraco.Cms/` with `IsPackable=true` and `ContentTargetFolders=.` (`N3O.Umbraco.Cms.csproj:16-17`). Either lost in the `origin/v17` restructure merge or made moot by the Razor SDK's globs — **unresolved, needs a `dotnet pack`/`publish` to settle.**
+- **Dead config in `src/DemoSite/DemoSite.Web/appsettings.json`:** `Umbraco:CMS:Content:MacroErrors` (line 20) and `Umbraco:CMS:RuntimeMinification` (lines 135-138, the last Smidge remnant) — both absent from the v17 schema and from the 17.3.5 source, so silently ignored. The `<None Remove="Smidge\**" />` csproj line was already removed by #977; this config block survived it.
+- **No `NuGet.Config` in the repo at any depth**, so restore-source resolution is machine/CI dependent — including for the four licence-gated commercial packages (UIBuilder 17.2.2, Engage 17.2.2, uSync.Complete 17.3.6, Forms 17.0.1). And `.github/workflows/v17-ci.yml:4-5` triggers only on `push` to `v17` — **no PR trigger, so per-project migration PRs get no CI.**
+- **Junk to delete:** `src/NUL` (a real 3,058-byte file created by a Bash `> NUL` redirect — a Windows device name used as a filename under Git Bash; it shows in `git status` as untracked and must not be committed), plus empty leftover dirs `src/Blazor/N3O.Umbraco.Blazor`, `src/Blazor/N3O.Umbraco.Blazor.BackOffice`, `src/Plugins/Cropper`, `src/Plugins/Uploader`, and an empty untracked `src/N3O.Umbraco.Cms/App_Plugins/`.
+- **`PACKAGING_RCL_RESEARCH.md` is internally contradictory:** lines 46-55 head a "Rollout checklist (DONE 2026-06-24)" over eleven **unchecked** boxes naming projects that no longer exist (`Cropper.StaticAssets`, `Uploader.StaticAssets`, `Data.StaticAssets`, `Blazor.BackOffice`), and line 28 says `N3O.Umbraco.Bundling` "was deleted" — it exists, is in the solution, and is `ProjectReference`d by `DemoSite.Web.csproj:13`.
+- **✅ Clean baseline worth keeping:** all **103** projects are `net10.0` (no net8/net9 anywhere); **83 distinct `PackageReference`s with zero version drift** across projects despite no central package management; the `.sln`'s 103 entries match the 103 `.csproj` on disk exactly; 101 composers all discoverable (99 via the repo `Composer` base, `SchedulerComposer` via `IComposer`); **zero `build/*.targets` copy files remain** and all 12 RCLs serve from `wwwroot/App_Plugins/`; `UseStaticWebAssets()` is unconditional at `src/N3O.Umbraco.Cms/UmbracoCms.cs:19`, closing the Production-runtime-mode gotcha; and **every property editor's `propertyEditorUi` alias matches its `meta.propertyEditorSchemaAlias` and backend `[DataEditor]` constant** (the known silent data-type breaker) — including `N3O.Umbraco.TemplateTextEditor`, which is deliberately *not* named `…TextResourceEditor`.
+- **Only one `Compile Remove` exists in this repo's entire csproj set** — none; the single `None Remove` in `DemoSite.Web.csproj:10` (`wwwroot\umbraco\**`) is correct and load-bearing.
+- **📍 Where the crowdfunding excludes actually live — reconciling two agents that appeared to disagree.** There is **no** `Compile Remove` anywhere in the v13 monorepo `D:\Development\n3oltd\sites`. The excludes exist only in the **v17 worktrees**, and there are **two**: `D:\AI Migration Test\site-mh-v17\…\MuslimHands.Core.csproj:13` **and** `D:\AI Migration Test\site-afh-v17\…\ActionForHumanity.Core.csproj:13`, both removing `Services\Platforms\OurPlatformsPagePublisher.CrowdfundingCampaign.cs`. So **a `site-afh-v17` worktree does exist** (an audit that only looks at the sites monorepo will wrongly report site-afh as "not started"), and #976's claim that two sites unblock together is correct.
+- **⚠️ Uncommitted, machine-local, must not be committed as-is:** `D:\Development\n3oltd\sites\…\MuslimHands.Core.csproj` (shows `M`) mixes 34 `PackageReference`s at `2026.8.31.1988` with two `ProjectReference`s reaching **outside the repo** into a local worktree (`..\..\..\..\..\N3O.Umbraco-wt\platforms-schema-seeding\…` for `Cloud.Platforms` and `GeoIP.Cloudflare`). Separately, the MH v17 worktree's `NuGet.Config` repoints all `N3O.*` resolution at a local temp folder and drops the myget mapping, and its `Migrations/`, `BackOffice/` and info-app JS are **untracked** — a stray clean would lose them.
+- **Sites estate baseline:** 17 real sites (site-ger ships two regional variants); **all** `net8.0`, all N3O packages at `2026.8.31.1988`, no direct `Umbraco.Cms` reference. Only three third-party packages estate-wide (Diplo.AuditLogViewer, OpenOrClosed, Our.Umbraco.TheDashboard), all with v17 builds already proven by site-mh-v17. `site-iac` and `site-mr` have **0 tracked files** — on-disk leftovers only, not part of the repo. **Cropper/Uploader is the estate-wide blocker (16 of 17 sites)** and is not code-only: per-site DB+media migration, then ModelsBuilder regeneration, then hand-fixing consumers — and every site's `uSync/v9/DataTypes/*.config` still names the removed editor aliases. **Most blocked: site-afh** (Cropper/Uploader + a fully vendored AngularJS `App_Plugins\Contentment` + the Bundling manifest gap + the crowdfunding exclude); `site-bsc` also carries vendored Contentment. **Alt text has nowhere to go on the native pickers** — both removed editors stored `altText` in their own JSON and `MediaPicker3`/`ImageCropper` has no slot for it; needs a per-site decision **before** the irreversible data migration, not after.
+- **Also flagged:** `src/N3O.Umbraco.Extensions/Extensions/ImageCropperExtensions.cs` is **untracked** in the framework repo, has **zero callers** in either repo, and its own comment admits the alt-text read is "migration continuity, not a permanent home". Either it gets a named consumer and a commit, or it goes — it will vanish silently otherwise. Four sites still carry the dead `<None Remove="Smidge\**" />` line (site-eptuk, site-ger MY-SG, site-mh, site-sr).
+
+**2026-09-01 — v13→v17 forward-port of the crowdfunding work shipped as [#976](https://github.com/n3oltd/umbraco-extensions/pull/976); self-reviewed; the confirmed finding fixed on BOTH lines ([#979](https://github.com/n3oltd/umbraco-extensions/pull/979) on `main`); orphaned client packages retired ([#980](https://github.com/n3oltd/umbraco-extensions/pull/980)).**
+- **#976 (base `v17`, branch `fwd-crowdfunder-v17`, 13 commits, ready).** Unblocks the crowdfunding `Compile Remove` excludes in **both** `MuslimHands.Core.csproj` and the site-afh equivalent — those files need `PlatformsSchemas.CrowdfundingCampaignPage`, which existed only on `main`. Verified independently: branch is a clean 11-ahead/0-behind of `origin/v17`, symbol now present in exactly 9 `.cs` files, full-solution build **0 errors**. Of ~86 main-only commits, 13 needed porting, 1 folded away, ~75 were N/A (**58 already absorbed by earlier v17 aggregate forward-ports under different SHAs** — a commit appearing in `log v17..main` does NOT mean it is missing).
+- **Deliberately NOT ported: `main`'s `.gitignore`** (which 11 of those commits touched). It replaces the per-project `App_Plugins` allowlist with a blanket `**/App_Plugins/*`, which shadows the **17 tracked `umbraco-package.json` manifests** the RCL/static-web-assets packaging needs — tracked files survive but any *new* plugin manifest becomes silently un-addable — and it lacks the Turbo/Vite rules incl. `**/wwwroot/App_Plugins/**/*.js`, without which generated bundles start getting committed. Its header claims a `sync-gitignore.yml` workflow manages it centrally; **that workflow exists on neither branch**. The carve-out belongs upstream in devops, not in a forward-port.
+- **New in #976: `PlatformsConstants` webhook constants nested to match `main`** (`WebhookEventTypes`/`WebhookIds` → `Webhooks.EventTypes`/`Webhooks.HookIds`, incl. main's alphabetical re-sort). Values identical, zero site consumers. Taken because that file is touched by most Platforms commits, so a divergent shape guarantees a conflict on every future forward-port. **Gotcha:** `CrowdfunderReceiver` lives in namespace `...Platforms.Webhooks`, so the new nested `Webhooks` class is ambiguous against it → `CS0234`. `main` resolves it by deepening the `using static` to `PlatformsConstants.Webhooks` and leaving call sites bare; do that, not full qualification, or the divergence returns.
+- **Self-review of #976 — 1 confirmed, 2 withdrawn. Record the withdrawals, they cost real time:** I claimed `EngageLocationExtractor` runs without an `HttpContext` (null location) or attributes pageviews to the wrong visitor. **Both wrong.** Decompiling Engage 17.2.2 shows `AnalyticsPageviewCollector.CollectAsync(HttpContext)` calls `_pageviewExtractor.Extract(context)` and only *then* `_flusherQueue.WriteAsync(pageview)` — **all extraction is synchronous on the request**; the flusher only batches finished `IPageview` objects for the DB write. And `MarketingComposer:19-20` registers `EngageIpAddressExtractor` + `EngageLocationExtractor` as a **pair**, both resolving through the same `IRemoteIpAddressAccessor`, so `rawPageview.IpAddress` and the geo-located address cannot diverge. Lesson: I reasoned from type names (`IPageviewFlusherQueue`) instead of reading the call order and the DI registrations, both a few greps away.
+- **The confirmed bug (`MaxMindIPGeoLocationProvider`): a failed geo lookup was cached for 12 hours.** `ForFailure()` returns from *inside* the `GetOrCreateAsync` factory, so it is committed under `AbsoluteExpirationRelativeToNow = 12h`. One transient error → no location for that address for the rest of the day, and via `GeoIPDefaultCurrencyProvider` the **wrong default currency** for that visitor. Harness proof: `BEFORE calls=1 [FAILURE×4]` / `AFTER calls=2 [FAILURE, SUCCESS×3]` / all-success `calls=1` (success still cached).
+- **Every one of these findings was byte-identical on `main`**, so the fix went to both lines — otherwise 7 files diverge and every future forward-port conflicts. `main` build **0 errors**. ⚠️ **`MaxMind.GeoIP2` is pinned to 5.4.1 on BOTH lines; `HttpException` derives from `IOException`, not `GeoIP2Exception`**, so narrowing that catch needs both types (verify against 5.4.1 — a check against 6.1.0 is not valid, I made that mistake).
+- **Talha's edits to #979 (respect these):** the **object-initializer revert stands** — `new MemoryCacheOptions { SizeLimit = 10_000 }` is kept despite `guidance://c-sharp.md` banning initializer syntax, and the `CreateResultsCache()` factory was removed. `TagsCookie` was **reverted in full** (blanket `catch` retained — it is load-bearing: the cookie is absent on a first visit, `GetValue()` answers null, and `JObject.Parse(null)` throws `ArgumentNullException`, which `catch (JsonException)` does **not** catch, so narrowing alone would throw on every first visit). The `EngageLocationExtractor` note was reverted here and split into **[#978](https://github.com/n3oltd/umbraco-extensions/pull/978)** (`main`, "Let Engage location extraction run without a geo IP provider"). ⚠️ **#979's title and body still describe the TagsCookie change that is no longer in its diff — needs correcting.**
+- **#980 (base `v17`) retires `@n3oltd/umbraco-cropper-client` + `@n3oltd/umbraco-uploader-client`** — 39 files, 3023 deletions, zero additions. They are the client SDKs for editors already deleted from `v17`; no reference under `src/` and none in the sites monorepo. **v17-only: `main` still ships both editors (75 files), so the packages are not orphaned there and must keep publishing.** The two `npm Publish` jobs had to go from `tag-ci.yml` with them — each names a `working-directory` under `clients/@n3oltd/`, so deleting the directories alone fails the next tag build. Caveat: this stops future publishes but does not unpublish existing npm versions, so anything pinned externally keeps resolving.
+- **MH node 3377 hero fix — coded, builds, NOT runtime-verified.** `OurBlockPreviewer` now reports a warning instead of "was not found on this page" for a hero that loses. Data confirmed via SQL: node 3377's grid root holds `heroBannerBlock` (ord 1) + `heroImageBlock` (ord 2), both carrying the `hero` composition, so the guard has a real producer. **`OurLayoutEngine:38` assigns `hero = ...` in a loop, so the LAST root hero wins** — my first warning text said "a hero above this one", which is backwards; corrected to "further down this page". Blocked on auth: `wc-mhuk` is a restored production backup so its 18 users carry production password hashes, and the `Unattended` credentials 401 (they only apply to an empty DB). Probe is ready at `scratchpad/probe_3377.py` (full PKCE flow against endpoints verified in the 17.3.5 source; posts both hero keys with 3377's real 49,420-char grid value).
+- **All MH worktree changes (`D:\AI Migration Test\site-mh-v17`, PR #155 draft) remain UNCOMMITTED**, including the hero fix and the corrected message.
+- **`IIPGeoLocationProvider` — ref-dependent, do not read a contradiction into it.** `origin/v17` **and** `v17-Talha` still declare `GeoLocateIpAsync(IPAddress, CancellationToken)`; `origin/main` **and** the #976 branch declare `GeoLocateAsync(CancellationToken)`. The rename already happened on `main` and *arrives* on v17 with #976 (it is part of the ported #967 change) — so an audit of `v17-Talha` correctly reports "not renamed" while an audit of the PR correctly reports "renamed". Either way **zero site consumers** (`GeoLocateIpAsync`/`GeoLocateAsync`/`IIPGeoLocationProvider` have no hits anywhere in the sites monorepo), so the breaking change is safe.
+
+**2026-09-01 — `N3O.Umbraco.Bundling` rebuilt as a BUILD-TIME asset mechanism (Smidge replacement). Shipped as PR [#977](https://github.com/n3oltd/umbraco-extensions/pull/977) (base `v17`, branch `v17-bundling`, now READY not draft), reviewed, findings fixed.**
+- **Review found two correctness bugs, both now fixed and reverse-checked (commit `98e7b7121`):** (1) the sourcemap guard **failed open** — it scoped requests with `PathString("/")` when `ManifestPath` had no directory component, and `StartsWithSegments` requires the next character to be a separator, so it matched nothing below the root and served `.map` files despite `ServeSourceMaps=false` (proven: reverted code → 200, fixed → 404); (2) the manifest was written **non-atomically** while the running site watches and reparses it, so a request mid-write hit truncated JSON and the exception reached every page render — now temp-file + rename. Also: stale hashed output is pruned (hash-pattern matched only, so a shared output dir can't lose hand-managed files), an adopted artefact's own `sourceMappingURL` is stripped, and an unknown bundle name warns once instead of rendering blank.
+- **Newtonsoft deviation is intentional (Talha, 2026-09-01):** the manifest is read with Umbraco's `IJsonSerializer` (System.Text.Json) rather than Newtonsoft, despite `guidance://c-sharp.md`. It is the CMS's own abstraction and its camelCase policy is what binds the manifest without attributes.
+- **Verified on the MH v17 checkout** (`D:\AI Migration Test\site-mh-v17`, net10, local beta feed) then **fully reverted** at Talha's request: package + tag helper + an `adopt` of `template.min.css` gave a hashed URL serving **byte-identical** CSS (sha256 `a1ebbc52…`, 161,254 bytes both ways). The sites-repo `site-mh` is still net8/v13 so the package cannot load there.
+- **Design spec:** `docs/superpowers/specs/2026-08-31-build-time-asset-bundling-design.md` (findings, rejected options, all-19-site rollout plan, verification results).
+- **⚠️ This reverses the recorded PR #915 ruling** (nadrummond: the CMS-side Smidge seam does not survive). The new mechanism is materially different — build-time only, no Smidge, no WebOptimizer, no runtime bundler — but it is still a framework-side seam and **cleared by Talha 2026-09-02 — the reversal is fine, no nadrummond gate**.
+- **⛔ RETRACTED 2026-09-01 (audit) — "no site has ever referenced the package" is FALSE, and it had been propagated into `MIGRATION_PR_TRACKER.md` and work#729.** **Four sites reference `N3O.Umbraco.Bundling` properly, both ways:** `PackageReference … Version="2026.8.31.1988"` at `site-afh/…/ActionForHumanity.Core.csproj:14`, `site-mpb/…/MiresiPerBoten.Core.csproj:14`, `site-mruk/…/MercyRelief.Core.csproj:14`, `site-mthuk/…/MercyToHumanity.Core.csproj:14`, **plus** `@addTagHelper *, N3O.Umbraco.Bundling` at `site-afh/…/_ViewImports.cshtml:31`, `site-mpb:25`, `site-mruk:27`, `site-mthuk:25` — and all four use `<n3o-css-bundle>` in `<head>` and `<n3o-js-bundle>` in their `Layout.cshtml` as their **actual** CSS/JS delivery (afh 119/567, mpb 54/388, mruk 77/450, mthuk 83/541). The original "5 sites" figure was nearly right: the 5th is **site-mh**, whose `PackageReference` was removed by `f65cb7f10` while the tags stayed — *only site-mh's* tags are dead markup. (The `IBundler`/`IAssetBundle` API genuinely had zero callers; that part stands.)
+- **🚨 Consequence for #977's rollout — a silent whole-site styling failure, not a build error.** `CssBundleTagHelper.Process` does `if (references.None()) { output.SuppressOutput(); return; }` (`src/Bundling/N3O.Umbraco.Bundling/TagHelpers/CssBundleTagHelper.cs:28`), so a bundle absent from the manifest emits **nothing** — no markup, no fallback, page still 200. There is a warn-once in the log (`Services/AssetManifest.cs:116-120`), so it is discoverable in logs but invisible in the page. **None of those four sites produces an `assets-manifest.json`**: their front-end build is a rollup pipeline emitting a single `build/index.js` copied to `wwwroot/assets/js/our.js`, with no `@n3oltd/asset-build` dependency in any `js/package.json`. So each of the four MUST have `@n3oltd/asset-build` wired into its js build **and** an `N3O:Bundling` config section **before** it upgrades, or it renders with no stylesheet. Treat this as a rollout prerequisite, not a follow-up.
+- **What was actually missing** (from a survey of all 19 sites): **Sass compilation** — 16 sites have authored `.scss` compiled *by hand*, only site-mh has a script — and **cache-busting**, which *no* site has (`/assets/js/site.js`, no hash, no `?v=`). JS is already Terser-minified by the Rollup pipeline **10 sites** share, so that output is *adopted*, not replaced.
+- **Shipped:** `src/frontend/asset-build` (`@n3oltd/asset-build` — dart-sass → Lightning CSS, esbuild, content hashing, manifest) and `src/Bundling/N3O.Umbraco.Bundling` (`IAssetManifest` + the two tag helpers + `BundlingSettings` + `BundlingComposer`). DemoSite wired as the proof.
+- **Two Umbraco/N3O-specific gotchas found and fixed (both verified):** (1) the filename hash must fold in the sourcemap, or toggling maps keeps the URL while changing the bytes and breaks SRI; (2) **`CmsStartup.cs:66` calls `UseStaticFiles` BEFORE `UseUmbraco`**, so *every* Umbraco pipeline hook (`PrePipeline` included) is too late to withhold a `.map` — the guard had to become an `IStartupFilter`. Anything in this repo that needs to run ahead of static files has the same constraint.
+- **Verified on a running DemoSite** (`localhost:6002`): solution builds **0 errors**; tags emit hashed URLs; assets 200 + minified; edit → hash changes and the running app reloads the manifest with no restart; reverse checks pass both ways for the manifest *and* for `ServeSourceMaps` (404 ⇄ 200); served-bytes digest equals the manifest SRI digest.
+- **Owed:** browser-level SRI rejection and a DevTools map round-trip are untested; **no visual browser pass** has been done on any rendered page (both browser MCPs were unavailable — Playwright's Firefox would not launch, Chrome was not on 9222); the 19-site rollout (tiers A/B/C in the spec) is per-site PRs in `n3oltd/sites`.
+- **MH phase 2 watch-outs (found while testing):** its head issues **16 separate script requests**; collapsing them needs a new entry module because esbuild with 15 entry points emits 15 files. `our-resources.js` is listed **twice** (Layout lines 47 and 52 — harmless under ESM dedupe, but a naive concatenation would double-execute it), `video-player.js` is a **classic script** that cannot join an ESM bundle unchecked, and the Rollup output `site.js` is **referenced by no view**.
+- **Also removed:** the stale `<None Remove="Smidge\**" />` line in `DemoSite.Web.csproj` (flagged in `NOT_REQUIRED_TO_RUN.md:96` as a v13 leftover pointing at a folder that doesn't exist).
+- **Build note:** a **failed** `npm ci` (the recurring EPERM `-4048`) aborts partway through wiping `node_modules`, taking the `@n3oltd/asset-build` workspace symlink with it — `assets.build.mjs` then dies with `ERR_MODULE_NOT_FOUND`. Fix with `npm install` in `src/`. A **successful** `npm ci` restores the link correctly (verified: exit 0, 397 packages, link present, `npm ci` + `turbo run build` both clean with the new lockfile), so CI is unaffected. The `.n3o-frontend-restored`/`.n3o-frontend-built` stamp workaround still applies to `dotnet build`.
+
 **DECIDED 2026-08-26 (Talha) — end-to-end v13→v17 migration test. These are standing decisions for this workstream:**
 - **Packaging route = MyGet betas, NOT manual `ProjectReference`.** Sites must consume real `N3O.*` packages so the nupkg `staticwebassets/` + `buildTransitive` delivery path is exercised — a `ProjectReference` resolves RCL assets through the project graph and would *hide* a plugin whose `App_Plugins` assets fail to ship in the package, which is the most likely defect class this migration introduced (12+ projects converted to RCL).
 - **Site scope = 3 representative DBs** (all Umbraco 13, all local SQL Server, `*-postmigration-25Aug2026`):
@@ -951,6 +1048,171 @@ explicitly public `--repo` target.
 instance), so #974 making the seam live would have switched it on at that site's v17 upgrade — serving
 unmapped extensions with no `Content-Type`, which the ASP.NET Core docs call a security risk. Zero-regression
 removal; branch cut from `origin/main` in a cone-mode sparse worktree.
+
+## Property source-value normalisation across the six JSON value converters (2026-09-02) — VERIFIED
+
+**The change.** New shared helper `N3O.Umbraco.Extensions/Extensions/PropertySourceValueExtensions.cs` —
+`object.ToSourceValueJson()`. Six converters now call it instead of testing `is string` (EditorJs) or
+`is string || is JsonNode` (the other five): `EditorJsValueConverter`, `CellsValueConverter`,
+`SerpEditorValueConverter`, `TextResourceEditorValueConverter`, `ImportDataEditorValueConverter`,
+`ImportNoticesViewerValueConverter`. Full-solution build **0 errors**.
+
+**The producer, confirmed in Umbraco 17.3.5 source** (clone at `D:\Development\Misc\Misc\Umbraco-CMS`):
+
+| Path | Source value type | Evidence |
+| --- | --- | --- |
+| MessagePack nucache (document's own property) | `string` | column holds the JSON as text |
+| Block-nested, value stored escaped | `string` | `JsonObjectConverter.ParseObject`: `JsonTokenType.String => reader.GetString()` |
+| Block-nested, stored unescaped, object | `JsonObject` | `ParseObject` StartObject branch |
+| Block-nested, unescaped array of objects | `JsonArray` | `ParseObject` StartArray, all-JsonNode branch |
+| Block-nested, unescaped array of scalars/arrays | `List<firstType>` | `ParseObject` StartArray, generic-list branch |
+| `NuCacheSerializerType=JSON` | `JsonElement` | `JsonContentNestedDataSerializer.JsonObjectConverter.Read`: `_ => JsonDocument.ParseValue(ref reader).RootElement.Clone()` — "fallback for complex types" |
+
+The chain is `BlockEditorConverter.ConvertToElement` -> `propertyValues[alias] = alignedProperty.Value`, where
+`BlockPropertyValue.Value` is `object?` and `SystemTextJsonSerializer` registers `JsonObjectConverter` with the
+comment "Required for block editor values". So the source type depends on **where the value was read from**, and
+the old tests silently yielded `null` for the shapes they did not name. `List<T>` and `JsonElement` were handled
+by **none** of the six.
+
+**Verification — and its honest limit.** MuslimHands (`wc-mhuk`) *cannot* exercise this fix, which is worth
+knowing before anyone else tries:
+
+- `N3O Editor JS` (dataType 3485) has exactly one property, `textBlock.text`, and `textBlock` is an
+  **element type** — so on this site the property only ever appears block-nested.
+- But every value migrated from v13 is stored **double-encoded** (a JSON string whose content is the EditorJs
+  JSON), which is a `JsonTokenType.String`, so it arrives as `string` and the old code already worked.
+- Scanned the published block JSON of 400 properties (2278 block instances): **every** JSON-ish value is
+  `str`/null, ints only for numeric aliases. No unescaped nested objects anywhere.
+- MuslimHands.Web builds against the repacked beta packages with **0 errors** (90 warnings, all pre-existing
+  NU19xx / CS0618).
+
+Rendering an MH page therefore proves nothing about this fix — which is exactly why every earlier verification
+passed. Verified instead by driving the **shipped assemblies** (taken from the `.nupkg` and decompiled with
+`ilspycmd` to confirm the change is in the IL) through every shape, with a reverse check:
+
+```
+                                                    FIXED           REVERTED
+EditorJs   string (escaped / MessagePack)           ok valid JSON   ok valid JSON
+EditorJs   JsonObject (unescaped block value)       ok valid JSON   NULL
+EditorJs   JsonElement (NuCacheSerializerType=JSON) ok valid JSON   NULL
+Cells      string                                   ok rows=2       ok rows=2
+Cells      JsonArray                                ok rows=2       ok rows=2
+Cells      List<JsonArray>                          ok rows=1       NULL
+Cells      JsonElement                              ok rows=2       NULL
+```
+
+Reverse check done by reverting both converter bodies, packing to `2026.8.26.98-rev`, re-running the same
+harness, then restoring source (`git diff` confirms only the fix remains) and deleting the `-rev` packages.
+Harness lives in the session scratchpad at `convcheck/`.
+
+Note `strings` on the packed DLL does **not** find `ToSourceValueJson` — it is the wrong tool for an IL
+metadata reference. Use `ilspycmd -t <type> <dll>`.
+
+**Consequence for the migration.** Existing v13-migrated content is safe on the old code; the exposure is
+content **saved in the v17 backoffice** plus any site setting `NuCacheSerializerType=JSON`. It is a silent
+blank-content failure, not an error, so it would never surface in logs.
+
+**Also in this batch.** `FlushSpecialContentPathsComponent` converted `IComponent` -> `IAsyncComponent`
+(obsolete warnings 4 -> 2; the remaining two are "removal in Umbraco 18" notices elsewhere).
+
+## Reconciliation batch (2026-09-02) — publish blocker fixed, five stale items retracted
+
+### NETSDK1152 was a REAL blocker — fixed
+
+`dotnet build` succeeds but **`dotnet publish` failed**, so deployment was broken while CI stayed green:
+
+```
+error NETSDK1152: Found multiple publish output files with the same relative path:
+  src\N3O.Umbraco.Cms\appsettings-schema.json,            src\DemoSite\DemoSite.Web\appsettings-schema.json,
+  src\N3O.Umbraco.Cms\appsettings-schema.Umbraco.Cms.json, src\DemoSite\DemoSite.Web\appsettings-schema.Umbraco.Cms.json,
+  src\N3O.Umbraco.Cms\umbraco-package-schema.json,        src\DemoSite\DemoSite.Web\umbraco-package-schema.json
+```
+
+Umbraco's targets emit one `appsettings-schema.<Package>.json` per referenced Umbraco package (Cms has 3,
+DemoSite.Web has 7 — it adds Forms/Licenses/Workflow/uSync). The **library** was flowing its copies into a
+consumer's publish output at the same relative paths as the consumer's own.
+
+Fix in `src/N3O.Umbraco.Cms/N3O.Umbraco.Cms.csproj` only — two projects carry these files, so this is
+right-sized as a per-project change rather than a `Directory.Build.props` convention:
+
+```xml
+<Content Remove="appsettings-schema*.json" />
+<Content Remove="umbraco-package-schema.json" />
+```
+
+A glob rather than three literals because the set is a function of the dependency list, not hand-enumerable.
+
+**Before/after:** publish `NETSDK1152` -> **exit 0**, `DemoSite.Web.dll` present, DemoSite's own 7 schema
+files still land in the output (correct — only the library's duplicates are dropped). `dotnet pack` still
+exits 0, ships `lib/net10.0` + static web assets, and no longer carries the schema files.
+
+**Why CI never caught it:** `build` does not run publish conflict-resolution across the project graph's
+content items. Any CI that only builds will keep missing this class of failure.
+
+### Also removed
+
+- **Dead config** in `src/DemoSite/DemoSite.Web/appsettings.json`: `Umbraco:CMS:Content:MacroErrors` and
+  `Umbraco:CMS:RuntimeMinification`. Both verified **absent from Umbraco 17.3.5 source** (0 files each, against
+  a positive control of `ContentVersionCleanupPolicy` at 16 files). JSON re-validated after the edit; all 24
+  `UserDefinedCharCollection` entries intact.
+- **`src/NUL`** (untracked, 3 KB) — a BrowserStack MCP server log captured by an accidental `> NUL` Bash
+  redirect. Not source; deleted.
+
+### Five items from the remaining-issues list are STALE — retracted, no action taken
+
+| Item | Claim | What is actually true |
+| --- | --- | --- |
+| Empty `Blazor`/`Cropper`/`Uploader` dirs | "junk, delete" | **Not empty** — 25 / 59 / 60 files. Cropper+Uploader are the open pending decision. Left alone. |
+| `ContentHelper` dead NestedContent branch | "dead code" | **No such branch exists.** Every `NestedContent` hit is an NSwag-generated Platforms API contract DTO. Resolved by the earlier NC->BlockList work. |
+| `StaticWebAssetBasePath` should be gated on `Exists(frontend)` | "to do" | **Already done** — `Directory.Build.props:12`, inside `PropertyGroup Condition="Exists('$(MSBuildProjectDirectory)\frontend')"`. Verified no gap: every project shipping `wwwroot/App_Plugins` also has a `frontend/` folder. |
+| `localization` extension type, zero manifests | "to do" | **Not a defect.** The only hits are the *generated* `umbraco-package-schema.json` (which enumerates all valid extension types) plus build artifacts. Zero real manifests simply means no plugin ships UI translations. Work only if localized backoffice strings are wanted. |
+| `N3O.Umbraco.Cms.csproj:37` ReactRuntime "convention drift" | "to fix" | **Unsubstantiated.** It is a plain `ProjectReference` and Cms is its only consumer, so "one caller, no interface change" applies. Also checked the hardcoded `<Version>17.0.0</Version>`: `origin/main` has `<Version>13.0.0</Version>`, so the hardcoded major is the repo's pre-existing pattern correctly bumped — real versions come from CI's `-p:Version=`. |
+
+### Confirmed pre-existing, not migration regressions
+
+`N3O.Umbraco.Forms.StaticAssets`, `N3O.Umbraco.Maps.Google.StaticAssets` and
+`N3O.Umbraco.Marketing.StaticAssets` are **2-file shells** (csproj + README, no assets, no code) — and are
+**identical on `origin/main`** (2 tracked files each). MuslimHands references all three. Not broken by the
+migration; left alone. Separately, `N3O.Umbraco.Extensions.StaticAssets` (recorded in memory as the RCL pilot)
+**no longer exists** in the tree.
+
+### `uSync/v9` removed (174 tracked files)
+
+`git rm -r src/DemoSite/DemoSite.Web/uSync/v9`. Justification: `uSync/v17/` is a 177-file superset and
+correctly drops the `Macros/` folder that `v9` still carried (a v14-removed concept); `v9` is only uSync's
+`LegacyFolder`, reachable through explicit legacy paths, and DemoSite has import/export at startup set to
+`None`. **Still outstanding separately:** `uSync/v17/` is itself a stale copy that names v14-removed editor
+aliases and needs a genuine re-export.
+
+### Public-API dead-code census — DECISION NEEDED, nothing deleted
+
+Item 22 ("dead code in `ContentServiceExtensions` / `JsonProvider` / `PublishedContentExtensions`") was
+checked against **all three trees**. First attempt was contaminated: `sites/.claude/worktrees/` contains a
+nested worktree of *umbraco-extensions itself*, so framework definitions counted as site usage. Excluding it
+and scanning the 19 real sites under `sites/src`:
+
+| member | framework | sites (19) | mh-v17 | verdict |
+| --- | --- | --- | --- | --- |
+| `Child` | 4 | 3 | 2 | **LIVE — do not delete** |
+| `Children` | 12 | 6 | 5 | **LIVE — do not delete** |
+| `Descendants` | 9 | 3 | 3 | **LIVE — do not delete** |
+| `AbsoluteUrl` | 17 | 81 | 3 | **LIVE — heavily used** |
+| `RelativeUrl` | 4 | 0 | 0 | live internally only |
+| `SerializeObjectForScript` | 4 | 0 | 0 | live internally only |
+| `Descendant` (singular) | 1 | 0 | 0 | definition only — zero callers anywhere |
+| `GetAncestorsOrSelf` | 1 | 0 | 0 | definition only — zero callers anywhere |
+| `GetSettingContent` | 1 | 0 | 0 | definition only — zero callers anywhere |
+| `GetSettingsRoot` | 1 | 0 | 0 | only caller is `GetSettingContent`, itself dead |
+| `GetDescendantsForContentOfType` | 2 | 0 | 0 | needs a definition-vs-caller check |
+| `HasTemplate` | 2 | 0 | 0 | needs a definition-vs-caller check |
+| `DeserializeDynamic` | 2 | 0 | 0 | needs a definition-vs-caller check |
+
+**Corrects the earlier note** that "`Child`/`Children`/`Descendants` are live in site-mh": true for those
+three, but `Descendant` (singular) is definition-only and was wrongly grouped with them.
+
+**Not actioned deliberately.** These are public API on shared packages, so removal is a breaking change for
+each site's own v17 upgrade — the "ports must justify survival" question, which is raised before the work,
+not decided in passing. Awaiting Talha's call on whether the zero-caller set retires with the migration.
 
 ## Remaining Work
 
