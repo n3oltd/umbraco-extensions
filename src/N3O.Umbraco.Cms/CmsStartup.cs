@@ -50,6 +50,7 @@ public abstract class CmsStartup {
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+        UseSecurityHeaders(app);
         app.UseMiddleware<NotFoundCacheControlMiddleware>();
 
         if (env.IsProduction()) {
@@ -116,5 +117,32 @@ public abstract class CmsStartup {
         rules.Do(x => options.Rules.Add(x));
 
         return options;
+    }
+
+    // Registered first so the headers also reach responses written by the static file middleware, and applied
+    // from OnStarting so a site or endpoint that sets one of them itself keeps its own value. X-Frame-Options is
+    // SAMEORIGIN rather than DENY because backoffice preview frames the front end.
+    private void UseSecurityHeaders(IApplicationBuilder app) {
+        app.Use((context, next) => {
+            context.Response.OnStarting(() => {
+                var headers = context.Response.Headers;
+
+                if (!headers.ContainsKey("X-Content-Type-Options")) {
+                    headers["X-Content-Type-Options"] = "nosniff";
+                }
+
+                if (!headers.ContainsKey("X-Frame-Options")) {
+                    headers["X-Frame-Options"] = "SAMEORIGIN";
+                }
+
+                if (!headers.ContainsKey("Referrer-Policy")) {
+                    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+                }
+
+                return Task.CompletedTask;
+            });
+
+            return next(context);
+        });
     }
 }
