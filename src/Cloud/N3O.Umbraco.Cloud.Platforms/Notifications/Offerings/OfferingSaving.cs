@@ -27,7 +27,7 @@ public class OfferingSaving : INotificationAsyncHandler<ContentSavingNotificatio
                 var campaign = _contentLocator.Value.ById(content.ParentId).As<CampaignContent>();
 
                 if (campaign.Type == CampaignTypes.Telethon) {
-                    var endAt = campaign.Telethon.BeginAt;
+                    var endAt = campaign.Telethon.EndAt;
 
                     if (DateTime.Now > endAt) {
                         notification.CancelWithError("The telethon campaign has ended, an offering cannot be created or updated");
