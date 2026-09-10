@@ -11,12 +11,11 @@ using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.Migrations;
 using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Services;
-using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Migrations.Upgrade;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
-public partial class PlatformsSchemaComponent : IComponent {
+public class PlatformsSchemaComponent : IComponent {
     private readonly IConfiguration _configuration;
     private readonly IContentTypeEditor _contentTypeEditor;
     private readonly Lazy<IPlatformsContentTypeSeeder> _contentTypeSeeder;
@@ -32,7 +31,6 @@ public partial class PlatformsSchemaComponent : IComponent {
     public PlatformsSchemaComponent(IConfiguration configuration,
                                     IContentTypeEditor contentTypeEditor,
                                     Lazy<IPlatformsContentTypeSeeder> contentTypeSeeder,
-                                    IContentTypeService contentTypeService,
                                     IDataTypeEditor dataTypeEditor,
                                     Lazy<IPlatformsDataTypeSeeder> dataTypeSeeder,
                                     Lazy<IKeyValueService> keyValueService,
@@ -40,12 +38,10 @@ public partial class PlatformsSchemaComponent : IComponent {
                                     Lazy<IMigrationPlanExecutor> migrationPlanExecutor,
                                     IRuntimeState runtimeState,
                                     Lazy<IPlatformsSchemaAudit> schemaAudit,
-                                    Lazy<ICoreScopeProvider> scopeProvider,
-                                    IShortStringHelper shortStringHelper) {
+                                    Lazy<ICoreScopeProvider> scopeProvider) {
         _configuration = configuration;
         _contentTypeEditor = contentTypeEditor;
         _contentTypeSeeder = contentTypeSeeder;
-        _contentTypeService = contentTypeService;
         _dataTypeEditor = dataTypeEditor;
         _dataTypeSeeder = dataTypeSeeder;
         _keyValueService = keyValueService;
@@ -54,7 +50,6 @@ public partial class PlatformsSchemaComponent : IComponent {
         _runtimeState = runtimeState;
         _schemaAudit = schemaAudit;
         _scopeProvider = scopeProvider;
-        _shortStringHelper = shortStringHelper;
     }
 
     public void Initialize() {
@@ -70,8 +65,6 @@ public partial class PlatformsSchemaComponent : IComponent {
 
         _dataTypeSeeder.Value.Seed();
         _contentTypeSeeder.Value.Seed();
-
-        CorrectCrowdfundingCampaignNames();
 
         var blockers = FindMigrationBlockers();
 

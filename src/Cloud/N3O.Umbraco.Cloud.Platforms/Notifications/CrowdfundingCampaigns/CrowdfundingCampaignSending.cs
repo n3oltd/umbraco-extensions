@@ -2,13 +2,10 @@
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
-using Newtonsoft.Json.Linq;
 using Slugify;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models.ContentEditing;
 using Umbraco.Cms.Core.Notifications;
@@ -30,23 +27,10 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
         if (notification.Content.ContentTypeAlias.EqualsInvariant(alias)) {
             foreach (var variant in notification.Content.Variants) {
                 SetUrl(notification, variant);
-                FixCampaignPicker(variant);
             }
         }
 
         return Task.CompletedTask;
-    }
-
-    [Obsolete("Delete me once every crowdfunding campaign node has been re-saved with the data list picker")]
-    private void FixCampaignPicker(ContentVariantDisplay variant) {
-        var alias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(y => y.Campaign);
-        var campaignProperty = variant.Tabs
-                                      .SelectMany(x => x.Properties.OrEmpty())
-                                      .SingleOrDefault(x => x.Alias == alias);
-
-        if (campaignProperty != null && UdiParser.TryParse(campaignProperty.Value?.ToString(), out GuidUdi udi)) {
-            campaignProperty.Value = new JArray(udi.Guid.ToString());
-        }
     }
 
     private void SetUrl(SendingContentNotification notification, ContentVariantDisplay variant) {
