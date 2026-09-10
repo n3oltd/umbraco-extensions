@@ -12,7 +12,6 @@ using System.Net.Http;
 namespace N3O.Umbraco.Cloud;
 
 public class ClientFactory<T> {
-    private const string BaseUrl = nameof(BaseUrl);
     private const int RetryAttempts = 4;
 
     private readonly ICloudUrl _cloudUrl;
@@ -31,17 +30,16 @@ public class ClientFactory<T> {
     }
 
     public CloudApiClient<T> Create(CloudApiType apiType,
+                                    string servicePath,
                                     string bearerToken,
                                     string onBehalfOf = null) {
         var httpClient = GetHttpClient(bearerToken, onBehalfOf);
 
-        var client = (T) Activator.CreateInstance(typeof(T), httpClient);
+        var baseUrl = _cloudUrl.ForApi(apiType, servicePath);
 
-        var baseUrl = _cloudUrl.ForApi(apiType, (string) typeof(T).GetProperty(BaseUrl).GetValue(client));
+        var client = (T) Activator.CreateInstance(typeof(T), baseUrl, httpClient);
 
         _jsonProvider.ApplySettings((JsonSerializerSettings) client.GetPropertyInfo("JsonSerializerSettings").GetValue(client));
-        
-        client.SetPropertyValue(BaseUrl, baseUrl);
 
         return new CloudApiClient<T>(client, _jsonProvider, _logger);
     }

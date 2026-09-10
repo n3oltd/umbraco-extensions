@@ -13,6 +13,8 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 namespace N3O.Umbraco.Cloud.Platforms.Templates;
 
 public class UserMergeModelProvider : MergeModelsProvider {
+    private const string ServicePath = "eu1/api/platforms";
+
     private readonly ILogger<UserMergeModelProvider> _logger;
     private readonly UserCookie _userCookie;
     private readonly Lazy<ClientFactory<PlatformsConnectClient>> _clientFactory;
@@ -34,7 +36,7 @@ public class UserMergeModelProvider : MergeModelsProvider {
             var bearerToken = _userCookie.GetValue();
 
             if (bearerToken.HasValue()) {
-                var client = _clientFactory.Value.Create(CloudApiTypes.Connect, bearerToken);
+                var client = _clientFactory.Value.Create(CloudApiTypes.Connect, ServicePath, bearerToken);
 
                 var platformsUser = await client.InvokeAsync(x => x.GetPlatformsUserAsync(cancellationToken));
 
