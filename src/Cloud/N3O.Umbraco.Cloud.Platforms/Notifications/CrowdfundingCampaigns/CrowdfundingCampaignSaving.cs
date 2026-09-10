@@ -21,10 +21,11 @@ namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavingNotification> {
     private const string ServicePath = "eu1/api/crowdfunding";
     private const string CampaignNotFound = "Campaign not found";
-    private const string CheckUnavailable = "Could not check whether this campaign allows crowdfunding, please try again";
+    private const string CheckUnavailable = "Could not check whether this campaign allows crowdfunding, please try " +
+                                            "again. If this keeps happening, contact support";
     private const string NotPermitted = "This campaign cannot be used for crowdfunding";
 
-    private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(3);
 
     private readonly IContentHelper _contentHelper;
     private readonly IContentService _contentService;
@@ -60,7 +61,7 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                     notification.CancelWithError(blocker);
                 }
 
-                continue;
+                break;
             }
 
             if (AnotherCrowdfundingCampaignExistsFor(content, campaignKey.Value)) {
@@ -90,6 +91,10 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                 res = await client.InvokeAsync(x => x.CanEnableCrowdfundingCampaignAsync(campaignKey.ToString(),
                                                                                          timeout.Token));
             } catch (Exception ex) when (IsNotFound(ex)) {
+                _logger.LogWarning(ex,
+                                   "The crowdfunding service has no campaign {CampaignKey}",
+                                   campaignKey);
+
                 return new[] { CampaignNotFound };
             } catch (Exception ex) {
                 _logger.LogError(ex,
@@ -101,13 +106,20 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             }
         }
 
-        if (res?.Permitted == true) {
+        if (res?.Permitted == null) {
+            _logger.LogError("The crowdfunding service did not say whether campaign {CampaignKey} allows crowdfunding",
+                             campaignKey);
+
+            return new[] { CheckUnavailable };
+        }
+
+        if (res.Permitted.Value) {
             return Array.Empty<string>();
         }
 
-        var reasons = res?.Reasons.OrEmpty().Select(x => x.Name).Where(x => x.HasValue()).ToList();
+        var reasons = res.Reasons.OrEmpty().Select(x => x?.Name).Where(x => x.HasValue()).ToList();
 
-        return reasons.OrEmpty().Any() ? reasons : new[] { NotPermitted };
+        return reasons.Any() ? reasons : new[] { NotPermitted };
     }
 
     private bool AnotherCrowdfundingCampaignExistsFor(IContent crowdfundingCampaign, Guid campaignKey) {
