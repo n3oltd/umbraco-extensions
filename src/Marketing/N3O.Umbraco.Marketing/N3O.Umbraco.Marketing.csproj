@@ -33,6 +33,7 @@
         <DebugType>pdbonly</DebugType>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\GeoIP\N3O.Umbraco.GeoIP\N3O.Umbraco.GeoIP.csproj" />
         <ProjectReference Include="..\..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
     </ItemGroup>
     <ItemGroup>

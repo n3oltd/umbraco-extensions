@@ -9,6 +9,8 @@ export declare class OpayoClient {
     protected processChargeCard(response: Response): Promise<PaymentFlowResOfOpayoPayment>;
     completeThreeDSecureChallenge(flowId: string, cRes: string | null | undefined, paRes: string | null | undefined): Promise<void>;
     protected processCompleteThreeDSecureChallenge(response: Response): Promise<void>;
+    getApplePaySession(): Promise<ApplePaySessionRes>;
+    protected processGetApplePaySession(response: Response): Promise<ApplePaySessionRes>;
     getMerchantSessionKey(): Promise<MerchantSessionKeyRes>;
     protected processGetMerchantSessionKey(response: Response): Promise<MerchantSessionKeyRes>;
     storeCard(flowId: string, req: StoreCardReq): Promise<PaymentFlowResOfOpayoCredential>;
@@ -20,17 +22,19 @@ export interface PaymentFlowResOfOpayoPayment {
 }
 export interface OpayoPayment {
     card?: CardPayment | undefined;
-    paidAt?: Date | undefined;
-    declinedAt?: Date | undefined;
+    paidAt?: string | undefined;
+    declinedAt?: string | undefined;
     declinedReason?: string | undefined;
     isDeclined?: boolean;
     isPaid?: boolean;
     type?: PaymentObjectType | undefined;
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
+    method?: string | undefined;
+    clock?: IClock | undefined;
     opayoTransactionId?: string | undefined;
     opayoStatusCode?: number | undefined;
     opayoStatusDetail?: string | undefined;
@@ -41,7 +45,6 @@ export interface OpayoPayment {
     opayoRetrievalReference?: number | undefined;
     returnUrl?: string | undefined;
     vendorTxCode?: string | undefined;
-    method?: string | undefined;
 }
 export interface CardPayment {
     threeDSecureRequired?: boolean;
@@ -74,24 +77,31 @@ export declare enum PaymentObjectStatus {
     Error = "error",
     InProgress = "inProgress"
 }
+/** Represents a clock which can return the current time as an Instant. */
+export interface IClock {
+}
 export interface ProblemDetails {
     type?: string | undefined;
     title?: string | undefined;
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface ChargeCardReq {
     merchantSessionKey?: string | undefined;
     cardIdentifier?: string | undefined;
-    value?: MoneyReq | undefined;
+    googlePayToken?: string | undefined;
+    applePayToken?: ApplePayTokenReq | undefined;
     browserParameters?: BrowserParametersReq | undefined;
     challengeWindowSize?: ChallengeWindowSize | undefined;
     returnUrl?: string | undefined;
 }
-export interface MoneyReq {
-    amount?: number | undefined;
-    currency?: string | undefined;
+export interface ApplePayTokenReq {
+    applicationData?: string | undefined;
+    displayName?: string | undefined;
+    paymentData?: string | undefined;
+    sessionValidationToken?: string | undefined;
 }
 export interface BrowserParametersReq {
     colourDepth?: number | undefined;
@@ -109,9 +119,23 @@ export declare enum ChallengeWindowSize {
     ExtraLarge = "extraLarge",
     FullScreen = "fullScreen"
 }
+export interface ApplePaySessionRes {
+    status?: string | undefined;
+    statusCode?: string | undefined;
+    statusDetail?: string | undefined;
+    epochTimeStamp?: number;
+    expiresAt?: number;
+    merchantSessionIdentifier?: string | undefined;
+    nonce?: string | undefined;
+    merchantIdentifier?: string | undefined;
+    domainName?: string | undefined;
+    displayName?: string | undefined;
+    signature?: string | undefined;
+    sessionValidationToken?: string | undefined;
+}
 export interface MerchantSessionKeyRes {
     key?: string | undefined;
-    expiresAt?: Date;
+    expiresAt?: string;
 }
 export interface PaymentFlowResOfOpayoCredential {
     flowRevision?: number;
@@ -119,29 +143,32 @@ export interface PaymentFlowResOfOpayoCredential {
 }
 export interface OpayoCredential {
     advancePayment?: Payment | undefined;
-    setupAt?: Date | undefined;
+    setupAt?: string | undefined;
     isSetUp?: boolean;
     type?: PaymentObjectType | undefined;
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
     method?: string | undefined;
+    clock?: IClock | undefined;
 }
 export interface Payment {
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
+    type?: PaymentObjectType | undefined;
+    method?: string | undefined;
+    clock?: IClock | undefined;
     card?: CardPayment | undefined;
-    paidAt?: Date | undefined;
-    declinedAt?: Date | undefined;
+    paidAt?: string | undefined;
+    declinedAt?: string | undefined;
     declinedReason?: string | undefined;
     isDeclined?: boolean;
     isPaid?: boolean;
-    type?: PaymentObjectType | undefined;
 }
 export interface StoreCardReq {
     advancePayment?: ChargeCardReq | undefined;

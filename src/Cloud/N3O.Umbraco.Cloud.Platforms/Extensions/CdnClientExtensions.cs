@@ -8,6 +8,7 @@ using N3O.Umbraco.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using PublishedFileInfo = N3O.Umbraco.Cloud.Models.PublishedFileInfo;
+using PlatformsPage = N3O.Umbraco.Cloud.Platforms.Models.PlatformsPage;
 
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 

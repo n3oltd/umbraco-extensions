@@ -23,8 +23,16 @@ public static class PlatformsConstants {
         public const string Sponsorship = "platformsSponsorshipCrossSell";
     }
 
-    public static class CrowdfundingCampaign {
-        public const string CompositionAlias = "platformsCrowdfundingCampaign";
+    public static class CrowdfundingCampaigns {
+        public const string Alias = "platformsCrowdfundingCampaigns";
+
+        public static class CrowdfundingCampaign {
+            public const string Alias = "platformsCrowdfundingCampaign";
+
+            public static class Properties {
+                public const string Campaign = "campaign";
+            }
+        }
     }
 
     public static class DonationFormContent {
@@ -80,24 +88,26 @@ public static class PlatformsConstants {
         }
     }
 
-    public static class WebhookEventTypes {
-        public static class Crowdfunder {
-            public const string Created = "crowdfunder.created";
-            public const string Updated = "crowdfunder.updated";
+    public static class Webhooks {
+        public static class EventTypes {
+            public static class Crowdfunder {
+                public const string Created = "crowdfunder.created";
+                public const string Updated = "crowdfunder.updated";
+            }
         }
-    }
 
-    public static class WebhookIds {
-        public const string Campaigns = "campaigns";
-        public const string CrossSells = "crossSells";
-        public const string ContentCollection = "contentCollection";
-        public const string ContentLibrary = "contentLibrary";
-        public const string Crowdfunder = nameof(Crowdfunder);
-        public const string CrowdfundingCampaigns = "crowdfundingCampaigns";
-        public const string ManagedContent = "managedContent";
-        public const string Offerings = "offerings";
-        public const string QurbaniSeason = "qurbaniSeason";
-        public const string ZakatSettings = "zakatSettings";
+        public static class HookIds {
+            public const string Campaigns = "campaigns";
+            public const string ContentCollection = "contentCollection";
+            public const string ContentLibrary = "contentLibrary";
+            public const string CrossSells = "crossSells";
+            public const string Crowdfunder = nameof(Crowdfunder);
+            public const string CrowdfundingCampaigns = "crowdfundingCampaigns";
+            public const string ManagedContent = "managedContent";
+            public const string Offerings = "offerings";
+            public const string QurbaniSeason = "qurbaniSeason";
+            public const string ZakatSettings = "zakatSettings";
+        }
     }
 
     public static class Zakat {

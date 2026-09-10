@@ -118,5 +118,5 @@ public class ZakatCalculatorSettingsPublished : CloudContentPublished {
         return html;
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.ZakatSettings;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.ZakatSettings;
 }

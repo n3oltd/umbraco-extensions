@@ -39,7 +39,16 @@ public static class PageViewModelExtensions {
                                                                                       jsonProvider,
                                                                                       CrowdfundingPublishedFileKind.CrowdfunderPage);
     }
-    
+
+    public static PublishedCrowdfundingCampaignPage CrowdfundingCampaignPage(this IPageViewModel pageViewModel,
+                                                                             IJsonProvider jsonProvider) {
+        var kind = CrowdfundingPublishedFileKind.CrowdfundingCampaignPage;
+
+        return PublishedFile<PublishedCrowdfundingCampaignPage, CrowdfundingPublishedFileKind>(pageViewModel,
+                                                                                              jsonProvider,
+                                                                                              kind);
+    }
+
     public static NisabMergeModel Nisab(this IPageViewModel pageViewModel, IJsonProvider jsonProvider) {
         return pageViewModel.MergeModel<NisabMergeModel>(jsonProvider, PlatformsTemplateConstants.ModelKeys.Nisab);
     }

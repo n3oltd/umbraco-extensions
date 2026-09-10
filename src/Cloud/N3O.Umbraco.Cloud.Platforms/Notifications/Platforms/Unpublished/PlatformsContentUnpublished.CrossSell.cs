@@ -26,5 +26,5 @@ public class CrossSellUnpublished : CloudContentUnpublished {
         return crossSellReq;
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.CrossSells;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.CrossSells;
 }

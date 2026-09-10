@@ -26,5 +26,5 @@ public class FeedItemDeleted : PlatformsContentDeleted {
         return req;
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.ManagedContent;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.ManagedContent;
 }

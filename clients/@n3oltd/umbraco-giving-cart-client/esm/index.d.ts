@@ -155,7 +155,6 @@ export interface RemoveFromCartReq {
     index?: number | undefined;
 }
 export declare class ApiException extends Error {
-    override: any;
     message: string;
     status: number;
     response: string;

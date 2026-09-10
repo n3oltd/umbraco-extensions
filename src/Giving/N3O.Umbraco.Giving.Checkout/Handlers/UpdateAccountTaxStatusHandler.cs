@@ -17,18 +17,18 @@ public class UpdateAccountTaxStatusHandler :
     private readonly IRepository<Entities.Checkout> _repository;
     private readonly IUmbracoMapper _mapper;
     private readonly IContentCache _contentCache;
-    private readonly IAttributionAccessor _attributionAccessor;
+    private readonly ITagsAccessor _tagsAccessor;
     private readonly ITaxReliefSchemeAccessor _taxReliefSchemeAccessor;
 
     public UpdateAccountTaxStatusHandler(IRepository<Entities.Checkout> repository,
                                          IUmbracoMapper mapper,
                                          IContentCache contentCache,
-                                         IAttributionAccessor attributionAccessor,
+                                         ITagsAccessor tagsAccessor,
                                          ITaxReliefSchemeAccessor taxReliefSchemeAccessor) {
         _repository = repository;
         _mapper = mapper;
         _contentCache = contentCache;
-        _attributionAccessor = attributionAccessor;
+        _tagsAccessor = tagsAccessor;
         _taxReliefSchemeAccessor = taxReliefSchemeAccessor;
     }
     
@@ -39,7 +39,7 @@ public class UpdateAccountTaxStatusHandler :
                                _taxReliefSchemeAccessor,
                                account => account.WithUpdatedTaxStatus(req.Model.TaxStatus));
         
-        checkout.UpdateAttribution(_attributionAccessor);
+        checkout.UpdateTags(_tagsAccessor);
         
         await _repository.UpdateAsync(checkout);
         

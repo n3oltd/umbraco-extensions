@@ -1,9 +1,11 @@
-﻿using N3O.Umbraco.Extensions;
+﻿using Microsoft.Extensions.Logging;
+using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Parameters;
 using N3O.Umbraco.Scheduler;
 using N3O.Umbraco.Scheduler.Extensions;
 using N3O.Umbraco.Search.Typesense.Commands;
 using N3O.Umbraco.Search.Typesense.Models;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
@@ -15,11 +17,18 @@ using Umbraco.Cms.Core.Notifications;
 namespace N3O.Umbraco.Search.Typesense.Notifications;
 
 public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicationStartedNotification> {
+    private readonly ILogger _logger;
     private readonly ITypesenseClient _typesenseClient;
+    private readonly ITypesenseJsonProvider _typesenseJsonProvider;
     private readonly IBackgroundJob _backgroundJob;
 
-    public TypesenseStartupTasks(ITypesenseClient typesenseClient, IBackgroundJob backgroundJob) {
+    public TypesenseStartupTasks(ILogger<TypesenseStartupTasks> logger,
+                                 ITypesenseClient typesenseClient,
+                                 ITypesenseJsonProvider typesenseJsonProvider,
+                                 IBackgroundJob backgroundJob) {
+        _logger = logger;
         _typesenseClient = typesenseClient;
+        _typesenseJsonProvider = typesenseJsonProvider;
         _backgroundJob = backgroundJob;
     }
 
@@ -27,7 +36,13 @@ public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicatio
                                   CancellationToken cancellationToken) {
         if (_typesenseClient.HasValue()) {
             foreach (var collection in TypesenseHelper.GetAllCollections()) {
-                await MigrateCollectionAsync(collection);
+                try {
+                    await MigrateCollectionAsync(collection);
+                } catch (Exception ex) {
+                    _logger.LogError(ex,
+                                     "Failed to migrate Typesense collection {Collection}",
+                                     collection.Name.Resolve());
+                }
             }
         }
     }
@@ -87,8 +102,16 @@ public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicatio
     }
     
     private int? GetVersionFromMetadata(CollectionResponse collection) {
-        var collectionVersionElement = (JsonElement?) collection?.Metadata?.TryGet(TypesenseConstants.MetadataKeys.Version);
+        var raw = collection?.Metadata?.TryGet(TypesenseConstants.MetadataKeys.Version);
 
-        return collectionVersionElement?.GetInt32();
+        if (raw == null) {
+            return null;
+        } else if (raw is JsonElement element) {
+            return _typesenseJsonProvider.DeserializeObject<int?>(element.GetRawText());
+        } else if (raw is int version) {
+            return version;
+        } else {
+            throw new Exception($"Version metadata {raw.ToString().Quote()} has an unrecognised format");
+        }
     }
 }

@@ -33,7 +33,7 @@
   ],
   "scripts": {
     "tsc": "tsc",
-    "build": "tsc && shx cp -r esm dist && npm run minify",
+    "build": "tsc && shx rm -rf dist && shx cp -r esm dist && npm run minify",
     "minify": "uglifyjs -c -m --comments --source-map \"content='./dist/index.js.map'\" -o ./dist/index.min.js ./dist/index.js"
   },
   "sideEffects": false

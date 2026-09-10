@@ -8,7 +8,7 @@ namespace N3O.Umbraco.Analytics;
 public class AnalyticsComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.Services.AddTransient<IDataLayerBuilder, DataLayerBuilder>();
-        builder.Services.AddTransient<IAttributionAccessor, AttributionAccessor>();
+        builder.Services.AddTransient<ITagsAccessor, TagsAccessor>();
         
         RegisterAll(t => t.ImplementsInterface<IDataLayerProvider>(),
                     t => builder.Services.AddTransient(typeof(IDataLayerProvider), t));

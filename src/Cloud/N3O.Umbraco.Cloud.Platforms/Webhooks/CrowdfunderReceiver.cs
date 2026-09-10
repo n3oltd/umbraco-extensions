@@ -9,11 +9,11 @@ using N3O.Umbraco.Webhooks.Receivers;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using static N3O.Umbraco.Cloud.Platforms.PlatformsConstants;
+using static N3O.Umbraco.Cloud.Platforms.PlatformsConstants.Webhooks;
 
 namespace N3O.Umbraco.Cloud.Platforms.Webhooks;
 
-[WebhookReceiver(WebhookIds.Crowdfunder)]
+[WebhookReceiver(HookIds.Crowdfunder)]
 public class CrowdfunderReceiver : WebhookReceiver {
     private readonly ICdnClient _cdnClient;
     private readonly IJsonProvider _jsonProvider;
@@ -32,8 +32,8 @@ public class CrowdfunderReceiver : WebhookReceiver {
         var eventType = payload.GetEventType();
 
         switch (eventType) {
-            case WebhookEventTypes.Crowdfunder.Created:
-            case WebhookEventTypes.Crowdfunder.Updated:
+            case EventTypes.Crowdfunder.Created:
+            case EventTypes.Crowdfunder.Updated:
                 await EvictAsync(webhookCrowdfunder, cancellationToken);
 
                 break;

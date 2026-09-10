@@ -5,7 +5,7 @@ export declare class UploaderClient {
     constructor(baseUrl?: string, http?: {
         fetch(url: RequestInfo, init?: RequestInit): Promise<Response>;
     });
-    getMediaById(mediaId: string | null): Promise<FileMedia>;
+    getMediaById(mediaId: string): Promise<FileMedia>;
     protected processGetMediaById(response: Response): Promise<FileMedia>;
     upload(allowedExtensions: string | null | undefined, imagesOnly: boolean | null | undefined, maxFileSizeMb: number | null | undefined, maxHeight: number | null | undefined, maxWidth: number | null | undefined, minHeight: number | null | undefined, minWidth: number | null | undefined, file: FileParameter | null | undefined): Promise<FileMedia>;
     protected processUpload(response: Response): Promise<FileMedia>;
@@ -25,6 +25,7 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface FileParameter {
     data: any;

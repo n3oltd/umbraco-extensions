@@ -22,5 +22,5 @@ public class FeedsUnpublished : CloudContentUnpublished {
         return req;
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.ContentLibrary;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.ContentLibrary;
 }

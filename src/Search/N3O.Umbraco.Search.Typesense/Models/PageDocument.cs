@@ -4,9 +4,9 @@ using Typesense;
 
 namespace N3O.Umbraco.Search.Typesense.Models;
 
-[Collection("pages")]
+[Collection("pages", 2)]
 public class PageDocument : SearchDocument {
-    [Field("timestamp", FieldType.String, true, true)]
+    [Field("timestamp", FieldType.Int64, true, true)]
     public Instant Timestamp { get; set; }
     
     [Field("content", FieldType.String, true, true)]

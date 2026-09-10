@@ -25,5 +25,5 @@ public class FeedsPublished : CloudContentPublished {
         return Task.FromResult<object>(req);
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.ContentLibrary;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.ContentLibrary;
 }

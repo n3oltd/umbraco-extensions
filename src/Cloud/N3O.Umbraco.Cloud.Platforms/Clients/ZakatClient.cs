@@ -177,15 +177,24 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public CalculatorFieldType? Type { get; set; }
 
+        /// <summary>
+        /// The alias of the field
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("alias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Alias { get; set; }
 
+        /// <summary>
+        /// The name of the field
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
         [Newtonsoft.Json.JsonProperty("content", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public RichTextContentReq Content { get; set; }
 
+        /// <summary>
+        /// The tooltip of the field
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("tooltip", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Tooltip { get; set; }
 
@@ -194,6 +203,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The metal settings for the field
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ZakatCalculatorMetalFieldReq
     {
@@ -208,20 +220,32 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class ZakatCalculatorSectionReq
     {
 
+        /// <summary>
+        /// The alias of the section
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("alias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Alias { get; set; }
 
+        /// <summary>
+        /// The name of the section
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
         [Newtonsoft.Json.JsonProperty("content", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public RichTextContentReq Content { get; set; }
 
+        /// <summary>
+        /// The fields in the section
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("fields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<ZakatCalculatorFieldReq> Fields { get; set; }
 
     }
 
+    /// <summary>
+    /// The settings for the zakat calculator
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ZakatCalculatorSettingsReq
     {
@@ -239,6 +263,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public NisabType? DefaultNisabType { get; set; }
 
+        /// <summary>
+        /// The sections of the calculator
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("sections", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<ZakatCalculatorSectionReq> Sections { get; set; }
 

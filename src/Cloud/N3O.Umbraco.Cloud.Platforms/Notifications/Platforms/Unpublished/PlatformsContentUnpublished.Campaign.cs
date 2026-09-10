@@ -26,5 +26,5 @@ public class CampaignUnpublished : CloudContentUnpublished {
         return campaignReq;
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.Campaigns;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.Campaigns;
 }

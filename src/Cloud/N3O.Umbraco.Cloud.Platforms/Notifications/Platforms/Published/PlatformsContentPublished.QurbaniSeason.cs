@@ -37,5 +37,5 @@ public class QurbaniSeasonPublished : CloudContentPublished {
         return Task.FromResult<object>(settingsReq);
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.QurbaniSeason;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.QurbaniSeason;
 }

@@ -40,5 +40,5 @@ public class CrossSellPublished : CloudContentPublished {
         return Task.FromResult<object>(crossSellReq);
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.CrossSells;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.CrossSells;
 }

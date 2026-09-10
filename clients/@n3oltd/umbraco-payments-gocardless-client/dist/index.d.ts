@@ -16,15 +16,16 @@ export interface PaymentFlowResOfGoCardlessCredential {
 }
 export interface GoCardlessCredential {
     advancePayment?: Payment | undefined;
-    setupAt?: Date | undefined;
+    setupAt?: string | undefined;
     isSetUp?: boolean;
     type?: PaymentObjectType | undefined;
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
     method?: string | undefined;
+    clock?: IClock | undefined;
     goCardlessCustomerId?: string | undefined;
     goCardlessRedirectFlowId?: string | undefined;
     goCardlessMandateId?: string | undefined;
@@ -33,24 +34,34 @@ export interface GoCardlessCredential {
     returnUrl?: string | undefined;
 }
 export interface Payment {
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
+    type?: PaymentObjectType | undefined;
+    method?: string | undefined;
+    clock?: IClock | undefined;
     card?: CardPayment | undefined;
-    paidAt?: Date | undefined;
-    declinedAt?: Date | undefined;
+    paidAt?: string | undefined;
+    declinedAt?: string | undefined;
     declinedReason?: string | undefined;
     isDeclined?: boolean;
     isPaid?: boolean;
-    type?: PaymentObjectType | undefined;
 }
 /** One of 'complete', 'error', 'inProgress' */
 export declare enum PaymentObjectStatus {
     Complete = "complete",
     Error = "error",
     InProgress = "inProgress"
+}
+/** One of 'credential', 'payment' */
+export declare enum PaymentObjectType {
+    Credential = "credential",
+    Payment = "payment"
+}
+/** Represents a clock which can return the current time as an Instant. */
+export interface IClock {
 }
 export interface CardPayment {
     threeDSecureRequired?: boolean;
@@ -72,17 +83,13 @@ export interface ThreeDSecureV2 {
     cRes?: string | undefined;
     html?: string | undefined;
 }
-/** One of 'credential', 'payment' */
-export declare enum PaymentObjectType {
-    Credential = "credential",
-    Payment = "payment"
-}
 export interface ProblemDetails {
     type?: string | undefined;
     title?: string | undefined;
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface RedirectFlowReq {
     returnUrl?: string | undefined;

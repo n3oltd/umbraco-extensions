@@ -17,18 +17,18 @@ public class UpdateAccountConsentHandler :
     private readonly IRepository<Entities.Checkout> _repository;
     private readonly IUmbracoMapper _mapper;
     private readonly IContentCache _contentCache;
-    private readonly IAttributionAccessor _attributionAccessor;
+    private readonly ITagsAccessor _tagsAccessor;
     private readonly ITaxReliefSchemeAccessor _taxReliefSchemeAccessor;
 
     public UpdateAccountConsentHandler(IRepository<Entities.Checkout> repository,
                                        IUmbracoMapper mapper,
                                        IContentCache contentCache,
-                                       IAttributionAccessor attributionAccessor,
+                                       ITagsAccessor tagsAccessor,
                                        ITaxReliefSchemeAccessor taxReliefSchemeAccessor) {
         _repository = repository;
         _mapper = mapper;
         _contentCache = contentCache;
-        _attributionAccessor = attributionAccessor;
+        _tagsAccessor = tagsAccessor;
         _taxReliefSchemeAccessor = taxReliefSchemeAccessor;
     }
 
@@ -39,7 +39,7 @@ public class UpdateAccountConsentHandler :
                                _taxReliefSchemeAccessor,
                                account => account.WithUpdatedConsent(req.Model));
         
-        checkout.UpdateAttribution(_attributionAccessor);
+        checkout.UpdateTags(_tagsAccessor);
 
         await _repository.UpdateAsync(checkout);
 

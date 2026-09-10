@@ -20,17 +20,19 @@ export interface PaymentFlowResOfStripePayment {
 }
 export interface StripePayment {
     card?: CardPayment | undefined;
-    paidAt?: Date | undefined;
-    declinedAt?: Date | undefined;
+    paidAt?: string | undefined;
+    declinedAt?: string | undefined;
     declinedReason?: string | undefined;
     isDeclined?: boolean;
     isPaid?: boolean;
     type?: PaymentObjectType | undefined;
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
+    method?: string | undefined;
+    clock?: IClock | undefined;
     stripeChargeId?: string | undefined;
     stripeCustomerId?: string | undefined;
     stripeDeclineCode?: string | undefined;
@@ -40,7 +42,6 @@ export interface StripePayment {
     stripePaymentIntentClientSecret?: string | undefined;
     stripePaymentMethodId?: string | undefined;
     actionRequired?: boolean;
-    method?: string | undefined;
 }
 export interface CardPayment {
     threeDSecureRequired?: boolean;
@@ -73,20 +74,19 @@ export declare enum PaymentObjectStatus {
     Error = "error",
     InProgress = "inProgress"
 }
+/** Represents a clock which can return the current time as an Instant. */
+export interface IClock {
+}
 export interface ProblemDetails {
     type?: string | undefined;
     title?: string | undefined;
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface PaymentIntentReq {
-    value?: MoneyReq | undefined;
     paymentMethodId?: string | undefined;
-}
-export interface MoneyReq {
-    amount?: number | undefined;
-    currency?: string | undefined;
 }
 export interface PaymentFlowResOfStripeCredential {
     flowRevision?: number;
@@ -94,14 +94,16 @@ export interface PaymentFlowResOfStripeCredential {
 }
 export interface StripeCredential {
     advancePayment?: Payment | undefined;
-    setupAt?: Date | undefined;
+    setupAt?: string | undefined;
     isSetUp?: boolean;
     type?: PaymentObjectType | undefined;
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
+    method?: string | undefined;
+    clock?: IClock | undefined;
     stripeMandateId?: string | undefined;
     stripeCustomerId?: string | undefined;
     stripeDeclineCode?: string | undefined;
@@ -111,21 +113,22 @@ export interface StripeCredential {
     stripeSetupIntentClientSecret?: string | undefined;
     stripePaymentMethodId?: string | undefined;
     actionRequired?: boolean;
-    method?: string | undefined;
 }
 export interface Payment {
-    completeAt?: Date | undefined;
-    errorAt?: Date | undefined;
+    completeAt?: string | undefined;
+    errorAt?: string | undefined;
     errorMessage?: string | undefined;
     exceptionDetails?: string | undefined;
     status?: PaymentObjectStatus | undefined;
+    type?: PaymentObjectType | undefined;
+    method?: string | undefined;
+    clock?: IClock | undefined;
     card?: CardPayment | undefined;
-    paidAt?: Date | undefined;
-    declinedAt?: Date | undefined;
+    paidAt?: string | undefined;
+    declinedAt?: string | undefined;
     declinedReason?: string | undefined;
     isDeclined?: boolean;
     isPaid?: boolean;
-    type?: PaymentObjectType | undefined;
 }
 export interface SetupIntentReq {
     paymentMethodId?: string | undefined;

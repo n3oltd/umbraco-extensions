@@ -96,17 +96,26 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
+        /// <summary>
+        /// The name of the qurbani season category
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
         [Newtonsoft.Json.JsonProperty("icon", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public SvgContentReq Icon { get; set; }
 
+        /// <summary>
+        /// The summary of the qurbani season category
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("summary", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Summary { get; set; }
 
     }
 
+    /// <summary>
+    /// The details used to update the qurbani season
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class QurbaniSeasonPlatformsSettingsReq
     {
@@ -120,6 +129,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class QurbaniSeasonReq
     {
 
+        /// <summary>
+        /// The number of days after payment within which a qurbani must be completed
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("completionDueDays", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? CompletionDueDays { get; set; }
 

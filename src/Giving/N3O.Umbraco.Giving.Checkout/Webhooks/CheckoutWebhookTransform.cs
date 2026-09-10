@@ -114,6 +114,7 @@ public class CheckoutWebhookTransform : WebhookTransform {
         }
     }
     
+    // Adds to the tags already carried by the checkout, so a site tag wins a clash.
     private void TransformTags(JObject jObject) {
         var language = LocalizationSettings.GetLanguageName(_cultureAccessor.GetCulture()) ?? Site.Language;
 
