@@ -17,7 +17,7 @@
         <ContentTargetFolders>.</ContentTargetFolders>
         <Authors>N3O Ltd</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>TODO</Description>
+        <Description>Core member sign-in abstractions and sign-out endpoint for N3O Umbraco, extended by providers such as Auth0</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
         <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>

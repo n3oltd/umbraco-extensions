@@ -17,7 +17,7 @@
         <ContentTargetFolders>.</ContentTargetFolders>
         <Authors>N3O Ltd</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>TODO</Description>
+        <Description>Shared Umbraco CMS host startup wiring backoffice, website and Delivery API pipelines for N3O sites</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
         <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>
