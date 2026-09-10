@@ -4,7 +4,6 @@ using N3O.Umbraco.Extensions;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Extensions;
@@ -18,8 +17,6 @@ public static class ContentExtensions {
 
         if (!value.HasValue()) {
             return null;
-        } else if (TryGetContentPickerKey(value, out var contentPickerKey)) {
-            return contentPickerKey;
         } else if (Guid.TryParse(GetDataListItem(value), out var campaignKey)) {
             return campaignKey;
         } else {
@@ -89,18 +86,5 @@ public static class ContentExtensions {
         var contentType = contentTypeService.Get(content.ContentTypeId);
 
         return contentType.CompositionAliases().Contains(compositionAlias, true);
-    }
-
-    [Obsolete("Delete me once every crowdfunding campaign node has been re-saved with the data list picker")]
-    private static bool TryGetContentPickerKey(string value, out Guid contentPickerKey) {
-        if (UdiParser.TryParse(value, out GuidUdi udi)) {
-            contentPickerKey = udi.Guid;
-
-            return true;
-        } else {
-            contentPickerKey = Guid.Empty;
-
-            return false;
-        }
     }
 }
