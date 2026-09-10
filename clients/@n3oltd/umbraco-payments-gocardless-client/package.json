@@ -1,10 +1,10 @@
 {
   "name": "@n3oltd/umbraco-payments-gocardless-client",
   "author": "N3O Ltd",
-  "description": "TODO",
+  "description": "Typed HTTP client for the GoCardless payments API: begins and completes the Direct Debit redirect flow.",
   "version": "1.0.0",
   "dependencies": {},
-  "license": "UNLICENSED",
+  "license": "MIT",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "types": "./esm/index.d.ts",
@@ -16,7 +16,8 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/n3oltd/umbraco-extensions.git",
+    "directory": "clients/@n3oltd/umbraco-payments-gocardless-client"
   },
   "files": [
     "dist/**/*.js",
