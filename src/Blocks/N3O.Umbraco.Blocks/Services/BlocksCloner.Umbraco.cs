@@ -21,28 +21,13 @@ public class UmbracoBlocksCloner : IBlocksCloner {
     }
 
     public string Clone(string value) {
-        var json = ParseObject(value);
+        return Rewrite(value, udi => new GuidUdi(udi.EntityType, Guid.NewGuid()).ToString());
+    }
 
-        if (json == null) {
-            return value;
-        }
+    public string StripIdentifiers(string value) {
+        var index = 0;
 
-        var udis = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-
-        TraverseObject(json, udis);
-
-        foreach (var udi in udis) {
-            if (!UdiParser.TryParse(udi, out var parsed) || parsed is not GuidUdi guidUdi) {
-                continue;
-            }
-
-            var replacement = new GuidUdi(guidUdi.EntityType, Guid.NewGuid()).ToString();
-
-            value = value.Replace(udi, replacement, StringComparison.InvariantCultureIgnoreCase);
-            value = value.Replace(Escape(udi), Escape(replacement), StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        return value;
+        return Rewrite(value, udi => $"{udi.EntityType}/{index++}");
     }
 
     private string Escape(string udi) {
@@ -73,6 +58,33 @@ public class UmbracoBlocksCloner : IBlocksCloner {
                 TraverseProperty(property, udis);
             }
         }
+    }
+
+    private string Rewrite(string value, Func<GuidUdi, string> getReplacement) {
+        var json = ParseObject(value);
+
+        if (json == null) {
+            return value;
+        }
+
+        var udis = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+
+        TraverseObject(json, udis);
+
+        var ordered = udis.OrderBy(x => value.IndexOf(x, StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+        foreach (var udi in ordered) {
+            if (!UdiParser.TryParse(udi, out var parsed) || parsed is not GuidUdi guidUdi) {
+                continue;
+            }
+
+            var replacement = getReplacement(guidUdi);
+
+            value = value.Replace(udi, replacement, StringComparison.InvariantCultureIgnoreCase);
+            value = value.Replace(Escape(udi), Escape(replacement), StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        return value;
     }
 
     private void TraverseObject(JObject json, ISet<string> udis) {

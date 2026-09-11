@@ -1,6 +1,7 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.ContentTypes;
 using N3O.Umbraco.Extensions;
+using CrowdfundingCampaignProperties = N3O.Umbraco.Cloud.Platforms.PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
 using Descriptions = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Descriptions;
 using Folders = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Folders;
@@ -108,11 +109,16 @@ public partial class PlatformsContentTypeSeeder {
         designer.InFolder(Folders.Platforms, Folders.CrowdfundingCampaigns);
         designer.WithDeterministicId();
 
-        designer.Tab(Tabs.CrowdfundingCampaign)
-                .ContentmentDataList(x => x.Campaign)
-                .DataType(DataTypeNames.CampaignsSingle)
-                .Mandatory()
-                .Description(Descriptions.CrowdfundingCampaignCampaign);
+        var tab = designer.Tab(Tabs.CrowdfundingCampaign);
+
+        tab.ContentmentDataList(x => x.Campaign)
+           .DataType(DataTypeNames.CampaignsSingle)
+           .Mandatory()
+           .Description(Descriptions.CrowdfundingCampaignCampaign);
+
+        tab.Textarea(CrowdfundingCampaignProperties.ContentSyncStamp)
+           .DataType(Shared.Textarea)
+           .Name(Names.CrowdfundingCampaignContentSyncStamp);
 
         designer.Save();
     }

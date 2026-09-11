@@ -27,6 +27,8 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
 
         if (notification.Content.ContentTypeAlias.EqualsInvariant(alias)) {
             foreach (var variant in notification.Content.Variants) {
+                HideContentSyncStamp(variant);
+
                 if (IsCreating(notification.Content)) {
                     ShowCampaignOnly(variant);
                 }
@@ -40,6 +42,16 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
 
     private bool HasValue(ContentPropertyDisplay property) {
         return property.Value != null && (property.Value is not string text || text.HasValue());
+    }
+
+    private void HideContentSyncStamp(ContentVariantDisplay variant) {
+        var stampAlias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.ContentSyncStamp;
+
+        foreach (var tab in variant.Tabs.OrEmpty()) {
+            tab.Properties = tab.Properties.OrEmpty()
+                                           .Where(x => !x.Alias.EqualsInvariant(stampAlias))
+                                           .ToList();
+        }
     }
 
     // A variant reports NotCreated for a language not yet added to a saved node

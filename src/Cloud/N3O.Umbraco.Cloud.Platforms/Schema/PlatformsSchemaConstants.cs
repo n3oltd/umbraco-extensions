@@ -89,6 +89,7 @@ public static class PlatformsSchemaConstants {
 
     public static class Names {
         public const string CrowdfundingCampaign = "Crowdfunding Campaign";
+        public const string CrowdfundingCampaignContentSyncStamp = "Content Sync Stamp";
         public const string CrowdfundingCampaigns = "Crowdfunding Campaigns";
     }
 
