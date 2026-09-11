@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using Umbraco.Cms.Core;
 using Umbraco.Extensions;
 using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
@@ -15,8 +15,6 @@ public class UmbracoBlocksCloner : IBlocksCloner {
         UmbracoConstants.PropertyEditors.Aliases.BlockList,
         UmbracoConstants.PropertyEditors.Aliases.BlockGrid
     };
-
-    private static readonly Regex UdiPattern = new(@"(umb:\/\/\w*\/)(\w*)", RegexOptions.Compiled);
 
     public bool CanClone(string propertyEditorAlias) {
         return EditorAliases.Any(x => x.EqualsInvariant(propertyEditorAlias));
@@ -33,27 +31,24 @@ public class UmbracoBlocksCloner : IBlocksCloner {
 
         TraverseObject(json, udis);
 
-        if (!udis.Any()) {
-            return value;
+        foreach (var udi in udis) {
+            if (!UdiParser.TryParse(udi, out var parsed) || parsed is not GuidUdi guidUdi) {
+                continue;
+            }
+
+            var replacement = new GuidUdi(guidUdi.EntityType, Guid.NewGuid()).ToString();
+
+            // Replacing in the original text leaves everything else byte identical, and reaches udis held
+            // in rich text, in picker lists, and in a nested block value stored as escaped JSON
+            value = value.Replace(udi, replacement, StringComparison.InvariantCultureIgnoreCase);
+            value = value.Replace(Escape(udi), Escape(replacement), StringComparison.InvariantCultureIgnoreCase);
         }
 
-        var keys = new Dictionary<Guid, Guid>();
+        return value;
+    }
 
-        // Replacing in the original text leaves everything else byte identical, and reaches udis inside
-        // a nested block value, which is held as escaped JSON in one of the outer block's properties
-        return UdiPattern.Replace(value, match => {
-            if (!udis.Contains(match.Value)) {
-                return match.Value;
-            }
-
-            var key = Guid.Parse(match.Groups[2].Value);
-
-            if (!keys.ContainsKey(key)) {
-                keys[key] = Guid.NewGuid();
-            }
-
-            return $"{match.Groups[1]}{keys[key]:N}";
-        });
+    private string Escape(string udi) {
+        return udi.Replace("/", "\\/");
     }
 
     private JObject ParseObject(string json) {
