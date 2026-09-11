@@ -9,6 +9,8 @@ public interface ILocator {
     IReadOnlyList<IPublishedContent> All(string contentTypeAlias, Func<IPublishedContent, bool> predicate = null);
     IReadOnlyList<T> All<T>(Func<T, bool> predicate = null);
 
+    bool AnyAtRoot();
+
     IPublishedContent ById(int id);
     T ById<T>(int id);
 

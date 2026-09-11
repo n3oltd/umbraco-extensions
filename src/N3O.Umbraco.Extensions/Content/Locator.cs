@@ -36,6 +36,10 @@ public abstract class Locator : ILocator {
         }
     }
 
+    public bool AnyAtRoot() {
+        return Run(c => c.GetAtRoot().Any());
+    }
+
     public IPublishedContent ById(int id) {
         return Run(c => c.GetById(id));
     }
