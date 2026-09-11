@@ -113,14 +113,14 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                                    "The crowdfunding service has no campaign {CampaignKey}",
                                    campaignKey);
 
-                return new[] { CampaignNotFound };
+                return [CampaignNotFound];
             } catch (Exception ex) {
                 _logger.LogError(ex,
                                  "Error checking whether campaign {CampaignKey} allows crowdfunding: {Error}",
                                  campaignKey,
                                  ex.Message);
 
-                return new[] { CheckUnavailable };
+                return [CheckUnavailable];
             }
         }
 
@@ -128,16 +128,16 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             _logger.LogError("The crowdfunding service did not say whether campaign {CampaignKey} allows crowdfunding",
                              campaignKey);
 
-            return new[] { CheckUnavailable };
+            return [CheckUnavailable];
         }
 
         if (res.Permitted.Value) {
-            return Array.Empty<string>();
+            return [];
         }
 
         var reasons = res.Reasons.OrEmpty().Select(x => x?.Name).Where(x => x.HasValue()).ToList();
 
-        return reasons.Any() ? reasons : new[] { NotPermitted };
+        return reasons.HasAny() ? reasons : [NotPermitted];
     }
 
     private bool AnotherCrowdfundingCampaignExistsFor(IContent crowdfundingCampaign, Guid campaignKey) {
