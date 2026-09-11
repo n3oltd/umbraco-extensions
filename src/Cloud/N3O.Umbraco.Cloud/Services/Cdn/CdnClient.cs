@@ -63,15 +63,23 @@ public class CdnClient : ICdnClient {
         return download.Content;
     }
 
-    public async Task<T> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
-                                                          string path,
-                                                          JsonSerializer jsonSerializer,
-                                                          CancellationToken cancellationToken = default) {
+    public async Task<PublishedContentResult<T>> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
+                                                                                  string path,
+                                                                                  JsonSerializer jsonSerializer,
+                                                                                  CancellationToken cancellationToken = default) {
         var publishedUrl = GetPublishedContentUrl(kind, path);
 
         var download = await FetchAsync(publishedUrl, cancellationToken);
 
-        return download.Content.IfNotNull(x => Deserialize<T>(x, jsonSerializer));
+        if (download.Error) {
+            return PublishedContentResult<T>.ForError(path);
+        }
+
+        if (download.NotFound) {
+            return PublishedContentResult<T>.ForNotFound(path);
+        }
+
+        return PublishedContentResult<T>.ForFound(path, download.Content.IfNotNull(x => Deserialize<T>(x, jsonSerializer)));
     }
 
     public async Task<PublishedContentResult> DownloadPublishedContentAsync(string path,
@@ -102,21 +110,6 @@ public class CdnClient : ICdnClient {
 
     public void Evict(PublishedFileKind kind, string path) {
         Invalidate(GetPublishedContentUrl(kind, path));
-    }
-
-    public async Task<T> RequirePublishedContentAsync<T>(PublishedFileKind kind,
-                                                         string path,
-                                                         JsonSerializer jsonSerializer,
-                                                         CancellationToken cancellationToken = default) {
-        var publishedUrl = GetPublishedContentUrl(kind, path);
-
-        var download = await FetchAsync(publishedUrl, cancellationToken);
-
-        if (!download.Success || !download.Content.HasValue()) {
-            throw new PublishedContentUnavailableException(publishedUrl);
-        }
-
-        return Deserialize<T>(download.Content, jsonSerializer);
     }
 
     private void Invalidate(string publishedUrl) {

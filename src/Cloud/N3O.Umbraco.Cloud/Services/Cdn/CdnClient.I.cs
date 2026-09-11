@@ -8,10 +8,10 @@ namespace N3O.Umbraco.Cloud;
 public interface ICdnClient {
     Task<string> DownloadAsync(string path, CancellationToken cancellationToken = default);
     
-    Task<T> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
-                                             string path,
-                                             JsonSerializer jsonSerializer,
-                                             CancellationToken cancellationToken = default);
+    Task<PublishedContentResult<T>> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
+                                                                     string path,
+                                                                     JsonSerializer jsonSerializer,
+                                                                     CancellationToken cancellationToken = default);
     
     Task<PublishedContentResult> DownloadPublishedContentAsync(string path,
                                                                CancellationToken cancellationToken = default);
@@ -21,9 +21,4 @@ public interface ICdnClient {
     void Evict(string path);
 
     void Evict(PublishedFileKind kind, string path);
-
-    Task<T> RequirePublishedContentAsync<T>(PublishedFileKind kind,
-                                            string path,
-                                            JsonSerializer jsonSerializer,
-                                            CancellationToken cancellationToken = default);
 }

@@ -49,7 +49,6 @@ public class SitemapPlatformsPagesChangedHandler : IPlatformsPagesChangedHandler
             _backgroundJob.Delete(previousJobId);
         }
 
-        // Rescheduling on each event leaves one run, a minute after the last of a burst
         var jobId = _backgroundJob.Schedule<GenerateSitemapCommand>(GetJobName<GenerateSitemapCommand>(),
                                                                     RegenerateDelay);
 

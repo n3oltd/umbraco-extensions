@@ -1,4 +1,4 @@
-using N3O.Umbraco.Cloud.Extensions;
+using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
@@ -31,11 +31,17 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
     public async Task<IEnumerable<SitemapEntry>> GetEntriesAsync(CancellationToken cancellationToken = default) {
         var entries = new List<SitemapEntry>();
 
-        var publishedCampaigns = await _cdnClient.RequireSubscriptionContentAsync<PublishedCampaigns>(SubscriptionFiles.Campaigns,
-                                                                                                      JsonSerializers.JsonProvider,
-                                                                                                      cancellationToken);
+        var campaigns = await _cdnClient.DownloadPublishedContentAsync<PublishedCampaigns>(PublishedFileKinds.Subscription,
+                                                                                          SubscriptionFiles.Campaigns.Filename,
+                                                                                          JsonSerializers.JsonProvider,
+                                                                                          cancellationToken);
 
-        foreach (var publishedCampaign in publishedCampaigns.OrEmpty(x => x.Campaigns)) {
+        // The backend publishes this file for every subscription, so its absence is a failed read
+        if (campaigns.Error || campaigns.NotFound) {
+            throw new PublishedContentUnavailableException(campaigns.Path);
+        }
+
+        foreach (var publishedCampaign in campaigns.Content.OrEmpty(x => x.Campaigns)) {
             if (!_visibility.IsVisible(publishedCampaign)) {
                 continue;
             }

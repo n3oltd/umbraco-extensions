@@ -1,3 +1,4 @@
+using AsyncKeyedLock;
 using Flurl;
 using Microsoft.AspNetCore.Hosting;
 using N3O.Umbraco.Extensions;
@@ -19,18 +20,19 @@ public class Sitemap : ISitemap {
     private const string SitemapFileName = "sitemap.xml";
     private const string SitemapFilePattern = "sitemap*.xml";
 
-    private static readonly SemaphoreSlim PublishLock = new(1, 1);
-
-    private readonly IWebHostEnvironment _webHostEnvironment;
-    private readonly IUrlBuilder _urlBuilder;
     private readonly IReadOnlyList<ISitemapEntriesProvider> _entriesProviders;
+    private readonly AsyncKeyedLocker<string> _locker;
+    private readonly IUrlBuilder _urlBuilder;
+    private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public Sitemap(IWebHostEnvironment webHostEnvironment,
+    public Sitemap(IEnumerable<ISitemapEntriesProvider> entriesProviders,
+                   AsyncKeyedLocker<string> locker,
                    IUrlBuilder urlBuilder,
-                   IEnumerable<ISitemapEntriesProvider> entriesProviders) {
-        _webHostEnvironment = webHostEnvironment;
-        _urlBuilder = urlBuilder;
+                   IWebHostEnvironment webHostEnvironment) {
         _entriesProviders = entriesProviders.ApplyAttributeOrdering();
+        _locker = locker;
+        _urlBuilder = urlBuilder;
+        _webHostEnvironment = webHostEnvironment;
     }
 
     public async Task<IReadOnlyList<SitemapEntry>> GetEntriesAsync(CancellationToken cancellationToken = default) {
@@ -44,12 +46,10 @@ public class Sitemap : ISitemap {
     }
 
     public async Task PublishAsync() {
-        await PublishLock.WaitAsync();
-
-        try {
+        using (await _locker.LockAsync(LockKey.Generate<Sitemap>())) {
             var entries = await GetEntriesAsync();
 
-            // A loading NuCache snapshot reads as an empty tree, so an empty result need not mean an empty site
+            // A loading NuCache snapshot reads as an empty tree
             if (!entries.Any() && WebRoot.GetFiles(_webHostEnvironment, SitemapFilePattern).Any()) {
                 return;
             }
@@ -59,8 +59,6 @@ public class Sitemap : ISitemap {
             } else {
                 await PublishSingleAsync(entries);
             }
-        } finally {
-            PublishLock.Release();
         }
     }
 
