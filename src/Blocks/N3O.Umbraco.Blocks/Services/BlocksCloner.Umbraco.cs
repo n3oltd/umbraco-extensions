@@ -38,8 +38,6 @@ public class UmbracoBlocksCloner : IBlocksCloner {
 
             var replacement = new GuidUdi(guidUdi.EntityType, Guid.NewGuid()).ToString();
 
-            // Replacing in the original text leaves everything else byte identical, and reaches udis held
-            // in rich text, in picker lists, and in a nested block value stored as escaped JSON
             value = value.Replace(udi, replacement, StringComparison.InvariantCultureIgnoreCase);
             value = value.Replace(Escape(udi), Escape(replacement), StringComparison.InvariantCultureIgnoreCase);
         }

@@ -31,7 +31,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
     private bool CanCopy(IContent content, string alias, out IProperty property) {
         property = content.HasProperty(alias) ? content.Properties[alias] : null;
 
-        // SetValue throws without a culture on a property that varies by one, and GetValue reads nothing
+        // SetValue throws without a culture on a property that varies by one
         return property != null && !property.PropertyType.VariesByCulture();
     }
 
@@ -56,12 +56,10 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
 
             var editorAlias = destination.PropertyType.PropertyEditorAlias;
 
-            // Sites define these properties, so a campaign and its crowdfunding page can differ in editor
             if (!source.PropertyType.PropertyEditorAlias.EqualsInvariant(editorAlias)) {
                 continue;
             }
 
-            // An import also creates the node, carrying its own values, so only an empty one is written
             if (crowdfundingCampaign.GetValue<string>(destinationAlias).HasValue()) {
                 continue;
             }

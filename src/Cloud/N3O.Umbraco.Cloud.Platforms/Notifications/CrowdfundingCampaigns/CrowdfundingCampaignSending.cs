@@ -42,7 +42,7 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
         return property.Value != null && (property.Value is not string text || text.HasValue());
     }
 
-    // A variant reports NotCreated for a language not yet added to a saved node, so the item is asked
+    // A variant reports NotCreated for a language not yet added to a saved node
     private bool IsCreating(ContentItemDisplay content) {
         return content.Id is int id && id <= 0;
     }

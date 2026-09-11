@@ -48,8 +48,7 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             var creating = !content.HasIdentity;
             var campaignKey = content.GetCampaignKey();
 
-            // Cancelling stops the whole notification, so an existing node missing a campaign would
-            // block operations that save in batches, such as sorting the folder it sits in
+            // Cancelling stops the whole notification, not the one entity
             if (campaignKey == null) {
                 if (creating) {
                     notification.CancelWithError("A campaign must be selected");

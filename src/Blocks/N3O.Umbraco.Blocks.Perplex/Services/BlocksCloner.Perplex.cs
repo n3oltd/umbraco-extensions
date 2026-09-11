@@ -77,7 +77,7 @@ public class PerplexBlocksCloner : IBlocksCloner {
         return (token as JArray)?.OfType<JObject>().ToArray() ?? Array.Empty<JObject>();
     }
 
-    // key is only a reserved identifier in nested content, so any other array-valued property is left alone
+    // key is a reserved identifier only in nested content
     private bool IsNestedContent(JArray array) {
         return array.First is JObject first && first["key"] != null && first["ncContentTypeAlias"] != null;
     }

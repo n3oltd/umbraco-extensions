@@ -11,8 +11,7 @@
         const variant = content.variants.find(x => x.active);
         const properties = variant ? variant.tabs.flatMap(x => x.properties) : [];
 
-        // A create is sent carrying the campaign alone, and the editor does not rebind the tabs it is
-        // answered with, so the properties populated from the campaign need it to load the node again
+        // The editor does not rebind the tabs a save answers with
         if (properties.length > 1) {
             return;
         }
