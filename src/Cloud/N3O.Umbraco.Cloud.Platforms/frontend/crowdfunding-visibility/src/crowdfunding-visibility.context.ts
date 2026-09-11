@@ -6,6 +6,8 @@ import { UmbVariantId } from '@umbraco-cms/backoffice/variant';
 
 const campaignAlias = 'campaign';
 
+const contentSyncStampAlias = 'contentSyncStamp';
+
 const crowdfundingCampaignAlias = 'platformsCrowdfundingCampaign';
 
 const newContentName = 'New Crowdfunding Campaign';
@@ -62,7 +64,13 @@ export class N3oCrowdfundingVisibilityContext extends UmbControllerBase {
             this.#ruleUniques = [];
         }
 
-        if (!this.#isNew || this.#contentTypeAlias !== crowdfundingCampaignAlias) {
+        if (this.#contentTypeAlias !== crowdfundingCampaignAlias) {
+            return;
+        }
+
+        this.#hide(context, this.#properties.filter((x) => x.alias === contentSyncStampAlias));
+
+        if (!this.#isNew) {
             return;
         }
 
@@ -74,19 +82,21 @@ export class N3oCrowdfundingVisibilityContext extends UmbControllerBase {
 
         this.#setNewContentName(context);
 
-        this.#properties
-            .filter((property) => property !== campaign)
-            .forEach((property) => {
-                const ruleUnique = `n3o-crowdfunding-${property.unique}`;
+        this.#hide(context, this.#properties.filter((x) => x !== campaign && x.alias !== contentSyncStampAlias));
+    }
 
-                context.propertyViewGuard.addRule({
-                    unique: ruleUnique,
-                    permitted: false,
-                    propertyType: { unique: property.unique },
-                });
+    #hide(context: UmbDocumentWorkspaceContext, properties: Array<{ unique: string }>): void {
+        properties.forEach((property) => {
+            const ruleUnique = `n3o-crowdfunding-${property.unique}`;
 
-                this.#ruleUniques.push(ruleUnique);
+            context.propertyViewGuard.addRule({
+                unique: ruleUnique,
+                permitted: false,
+                propertyType: { unique: property.unique },
             });
+
+            this.#ruleUniques.push(ruleUnique);
+        });
     }
 
     #hasValue(value: unknown): boolean {
