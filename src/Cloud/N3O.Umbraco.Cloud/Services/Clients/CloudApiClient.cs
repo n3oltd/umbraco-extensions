@@ -48,9 +48,9 @@ public class CloudApiClient<TClient> {
             var statusCode = (int) exception.GetType().GetProperty("StatusCode").GetValue(exception);
 
             if (result == null) {
-                return new CloudApiException(new ProblemDetails((HttpStatusCode) statusCode,
-                                                                "Error",
-                                                                exception.Message),
+                var status = (HttpStatusCode) statusCode;
+
+                return new CloudApiException(new ProblemDetails(status, status.ToString(), exception.Message),
                                              exception);
             }
 
@@ -69,9 +69,7 @@ public class CloudApiClient<TClient> {
 
             return new CloudApiException(problemDetails, exception);
         } catch (Exception ex) {
-            _logger.LogError(ex,
-                             $"Error occured converting exception to {nameof(CloudApiException)}: {{Error}}",
-                             exception.Message);
+            _logger.LogError(ex, "Could not read the API's error response: {Error}", exception.Message);
             
             throw;
         }
