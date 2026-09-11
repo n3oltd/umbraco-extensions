@@ -75,7 +75,7 @@ public class DonationItemReceiver : WebhookReceiver {
     }
 
     private void CreateOrUpdate(WebhookPayload payload, WebhookDonationItem webhookDonationItem) {
-        var collection = _contentCache.Single<DonationItemsContent>();
+        var collection = GetDonationItems();
         
         var existingContent = GetExistingContent(webhookDonationItem.Name, payload.GetHeader(Headers.PreviousName));
 
@@ -121,8 +121,18 @@ public class DonationItemReceiver : WebhookReceiver {
         }
     }
 
+    private DonationItemsContent GetDonationItems() {
+        var donationItems = _contentCache.Single<DonationItemsContent>();
+
+        if (donationItems == null) {
+            throw new Exception($"Could not resolve {AliasHelper<DonationItemsContent>.ContentTypeAlias()} content");
+        }
+
+        return donationItems;
+    }
+
     private IContent GetExistingContent(string name, string previousName) {
-        var collectionPublished = _contentCache.Single<DonationItemsContent>();
+        var collectionPublished = GetDonationItems();
         var collection = _contentService.GetById(collectionPublished.Content().Key);
         var donationItems = _contentHelper.GetChildren(collection);
         var matches = donationItems.Where(x => x.Name.EqualsInvariant(name) || x.Name.EqualsInvariant(previousName))
