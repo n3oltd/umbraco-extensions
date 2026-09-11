@@ -24,6 +24,7 @@ public class PageController : RenderController {
     private readonly IServiceProvider _serviceProvider;
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
     private readonly IEnumerable<IContentRenderabilityFilter> _contentRenderabilityFilters;
+    private readonly ILogger<RenderController> _logger;
 
     public PageController(ILogger<RenderController> logger,
                           ICompositeViewEngine compositeViewEngine,
@@ -40,6 +41,7 @@ public class PageController : RenderController {
         _contentCache = contentCache;
         _serviceProvider = serviceProvider;
         _contentRenderabilityFilters = contentRenderabilityFilters;
+        _logger = logger;
     }
 
     [NonAction]
@@ -57,6 +59,12 @@ public class PageController : RenderController {
 
     protected IActionResult Redirect(SpecialContent specialContent) {
         var publishedContent = _contentCache.Special(specialContent);
+
+        if (publishedContent == null) {
+            _logger.LogError("Could not resolve the {SpecialPage} special page", specialContent.Id);
+
+            return NotFound();
+        }
 
         return Redirect(publishedContent);
     }

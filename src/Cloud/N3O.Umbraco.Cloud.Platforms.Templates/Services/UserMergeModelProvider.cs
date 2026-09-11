@@ -13,10 +13,6 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 namespace N3O.Umbraco.Cloud.Platforms.Templates;
 
 public class UserMergeModelProvider : MergeModelsProvider {
-    private const string ServicePath = "eu1/api/platforms";
-
-    private static readonly TimeSpan FetchTimeout = TimeSpan.FromSeconds(3);
-
     private readonly ILogger<UserMergeModelProvider> _logger;
     private readonly UserCookie _userCookie;
     private readonly Lazy<ClientFactory<PlatformsConnectClient>> _clientFactory;
@@ -38,16 +34,12 @@ public class UserMergeModelProvider : MergeModelsProvider {
             var bearerToken = _userCookie.GetValue();
 
             if (bearerToken.HasValue()) {
-                using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) {
-                    timeout.CancelAfter(FetchTimeout);
+                var client = _clientFactory.Value.Create(CloudApiTypes.Connect, bearerToken);
 
-                    var client = _clientFactory.Value.Create(CloudApiTypes.Connect, ServicePath, bearerToken);
+                var platformsUser = await client.InvokeAsync(x => x.GetPlatformsUserAsync(cancellationToken));
 
-                    var platformsUser = await client.InvokeAsync(x => x.GetPlatformsUserAsync(timeout.Token));
-
-                    if (platformsUser.HasValue()) {
-                        mergeModels["user"] = platformsUser;
-                    }
+                if (platformsUser.HasValue()) {
+                    mergeModels["user"] = platformsUser;
                 }
             }
         } catch (Exception ex) {

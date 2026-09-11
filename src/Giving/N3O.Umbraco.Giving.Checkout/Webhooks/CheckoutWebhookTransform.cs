@@ -131,9 +131,14 @@ public class CheckoutWebhookTransform : WebhookTransform {
         var settingsContentTypeAlias = paymentMethod.GetSettingsContentTypeAlias();
         var allowedCollectionDays = new List<DayOfMonth>();
         
-        var restrictedToDays = (IEnumerable<DayOfMonth>) _contentCache.Single(settingsContentTypeAlias)
-                                                                      .GetProperty(RestrictCollectionDaysToAlias)
-                                                                      .GetValue();
+        var settings = _contentCache.Single(settingsContentTypeAlias);
+
+        if (settings == null) {
+            throw new Exception($"Could not resolve {settingsContentTypeAlias} content");
+        }
+
+        var restrictedToDays = (IEnumerable<DayOfMonth>) settings.GetProperty(RestrictCollectionDaysToAlias)
+                                                                 .GetValue();
 
         if (restrictedToDays.HasAny()) {
             allowedCollectionDays.AddRange(restrictedToDays.OrEmpty());

@@ -19,7 +19,6 @@ using Umbraco.Cms.Core.Services;
 namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
 public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavingNotification> {
-    private const string ServicePath = "eu1/api/crowdfunding";
     private const string CampaignNotFound = "Campaign not found";
     private const string CheckUnavailable = "Could not check whether this campaign allows crowdfunding, please try " +
                                             "again. If this keeps happening, contact support";
@@ -86,7 +85,7 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             timeout.CancelAfter(CheckTimeout);
 
             try {
-                var client = _clientFactory.Value.Create(CloudApiTypes.Engage, ServicePath, bearerToken: null);
+                var client = _clientFactory.Value.Create(CloudApiTypes.Engage, bearerToken: null);
 
                 res = await client.InvokeAsync(x => x.CanEnableCrowdfundingCampaignAsync(campaignKey.ToString(),
                                                                                          timeout.Token));

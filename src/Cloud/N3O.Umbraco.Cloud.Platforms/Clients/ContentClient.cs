@@ -482,6 +482,27 @@ namespace N3O.Umbraco.Cloud.Content.Clients
     }
 
     /// <summary>
+    /// One of 'attention', 'informational', 'negative', 'positive'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum LookupSignal
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"attention")]
+        Attention = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"informational")]
+        Informational = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"negative")]
+        Negative = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"positive")]
+        Positive = 3,
+
+    }
+
+    /// <summary>
     /// The collections the content belongs to
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -734,6 +755,10 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
 
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
@@ -1335,8 +1360,8 @@ namespace N3O.Umbraco.Cloud.Content.Clients
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Value { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("isSystem", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool? IsSystem { get; set; }
+        [Newtonsoft.Json.JsonProperty("isAutoPopulated", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? IsAutoPopulated { get; set; }
 
     }
 
@@ -1372,10 +1397,10 @@ namespace N3O.Umbraco.Cloud.Content.Clients
         public string Value { get; set; }
 
         /// <summary>
-        /// Indicates whether the tag is a system tag
+        /// Indicates whether the tag is populated automatically
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("isSystem", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool? IsSystem { get; set; }
+        [Newtonsoft.Json.JsonProperty("isAutoPopulated", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? IsAutoPopulated { get; set; }
 
     }
 
