@@ -1,0 +1,13 @@
+# App_Plugins is tracked source in the *.StaticAssets projects; keep these anchored
+/App_Plugins/
+/Smidge/
+/umbraco/
+/uSync/v9/Media/
+/uSync/v9/UserGroups/
+/uSync/v9/Users/
+/Views/MacroPartials/
+/Views/Partials/Forms/
+/Views/Partials/blocklist/
+/Views/Partials/grid/
+/wwwroot/media/
+/wwwroot/umbraco/
