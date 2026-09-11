@@ -40,6 +40,7 @@ public static class PlatformsConstants {
 
             public static class Properties {
                 public const string Campaign = "campaign";
+                public const string ContentSyncStamp = "contentSyncStamp";
                 public const string PageContent = "page";
                 public const string PageContentAdditional = "pageAdditionalContent";
                 public const string PageHeroImage = "pageHeroImage";

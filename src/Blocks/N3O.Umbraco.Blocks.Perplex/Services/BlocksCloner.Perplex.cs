@@ -14,63 +14,13 @@ public class PerplexBlocksCloner : IBlocksCloner {
     }
 
     public string Clone(string value) {
-        var json = ParseObject(value);
-
-        if (json == null) {
-            return value;
-        }
-
-        CloneBlock(json["header"] as JObject);
-
-        foreach (var block in GetObjects(json["blocks"])) {
-            CloneBlock(block);
-        }
-
-        return json.ToString(Formatting.None);
+        return Rewrite(value, () => Guid.NewGuid());
     }
 
-    private void CloneBlock(JObject block) {
-        if (block == null) {
-            return;
-        }
+    public string StripIdentifiers(string value) {
+        var index = 0;
 
-        block["id"] = Guid.NewGuid();
-
-        foreach (var item in GetObjects(block["content"])) {
-            CloneNestedContent(item);
-        }
-
-        foreach (var variant in GetObjects(block["variants"])) {
-            CloneBlock(variant);
-        }
-    }
-
-    private void CloneNestedContent(JObject item) {
-        if (item?["key"] == null) {
-            return;
-        }
-
-        item["key"] = Guid.NewGuid();
-
-        foreach (var property in item.Properties().ToList()) {
-            if (property.Value is not JValue { Type: JTokenType.String } value) {
-                continue;
-            }
-
-            var text = (string) value.Value;
-
-            if (!text.HasValue() || !text.TrimStart().StartsWith("[")) {
-                continue;
-            }
-
-            if (TryParseArray(text, out var nested) && IsNestedContent(nested)) {
-                foreach (var nestedItem in GetObjects(nested)) {
-                    CloneNestedContent(nestedItem);
-                }
-
-                property.Value = nested.ToString(Formatting.None);
-            }
-        }
+        return Rewrite(value, () => index++);
     }
 
     private JObject[] GetObjects(JToken token) {
@@ -91,6 +41,66 @@ public class PerplexBlocksCloner : IBlocksCloner {
             return JObject.Parse(json);
         } catch (JsonException) {
             return null;
+        }
+    }
+
+    private string Rewrite(string value, Func<JToken> getIdentifier) {
+        var json = ParseObject(value);
+
+        if (json == null) {
+            return value;
+        }
+
+        RewriteBlock(json["header"] as JObject, getIdentifier);
+
+        foreach (var block in GetObjects(json["blocks"])) {
+            RewriteBlock(block, getIdentifier);
+        }
+
+        return json.ToString(Formatting.None);
+    }
+
+    private void RewriteBlock(JObject block, Func<JToken> getIdentifier) {
+        if (block == null) {
+            return;
+        }
+
+        block["id"] = getIdentifier();
+
+        foreach (var item in GetObjects(block["content"])) {
+            RewriteNestedContent(item, getIdentifier);
+        }
+
+        foreach (var variant in GetObjects(block["variants"])) {
+            RewriteBlock(variant, getIdentifier);
+        }
+    }
+
+    private void RewriteNestedContent(JObject item, Func<JToken> getIdentifier) {
+        if (item?["key"] == null) {
+            return;
+        }
+
+        item["key"] = getIdentifier();
+
+        foreach (var property in item.Properties().ToList()) {
+            if (property.Value is not JValue { Type: JTokenType.String } value) {
+                continue;
+            }
+
+            var text = (string) value.Value;
+
+            if (!text.HasValue() || !text.TrimStart().StartsWith("[")) {
+                continue;
+            }
+
+            if (TryParseArray(text, out var nested) && IsNestedContent(nested)) {
+                foreach (var nestedItem in GetObjects(nested)) {
+                    RewriteNestedContent(nestedItem, getIdentifier);
+                }
+
+                property.Value = nested.ToString(Formatting.None);
+            }
         }
     }
 
