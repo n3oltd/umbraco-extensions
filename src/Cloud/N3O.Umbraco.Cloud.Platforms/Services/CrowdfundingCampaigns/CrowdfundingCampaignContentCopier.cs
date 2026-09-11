@@ -5,8 +5,7 @@ using System.Linq;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Extensions;
 using CampaignProperties = N3O.Umbraco.Cloud.Platforms.PlatformsConstants.Campaigns.Properties;
-using CrowdfundingCampaignProperties =
-    N3O.Umbraco.Cloud.Platforms.PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties;
+using CrowdfundingCampaignProperties = N3O.Umbraco.Cloud.Platforms.PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
