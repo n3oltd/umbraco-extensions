@@ -1949,6 +1949,162 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     /// <summary>
+    /// One of 'account', 'accountAttachment', 'accountEmail', 'accountPreference', 'accountTelephone', 'beneficiary', 'beneficiaryDeactivation', 'call', 'callAppointment', 'campaign', 'cart', 'checkout', 'contribution', 'credential', 'crowdfunder', 'crowdfundingTeam', 'customCorrespondence', 'deposit', 'digitalAd', 'digitalAdCampaign', 'donation', 'donationAllocation', 'donationItem', 'emailCampaign', 'emailList', 'feedback', 'feedbackProject', 'household', 'managedContent', 'payment', 'pledge', 'pledgeAllocation', 'project', 'qurbani', 'qurbaniItem', 'regularGiving', 'regularGivingAllocation', 'report', 'role', 'scheduledGiving', 'scheduledGivingAllocation', 'sitePage', 'sponsorship', 'tags', 'taxReliefDeclaration', 'taxReliefStatement', 'taxReliefSubmission', 'transformRule', 'user'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum EntityType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"account")]
+        Account = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountAttachment")]
+        AccountAttachment = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountEmail")]
+        AccountEmail = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountPreference")]
+        AccountPreference = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountTelephone")]
+        AccountTelephone = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"beneficiary")]
+        Beneficiary = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"beneficiaryDeactivation")]
+        BeneficiaryDeactivation = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"call")]
+        Call = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"callAppointment")]
+        CallAppointment = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"campaign")]
+        Campaign = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"cart")]
+        Cart = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"checkout")]
+        Checkout = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"contribution")]
+        Contribution = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"credential")]
+        Credential = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfunder")]
+        Crowdfunder = 14,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfundingTeam")]
+        CrowdfundingTeam = 15,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"customCorrespondence")]
+        CustomCorrespondence = 16,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"deposit")]
+        Deposit = 17,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"digitalAd")]
+        DigitalAd = 18,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"digitalAdCampaign")]
+        DigitalAdCampaign = 19,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"donation")]
+        Donation = 20,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"donationAllocation")]
+        DonationAllocation = 21,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"donationItem")]
+        DonationItem = 22,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"emailCampaign")]
+        EmailCampaign = 23,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"emailList")]
+        EmailList = 24,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"feedback")]
+        Feedback = 25,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"feedbackProject")]
+        FeedbackProject = 26,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"household")]
+        Household = 27,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"managedContent")]
+        ManagedContent = 28,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"payment")]
+        Payment = 29,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"pledge")]
+        Pledge = 30,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"pledgeAllocation")]
+        PledgeAllocation = 31,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"project")]
+        Project = 32,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"qurbani")]
+        Qurbani = 33,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"qurbaniItem")]
+        QurbaniItem = 34,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"regularGiving")]
+        RegularGiving = 35,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"regularGivingAllocation")]
+        RegularGivingAllocation = 36,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"report")]
+        Report = 37,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"role")]
+        Role = 38,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"scheduledGiving")]
+        ScheduledGiving = 39,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"scheduledGivingAllocation")]
+        ScheduledGivingAllocation = 40,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"sitePage")]
+        SitePage = 41,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"sponsorship")]
+        Sponsorship = 42,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"tags")]
+        Tags = 43,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"taxReliefDeclaration")]
+        TaxReliefDeclaration = 44,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"taxReliefStatement")]
+        TaxReliefStatement = 45,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"taxReliefSubmission")]
+        TaxReliefSubmission = 46,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"transformRule")]
+        TransformRule = 47,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"user")]
+        User = 48,
+
+    }
+
+    /// <summary>
     /// The details of the feedback allocation to create
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -5340,8 +5496,8 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Value { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("isSystem", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool? IsSystem { get; set; }
+        [Newtonsoft.Json.JsonProperty("isAutoPopulated", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? IsAutoPopulated { get; set; }
 
     }
 
@@ -5377,10 +5533,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         public string Value { get; set; }
 
         /// <summary>
-        /// Indicates whether the tag is a system tag
+        /// Indicates whether the tag is populated automatically
         /// </summary>
-        [Newtonsoft.Json.JsonProperty("isSystem", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool? IsSystem { get; set; }
+        [Newtonsoft.Json.JsonProperty("isAutoPopulated", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? IsAutoPopulated { get; set; }
 
     }
 
