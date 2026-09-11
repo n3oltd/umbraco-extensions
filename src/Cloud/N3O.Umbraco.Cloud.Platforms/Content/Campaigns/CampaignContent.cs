@@ -48,7 +48,7 @@ public class CampaignContent : UmbracoContent<CampaignContent> {
         var publishedCampaign = cdnClient.DownloadPublishedContentAsync<PublishedCampaign>(PublishedFileKinds.Campaign,
                                                                                            $"{Key}.json",
                                                                                            JsonSerializers.Simple)
-                                         .GetAwaiter().GetResult();
+                                         .GetAwaiter().GetResult().Content;
 
         if (publishedCampaign == null) {
             throw new ResourceNotFoundException(nameof(PublishedCampaign), Key.ToString());
