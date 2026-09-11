@@ -19,6 +19,8 @@ public class Sitemap : ISitemap {
     private const string SitemapFileName = "sitemap.xml";
     private const string SitemapFilePattern = "sitemap*.xml";
 
+    private static readonly SemaphoreSlim PublishLock = new(1, 1);
+
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IUrlBuilder _urlBuilder;
     private readonly IReadOnlyList<ISitemapEntriesProvider> _entriesProviders;
@@ -42,12 +44,23 @@ public class Sitemap : ISitemap {
     }
 
     public async Task PublishAsync() {
-        var entries = await GetEntriesAsync();
+        await PublishLock.WaitAsync();
 
-        if (FeatureFlags.IsSet(FeatureFlags.SitemapIndex) && entries.Any()) {
-            await PublishIndexAsync(entries);
-        } else {
-            await PublishSingleAsync(entries);
+        try {
+            var entries = await GetEntriesAsync();
+
+            // A loading NuCache snapshot reads as an empty tree, so an empty result need not mean an empty site
+            if (!entries.Any() && WebRoot.GetFiles(_webHostEnvironment, SitemapFilePattern).Any()) {
+                return;
+            }
+
+            if (FeatureFlags.IsSet(FeatureFlags.SitemapIndex) && entries.Any()) {
+                await PublishIndexAsync(entries);
+            } else {
+                await PublishSingleAsync(entries);
+            }
+        } finally {
+            PublishLock.Release();
         }
     }
 

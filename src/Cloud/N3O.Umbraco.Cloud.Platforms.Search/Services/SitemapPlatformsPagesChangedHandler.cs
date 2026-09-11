@@ -3,13 +3,13 @@ using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Models;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Scheduler;
-using N3O.Umbraco.Scheduler.Extensions;
 using N3O.Umbraco.Search.Commands;
 using NodaTime;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using static N3O.Umbraco.Cloud.Platforms.PlatformsConstants.Webhooks;
+using static N3O.Umbraco.Scheduler.Extensions.BackgroundJobExtensions;
 
 namespace N3O.Umbraco.Cloud.Platforms.Search;
 
@@ -23,6 +23,8 @@ public class SitemapPlatformsPagesChangedHandler : IPlatformsPagesChangedHandler
     ];
 
     private static readonly Duration RegenerateDelay = Duration.FromMinutes(1);
+
+    private static string ScheduledJobId;
 
     private readonly IBackgroundJob _backgroundJob;
     private readonly ICdnClient _cdnClient;
@@ -41,7 +43,17 @@ public class SitemapPlatformsPagesChangedHandler : IPlatformsPagesChangedHandler
 
         _cdnClient.EvictSubscriptionContent(SubscriptionFiles.Campaigns);
 
-        _backgroundJob.ScheduleCommand<GenerateSitemapCommand>(RegenerateDelay);
+        var previousJobId = Interlocked.Exchange(ref ScheduledJobId, null);
+
+        if (previousJobId.HasValue()) {
+            _backgroundJob.Delete(previousJobId);
+        }
+
+        // Rescheduling on each event leaves one run, a minute after the last of a burst
+        var jobId = _backgroundJob.Schedule<GenerateSitemapCommand>(GetJobName<GenerateSitemapCommand>(),
+                                                                    RegenerateDelay);
+
+        Interlocked.Exchange(ref ScheduledJobId, jobId);
 
         return Task.CompletedTask;
     }
