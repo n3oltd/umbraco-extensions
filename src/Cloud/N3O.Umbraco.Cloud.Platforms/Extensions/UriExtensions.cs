@@ -12,11 +12,22 @@ public static class UriExtensions {
         }
 
         var rootUrl = urlBuilder.Root();
-        var rebasedUrl = new Url(url.IsAbsoluteUri ? url.AbsolutePath : url.OriginalString);
 
-        rebasedUrl.Scheme = rootUrl.Scheme;
-        rebasedUrl.Host = rootUrl.Host;
-        rebasedUrl.Port = rootUrl.Port;
+        if (rootUrl == null) {
+            return null;
+        }
+
+        var pathAndQuery = url.IsAbsoluteUri ? url.PathAndQuery : url.OriginalString;
+        var queryIndex = pathAndQuery.IndexOf('?');
+        var path = queryIndex == -1 ? pathAndQuery : pathAndQuery.Substring(0, queryIndex);
+
+        var rebasedUrl = new Url(rootUrl.ToString());
+
+        rebasedUrl.AppendPathSegments(path.Split('/', StringSplitOptions.RemoveEmptyEntries));
+
+        if (queryIndex != -1) {
+            rebasedUrl.Query = pathAndQuery.Substring(queryIndex + 1);
+        }
 
         return rebasedUrl;
     }

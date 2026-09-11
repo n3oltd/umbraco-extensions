@@ -1,4 +1,5 @@
-﻿using N3O.Umbraco.Json;
+﻿using Flurl;
+using N3O.Umbraco.Json;
 using N3O.Umbraco.Mediator;
 using N3O.Umbraco.Scheduler.Attributes;
 using N3O.Umbraco.Sync.Extensions.Attributes;
@@ -66,11 +67,12 @@ public class TriggerDataSyncHandler : IRequestHandler<TriggerDataSyncCommand, No
     }
     
     private async Task SyncDataAsync(SyncDataReq syncDataReq, string providerId) {
-        var baseUrl = _urlBuilder.Root().ToString().TrimEnd('/');
+        var url = _urlBuilder.Root()
+                             .AppendPathSegments("umbraco", "api", "SyncExtensions", providerId, "syncData");
         var httpClient = _httpClientFactory.CreateClient();
         var reqStr = _jsonProvider.SerializeObject(syncDataReq);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/umbraco/api/SyncExtensions/{providerId}/syncData");
+        var request = new HttpRequestMessage(HttpMethod.Post, url.ToUri());
         request.Content = new StringContent(reqStr, null, "application/json");
         request.Headers.Add("accept", "*/*");
 
