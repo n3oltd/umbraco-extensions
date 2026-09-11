@@ -226,9 +226,3 @@ out-tsc/
 
 # n3o CLI local state
 .n3o-switch.json
-
-# Playwright artifacts (test runner output + MCP page snapshots)
-test-results/
-playwright-report/
-playwright/.cache/
-.playwright-mcp/
