@@ -43,7 +43,7 @@ public class UserMergeModelProvider : MergeModelsProvider {
                 }
             }
         } catch (OperationCanceledException ex) {
-            _logger.LogWarning(ex, "Timed out fetching platforms user");
+            _logger.LogWarning(ex, "Fetching the platforms user was cancelled");
         } catch (Exception ex) {
             _logger.LogError(ex, "Error fetching platforms user: {Error}", ex.Message);
         }

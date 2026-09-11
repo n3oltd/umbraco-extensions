@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Exceptions;
+using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Json;
 using N3O.Umbraco.Validation;
 using Newtonsoft.Json;
@@ -46,10 +47,6 @@ public class CloudApiClient<TClient> {
             var result = exception.GetType().GetProperty("Result")?.GetValue(exception);
             var statusCode = (int) exception.GetType().GetProperty("StatusCode").GetValue(exception);
 
-            if (statusCode >= 500) {
-                _logger.LogError(exception, "Error calling API: {Error}", exception.Message);
-            }
-
             if (result == null) {
                 return new CloudApiException(new ProblemDetails((HttpStatusCode) statusCode,
                                                                 "Error",
@@ -63,7 +60,7 @@ public class CloudApiClient<TClient> {
                 statusCode == StatusCodes.Status422UnprocessableEntity) {
                 var validationProblemDetails = _jsonProvider.DeserializeObject<ValidationProblemDetails>(content);
 
-                if (validationProblemDetails?.Errors != null) {
+                if (validationProblemDetails.HasAny(x => x.Errors)) {
                     return new ValidationException(validationProblemDetails.Errors);
                 }
             }
