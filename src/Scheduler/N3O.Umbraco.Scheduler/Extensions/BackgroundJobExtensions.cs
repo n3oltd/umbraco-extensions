@@ -35,6 +35,10 @@ public static class BackgroundJobExtensions {
         backgroundJob.Enqueue<TCommand, TReq>(GetJobName<TCommand>(parameters), req, addParameters);
     }
     
+    public static string GetJobName<TCommand>(params object[] parameters) {
+        return $"{typeof(TCommand).Name.Replace("Command", "").Replace("Event", "")}({string.Join(", ", parameters)})";
+    }
+
     public static void ScheduleCommand<TCommand>(this IBackgroundJob backgroundJob,
                                                  Duration fromNow,
                                                  params object[] parameters)
@@ -69,7 +73,4 @@ public static class BackgroundJobExtensions {
         backgroundJob.Schedule<TCommand, TReq>(GetJobName<TCommand>(parameters), fromNow, req, addParameters);
     }
 
-    private static string GetJobName<TCommand>(object[] parameters) {
-        return $"{typeof(TCommand).Name.Replace("Command", "").Replace("Event", "")}({string.Join(", ", parameters)})";
-    }
 }

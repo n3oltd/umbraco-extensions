@@ -1,4 +1,4 @@
-using N3O.Umbraco.Cloud.Extensions;
+using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
@@ -6,7 +6,6 @@ using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Search;
 using N3O.Umbraco.Search.Models;
 using N3O.Umbraco.Utilities;
-using NodaTime;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -18,16 +17,13 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
     private const string AppealsSection = "appeals";
 
     private readonly ICdnClient _cdnClient;
-    private readonly IClock _clock;
     private readonly IUrlBuilder _urlBuilder;
     private readonly ICampaignOfferingVisibility _visibility;
 
     public CampaignOfferingsSitemapEntriesProvider(ICdnClient cdnClient,
-                                                   IClock clock,
                                                    IUrlBuilder urlBuilder,
                                                    ICampaignOfferingVisibility visibility) {
         _cdnClient = cdnClient;
-        _clock = clock;
         _urlBuilder = urlBuilder;
         _visibility = visibility;
     }
@@ -35,22 +31,26 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
     public async Task<IEnumerable<SitemapEntry>> GetEntriesAsync(CancellationToken cancellationToken = default) {
         var entries = new List<SitemapEntry>();
 
-        var today = _clock.GetCurrentInstant().InUtc().Date;
+        var campaigns = await _cdnClient.DownloadPublishedContentAsync<PublishedCampaigns>(PublishedFileKinds.Subscription,
+                                                                                          SubscriptionFiles.Campaigns.Filename,
+                                                                                          JsonSerializers.JsonProvider,
+                                                                                          cancellationToken);
 
-        var publishedCampaigns = await _cdnClient.DownloadSubscriptionContentAsync<PublishedCampaigns>(SubscriptionFiles.Campaigns,
-                                                                                                       JsonSerializers.JsonProvider,
-                                                                                                       cancellationToken);
+        // The backend publishes this file for every subscription, so its absence is a failed read
+        if (campaigns.Error || campaigns.NotFound) {
+            throw new PublishedContentUnavailableException(campaigns.Path);
+        }
 
-        foreach (var publishedCampaign in publishedCampaigns.OrEmpty(x => x.Campaigns)) {
+        foreach (var publishedCampaign in campaigns.Content.OrEmpty(x => x.Campaigns)) {
             if (!_visibility.IsVisible(publishedCampaign)) {
                 continue;
             }
 
-            AddSitemapEntry(entries, publishedCampaign.Url, today);
+            AddSitemapEntry(entries, publishedCampaign.Url);
 
             foreach (var publishedOffering in publishedCampaign.Offerings.OrEmpty()) {
                 if (_visibility.IsVisible(publishedOffering)) {
-                    AddSitemapEntry(entries, publishedOffering.Url, today);
+                    AddSitemapEntry(entries, publishedOffering.Url);
                 }
             }
         }
@@ -58,13 +58,13 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
         return entries;
     }
 
-    private void AddSitemapEntry(List<SitemapEntry> entries, Uri publishedUrl, LocalDate today) {
+    private void AddSitemapEntry(List<SitemapEntry> entries, Uri publishedUrl) {
         var url = publishedUrl.RebaseOnSiteRoot(_urlBuilder);
 
         if (!url.HasValue()) {
             return;
         }
 
-        entries.Add(new SitemapEntry(url, null, AppealsSection, today, null));
+        entries.Add(new SitemapEntry(url, null, AppealsSection, null, null));
     }
 }

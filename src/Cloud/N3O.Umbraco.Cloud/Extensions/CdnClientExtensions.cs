@@ -9,11 +9,15 @@ public static class CdnClientExtensions {
                                                                     SubscriptionFile file,
                                                                     JsonSerializer jsonSerializer,
                                                                     CancellationToken cancellationToken = default) {
-        var content = await cdnClient.DownloadPublishedContentAsync<T>(PublishedFileKinds.Subscription,
-                                                                       file.Filename,
-                                                                       jsonSerializer,
-                                                                       cancellationToken);
+        var result = await cdnClient.DownloadPublishedContentAsync<T>(PublishedFileKinds.Subscription,
+                                                                      file.Filename,
+                                                                      jsonSerializer,
+                                                                      cancellationToken);
 
-        return content;
+        return result.Content;
+    }
+
+    public static void EvictSubscriptionContent(this ICdnClient cdnClient, SubscriptionFile file) {
+        cdnClient.Evict(PublishedFileKinds.Subscription, file.Filename);
     }
 }

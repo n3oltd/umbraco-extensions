@@ -36,7 +36,10 @@ public class PlatformsComposer : Composer {
         
         RegisterAll(t => t.ImplementsInterface<IPlatformsPageContentPublisher>(),
                     t => builder.Services.AddTransient(typeof(IPlatformsPageContentPublisher), t));
-        
+
+        RegisterAll(t => t.ImplementsInterface<IPlatformsPagesChangedHandler>(),
+                    t => builder.Services.AddTransient(typeof(IPlatformsPagesChangedHandler), t));
+
         RegisterAll(t => t.ImplementsInterface<IPreviewHtmlGenerator>(),
                     t => builder.Services.AddTransient(typeof(IPreviewHtmlGenerator), t));
         
