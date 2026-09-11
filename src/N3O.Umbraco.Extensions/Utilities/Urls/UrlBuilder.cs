@@ -16,6 +16,10 @@ public class UrlBuilder : IUrlBuilder {
     public Url Root() {
         var urlSettings = _contentCache.Single<UrlSettingsContent>();
 
+        if (urlSettings == null) {
+            return null;
+        }
+
         return urlSettings.BaseUrl(_webHostEnvironment);
     }
 }
