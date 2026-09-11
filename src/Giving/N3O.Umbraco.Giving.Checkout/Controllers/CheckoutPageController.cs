@@ -58,9 +58,9 @@ public class CheckoutPageController : PageController {
             if (checkout == null) {
                 url = CheckoutRedirects.DonateUrl(_contentCache, _logger);
             } else if (checkout.IsComplete) {
-                url = _contentCache.Single<CheckoutCompletePageContent>().Content().AbsoluteUrl();
+                url = CheckoutRedirects.CompletePageUrl(_contentCache, _logger);
             } else {
-                url = checkout.Progress.CurrentStage.GetUrl(_contentCache);
+                url = CheckoutRedirects.StageUrl(checkout.Progress.CurrentStage, _contentCache, _logger);
             }
 
             return Redirect(url);

@@ -6,17 +6,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Cms.Core.Collections;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.Scoping;
 
 namespace N3O.Umbraco.Content;
 
 public class ContentCache : IContentCache {
     private readonly IContentLocator _contentLocator;
+    private readonly ICoreScopeProvider _scopeProvider;
     private readonly ConcurrentDictionary<string, object> _typedStore = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly ConcurrentDictionary<string, IReadOnlyList<IPublishedContent>> _untypedStore = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly ConcurrentHashSet<string> _heldContentTypes = [];
 
-    public ContentCache(IContentLocator contentLocator) {
+    public ContentCache(IContentLocator contentLocator, ICoreScopeProvider scopeProvider) {
         _contentLocator = contentLocator;
+        _scopeProvider = scopeProvider;
     }
 
     public IReadOnlyList<T> All<T>(Func<T, bool> predicate = null) {
@@ -25,7 +28,7 @@ public class ContentCache : IContentCache {
         if (!_typedStore.TryGetValue(cacheKey, out var stored)) {
             var located = _contentLocator.All<T>();
 
-            stored = CanCache(located) ? _typedStore.GetOrAdd(cacheKey, located) : located;
+            stored = CanCache() ? _typedStore.GetOrAdd(cacheKey, located) : located;
         }
 
         var all = (IReadOnlyList<T>) stored;
@@ -50,7 +53,7 @@ public class ContentCache : IContentCache {
         if (!_untypedStore.TryGetValue(cacheKey, out var all)) {
             var located = _contentLocator.All(contentTypeAlias);
 
-            all = CanCache(located) ? _untypedStore.GetOrAdd(cacheKey, located) : located;
+            all = CanCache() ? _untypedStore.GetOrAdd(cacheKey, located) : located;
         }
 
         if (contentTypeAlias.HasValue()) {
@@ -90,9 +93,8 @@ public class ContentCache : IContentCache {
 
     public event EventHandler Flushed;
 
-    // A loading or rebuilding snapshot reads as empty rather than throwing.
-    private bool CanCache<T>(IReadOnlyList<T> located) {
-        return located.Any() || _contentLocator.AnyAtRoot();
+    private bool CanCache() {
+        return _scopeProvider.Context == null;
     }
 
     private string GetCacheKey<T>() {
