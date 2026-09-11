@@ -11,17 +11,6 @@ using CrowdfundingCampaignProperties =
 namespace N3O.Umbraco.Cloud.Platforms;
 
 public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCopier {
-    private static readonly IReadOnlyList<(string Source, string[] Destinations)> Mappings =
-        new[] {
-            (CampaignProperties.HeroImage, new[] { CrowdfundingCampaignProperties.PageHeroImage,
-                                                   CrowdfundingCampaignProperties.PageTemplateHeroImage }),
-            (CampaignProperties.PageContent, new[] { CrowdfundingCampaignProperties.PageContent,
-                                                     CrowdfundingCampaignProperties.PageTemplateContent }),
-            (CampaignProperties.PageContentAdditional,
-             new[] { CrowdfundingCampaignProperties.PageContentAdditional,
-                     CrowdfundingCampaignProperties.PageTemplateContentAdditional })
-        };
-
     private readonly IEnumerable<IBlocksCloner> _cloners;
 
     public CrowdfundingCampaignContentCopier(IEnumerable<IBlocksCloner> cloners) {
@@ -29,7 +18,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
     }
 
     public void CopyFromCampaign(IContent crowdfundingCampaign, IContent campaign) {
-        foreach (var mapping in Mappings) {
+        foreach (var mapping in GetMappings()) {
             CopyProperty(crowdfundingCampaign, campaign, mapping.Source, mapping.Destinations);
         }
     }
@@ -72,5 +61,19 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
 
             crowdfundingCampaign.SetValue(destinationAlias, Clone(destinationEditorAlias, value));
         }
+    }
+
+    private IReadOnlyList<(string Source, string[] Destinations)> GetMappings() {
+        return [
+            (CampaignProperties.HeroImage,
+             [CrowdfundingCampaignProperties.PageHeroImage,
+              CrowdfundingCampaignProperties.PageTemplateHeroImage]),
+            (CampaignProperties.PageContent,
+             [CrowdfundingCampaignProperties.PageContent,
+              CrowdfundingCampaignProperties.PageTemplateContent]),
+            (CampaignProperties.PageContentAdditional,
+             [CrowdfundingCampaignProperties.PageContentAdditional,
+              CrowdfundingCampaignProperties.PageTemplateContentAdditional])
+        ];
     }
 }

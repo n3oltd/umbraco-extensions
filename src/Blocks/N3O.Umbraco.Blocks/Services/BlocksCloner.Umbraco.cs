@@ -34,7 +34,7 @@ public class UmbracoBlocksCloner : IBlocksCloner {
 
         var json = JObject.Parse(value);
 
-        // The layout references these udis, so every occurrence is replaced, not just the two data lists
+        // The layout holds the same UDIs, so every occurrence is replaced, not just the two data lists
         foreach (var token in json.Descendants().OfType<JValue>().ToList()) {
             if (token.Type == JTokenType.String &&
                 replacements.TryGetValue((string) token.Value, out var replacement)) {
