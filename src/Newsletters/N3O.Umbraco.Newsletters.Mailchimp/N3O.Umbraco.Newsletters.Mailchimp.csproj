@@ -36,7 +36,7 @@
         <ProjectReference Include="..\N3O.Umbraco.Newsletters\N3O.Umbraco.Newsletters.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="MailChimp.Net.V3" Version="5.5.0" />
+        <PackageReference Include="MailChimp.Net.V3" Version="5.8.2" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
