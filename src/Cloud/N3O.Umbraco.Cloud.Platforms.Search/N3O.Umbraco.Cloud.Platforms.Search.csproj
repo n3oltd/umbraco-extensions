@@ -37,6 +37,7 @@
         </None>
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\Scheduler\N3O.Umbraco.Scheduler\N3O.Umbraco.Scheduler.csproj" />
         <ProjectReference Include="..\..\Search\N3O.Umbraco.Search\N3O.Umbraco.Search.csproj" />
         <ProjectReference Include="..\N3O.Umbraco.Cloud.Platforms\N3O.Umbraco.Cloud.Platforms.csproj" />
     </ItemGroup>

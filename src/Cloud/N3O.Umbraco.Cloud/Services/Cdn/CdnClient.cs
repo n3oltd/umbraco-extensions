@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Cloud.Options;
@@ -62,15 +63,23 @@ public class CdnClient : ICdnClient {
         return download.Content;
     }
 
-    public async Task<T> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
-                                                          string path,
-                                                          JsonSerializer jsonSerializer,
-                                                          CancellationToken cancellationToken = default) {
+    public async Task<PublishedContentResult<T>> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
+                                                                                  string path,
+                                                                                  JsonSerializer jsonSerializer,
+                                                                                  CancellationToken cancellationToken = default) {
         var publishedUrl = GetPublishedContentUrl(kind, path);
 
         var download = await FetchAsync(publishedUrl, cancellationToken);
 
-        return download.Content.IfNotNull(x => Deserialize<T>(x, jsonSerializer));
+        if (download.Error) {
+            return PublishedContentResult<T>.ForError(path);
+        }
+
+        if (download.NotFound) {
+            return PublishedContentResult<T>.ForNotFound(path);
+        }
+
+        return PublishedContentResult<T>.ForFound(path, download.Content.IfNotNull(x => Deserialize<T>(x, jsonSerializer)));
     }
 
     public async Task<PublishedContentResult> DownloadPublishedContentAsync(string path,

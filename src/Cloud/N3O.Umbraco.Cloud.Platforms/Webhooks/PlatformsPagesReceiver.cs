@@ -7,6 +7,7 @@ using N3O.Umbraco.Webhooks.Extensions;
 using N3O.Umbraco.Webhooks.Models;
 using N3O.Umbraco.Webhooks.Receivers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static N3O.Umbraco.Cloud.Platforms.PlatformsConstants.Webhooks;
@@ -17,13 +18,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Webhooks;
 [WebhookReceiver(HookIds.Crowdfunder)]
 public class PlatformsPagesReceiver : WebhookReceiver {
     private readonly ICdnClient _cdnClient;
+    private readonly IReadOnlyList<IPlatformsPagesChangedHandler> _changedHandlers;
     private readonly IJsonProvider _jsonProvider;
     private readonly ILogger<PlatformsPagesReceiver> _logger;
 
     public PlatformsPagesReceiver(ICdnClient cdnClient,
+                                  IEnumerable<IPlatformsPagesChangedHandler> changedHandlers,
                                   IJsonProvider jsonProvider,
                                   ILogger<PlatformsPagesReceiver> logger) {
         _cdnClient = cdnClient;
+        _changedHandlers = changedHandlers.ToList();
         _jsonProvider = jsonProvider;
         _logger = logger;
     }
@@ -39,31 +43,35 @@ public class PlatformsPagesReceiver : WebhookReceiver {
             return;
         }
 
-        var webhookPage = payload.GetBody<WebhookPlatformsPage>(_jsonProvider);
+        var page = payload.GetBody<WebhookPlatformsPage>(_jsonProvider);
 
-        await EvictAsync(eventType, webhookPage, cancellationToken);
+        await EvictAsync(eventType, page, cancellationToken);
+
+        foreach (var changedHandler in _changedHandlers) {
+            await changedHandler.HandleAsync(eventType, page, cancellationToken);
+        }
     }
 
     private async Task EvictAsync(string eventType,
-                                  WebhookPlatformsPage webhookPage,
+                                  WebhookPlatformsPage page,
                                   CancellationToken cancellationToken) {
-        if (webhookPage == null || !webhookPage.HasValue(x => x.PagePublishedPath)) {
+        if (page == null || !page.HasValue(x => x.PagePublishedPath)) {
             _logger.LogWarning("{EventType} webhook carried no page published path, so nothing was evicted", eventType);
 
             return;
         }
 
-        foreach (var pagePublishedPath in webhookPage.OrEmpty(x => x.PagePublishedPathsHistory)) {
+        foreach (var pagePublishedPath in page.OrEmpty(x => x.PagePublishedPathsHistory)) {
             _cdnClient.Evict(pagePublishedPath);
         }
 
-        _cdnClient.Evict(webhookPage.PagePublishedPath);
+        _cdnClient.Evict(page.PagePublishedPath);
 
         // The read that follows is served fresh because of the eviction above, and consumes it.
-        await EvictMergeModelsAsync(webhookPage.PagePublishedPath, cancellationToken);
+        await EvictMergeModelsAsync(page.PagePublishedPath, cancellationToken);
 
         // The CDN may not have had the new page yet, so the page is left marked for the next reader.
-        _cdnClient.Evict(webhookPage.PagePublishedPath);
+        _cdnClient.Evict(page.PagePublishedPath);
     }
 
     private async Task EvictMergeModelsAsync(string pagePublishedPath, CancellationToken cancellationToken) {
@@ -83,15 +91,5 @@ public class PlatformsPagesReceiver : WebhookReceiver {
         foreach (var mergeModel in publishedPlatformsPage.OrEmpty(x => x.MergeModels)) {
             _cdnClient.Evict(mergeModel.Path);
         }
-    }
-
-    public class WebhookPlatformsPage {
-        public WebhookPlatformsPage(string pagePublishedPath, IEnumerable<string> pagePublishedPathsHistory) {
-            PagePublishedPath = pagePublishedPath;
-            PagePublishedPathsHistory = pagePublishedPathsHistory;
-        }
-
-        public string PagePublishedPath { get; }
-        public IEnumerable<string> PagePublishedPathsHistory { get; }
     }
 }
