@@ -6,8 +6,6 @@ using N3O.Umbraco.Lookups;
 namespace N3O.Umbraco.Giving.Checkout.Controllers;
 
 internal static class CheckoutRedirects {
-    // Always resolves to a usable URL. A null reaches AbsoluteUrl() and throws, and a bare ?. at the
-    // call site would instead render a checkout stage with no checkout behind it.
     public static string DonateUrl(IContentCache contentCache, ILogger logger) {
         var donatePage = contentCache.Special(SpecialPages.Donate);
 

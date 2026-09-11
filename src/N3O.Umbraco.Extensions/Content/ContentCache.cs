@@ -90,9 +90,7 @@ public class ContentCache : IContentCache {
 
     public event EventHandler Flushed;
 
-    // An empty result is only trustworthy when the published snapshot is readable. While a snapshot is
-    // loading or rebuilding the tree reads as empty without throwing, and caching that would serve "no
-    // content" from this singleton until the next publish happens to flush it.
+    // A loading or rebuilding snapshot reads as empty rather than throwing.
     private bool CanCache<T>(IReadOnlyList<T> located) {
         return located.Any() || _contentLocator.AnyAtRoot();
     }
