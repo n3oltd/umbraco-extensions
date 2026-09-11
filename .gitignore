@@ -88,8 +88,6 @@ PublishScripts/
 # NuGet
 *.nupkg
 *.snupkg
-**/[Pp]ackages/*
-!**/[Pp]ackages/build/
 *.nuget.props
 *.nuget.targets
 
@@ -242,7 +240,6 @@ code-model-v1
 
 # Frontend build output (CRA/webpack output dir — never tracked)
 **/build/
-!**/[Pp]ackages/build/
 dist-ssr
 dist-server
 storybook-static/
