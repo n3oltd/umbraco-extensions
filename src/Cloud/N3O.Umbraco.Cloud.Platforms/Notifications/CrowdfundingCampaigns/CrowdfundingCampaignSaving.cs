@@ -66,7 +66,7 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
 
             var blockers = await GetCrowdfundingBlockersAsync(campaignKey.Value, cancellationToken);
 
-            if (blockers.Any()) {
+            if (blockers.HasAny()) {
                 foreach (var blocker in blockers) {
                     notification.CancelWithError(blocker);
                 }
