@@ -26,18 +26,21 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
 
     private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(3);
 
+    private readonly Lazy<ClientFactory<CrowdfundingClient>> _clientFactory;
+    private readonly ICrowdfundingCampaignContentCopier _contentCopier;
     private readonly IContentHelper _contentHelper;
     private readonly IContentService _contentService;
-    private readonly Lazy<ClientFactory<CrowdfundingClient>> _clientFactory;
     private readonly ILogger<CrowdfundingCampaignSaving> _logger;
 
-    public CrowdfundingCampaignSaving(IContentHelper contentHelper,
+    public CrowdfundingCampaignSaving(Lazy<ClientFactory<CrowdfundingClient>> clientFactory,
+                                      ICrowdfundingCampaignContentCopier contentCopier,
+                                      IContentHelper contentHelper,
                                       IContentService contentService,
-                                      Lazy<ClientFactory<CrowdfundingClient>> clientFactory,
                                       ILogger<CrowdfundingCampaignSaving> logger) {
+        _clientFactory = clientFactory;
+        _contentCopier = contentCopier;
         _contentHelper = contentHelper;
         _contentService = contentService;
-        _clientFactory = clientFactory;
         _logger = logger;
     }
 
@@ -47,9 +50,17 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                 continue;
             }
 
+            var creating = !content.HasIdentity;
             var campaignKey = content.GetCampaignKey();
 
+            // Cancelling stops the whole notification, not the one entity
             if (campaignKey == null) {
+                if (creating) {
+                    notification.CancelWithError("A campaign must be selected");
+
+                    return;
+                }
+
                 continue;
             }
 
@@ -60,19 +71,27 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                     notification.CancelWithError(blocker);
                 }
 
-                break;
+                return;
             }
 
             if (AnotherCrowdfundingCampaignExistsFor(content, campaignKey.Value)) {
                 notification.CancelWithError("This campaign already has a crowdfunding campaign");
 
-                continue;
+                return;
             }
 
             var campaign = _contentService.GetById(campaignKey.Value);
 
-            if (campaign != null) {
-                content.Name = campaign.Name;
+            if (campaign == null) {
+                notification.CancelWithError("The selected campaign no longer exists");
+
+                return;
+            }
+
+            content.Name = campaign.Name;
+
+            if (creating) {
+                _contentCopier.CopyFromCampaign(content, campaign);
             }
         }
     }
