@@ -4,6 +4,7 @@ using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using Slugify;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Events;
@@ -26,11 +27,33 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
 
         if (notification.Content.ContentTypeAlias.EqualsInvariant(alias)) {
             foreach (var variant in notification.Content.Variants) {
+                if (variant.State == ContentSavedState.NotCreated) {
+                    ShowCampaignOnly(variant);
+                }
+
                 SetUrl(notification, variant);
             }
         }
 
         return Task.CompletedTask;
+    }
+
+    private void ShowCampaignOnly(ContentVariantDisplay variant) {
+        var campaignAlias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
+
+        variant.Name = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.NewContentName;
+
+        var tabs = variant.Tabs.Where(x => HasProperty(x, campaignAlias)).ToList();
+
+        foreach (var tab in tabs) {
+            tab.Properties = tab.Properties.Where(x => x.Alias.EqualsInvariant(campaignAlias)).ToList();
+        }
+
+        variant.Tabs = tabs;
+    }
+
+    private bool HasProperty(Tab<ContentPropertyDisplay> tab, string alias) {
+        return tab.Properties?.Any(x => x.Alias.EqualsInvariant(alias)) == true;
     }
 
     private void SetUrl(SendingContentNotification notification, ContentVariantDisplay variant) {

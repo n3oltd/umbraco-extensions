@@ -25,6 +25,7 @@ public class PerplexBlocksComposer : Composer {
         BlocksComponent.LoadDefinitions(builder, WebHostEnvironment);
 
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
+        builder.Services.AddTransient<IBlocksCloner, PerplexBlocksCloner>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
 
         foreach (var blockDefinition in BlocksComponent.BlockDefinitions) {

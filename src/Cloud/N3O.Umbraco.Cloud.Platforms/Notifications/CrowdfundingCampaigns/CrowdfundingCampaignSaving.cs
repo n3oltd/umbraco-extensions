@@ -16,6 +16,7 @@ using Umbraco.Cms.Core.Services;
 namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
 public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavingNotification> {
+    private readonly ICrowdfundingCampaignContentCopier _contentCopier;
     private readonly IContentHelper _contentHelper;
 
     [Obsolete("Delete me once the can-enable query is called from the regenerated crowdfunding client")]
@@ -26,10 +27,12 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
     [Obsolete("Delete me once the can-enable query is called from the regenerated crowdfunding client")]
     private readonly ILookups _lookups;
 
-    public CrowdfundingCampaignSaving(IContentHelper contentHelper,
+    public CrowdfundingCampaignSaving(ICrowdfundingCampaignContentCopier contentCopier,
+                                      IContentHelper contentHelper,
                                       IContentLocator contentLocator,
                                       IContentService contentService,
                                       ILookups lookups) {
+        _contentCopier = contentCopier;
         _contentHelper = contentHelper;
         _contentLocator = contentLocator;
         _contentService = contentService;
@@ -45,6 +48,8 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             var campaignKey = content.GetCampaignKey();
 
             if (campaignKey == null) {
+                notification.CancelWithError("A campaign must be selected");
+
                 continue;
             }
 
@@ -63,7 +68,13 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             var campaign = _contentService.GetById(campaignKey.Value);
 
             if (campaign != null) {
+                var creating = !content.HasIdentity;
+
                 content.Name = campaign.Name;
+
+                if (creating) {
+                    _contentCopier.CopyFromCampaign(content, campaign);
+                }
             }
         }
 
