@@ -2,18 +2,21 @@ import { UmbControllerBase } from '@umbraco-cms/backoffice/class-api';
 import type { UmbControllerHost } from '@umbraco-cms/backoffice/controller-api';
 import { UMB_DOCUMENT_WORKSPACE_CONTEXT } from '@umbraco-cms/backoffice/document';
 import type { UmbDocumentWorkspaceContext } from '@umbraco-cms/backoffice/document';
+import { UmbVariantId } from '@umbraco-cms/backoffice/variant';
 
-const crowdfundingTabName = 'Crowdfunding';
+const campaignAlias = 'campaign';
 
-const noteAliasMarker = 'savenote';
+const crowdfundingCampaignAlias = 'platformsCrowdfundingCampaign';
+
+const newContentName = 'New Crowdfunding Campaign';
 
 export class N3oCrowdfundingVisibilityContext extends UmbControllerBase {
     #workspaceContext?: UmbDocumentWorkspaceContext;
+    #contentTypeAlias?: string;
     #isNew = false;
-    #tabIds: string[] = [];
-    #groupIdsByTab = new Map<string, string[]>();
-    #properties: Array<{ unique: string; alias: string; container?: { id: string } | null }> = [];
+    #properties: Array<{ unique: string; alias: string }> = [];
     #ruleUniques: string[] = [];
+    #values: Array<{ alias: string; value?: unknown }> = [];
 
     constructor(host: UmbControllerHost) {
         super(host);
@@ -30,33 +33,20 @@ export class N3oCrowdfundingVisibilityContext extends UmbControllerBase {
                 this.#apply();
             }, '_n3oCrowdfundingIsNew');
 
+            this.observe(context.structure.ownerContentTypeAlias, (alias) => {
+                this.#contentTypeAlias = alias;
+                this.#apply();
+            }, '_n3oCrowdfundingContentType');
+
             this.observe(context.structure.contentTypeProperties, (properties) => {
                 this.#properties = properties ?? [];
                 this.#apply();
             }, '_n3oCrowdfundingProperties');
 
-            this.observe(context.structure.containersByNameAndType(crowdfundingTabName, 'Tab'), (tabs) => {
-                this.#tabIds = (tabs ?? []).map((x) => x.id);
-                this.#observeGroups();
+            this.observe(context.values, (values) => {
+                this.#values = values ?? [];
                 this.#apply();
-            }, '_n3oCrowdfundingTabs');
-        });
-    }
-
-    #observeGroups(): void {
-        const context = this.#workspaceContext;
-
-        if (!context) {
-            return;
-        }
-
-        this.#groupIdsByTab.clear();
-
-        this.#tabIds.forEach((tabId) => {
-            this.observe(context.structure.containersOfParentId(tabId, 'Group'), (groups) => {
-                this.#groupIdsByTab.set(tabId, (groups ?? []).map((x) => x.id));
-                this.#apply();
-            }, `_n3oCrowdfundingGroups_${tabId}`);
+            }, '_n3oCrowdfundingValues');
         });
     }
 
@@ -72,21 +62,20 @@ export class N3oCrowdfundingVisibilityContext extends UmbControllerBase {
             this.#ruleUniques = [];
         }
 
-        const containerIds = new Set<string>(this.#tabIds);
-
-        this.#groupIdsByTab.forEach((groupIds) => groupIds.forEach((id) => containerIds.add(id)));
-
-        if (containerIds.size === 0) {
+        if (!this.#isNew || this.#contentTypeAlias !== crowdfundingCampaignAlias) {
             return;
         }
 
-        this.#properties
-            .filter((property) => property.container != null && containerIds.has(property.container.id))
-            .filter((property) => {
-                const isNote = (property.alias ?? '').toLowerCase().endsWith(noteAliasMarker);
+        const campaign = this.#properties.find((x) => x.alias === campaignAlias);
 
-                return this.#isNew ? !isNote : isNote;
-            })
+        if (!campaign || this.#values.some((x) => x.alias !== campaignAlias && this.#hasValue(x.value))) {
+            return;
+        }
+
+        this.#setNewContentName(context);
+
+        this.#properties
+            .filter((property) => property !== campaign)
             .forEach((property) => {
                 const ruleUnique = `n3o-crowdfunding-${property.unique}`;
 
@@ -98,6 +87,16 @@ export class N3oCrowdfundingVisibilityContext extends UmbControllerBase {
 
                 this.#ruleUniques.push(ruleUnique);
             });
+    }
+
+    #hasValue(value: unknown): boolean {
+        return value !== null && value !== undefined && (typeof value !== 'string' || value.trim().length > 0);
+    }
+
+    #setNewContentName(context: UmbDocumentWorkspaceContext): void {
+        (context.getData()?.variants ?? [])
+            .filter((variant) => !variant.name)
+            .forEach((variant) => context.setName(newContentName, UmbVariantId.Create(variant)));
     }
 }
 
