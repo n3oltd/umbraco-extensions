@@ -14,18 +14,16 @@ namespace N3O.Umbraco.Extensions;
 public static class PublishedContentExtensions {
     // TODO This is ugly, but is no different from what content.Url() call below is doing
     private static IUrlBuilder UrlBuilder { get; } = StaticServiceProvider.Instance.GetRequiredService<IUrlBuilder>();
-    private static IContentCache ContentCache { get; } = StaticServiceProvider.Instance.GetRequiredService<IContentCache>();
     
     // We need to do all of this as for background jobs Umbraco picks up the URL from the context and ends up
     // resolving to localhost
     public static string AbsoluteUrl(this IPublishedContent content, string culture = null) {
         var url = new Url(content.Url(mode: UrlMode.Absolute, culture: culture));
+        var rootUrl = UrlBuilder.Root();
 
-        if (ContentCache.Single<UrlSettingsContent>() == null) {
+        if (rootUrl == null) {
             return url;
         }
-
-        var rootUrl = UrlBuilder.Root();
 
         url.Scheme = rootUrl.Scheme;
         url.Host = rootUrl.Host;
