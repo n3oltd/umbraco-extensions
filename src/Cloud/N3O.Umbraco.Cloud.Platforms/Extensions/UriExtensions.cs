@@ -12,11 +12,25 @@ public static class UriExtensions {
         }
 
         var rootUrl = urlBuilder.Root();
-        var rebasedUrl = new Url(url.IsAbsoluteUri ? url.AbsolutePath : url.OriginalString);
 
+        if (rootUrl == null) {
+            return null;
+        }
+
+        // Flurl's Url constructor reads a leading // as an authority, so the path is split and
+        // assigned rather than parsed
+        var pathAndQuery = url.IsAbsoluteUri ? url.AbsolutePath : url.OriginalString;
+        var queryIndex = pathAndQuery.IndexOf('?');
+
+        var rebasedUrl = new Url();
         rebasedUrl.Scheme = rootUrl.Scheme;
         rebasedUrl.Host = rootUrl.Host;
         rebasedUrl.Port = rootUrl.Port;
+        rebasedUrl.Path = queryIndex == -1 ? pathAndQuery : pathAndQuery.Substring(0, queryIndex);
+
+        if (queryIndex != -1) {
+            rebasedUrl.Query = pathAndQuery.Substring(queryIndex + 1);
+        }
 
         return rebasedUrl;
     }
