@@ -20,6 +20,7 @@ public class PlatformsComposer : Composer {
         builder.Services.AddOpenApiDocument(PlatformsConstants.DevToolsApiName);
         builder.Services.AddSingleton<ICampaignAccessor, CampaignAccessor>();
         builder.Services.AddSingleton<ICampaignIdAccessor, CampaignIdAccessor>();
+        builder.Services.AddTransient<ICrowdfundingCampaignContentCopier, CrowdfundingCampaignContentCopier>();
         builder.Services.AddSingleton<INisab, Nisab>();
         builder.Services.AddTransient<IPlatformsContentTypeSeeder, PlatformsContentTypeSeeder>();
         builder.Services.AddTransient<IPlatformsDataTypeSeeder, PlatformsDataTypeSeeder>();

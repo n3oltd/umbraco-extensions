@@ -15,6 +15,12 @@ public static class PlatformsConstants {
         
         public const string ScheduledGiving = "platformsScheduledGivingCampaign";
         public const string RegularGiving = "platformsRegularGivingCampaign";
+
+        public static class Properties {
+            public const string HeroImage = "heroImage";
+            public const string PageContent = "campaignPageContent";
+            public const string PageContentAdditional = "campaignPageContentAdditional";
+        }
     }
 
     public static class CrossSells {
@@ -30,9 +36,16 @@ public static class PlatformsConstants {
 
         public static class CrowdfundingCampaign {
             public const string Alias = "platformsCrowdfundingCampaign";
+            public const string NewContentName = "New Crowdfunding Campaign";
 
             public static class Properties {
                 public const string Campaign = "campaign";
+                public const string PageContent = "page";
+                public const string PageContentAdditional = "pageAdditionalContent";
+                public const string PageHeroImage = "pageHeroImage";
+                public const string PageTemplateContent = "pageTemplate";
+                public const string PageTemplateContentAdditional = "pageTemplateAdditionalContent";
+                public const string PageTemplateHeroImage = "pageTemplateHeroImage";
             }
         }
     }
