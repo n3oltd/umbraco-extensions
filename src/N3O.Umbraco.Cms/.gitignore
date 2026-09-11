@@ -1,0 +1,2 @@
+# Keep anchored: restore drops assets here; elsewhere App_Plugins is tracked source
+/App_Plugins/

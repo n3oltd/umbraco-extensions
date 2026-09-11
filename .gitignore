@@ -1,7 +1,3 @@
-# n3oltd canonical .gitignore — managed centrally in n3oltd/devops
-# (github/gitignore/default.gitignore). Synced to every repo by
-# .github/workflows/sync-gitignore.yml; local edits are overwritten.
-
 # ===== .NET / Visual Studio =====
 *.rsuser
 *.suo
@@ -25,7 +21,6 @@
 /[Oo]ut/
 /[Ll]og/
 /[Ll]ogs/
-**/[Bb]in/*
 
 # Visual Studio
 .vs/
@@ -142,8 +137,6 @@ esm
 .vuepress/dist
 .temp
 .svelte-kit/
-**/.vitepress/dist
-**/.vitepress/cache
 .docusaurus
 .serverless/
 .fusebox/
@@ -169,7 +162,7 @@ vite.config.ts.timestamp-*
 __MACOSX/
 .AppleDouble
 .LSOverride
-Icon?
+Icon[[:cntrl:]]
 ._*
 .DocumentRevisions-V100
 .fseventsd
@@ -219,27 +212,6 @@ nohup.out
 code-model-v1
 *.DotSettings
 
-# Umbraco
-**/App_Plugins/*
-**/umbraco/*
-**/Smidge/*
-**/uSync/v9/Users/*
-**/uSync/v9/UserGroups/*
-**/uSync/v9/Media/*
-**/Views/Partials/grid
-**/Views/Partials/blocklist
-**/Views/Partials/Forms
-**/Views/MacroPartials
-**/appsettings-schema.*.json
-**/wwwroot/media
-
-# Generated SDK XML documentation
-**/*.Sdk.xml
-**/*.SDK.xml
-**/*.Abstractions.xml
-
-# Frontend build output (CRA/webpack output dir — never tracked)
-**/build/
 dist-ssr
 dist-server
 storybook-static/
@@ -247,25 +219,9 @@ out-tsc/
 .turbo
 .vercel
 
-# Build-time codegen output (regenerated on every build, e.g. Refitter)
-src/**/Generated/
-!src/lib-be-*/*.Abstractions/Generated/
-!src/svc-be-*/*.Abstractions/Generated/
-!src/lib-be-*/TypeScript/dist/
-
 # Generated API client packages (compiled output ships in the package)
 !clients/@n3oltd/*/dist/
 !clients/@n3oltd/*/esm/
 
 # n3o CLI local state
 .n3o-switch.json
-
-# Playwright artifacts (test runner output + MCP page snapshots)
-test-results/
-playwright-report/
-playwright/.cache/
-.playwright-mcp/
-
-# Vitest browser-mode artifacts (attachments + failure screenshots)
-**/.vitest-attachments/
-**/__screenshots__/
