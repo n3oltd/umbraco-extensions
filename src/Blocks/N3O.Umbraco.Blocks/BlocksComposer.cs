@@ -12,11 +12,13 @@ public class BlocksComposer : Composer {
         RegisterAll(t => t.ImplementsInterface<IBlockModule>(),
                     t => builder.Services.AddTransient(typeof(IBlockModule), t));
         
+        RegisterAll(t => t.ImplementsInterface<IBlocksCloner>(),
+                    t => builder.Services.AddTransient(typeof(IBlocksCloner), t));
+
         RegisterAll(t => t.ImplementsInterface<IBlocksRendererPostProcessor>(),
                     t => builder.Services.AddTransient(typeof(IBlocksRendererPostProcessor), t));
 
         builder.Services.AddTransient<IBlockPipeline, BlockPipeline>();
-        builder.Services.AddTransient<IBlocksCloner, UmbracoBlocksCloner>();
         builder.Services.AddTransient<IBlocksRenderer, UmbracoBlocksRenderer>();
         
         ConfigureRazorTemplating(builder);

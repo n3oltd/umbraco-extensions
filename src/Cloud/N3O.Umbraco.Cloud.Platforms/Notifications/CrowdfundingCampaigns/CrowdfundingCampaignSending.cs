@@ -38,10 +38,6 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
         return Task.CompletedTask;
     }
 
-    private bool HasProperty(Tab<ContentPropertyDisplay> tab, string alias) {
-        return tab.Properties?.Any(x => x.Alias.EqualsInvariant(alias)) == true;
-    }
-
     private void SetUrl(SendingContentNotification notification, ContentVariantDisplay variant) {
         if (variant.State == ContentSavedState.Published) {
             var path = _contentCache.Value.GetCrowdfundingCampaignPath(_slugHelper.Value, variant.Name);
@@ -57,7 +53,9 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
 
         variant.Name = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.NewContentName;
 
-        var tabs = variant.Tabs.Where(x => HasProperty(x, campaignAlias)).ToList();
+        var tabs = variant.Tabs
+                          .Where(x => x.Properties.HasAny(y => y.Alias.EqualsInvariant(campaignAlias)))
+                          .ToList();
 
         foreach (var tab in tabs) {
             tab.Properties = tab.Properties.Where(x => x.Alias.EqualsInvariant(campaignAlias)).ToList();
