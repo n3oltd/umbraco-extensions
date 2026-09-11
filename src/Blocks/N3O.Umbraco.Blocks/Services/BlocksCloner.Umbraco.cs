@@ -20,25 +20,13 @@ public class UmbracoBlocksCloner : IBlocksCloner {
     }
 
     public string Clone(string value) {
-        var json = ParseObject(value);
+        return Rewrite(value, () => Guid.NewGuid().ToString("D"));
+    }
 
-        if (json == null) {
-            return value;
-        }
+    public string StripIdentifiers(string value) {
+        var index = 0;
 
-        var keys = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
-
-        TraverseObject(json, keys);
-
-        foreach (var key in keys) {
-            if (!Guid.TryParse(key, out _)) {
-                continue;
-            }
-
-            value = value.Replace(key, Guid.NewGuid().ToString("D"), StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        return value;
+        return Rewrite(value, () => $"key/{index++}");
     }
 
     private JObject ParseObject(string json) {
@@ -65,6 +53,30 @@ public class UmbracoBlocksCloner : IBlocksCloner {
                 TraverseProperty(property, keys);
             }
         }
+    }
+
+    private string Rewrite(string value, Func<string> getReplacement) {
+        var json = ParseObject(value);
+
+        if (json == null) {
+            return value;
+        }
+
+        var keys = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+
+        TraverseObject(json, keys);
+
+        var ordered = keys.OrderBy(x => value.IndexOf(x, StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+        foreach (var key in ordered) {
+            if (!Guid.TryParse(key, out _)) {
+                continue;
+            }
+
+            value = value.Replace(key, getReplacement(), StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        return value;
     }
 
     private void TraverseObject(JObject json, ISet<string> keys) {
