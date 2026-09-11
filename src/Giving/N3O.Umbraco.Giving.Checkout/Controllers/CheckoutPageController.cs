@@ -6,7 +6,6 @@ using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Giving.Checkout.Content;
 using N3O.Umbraco.Hosting;
-using N3O.Umbraco.Lookups;
 using N3O.Umbraco.Pages;
 using System;
 using System.Collections.Generic;
@@ -22,6 +21,7 @@ public class CheckoutPageController : PageController {
     private readonly ICheckoutAccessor _checkoutAccessor;
     private readonly IQueryStringAccessor _queryStringAccessor;
     private readonly IContentCache _contentCache;
+    private readonly ILogger<CheckoutPageController> _logger;
 
     public CheckoutPageController(ILogger<CheckoutPageController> logger,
                                   ICompositeViewEngine compositeViewEngine,
@@ -42,6 +42,7 @@ public class CheckoutPageController : PageController {
                serviceProvider,
                contentRenderabilityFilters) {
         _contentCache = contentCache;
+        _logger = logger;
         _checkoutAccessor = checkoutAccessor;
         _queryStringAccessor = queryStringAccessor;
     }
@@ -55,7 +56,7 @@ public class CheckoutPageController : PageController {
             string url;
 
             if (checkout == null) {
-                url = _contentCache.Special(SpecialPages.Donate).AbsoluteUrl();
+                url = CheckoutRedirects.DonateUrl(_contentCache, _logger);
             } else if (checkout.IsComplete) {
                 url = _contentCache.Single<CheckoutCompletePageContent>().Content().AbsoluteUrl();
             } else {
