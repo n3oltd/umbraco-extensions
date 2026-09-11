@@ -42,8 +42,10 @@ public class UserMergeModelProvider : MergeModelsProvider {
                     mergeModels["user"] = platformsUser;
                 }
             }
+        } catch (OperationCanceledException ex) {
+            _logger.LogWarning(ex, "Timed out loading the signed-in visitor's details");
         } catch (Exception ex) {
-            _logger.LogError(ex, "Error fetching platforms user: {Error}", ex.Message);;
+            _logger.LogError(ex, "Could not load the signed-in visitor's details: {Error}", ex.Message);
         }
     }
 }
