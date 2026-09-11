@@ -21,4 +21,9 @@ public interface ICdnClient {
     void Evict(string path);
 
     void Evict(PublishedFileKind kind, string path);
+
+    Task<T> RequirePublishedContentAsync<T>(PublishedFileKind kind,
+                                            string path,
+                                            JsonSerializer jsonSerializer,
+                                            CancellationToken cancellationToken = default);
 }

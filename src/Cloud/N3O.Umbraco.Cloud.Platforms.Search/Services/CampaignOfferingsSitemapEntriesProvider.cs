@@ -31,9 +31,9 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
     public async Task<IEnumerable<SitemapEntry>> GetEntriesAsync(CancellationToken cancellationToken = default) {
         var entries = new List<SitemapEntry>();
 
-        var publishedCampaigns = await _cdnClient.DownloadSubscriptionContentAsync<PublishedCampaigns>(SubscriptionFiles.Campaigns,
-                                                                                                       JsonSerializers.JsonProvider,
-                                                                                                       cancellationToken);
+        var publishedCampaigns = await _cdnClient.RequireSubscriptionContentAsync<PublishedCampaigns>(SubscriptionFiles.Campaigns,
+                                                                                                      JsonSerializers.JsonProvider,
+                                                                                                      cancellationToken);
 
         foreach (var publishedCampaign in publishedCampaigns.OrEmpty(x => x.Campaigns)) {
             if (!_visibility.IsVisible(publishedCampaign)) {

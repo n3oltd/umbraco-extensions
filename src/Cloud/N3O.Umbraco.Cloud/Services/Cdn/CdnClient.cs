@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Cloud.Options;
@@ -101,6 +102,21 @@ public class CdnClient : ICdnClient {
 
     public void Evict(PublishedFileKind kind, string path) {
         Invalidate(GetPublishedContentUrl(kind, path));
+    }
+
+    public async Task<T> RequirePublishedContentAsync<T>(PublishedFileKind kind,
+                                                         string path,
+                                                         JsonSerializer jsonSerializer,
+                                                         CancellationToken cancellationToken = default) {
+        var publishedUrl = GetPublishedContentUrl(kind, path);
+
+        var download = await FetchAsync(publishedUrl, cancellationToken);
+
+        if (!download.Success || !download.Content.HasValue()) {
+            throw new PublishedContentUnavailableException(publishedUrl);
+        }
+
+        return Deserialize<T>(download.Content, jsonSerializer);
     }
 
     private void Invalidate(string publishedUrl) {
