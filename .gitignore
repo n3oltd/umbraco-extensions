@@ -212,7 +212,6 @@ nohup.out
 code-model-v1
 *.DotSettings
 
-# Frontend build output
 dist-ssr
 dist-server
 storybook-static/

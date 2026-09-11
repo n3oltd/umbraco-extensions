@@ -1,5 +1,4 @@
-# Keep anchored: at the root these reach the package projects, where App_Plugins
-# is tracked source
+# Keep anchored: at the root these reach package projects, where App_Plugins is tracked source
 /App_Plugins/
 /Smidge/
 /umbraco/
