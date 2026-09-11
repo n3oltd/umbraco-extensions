@@ -4,8 +4,8 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Models.Blocks;
+using System.Text.RegularExpressions;
+using Umbraco.Extensions;
 using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace N3O.Umbraco.Blocks;
@@ -16,51 +16,100 @@ public class UmbracoBlocksCloner : IBlocksCloner {
         UmbracoConstants.PropertyEditors.Aliases.BlockGrid
     };
 
+    private static readonly Regex UdiPattern = new(@"(umb:\/\/\w*\/)(\w*)", RegexOptions.Compiled);
+
     public bool CanClone(string propertyEditorAlias) {
         return EditorAliases.Any(x => x.EqualsInvariant(propertyEditorAlias));
     }
 
     public string Clone(string value) {
-        if (!value.HasValue()) {
+        var json = ParseObject(value);
+
+        if (json == null) {
             return value;
         }
 
-        var blockValue = JsonConvert.DeserializeObject<BlockValue>(value);
-        var replacements = GetReplacements(blockValue);
+        var udis = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
 
-        if (!replacements.Any()) {
+        TraverseObject(json, udis);
+
+        if (!udis.Any()) {
             return value;
         }
 
-        var json = JObject.Parse(value);
+        var keys = new Dictionary<Guid, Guid>();
 
-        // The layout holds the same UDIs, so every occurrence is replaced, not just the two data lists
-        foreach (var token in json.Descendants().OfType<JValue>().ToList()) {
-            if (token.Type == JTokenType.String &&
-                replacements.TryGetValue((string) token.Value, out var replacement)) {
-                token.Value = replacement;
+        // Replacing in the original text leaves everything else byte identical, and reaches udis inside
+        // a nested block value, which is held as escaped JSON in one of the outer block's properties
+        return UdiPattern.Replace(value, match => {
+            if (!udis.Contains(match.Value)) {
+                return match.Value;
             }
-        }
 
-        return json.ToString(Formatting.None);
+            var key = Guid.Parse(match.Groups[2].Value);
+
+            if (!keys.ContainsKey(key)) {
+                keys[key] = Guid.NewGuid();
+            }
+
+            return $"{match.Groups[1]}{keys[key]:N}";
+        });
     }
 
-    private Dictionary<string, string> GetReplacements(BlockValue blockValue) {
-        var replacements = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-
-        if (blockValue == null) {
-            return replacements;
+    private JObject ParseObject(string json) {
+        if (!json.HasValue() || !json.DetectIsJson()) {
+            return null;
         }
 
-        var items = (blockValue.ContentData ?? new List<BlockItemData>())
-            .Concat(blockValue.SettingsData ?? new List<BlockItemData>());
+        try {
+            return JObject.Parse(json);
+        } catch (JsonException) {
+            return null;
+        }
+    }
 
-        foreach (var item in items) {
-            if (item?.Udi is GuidUdi udi && !replacements.ContainsKey(udi.ToString())) {
-                replacements[udi.ToString()] = new GuidUdi(udi.EntityType, Guid.NewGuid()).ToString();
+    private void ParseUdis(JArray contentData, JArray settingsData, ISet<string> udis) {
+        foreach (var item in contentData.Union(settingsData).OfType<JObject>()) {
+            var udi = item.SelectToken("$.udi")?.Value<string>();
+
+            if (udi.HasValue()) {
+                udis.Add(udi);
+            }
+
+            foreach (var property in item.Properties().Where(x => x.Name != "contentTypeKey" && x.Name != "udi")) {
+                TraverseProperty(property, udis);
             }
         }
+    }
 
-        return replacements;
+    private void TraverseObject(JObject json, ISet<string> udis) {
+        var contentData = json.SelectToken("$.contentData") as JArray;
+        var settingsData = json.SelectToken("$.settingsData") as JArray;
+
+        if (contentData != null && settingsData != null) {
+            ParseUdis(contentData, settingsData, udis);
+        } else {
+            foreach (var property in json.Properties()) {
+                TraverseProperty(property, udis);
+            }
+        }
+    }
+
+    private void TraverseProperty(JProperty property, ISet<string> udis) {
+        if (property.Value is JArray array) {
+            foreach (var item in array) {
+                TraverseToken(item, udis);
+            }
+        } else {
+            TraverseToken(property.Value, udis);
+        }
+    }
+
+    private void TraverseToken(JToken token, ISet<string> udis) {
+        var json = token as JObject ?? (token is JValue { Value: string text } ? ParseObject(text) : null);
+
+        if (json != null) {
+            TraverseObject(json, udis);
+        }
     }
 }

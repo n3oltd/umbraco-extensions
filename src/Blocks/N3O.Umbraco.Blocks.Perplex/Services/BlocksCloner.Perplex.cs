@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
+using Umbraco.Extensions;
 using ContentBlocksConstants = Perplex.ContentBlocks.Constants;
 
 namespace N3O.Umbraco.Blocks.Perplex;
@@ -13,11 +14,11 @@ public class PerplexBlocksCloner : IBlocksCloner {
     }
 
     public string Clone(string value) {
-        if (!value.HasValue()) {
+        var json = ParseObject(value);
+
+        if (json == null) {
             return value;
         }
-
-        var json = JObject.Parse(value);
 
         CloneBlock(json["header"] as JObject);
 
@@ -62,7 +63,7 @@ public class PerplexBlocksCloner : IBlocksCloner {
                 continue;
             }
 
-            if (TryParseArray(text, out var nested)) {
+            if (TryParseArray(text, out var nested) && IsNestedContent(nested)) {
                 foreach (var nestedItem in GetObjects(nested)) {
                     CloneNestedContent(nestedItem);
                 }
@@ -74,6 +75,23 @@ public class PerplexBlocksCloner : IBlocksCloner {
 
     private JObject[] GetObjects(JToken token) {
         return (token as JArray)?.OfType<JObject>().ToArray() ?? Array.Empty<JObject>();
+    }
+
+    // key is only a reserved identifier in nested content, so any other array-valued property is left alone
+    private bool IsNestedContent(JArray array) {
+        return array.First is JObject first && first["key"] != null && first["ncContentTypeAlias"] != null;
+    }
+
+    private JObject ParseObject(string json) {
+        if (!json.HasValue() || !json.DetectIsJson()) {
+            return null;
+        }
+
+        try {
+            return JObject.Parse(json);
+        } catch (JsonException) {
+            return null;
+        }
     }
 
     private bool TryParseArray(string text, out JArray array) {
