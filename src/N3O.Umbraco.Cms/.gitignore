@@ -1,3 +1,3 @@
-# Contentment and Diplo.GodMode restore back-office assets here; App_Plugins is
-# tracked source in the *.StaticAssets projects, so keep this rule anchored
+# Contentment and Diplo.GodMode restore back-office assets here; elsewhere in the
+# repo App_Plugins is tracked package source, so keep this rule anchored
 /App_Plugins/
