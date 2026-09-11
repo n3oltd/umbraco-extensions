@@ -19,7 +19,7 @@ public class CloudComposer : Composer {
         builder.Services.AddOpenApiDocument(CloudConstants.BackOfficeApiName);
         builder.Services.Configure<CdnCacheOptions>(builder.Config.GetSection(CloudConstants.Configuration.CdnCacheSection));
 
-        builder.Services.AddSingleton(typeof(ClientFactory<>));
+        builder.Services.AddScoped(typeof(ClientFactory<>));
         builder.Services.AddSingleton<ICdnClient, CdnClient>();
         builder.Services.AddSingleton<ICloudApiHttpClientFactory, CloudApiHttpClientFactory>();
         builder.Services.AddSingleton<ICloudUrl, CloudUrl>();
