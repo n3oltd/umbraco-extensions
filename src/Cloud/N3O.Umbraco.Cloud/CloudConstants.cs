@@ -7,6 +7,8 @@ public static class CloudConstants {
     public const string BackOfficeApiName = "CloudBackOffice";
     
     public static class Clients {
+        public const int MaxConnectionsPerServer = 64;
+
         public static readonly TimeSpan PooledConnectionLifetime = TimeSpan.FromMinutes(2);
         public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(3);
 

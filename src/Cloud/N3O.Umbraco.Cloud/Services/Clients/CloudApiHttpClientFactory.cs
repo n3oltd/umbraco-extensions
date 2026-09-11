@@ -19,7 +19,11 @@ public class CloudApiHttpClientFactory : ICloudApiHttpClientFactory, IDisposable
         _primaryHandler = new SocketsHttpHandler {
             // Connections belong to the primary handler, so every caller shares this one instance. Capping
             // their lifetime is what lets a DNS change be picked up without recycling the handler itself.
-            PooledConnectionLifetime = CloudConstants.Clients.PooledConnectionLifetime
+            PooledConnectionLifetime = CloudConstants.Clients.PooledConnectionLifetime,
+            // Capping connections caps concurrent requests, and the wait for one happens inside the send,
+            // so the client timeout bounds queueing and request together rather than leaving a render
+            // queued behind an unhealthy API for longer than its own budget.
+            MaxConnectionsPerServer = CloudConstants.Clients.MaxConnectionsPerServer
         };
 
         _transientErrorPolicy = HttpPolicyExtensions.HandleTransientHttpError()
