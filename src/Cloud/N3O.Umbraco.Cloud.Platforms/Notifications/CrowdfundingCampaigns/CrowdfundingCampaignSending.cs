@@ -38,20 +38,6 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
         return Task.CompletedTask;
     }
 
-    private void ShowCampaignOnly(ContentVariantDisplay variant) {
-        var campaignAlias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
-
-        variant.Name = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.NewContentName;
-
-        var tabs = variant.Tabs.Where(x => HasProperty(x, campaignAlias)).ToList();
-
-        foreach (var tab in tabs) {
-            tab.Properties = tab.Properties.Where(x => x.Alias.EqualsInvariant(campaignAlias)).ToList();
-        }
-
-        variant.Tabs = tabs;
-    }
-
     private bool HasProperty(Tab<ContentPropertyDisplay> tab, string alias) {
         return tab.Properties?.Any(x => x.Alias.EqualsInvariant(alias)) == true;
     }
@@ -64,5 +50,19 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
                 notification.SetPlatformsUrls(_contentCache.Value, path);
             }
         }
+    }
+
+    private void ShowCampaignOnly(ContentVariantDisplay variant) {
+        var campaignAlias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
+
+        variant.Name = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.NewContentName;
+
+        var tabs = variant.Tabs.Where(x => HasProperty(x, campaignAlias)).ToList();
+
+        foreach (var tab in tabs) {
+            tab.Properties = tab.Properties.Where(x => x.Alias.EqualsInvariant(campaignAlias)).ToList();
+        }
+
+        variant.Tabs = tabs;
     }
 }

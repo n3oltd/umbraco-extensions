@@ -34,6 +34,12 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         }
     }
 
+    private string Clone(string editorAlias, string value) {
+        var cloner = _cloners.FirstOrDefault(x => x.CanClone(editorAlias));
+
+        return cloner == null ? value : cloner.Clone(value);
+    }
+
     private void CopyProperty(IContent crowdfundingCampaign,
                               IContent campaign,
                               string sourceAlias,
@@ -66,11 +72,5 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
 
             crowdfundingCampaign.SetValue(destinationAlias, Clone(destinationEditorAlias, value));
         }
-    }
-
-    private string Clone(string editorAlias, string value) {
-        var cloner = _cloners.FirstOrDefault(x => x.CanClone(editorAlias));
-
-        return cloner == null ? value : cloner.Clone(value);
     }
 }

@@ -40,12 +40,12 @@ public static class PlatformsConstants {
 
             public static class Properties {
                 public const string Campaign = "campaign";
-                public const string PageHeroImage = "pageHeroImage";
                 public const string PageContent = "page";
                 public const string PageContentAdditional = "pageAdditionalContent";
-                public const string PageTemplateHeroImage = "pageTemplateHeroImage";
+                public const string PageHeroImage = "pageHeroImage";
                 public const string PageTemplateContent = "pageTemplate";
                 public const string PageTemplateContentAdditional = "pageTemplateAdditionalContent";
+                public const string PageTemplateHeroImage = "pageTemplateHeroImage";
             }
         }
     }

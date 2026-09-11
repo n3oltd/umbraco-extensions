@@ -24,8 +24,8 @@ public class PerplexBlocksComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         BlocksComponent.LoadDefinitions(builder, WebHostEnvironment);
 
-        builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
         builder.Services.AddTransient<IBlocksCloner, PerplexBlocksCloner>();
+        builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
 
         foreach (var blockDefinition in BlocksComponent.BlockDefinitions) {

@@ -16,8 +16,8 @@ public class BlocksComposer : Composer {
                     t => builder.Services.AddTransient(typeof(IBlocksRendererPostProcessor), t));
 
         builder.Services.AddTransient<IBlockPipeline, BlockPipeline>();
-        builder.Services.AddTransient<IBlocksRenderer, UmbracoBlocksRenderer>();
         builder.Services.AddTransient<IBlocksCloner, UmbracoBlocksCloner>();
+        builder.Services.AddTransient<IBlocksRenderer, UmbracoBlocksRenderer>();
         
         ConfigureRazorTemplating(builder);
     }

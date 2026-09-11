@@ -72,6 +72,10 @@ public class PerplexBlocksCloner : IBlocksCloner {
         }
     }
 
+    private JObject[] GetObjects(JToken token) {
+        return (token as JArray)?.OfType<JObject>().ToArray() ?? Array.Empty<JObject>();
+    }
+
     private bool TryParseArray(string text, out JArray array) {
         try {
             array = JArray.Parse(text);
@@ -82,9 +86,5 @@ public class PerplexBlocksCloner : IBlocksCloner {
 
             return false;
         }
-    }
-
-    private JObject[] GetObjects(JToken token) {
-        return (token as JArray)?.OfType<JObject>().ToArray() ?? Array.Empty<JObject>();
     }
 }
