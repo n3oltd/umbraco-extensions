@@ -29,11 +29,18 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         return cloner == null ? value : cloner.Clone(value);
     }
 
+    private bool CanCopy(IContent content, string alias, out IProperty property) {
+        property = content.HasProperty(alias) ? content.Properties[alias] : null;
+
+        // SetValue throws without a culture on a property that varies by one, and GetValue reads nothing
+        return property != null && !property.PropertyType.VariesByCulture();
+    }
+
     private void CopyProperty(IContent crowdfundingCampaign,
                               IContent campaign,
                               string sourceAlias,
                               IEnumerable<string> destinationAliases) {
-        if (!campaign.HasProperty(sourceAlias)) {
+        if (!CanCopy(campaign, sourceAlias, out var source)) {
             return;
         }
 
@@ -43,23 +50,24 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
             return;
         }
 
-        var sourceEditorAlias = campaign.Properties[sourceAlias].PropertyType.PropertyEditorAlias;
-
         foreach (var destinationAlias in destinationAliases) {
-            if (!crowdfundingCampaign.HasProperty(destinationAlias)) {
+            if (!CanCopy(crowdfundingCampaign, destinationAlias, out var destination)) {
                 continue;
             }
 
-            var destinationEditorAlias = crowdfundingCampaign.Properties[destinationAlias]
-                                                             .PropertyType
-                                                             .PropertyEditorAlias;
+            var editorAlias = destination.PropertyType.PropertyEditorAlias;
 
             // Sites define these properties, so a campaign and its crowdfunding page can differ in editor
-            if (!sourceEditorAlias.EqualsInvariant(destinationEditorAlias)) {
+            if (!source.PropertyType.PropertyEditorAlias.EqualsInvariant(editorAlias)) {
                 continue;
             }
 
-            crowdfundingCampaign.SetValue(destinationAlias, Clone(destinationEditorAlias, value));
+            // An import also creates the node, carrying its own values, so only an empty one is written
+            if (crowdfundingCampaign.GetValue<string>(destinationAlias).HasValue()) {
+                continue;
+            }
+
+            crowdfundingCampaign.SetValue(destinationAlias, Clone(editorAlias, value));
         }
     }
 

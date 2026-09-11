@@ -45,10 +45,17 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                 continue;
             }
 
+            var creating = !content.HasIdentity;
             var campaignKey = content.GetCampaignKey();
 
+            // Cancelling stops the whole notification, so an existing node missing a campaign would
+            // block operations that save in batches, such as sorting the folder it sits in
             if (campaignKey == null) {
-                notification.CancelWithError("A campaign must be selected");
+                if (creating) {
+                    notification.CancelWithError("A campaign must be selected");
+
+                    return Task.CompletedTask;
+                }
 
                 continue;
             }
@@ -56,25 +63,27 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             if (!CampaignAllowsCrowdfunding(campaignKey.Value)) {
                 notification.CancelWithError("No offering allows crowdfunding for the selected campaign");
 
-                continue;
+                return Task.CompletedTask;
             }
 
             if (AnotherCrowdfundingCampaignExistsFor(content, campaignKey.Value)) {
                 notification.CancelWithError("This campaign already has a crowdfunding campaign");
 
-                continue;
+                return Task.CompletedTask;
             }
 
             var campaign = _contentService.GetById(campaignKey.Value);
 
-            if (campaign != null) {
-                var creating = !content.HasIdentity;
+            if (campaign == null) {
+                notification.CancelWithError("The selected campaign no longer exists");
 
-                content.Name = campaign.Name;
+                return Task.CompletedTask;
+            }
 
-                if (creating) {
-                    _contentCopier.CopyFromCampaign(content, campaign);
-                }
+            content.Name = campaign.Name;
+
+            if (creating) {
+                _contentCopier.CopyFromCampaign(content, campaign);
             }
         }
 
