@@ -7,6 +7,7 @@ using N3O.Umbraco.Webhooks.Extensions;
 using N3O.Umbraco.Webhooks.Models;
 using N3O.Umbraco.Webhooks.Receivers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using static N3O.Umbraco.Cloud.Platforms.PlatformsConstants.Webhooks;
@@ -19,13 +20,16 @@ public class PlatformsPagesReceiver : WebhookReceiver {
     private readonly ICdnClient _cdnClient;
     private readonly IJsonProvider _jsonProvider;
     private readonly ILogger<PlatformsPagesReceiver> _logger;
+    private readonly IReadOnlyList<IPlatformsPagesChangedHandler> _changedHandlers;
 
     public PlatformsPagesReceiver(ICdnClient cdnClient,
                                   IJsonProvider jsonProvider,
-                                  ILogger<PlatformsPagesReceiver> logger) {
+                                  ILogger<PlatformsPagesReceiver> logger,
+                                  IEnumerable<IPlatformsPagesChangedHandler> changedHandlers) {
         _cdnClient = cdnClient;
         _jsonProvider = jsonProvider;
         _logger = logger;
+        _changedHandlers = changedHandlers.ToList();
     }
 
     protected override async Task ProcessAsync(WebhookPayload payload, CancellationToken cancellationToken) {
@@ -42,6 +46,10 @@ public class PlatformsPagesReceiver : WebhookReceiver {
         var webhookPage = payload.GetBody<WebhookPlatformsPage>(_jsonProvider);
 
         await EvictAsync(eventType, webhookPage, cancellationToken);
+
+        foreach (var changedHandler in _changedHandlers) {
+            await changedHandler.HandleAsync(cancellationToken);
+        }
     }
 
     private async Task EvictAsync(string eventType,

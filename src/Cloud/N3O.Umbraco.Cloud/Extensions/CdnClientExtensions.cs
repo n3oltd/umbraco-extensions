@@ -16,4 +16,8 @@ public static class CdnClientExtensions {
 
         return content;
     }
+
+    public static void EvictSubscriptionContent(this ICdnClient cdnClient, SubscriptionFile file) {
+        cdnClient.Evict(PublishedFileKinds.Subscription, file.Filename);
+    }
 }
