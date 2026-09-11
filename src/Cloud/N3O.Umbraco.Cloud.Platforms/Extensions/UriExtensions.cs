@@ -17,16 +17,13 @@ public static class UriExtensions {
             return null;
         }
 
-        // Flurl's Url constructor reads a leading // as an authority, so the path is split and
-        // assigned rather than parsed
-        var pathAndQuery = url.IsAbsoluteUri ? url.AbsolutePath : url.OriginalString;
+        var pathAndQuery = url.IsAbsoluteUri ? url.PathAndQuery : url.OriginalString;
         var queryIndex = pathAndQuery.IndexOf('?');
+        var path = queryIndex == -1 ? pathAndQuery : pathAndQuery.Substring(0, queryIndex);
 
-        var rebasedUrl = new Url();
-        rebasedUrl.Scheme = rootUrl.Scheme;
-        rebasedUrl.Host = rootUrl.Host;
-        rebasedUrl.Port = rootUrl.Port;
-        rebasedUrl.Path = queryIndex == -1 ? pathAndQuery : pathAndQuery.Substring(0, queryIndex);
+        var rebasedUrl = new Url(rootUrl.ToString());
+
+        rebasedUrl.AppendPathSegments(path.Split('/', StringSplitOptions.RemoveEmptyEntries));
 
         if (queryIndex != -1) {
             rebasedUrl.Query = pathAndQuery.Substring(queryIndex + 1);
