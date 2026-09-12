@@ -21,6 +21,7 @@ namespace N3O.Umbraco.ValueConverters;
 
 public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePickerValueConverter {
     private readonly ModelsBuilderSettings _modelBuilderSettings;
+    private readonly IContentTypeService _contentTypeService;
 
     public StronglyTypedMultiNodeTreePickerValueConverter(IUmbracoContextAccessor umbracoContextAccessor,
                                                           IMemberService memberService,
@@ -29,8 +30,10 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
                                                           IPublishedContentCache contentCache,
                                                           IPublishedMediaCache mediaCache,
                                                           IPublishedMemberCache memberCache,
-                                                          IOptions<ModelsBuilderSettings> modelBuilderSettings) 
+                                                          IContentTypeService contentTypeService,
+                                                          IOptions<ModelsBuilderSettings> modelBuilderSettings)
         : base(umbracoContextAccessor, memberService, apiContentBuilder, apiMediaBuilder, contentCache, mediaCache, memberCache) {
+        _contentTypeService = contentTypeService;
         _modelBuilderSettings = modelBuilderSettings.Value;
     }
 
@@ -84,8 +87,23 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         return typeof(IEnumerable<>).MakeGenericType(elementType);
     }
 
+    // Umbraco 14 changed the picker's "allow items of type" filter from a list of content type aliases to a
+    // list of content type keys, so pascalizing an entry now yields a name no model has. ModelsHelper answers
+    // a missing name by emitting a dynamic type, so nothing fails here; the property simply hands back a
+    // collection of the wrong element type and the real models are rejected when they are added to it.
+    private string GetContentTypeAlias(string filterEntry) {
+        if (!Guid.TryParse(filterEntry, out var key)) {
+            return filterEntry;
+        }
+
+        return _contentTypeService.Get(key)?.Alias ?? filterEntry;
+    }
+
     private string GetPickerContentTypeName(string filter) {
-        var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Pascalize()).ToList();
+        var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                 .Select(GetContentTypeAlias)
+                                 .Select(x => x.Pascalize())
+                                 .ToList();
 
         if (contentTypes.IsSingle()) {
             return contentTypes.First();
