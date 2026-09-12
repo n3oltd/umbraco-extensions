@@ -94,7 +94,6 @@ public static class PlatformsSchemaConstants {
     }
 
     public static class Tabs {
-        public const string CrowdfunderPageTemplate = "Crowdfunder Page Template";
         public const string CrowdfundingCampaign = "Crowdfunding Campaign";
     }
 }
