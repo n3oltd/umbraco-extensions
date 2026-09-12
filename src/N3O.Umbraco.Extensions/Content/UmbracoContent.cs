@@ -152,6 +152,12 @@ public abstract class UmbracoContent<T> : Value, IUmbracoContent {
             return publishedContent.As<TProperty>();
         } else if (propertyValue is IPublishedElement publishedElement) {
             return publishedElement.As<TProperty>(_content);
+        } else if (propertyValue is IEnumerable<BlockListItem> blockList) {
+            // Nested Content handed back the element itself for a single-item property, so it matched the
+            // branch above. The editor migration rewrites those properties to a Block List, which hands back
+            // a BlockListModel instead, and without this the property answers null however much data it
+            // holds. Nothing throws at the point of the null, so it surfaces somewhere else entirely.
+            return blockList.FirstOrDefault().IfNotNull(x => x.Content.As<TProperty>(_content));
         } else {
             return default;
         }
