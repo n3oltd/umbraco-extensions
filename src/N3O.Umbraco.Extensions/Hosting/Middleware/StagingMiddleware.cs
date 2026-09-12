@@ -50,13 +50,13 @@ public class StagingMiddleware : IMiddleware {
             if (stagingSettings != null) {
                 var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress().ToString();
 
-                if (IsBlocked(remoteIp)) {
+                if (IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
+                    FailedLogins.Remove(remoteIp);
+                } else if (IsBlocked(remoteIp)) {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     
                     return;
-                }
-
-                if (IsAuthorized(context, stagingSettings, remoteIp)) {
+                } else if (HasValidCredentials(context, stagingSettings)) {
                     FailedLogins.Remove(remoteIp);
                 } else {
                     LogFailure(remoteIp);
@@ -81,38 +81,41 @@ public class StagingMiddleware : IMiddleware {
     }
 
     private void LogFailure(string remoteIp) {
-        var failedCount = FailedLogins.GetOrCreate(remoteIp, c => {
-            c.SlidingExpiration = LockOutPeriod;
+        // Set replaces the entry with one that carries no expiration, so applying the lock out period only
+        // when the entry is created leaves every failure after the first stored permanently, which blocks
+        // the address until the process restarts rather than for the lock out period.
+        var failedCount = FailedLogins.Get<int>(remoteIp);
 
-            return 0;
-        });
-
-        FailedLogins.Set(remoteIp, failedCount + 1);
+        FailedLogins.Set(remoteIp,
+                         failedCount + 1,
+                         new MemoryCacheEntryOptions { SlidingExpiration = LockOutPeriod });
     }
 
-    private bool IsAuthorized(HttpContext context, StagingSettingsContent stagingSettings, string remoteIp) {
-        var isAuthorized = false;
-
+    // An allow listed address and a back office cookie are not guessable secrets, so gating them behind the
+    // failed password lock out gives no protection and only strands the people able to lift the block.
+    private bool IsAllowedWithoutCredentials(HttpContext context,
+                                             StagingSettingsContent stagingSettings,
+                                             string remoteIp) {
         if (stagingSettings.Rules.OrEmpty().Any(x => remoteIp.EqualsInvariant(x.RuleIpAddress))) {
-            isAuthorized = true;
-        } else if (IsSignedIntoBackOffice(context)) {
-            isAuthorized = true;
-        } else {
-            string header = context.Request.Headers["Authorization"];
-        
-            if (header.HasValue()) {
-                var auth = header.Split(' ')[1];
-                var usernameAndPassword = Encoding.UTF8.GetString(Convert.FromBase64String(auth)).Split(':');
-                var username = usernameAndPassword[0];
-                var password = usernameAndPassword[1];
-                
-                if (username.EqualsInvariant(stagingSettings.Username) && password == stagingSettings.Password) {
-                    isAuthorized = true;
-                }
-            }
+            return true;
         }
 
-        return isAuthorized;
+        return IsSignedIntoBackOffice(context);
+    }
+
+    private bool HasValidCredentials(HttpContext context, StagingSettingsContent stagingSettings) {
+        string header = context.Request.Headers["Authorization"];
+
+        if (!header.HasValue()) {
+            return false;
+        }
+
+        var auth = header.Split(' ')[1];
+        var usernameAndPassword = Encoding.UTF8.GetString(Convert.FromBase64String(auth)).Split(':');
+        var username = usernameAndPassword[0];
+        var password = usernameAndPassword[1];
+
+        return username.EqualsInvariant(stagingSettings.Username) && password == stagingSettings.Password;
     }
 
     private bool IsSignedIntoBackOffice(HttpContext context) {
