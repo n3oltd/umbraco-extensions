@@ -4,7 +4,6 @@ using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
-using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Events;
-using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Services;
 
@@ -28,18 +26,15 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
 
     private readonly Lazy<ClientFactory<CrowdfundingClient>> _clientFactory;
     private readonly ICrowdfundingCampaignContentCopier _contentCopier;
-    private readonly IContentHelper _contentHelper;
     private readonly IContentService _contentService;
     private readonly ILogger<CrowdfundingCampaignSaving> _logger;
 
     public CrowdfundingCampaignSaving(Lazy<ClientFactory<CrowdfundingClient>> clientFactory,
                                       ICrowdfundingCampaignContentCopier contentCopier,
-                                      IContentHelper contentHelper,
                                       IContentService contentService,
                                       ILogger<CrowdfundingCampaignSaving> logger) {
         _clientFactory = clientFactory;
         _contentCopier = contentCopier;
-        _contentHelper = contentHelper;
         _contentService = contentService;
         _logger = logger;
     }
@@ -70,12 +65,6 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                 foreach (var blocker in blockers) {
                     notification.CancelWithError(blocker);
                 }
-
-                return;
-            }
-
-            if (AnotherCrowdfundingCampaignExistsFor(content, campaignKey.Value)) {
-                notification.CancelWithError("This campaign already has a crowdfunding campaign");
 
                 return;
             }
@@ -138,11 +127,6 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
         var reasons = res.Reasons.OrEmpty().Select(x => x?.Name).Where(x => x.HasValue()).ToList();
 
         return reasons.HasAny() ? reasons : [NotPermitted];
-    }
-
-    private bool AnotherCrowdfundingCampaignExistsFor(IContent crowdfundingCampaign, Guid campaignKey) {
-        return _contentHelper.GetCrowdfundingCampaigns()
-                             .Any(x => x.Key != crowdfundingCampaign.Key && x.GetCampaignKey() == campaignKey);
     }
 
     private static bool IsNotFound(Exception exception) {
