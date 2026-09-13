@@ -20,11 +20,13 @@ namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
 public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavingNotification> {
     private const string CampaignNotFound = "Campaign not found";
+    private const string CheckTimedOut = "Timed out checking whether this campaign allows crowdfunding, please try " +
+                                         "again. If this keeps happening, contact support";
     private const string CheckUnavailable = "Could not check whether this campaign allows crowdfunding, please try " +
                                             "again. If this keeps happening, contact support";
     private const string NotPermitted = "This campaign cannot be used for crowdfunding";
 
-    private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(4);
 
     private readonly Lazy<ClientFactory<CrowdfundingClient>> _clientFactory;
     private readonly ICrowdfundingCampaignContentCopier _contentCopier;
@@ -125,6 +127,12 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                                    campaignKey);
 
                 return [CampaignNotFound];
+            } catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested) {
+                _logger.LogError(ex,
+                                 "Timed out checking whether campaign {CampaignKey} allows crowdfunding",
+                                 campaignKey);
+
+                return [CheckTimedOut];
             } catch (Exception ex) {
                 _logger.LogError(ex,
                                  "Error checking whether campaign {CampaignKey} allows crowdfunding: {Error}",
