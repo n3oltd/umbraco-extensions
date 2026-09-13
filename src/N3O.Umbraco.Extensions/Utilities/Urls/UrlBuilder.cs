@@ -16,6 +16,10 @@ public class UrlBuilder : IUrlBuilder {
     }
     
     public Url ProductionUrl(string url) {
+        if (!url.HasValue()) {
+            throw new Exception("Could not build a production URL as no URL was given");
+        }
+
         var productionBaseUrl = _contentCache.Single<UrlSettingsContent>()?.ProductionBaseUrl;
 
         if (!productionBaseUrl.HasValue()) {
@@ -24,6 +28,10 @@ public class UrlBuilder : IUrlBuilder {
 
         var src = new Url(url);
         var productionUrl = new Url(productionBaseUrl);
+
+        if (productionUrl.IsRelative) {
+            throw new Exception($"Could not build a production URL as {productionBaseUrl.Quote()} is not absolute");
+        }
 
         productionUrl.AppendPathSegment(src.Path);
         productionUrl.Query = src.Query;
