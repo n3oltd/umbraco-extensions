@@ -1,8 +1,6 @@
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
-using System;
-using System.Linq;
 
 namespace N3O.Umbraco.Cloud.Platforms.Validators;
 
@@ -18,15 +16,8 @@ public class CrowdfundingCampaignValidator : ContentValidator {
     public override void Validate(ContentProperties content) {
         var campaignKey = content.GetCampaignKey();
 
-        if (campaignKey != null && AnotherCrowdfundingCampaignExistsFor(content.Id, campaignKey.Value)) {
-            ErrorResult("This campaign already has a crowdfunding campaign");
+        if (campaignKey != null && ContentHelper.AnotherCrowdfundingCampaignExistsFor(content.Id, campaignKey.Value)) {
+            ErrorResult(PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.CampaignTakenError);
         }
-    }
-
-    private bool AnotherCrowdfundingCampaignExistsFor(Guid crowdfundingCampaignKey, Guid campaignKey) {
-        return ContentHelper.GetCrowdfundingCampaigns()
-                            .Any(x => x.Key != crowdfundingCampaignKey &&
-                                      !x.Trashed &&
-                                      x.GetCampaignKey() == campaignKey);
     }
 }
