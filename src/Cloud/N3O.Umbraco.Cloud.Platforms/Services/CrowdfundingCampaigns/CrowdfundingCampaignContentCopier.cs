@@ -90,7 +90,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
             return;
         }
 
-        var value = campaign.GetValue<string>(sourceAlias);
+        var value = campaign.GetValue<string>(sourceAlias, published: true);
 
         foreach (var destinationAlias in destinationAliases) {
             var editorAlias = GetEditorAlias(crowdfundingCampaign, destinationAlias, source);
