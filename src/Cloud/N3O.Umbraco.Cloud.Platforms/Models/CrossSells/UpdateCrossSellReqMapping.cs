@@ -3,6 +3,7 @@ using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Media;
+using N3O.Umbraco.Utilities;
 using System.Linq;
 using Umbraco.Cms.Core.Mapping;
 using Umbraco.Extensions;
@@ -12,9 +13,11 @@ namespace N3O.Umbraco.Cloud.Platforms.Models;
 
 public class UpdateCrossSellReqMapping : IMapDefinition {
     private readonly IMediaUrl _mediaUrl;
+    private readonly IUrlBuilder _urlBuilder;
 
-    public UpdateCrossSellReqMapping(IMediaUrl mediaUrl) {
+    public UpdateCrossSellReqMapping(IMediaUrl mediaUrl, IUrlBuilder urlBuilder) {
         _mediaUrl = mediaUrl;
+        _urlBuilder = urlBuilder;
     }
 
     public void DefineMaps(IUmbracoMapper mapper) {
@@ -30,7 +33,7 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
         dest.Targeting = new CrossSellTargetingReq();
         dest.Targeting.Campaigns = src.TargetCampaigns.OrEmpty().Select(x => x.Id).ToList();
 
-        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl);
+        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _urlBuilder);
         dest.FormState = ctx.Map<CrossSellContent, DonationFormStateReq>(src);
 
         if (src.Content().IsPublished()) {
