@@ -101,13 +101,9 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                                        .ToList();
 
         foreach (var property in invalidProperties) {
-            var results = _propertyValidationService.ValidatePropertyValue(property.PropertyType, property.GetValue());
+            var message = GetInvalidPropertyMessage(property);
 
-            foreach (var result in results) {
-                var message = $"Property {property.PropertyType.Name.Quote()} is invalid: {result.ErrorMessage}";
-
-                notification.Messages.Add(new EventMessage("Warning", message, EventMessageType.Warning));
-            }
+            notification.Messages.Add(new EventMessage("Warning", message, EventMessageType.Warning));
         }
     }
 
@@ -153,6 +149,20 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
         var reasons = res.Reasons.OrEmpty().Select(x => x?.Name).Where(x => x.HasValue()).ToList();
 
         return reasons.HasAny() ? reasons : [NotPermitted];
+    }
+
+    private string GetInvalidPropertyMessage(IProperty property) {
+        var message = $"Property {property.PropertyType.Name.Quote()} is invalid";
+        var reasons = _propertyValidationService.ValidatePropertyValue(property.PropertyType, property.GetValue())
+                                                .Select(x => x.ErrorMessage)
+                                                .Where(x => x.HasValue())
+                                                .ToList();
+
+        if (reasons.HasAny()) {
+            return $"{message}: {reasons.ToCsv(true)}";
+        } else {
+            return message;
+        }
     }
 
     private static bool IsNotFound(Exception exception) {
