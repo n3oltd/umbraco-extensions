@@ -1,22 +1,22 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Clients;
-using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Media;
-using System;
+using N3O.Umbraco.Utilities;
 using System.Linq;
 using Umbraco.Cms.Core.Models;
-using Umbraco.Cms.Core.Models.PublishedContent;
 using MediaConstants = Umbraco.Cms.Core.Constants.Conventions.Media;
 
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class MediaWithCropsExtensions {
-    public static ImageSimpleContentReq ToImageSimpleContentReq(this MediaWithCrops media, IMediaUrl mediaUrl) {
+    public static ImageSimpleContentReq ToImageSimpleContentReq(this MediaWithCrops media,
+                                                                IMediaUrl mediaUrl,
+                                                                IUrlBuilder urlBuilder) {
         if (media == null) {
             return null;
         }
         
         var req = new ImageSimpleContentReq();
-        req.SourceFile = mediaUrl.GetMediaUrl(media, urlMode: UrlMode.Absolute).IfNotNull(x => new Uri(x)).ToString();
+        req.SourceFile = urlBuilder.ProductionUrl(mediaUrl.GetMediaUrl(media)).ToUri().ToString();
         
         req.Main = new ImageSimpleProcessingReq();
         req.Main.Crop = new ImageCropReq();
@@ -28,13 +28,15 @@ public static class MediaWithCropsExtensions {
         return req;
     }
 
-    public static SvgContentReq ToSvgContentReq(this MediaWithCrops media, IMediaUrl mediaUrl) {
+    public static SvgContentReq ToSvgContentReq(this MediaWithCrops media,
+                                                IMediaUrl mediaUrl,
+                                                IUrlBuilder urlBuilder) {
         if (media == null) {
             return null;
         }
         
         var req = new SvgContentReq();
-        req.SourceFile = mediaUrl.GetMediaUrl(media, urlMode: UrlMode.Absolute).IfNotNull(x => new Uri(x)).ToString();
+        req.SourceFile = urlBuilder.ProductionUrl(mediaUrl.GetMediaUrl(media)).ToUri().ToString();
 
         return req;
     }
