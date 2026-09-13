@@ -20,7 +20,7 @@ public class ContentPublisher : IContentPublisher {
     }
 
     public bool HasProperty(string propertyTypeAlias) {
-        var property = _content.Properties.SingleOrDefault(x => x.Alias == propertyTypeAlias);
+        var property = _content.Properties.SingleOrDefault(x => x.Alias.EqualsInvariant(propertyTypeAlias));
 
         return property != null;
     }

@@ -11,6 +11,9 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
+    private static readonly string ContentSyncStampAlias =
+        AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+
     public static Guid? GetCampaignKey(this ContentProperties content) {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
 
@@ -21,6 +24,14 @@ public static class ContentExtensions {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
 
         return ParseCampaignKey(content.GetValue<string>(alias));
+    }
+
+    public static string GetContentSyncStamp(this IContent content) {
+        if (HasContentSyncStamp(content)) {
+            return content.GetValue<string>(ContentSyncStampAlias);
+        } else {
+            return null;
+        }
     }
 
     public static bool IsCampaign(this IContent content, IContentTypeService contentTypeService) {
@@ -71,6 +82,12 @@ public static class ContentExtensions {
         return content.ContentType.Alias.EqualsInvariant(PlatformsConstants.Zakat.Settings.Calculator.Field.Alias);
     }
 
+    public static void SetContentSyncStamp(this IContent content, string stamp) {
+        if (HasContentSyncStamp(content)) {
+            content.SetValue(ContentSyncStampAlias, stamp);
+        }
+    }
+
     private static string GetDataListItem(string value) {
         if (value.DetectIsJson()) {
             return (JToken.Parse(value) as JArray)?.FirstOrDefault()?.ToString();
@@ -85,6 +102,12 @@ public static class ContentExtensions {
         var contentType = contentTypeService.Get(content.ContentTypeId);
 
         return contentType.CompositionAliases().Contains(compositionAlias, true);
+    }
+
+    private static bool HasContentSyncStamp(IContent content) {
+        var property = content.HasProperty(ContentSyncStampAlias) ? content.Properties[ContentSyncStampAlias] : null;
+
+        return property != null && !property.PropertyType.VariesByCulture();
     }
 
     private static Guid? ParseCampaignKey(string value) {

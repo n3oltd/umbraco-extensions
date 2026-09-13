@@ -17,6 +17,16 @@ public class PerplexBlocksCloner : IBlocksCloner {
         return Rewrite(value, () => Guid.NewGuid());
     }
 
+    public bool IsEmpty(string value) {
+        var json = ParseObject(value);
+
+        if (json == null) {
+            return false;
+        } else {
+            return json["header"] is not JObject && GetObjects(json["blocks"]).None();
+        }
+    }
+
     public string StripIdentifiers(string value) {
         var index = 0;
 

@@ -1,4 +1,5 @@
 using N3O.Umbraco.Blocks;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,7 +21,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
     }
 
     public void CopyFromCampaign(IContent crowdfundingCampaign, IContent campaign) {
-        var fingerprints = new Dictionary<string, string>();
+        var fingerprints = new Dictionary<string, string>(GetStamp(crowdfundingCampaign));
 
         foreach (var mapping in GetMappings()) {
             CopyProperty(crowdfundingCampaign, campaign, mapping.Source, mapping.Destinations, fingerprints);
@@ -29,29 +30,30 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         SetStamp(crowdfundingCampaign, fingerprints);
     }
 
-    public IReadOnlyDictionary<string, string> GetUpdatesFromCampaign(IContent crowdfundingCampaign,
-                                                                      IContent campaign) {
-        var updates = new Dictionary<string, string>();
+    public bool UpdateFromCampaign(IContent crowdfundingCampaign, IContent campaign) {
         var fingerprints = new Dictionary<string, string>(GetStamp(crowdfundingCampaign));
 
         if (fingerprints.None()) {
-            return updates;
+            return false;
         }
+
+        var updated = false;
 
         foreach (var mapping in GetMappings()) {
-            UpdateProperty(crowdfundingCampaign,
-                           campaign,
-                           mapping.Source,
-                           mapping.Destinations,
-                           updates,
-                           fingerprints);
+            if (UpdateProperty(crowdfundingCampaign,
+                               campaign,
+                               mapping.Source,
+                               mapping.Destinations,
+                               fingerprints)) {
+                updated = true;
+            }
         }
 
-        if (updates.Any()) {
-            updates[CrowdfundingCampaignProperties.ContentSyncStamp] = JsonConvert.SerializeObject(fingerprints);
+        if (updated) {
+            SetStamp(crowdfundingCampaign, fingerprints);
         }
 
-        return updates;
+        return updated;
     }
 
     private bool CanCopy(IContent content, string alias, out IProperty property) {
@@ -101,7 +103,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
                 continue;
             }
 
-            var written = value.HasValue() ? Clone(editorAlias, value) : null;
+            var written = IsEmpty(editorAlias, value) ? null : Clone(editorAlias, value);
 
             if (written.HasValue()) {
                 crowdfundingCampaign.SetValue(destinationAlias, written);
@@ -112,7 +114,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
     }
 
     private string Fingerprint(string editorAlias, string value) {
-        var canonical = Canonicalise(value);
+        var canonical = IsEmpty(editorAlias, value) ? string.Empty : Canonicalise(value);
         var cloner = GetCloner(editorAlias);
 
         return (cloner == null ? canonical : cloner.StripIdentifiers(canonical)).Sha256();
@@ -148,12 +150,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
 
     private IReadOnlyDictionary<string, string> GetStamp(IContent crowdfundingCampaign) {
         var empty = new Dictionary<string, string>();
-
-        if (!CanCopy(crowdfundingCampaign, CrowdfundingCampaignProperties.ContentSyncStamp, out _)) {
-            return empty;
-        }
-
-        var value = crowdfundingCampaign.GetValue<string>(CrowdfundingCampaignProperties.ContentSyncStamp);
+        var value = crowdfundingCampaign.GetContentSyncStamp();
 
         if (!value.HasValue()) {
             return empty;
@@ -166,14 +163,22 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         }
     }
 
-    private void SetStamp(IContent crowdfundingCampaign, IReadOnlyDictionary<string, string> fingerprints) {
-        if (fingerprints.None() ||
-            !CanCopy(crowdfundingCampaign, CrowdfundingCampaignProperties.ContentSyncStamp, out _)) {
-            return;
-        }
+    private bool IsEmpty(string editorAlias, string value) {
+        var cloner = GetCloner(editorAlias);
 
-        crowdfundingCampaign.SetValue(CrowdfundingCampaignProperties.ContentSyncStamp,
-                                      JsonConvert.SerializeObject(fingerprints));
+        if (!value.HasValue()) {
+            return true;
+        } else if (cloner != null) {
+            return cloner.IsEmpty(value);
+        } else {
+            return Canonicalise(value).IsAnyOf("[]", "{}");
+        }
+    }
+
+    private void SetStamp(IContent crowdfundingCampaign, IReadOnlyDictionary<string, string> fingerprints) {
+        if (fingerprints.Any()) {
+            crowdfundingCampaign.SetContentSyncStamp(JsonConvert.SerializeObject(fingerprints));
+        }
     }
 
     private JToken SortProperties(JToken token) {
@@ -194,17 +199,22 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         return token;
     }
 
-    private void UpdateProperty(IContent crowdfundingCampaign,
+    private bool UpdateProperty(IContent crowdfundingCampaign,
                                 IContent campaign,
                                 string sourceAlias,
                                 IEnumerable<string> destinationAliases,
-                                IDictionary<string, string> updates,
                                 IDictionary<string, string> fingerprints) {
         if (!CanCopy(campaign, sourceAlias, out var source)) {
-            return;
+            return false;
         }
 
-        var value = campaign.GetValue<string>(sourceAlias);
+        var value = campaign.GetValue<string>(sourceAlias, published: true);
+
+        if (IsEmpty(source.PropertyType.PropertyEditorAlias, value)) {
+            return false;
+        }
+
+        var updated = false;
 
         foreach (var destinationAlias in destinationAliases) {
             var editorAlias = GetEditorAlias(crowdfundingCampaign, destinationAlias, source);
@@ -219,15 +229,18 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
                 continue;
             }
 
-            var written = value.HasValue() ? Clone(editorAlias, value) : null;
+            var written = Clone(editorAlias, value);
             var fingerprint = Fingerprint(editorAlias, written);
 
             if (fingerprint.EqualsInvariant(stamped)) {
                 continue;
             }
 
-            updates[destinationAlias] = written;
+            crowdfundingCampaign.SetValue(destinationAlias, written);
             fingerprints[destinationAlias] = fingerprint;
+            updated = true;
         }
+
+        return updated;
     }
 }

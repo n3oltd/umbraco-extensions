@@ -24,10 +24,18 @@ public class UmbracoBlocksCloner : IBlocksCloner {
         return Rewrite(value, udi => new GuidUdi(udi.EntityType, Guid.NewGuid()).ToString());
     }
 
+    public bool IsEmpty(string value) {
+        var contentData = ParseObject(value)?.SelectToken("$.contentData") as JArray;
+
+        return contentData != null && contentData.None();
+    }
+
+    // Every % in the content is doubled so that no content can read as a token
     public string StripIdentifiers(string value) {
         var index = 0;
 
-        return Rewrite(value, udi => $"{udi.EntityType}/{index++}");
+        return Rewrite(value?.Replace("%", "%%", StringComparison.InvariantCulture),
+                       udi => $"%{udi.EntityType}/{index++}%");
     }
 
     private string Escape(string udi) {
