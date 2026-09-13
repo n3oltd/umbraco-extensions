@@ -38,8 +38,8 @@
     <ItemGroup>
         <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.3" />
         <PackageReference Include="SixLabors.ImageSharp.Web.Providers.Azure" Version="3.2.0" />
-        <PackageReference Include="Umbraco.StorageProviders.AzureBlob" Version="13.1.0" />
-        <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" Version="13.1.0" />
+        <PackageReference Include="Umbraco.StorageProviders.AzureBlob" Version="14.1.0" />
+        <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" Version="14.1.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
