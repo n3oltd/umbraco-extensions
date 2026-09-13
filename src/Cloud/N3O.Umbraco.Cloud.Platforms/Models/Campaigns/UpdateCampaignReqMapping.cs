@@ -8,6 +8,7 @@ using N3O.Umbraco.Exceptions;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Giving.Allocations.Lookups;
 using N3O.Umbraco.Media;
+using N3O.Umbraco.Utilities;
 using NodaTime.Extensions;
 using NodaTime.Text;
 using Slugify;
@@ -26,11 +27,16 @@ public class UpdateCampaignReqMapping : IMapDefinition {
     private readonly ICdnClient _cdnClient;
     private readonly IMediaUrl _mediaUrl;
     private readonly ISlugHelper _slugHelper;
+    private readonly IUrlBuilder _urlBuilder;
 
-    public UpdateCampaignReqMapping(ICdnClient cdnClient, IMediaUrl mediaUrl, ISlugHelper slugHelper) {
+    public UpdateCampaignReqMapping(ICdnClient cdnClient,
+                                    IMediaUrl mediaUrl,
+                                    ISlugHelper slugHelper,
+                                    IUrlBuilder urlBuilder) {
         _cdnClient = cdnClient;
         _mediaUrl = mediaUrl;
         _slugHelper = slugHelper;
+        _urlBuilder = urlBuilder;
     }
     
     public void DefineMaps(IUmbracoMapper mapper) {
@@ -46,7 +52,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
         dest.Slug = _slugHelper.GenerateSlug(src.Name);
         dest.Target = target == 0 ? null : target;
 
-        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl);
+        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _urlBuilder);
 
         dest.Order = new CampaignOrderReq();
         dest.Order.Order = src.Content().Parent.Children.FindIndex(x => x.Id == src.Content().Id);
