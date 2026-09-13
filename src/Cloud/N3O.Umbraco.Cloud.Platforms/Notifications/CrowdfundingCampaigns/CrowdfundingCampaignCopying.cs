@@ -8,7 +8,7 @@ namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
 public class CrowdfundingCampaignCopying : INotificationAsyncHandler<ContentCopyingNotification> {
     public Task HandleAsync(ContentCopyingNotification notification, CancellationToken cancellationToken) {
-        if (notification.Copy.IsCrowdfundingCampaign()) {
+        if (!notification.Cancel && notification.Copy.IsCrowdfundingCampaign()) {
             notification.Copy.SetContentSyncStamp(null);
         }
 

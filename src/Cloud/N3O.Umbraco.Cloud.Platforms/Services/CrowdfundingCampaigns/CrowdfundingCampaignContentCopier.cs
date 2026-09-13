@@ -21,7 +21,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
     }
 
     public void CopyFromCampaign(IContent crowdfundingCampaign, IContent campaign) {
-        var fingerprints = new Dictionary<string, string>(GetStamp(crowdfundingCampaign));
+        var fingerprints = new Dictionary<string, string>();
 
         foreach (var mapping in GetMappings()) {
             CopyProperty(crowdfundingCampaign, campaign, mapping.Source, mapping.Destinations, fingerprints);
@@ -95,7 +95,8 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         foreach (var destinationAlias in destinationAliases) {
             var editorAlias = GetEditorAlias(crowdfundingCampaign, destinationAlias, source);
 
-            if (!editorAlias.HasValue() || !IsEmpty(editorAlias, crowdfundingCampaign.GetValue<string>(destinationAlias))) {
+            if (!editorAlias.HasValue() ||
+                !IsEmpty(editorAlias, crowdfundingCampaign.GetValue<string>(destinationAlias))) {
                 continue;
             }
 
@@ -174,6 +175,8 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
     private void SetStamp(IContent crowdfundingCampaign, IReadOnlyDictionary<string, string> fingerprints) {
         if (fingerprints.HasAny()) {
             crowdfundingCampaign.SetContentSyncStamp(JsonConvert.SerializeObject(fingerprints));
+        } else {
+            crowdfundingCampaign.SetContentSyncStamp(null);
         }
     }
 

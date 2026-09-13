@@ -11,8 +11,6 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
-    private static readonly string ContentSyncStampAlias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
-
     public static Guid? GetCampaignKey(this ContentProperties content) {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
 
@@ -26,8 +24,10 @@ public static class ContentExtensions {
     }
 
     public static string GetContentSyncStamp(this IContent content) {
-        if (HasContentSyncStamp(content)) {
-            return content.GetValue<string>(ContentSyncStampAlias);
+        var alias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+
+        if (HasContentSyncStamp(content, alias)) {
+            return content.GetValue<string>(alias);
         } else {
             return null;
         }
@@ -82,8 +82,10 @@ public static class ContentExtensions {
     }
 
     public static void SetContentSyncStamp(this IContent content, string stamp) {
-        if (HasContentSyncStamp(content)) {
-            content.SetValue(ContentSyncStampAlias, stamp);
+        var alias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+
+        if (HasContentSyncStamp(content, alias)) {
+            content.SetValue(alias, stamp);
         }
     }
 
@@ -103,8 +105,8 @@ public static class ContentExtensions {
         return contentType.CompositionAliases().Contains(compositionAlias, true);
     }
 
-    private static bool HasContentSyncStamp(IContent content) {
-        var property = content.HasProperty(ContentSyncStampAlias) ? content.Properties[ContentSyncStampAlias] : null;
+    private static bool HasContentSyncStamp(IContent content, string alias) {
+        var property = content.HasProperty(alias) ? content.Properties[alias] : null;
 
         return property != null && !property.PropertyType.VariesByCulture();
     }

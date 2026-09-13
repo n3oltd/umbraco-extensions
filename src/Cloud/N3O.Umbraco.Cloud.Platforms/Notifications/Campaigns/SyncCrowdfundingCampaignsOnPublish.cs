@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -19,15 +21,18 @@ public class SyncCrowdfundingCampaignsOnPublish : INotificationAsyncHandler<Cont
     private readonly IContentHelper _contentHelper;
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
+    private readonly ILogger<SyncCrowdfundingCampaignsOnPublish> _logger;
 
     public SyncCrowdfundingCampaignsOnPublish(ICrowdfundingCampaignContentCopier contentCopier,
                                               IContentHelper contentHelper,
                                               IContentService contentService,
-                                              IContentTypeService contentTypeService) {
+                                              IContentTypeService contentTypeService,
+                                              ILogger<SyncCrowdfundingCampaignsOnPublish> logger) {
         _contentCopier = contentCopier;
         _contentHelper = contentHelper;
         _contentService = contentService;
         _contentTypeService = contentTypeService;
+        _logger = logger;
     }
 
     public Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken) {
@@ -37,24 +42,45 @@ public class SyncCrowdfundingCampaignsOnPublish : INotificationAsyncHandler<Cont
             var crowdfundingCampaigns = _contentHelper.GetCrowdfundingCampaigns();
 
             foreach (var campaign in campaigns) {
-                UpdateCrowdfundingCampaigns(crowdfundingCampaigns, campaign);
+                UpdateCrowdfundingCampaigns(notification, crowdfundingCampaigns, campaign);
             }
         }
 
         return Task.CompletedTask;
     }
 
-    private void UpdateCrowdfundingCampaigns(IEnumerable<IContent> crowdfundingCampaigns, IContent campaign) {
+    private void UpdateCrowdfundingCampaign(IContent crowdfundingCampaign, IContent campaign) {
+        if (!_contentCopier.UpdateFromCampaign(crowdfundingCampaign, campaign)) {
+            return;
+        }
+
+        if (crowdfundingCampaign.Published && !crowdfundingCampaign.Edited) {
+            _contentService.SaveAndPublish(crowdfundingCampaign);
+        } else {
+            _contentService.Save(crowdfundingCampaign);
+        }
+    }
+
+    private void UpdateCrowdfundingCampaigns(ContentPublishedNotification notification,
+                                             IEnumerable<IContent> crowdfundingCampaigns,
+                                             IContent campaign) {
         foreach (var crowdfundingCampaign in crowdfundingCampaigns) {
-            if (crowdfundingCampaign.GetCampaignKey() != campaign.Key ||
-                !_contentCopier.UpdateFromCampaign(crowdfundingCampaign, campaign)) {
+            if (crowdfundingCampaign.GetCampaignKey() != campaign.Key) {
                 continue;
             }
 
-            if (crowdfundingCampaign.Published && !crowdfundingCampaign.Edited) {
-                _contentService.SaveAndPublish(crowdfundingCampaign);
-            } else {
-                _contentService.Save(crowdfundingCampaign);
+            try {
+                UpdateCrowdfundingCampaign(crowdfundingCampaign, campaign);
+            } catch (Exception ex) {
+                _logger.LogError(ex,
+                                 "Error updating crowdfunding campaign {CrowdfundingCampaignKey} from {CampaignKey}",
+                                 crowdfundingCampaign.Key,
+                                 campaign.Key);
+
+                var message = $"The crowdfunding campaign {crowdfundingCampaign.Name.Quote()} could not be updated " +
+                              "from this campaign";
+
+                notification.Messages.Add(new EventMessage("Warning", message, EventMessageType.Warning));
             }
         }
     }
