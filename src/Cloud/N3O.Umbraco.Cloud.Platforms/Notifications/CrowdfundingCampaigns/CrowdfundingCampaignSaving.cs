@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Models.Validation;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Extensions;
@@ -95,9 +96,10 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
     }
 
     private void AddInvalidPropertyWarnings(ContentSavingNotification notification, IContent content) {
+        var validationContext = PropertyValidationContext.Empty();
         var invalidProperties = content.Properties
                                        .Where(x => !x.PropertyType.VariesByCulture() &&
-                                                   !_propertyValidationService.IsPropertyValid(x, null))
+                                                   !_propertyValidationService.IsPropertyValid(x, validationContext))
                                        .ToList();
 
         foreach (var property in invalidProperties) {
@@ -153,7 +155,9 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
 
     private string GetInvalidPropertyMessage(IProperty property) {
         var message = $"Property {property.PropertyType.Name.Quote()} is invalid";
-        var reasons = _propertyValidationService.ValidatePropertyValue(property.PropertyType, property.GetValue())
+        var reasons = _propertyValidationService.ValidatePropertyValue(property.PropertyType,
+                                                                       property.GetValue(),
+                                                                       PropertyValidationContext.Empty())
                                                 .Select(x => x.ErrorMessage)
                                                 .Where(x => x.HasValue())
                                                 .ToList();

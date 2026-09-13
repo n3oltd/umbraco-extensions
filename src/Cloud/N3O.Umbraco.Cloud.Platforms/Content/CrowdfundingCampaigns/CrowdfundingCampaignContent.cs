@@ -11,4 +11,5 @@ public class CrowdfundingCampaignContent : UmbracoContent<CrowdfundingCampaignCo
     public Guid Key => Content().Key;
 
     public Campaign Campaign => GetValue(x => x.Campaign);
+    public string ContentSyncStamp => GetValue(x => x.ContentSyncStamp);
 }

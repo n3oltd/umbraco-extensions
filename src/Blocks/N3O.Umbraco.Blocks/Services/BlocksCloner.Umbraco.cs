@@ -23,10 +23,17 @@ public class UmbracoBlocksCloner : IBlocksCloner {
         return Rewrite(value, () => Guid.NewGuid().ToString("D"));
     }
 
+    public bool IsEmpty(string value) {
+        var contentData = ParseObject(value)?.SelectToken("$.contentData") as JArray;
+
+        return contentData != null && contentData.None();
+    }
+
     public string StripIdentifiers(string value) {
         var index = 0;
 
-        return Rewrite(value, () => $"key/{index++}");
+        return Rewrite(value?.Replace("%", "%%", StringComparison.InvariantCultureIgnoreCase),
+                       () => $"%key/{index++}%");
     }
 
     private JObject ParseObject(string json) {
