@@ -50,14 +50,17 @@ public class SyncCrowdfundingCampaignsOnPublish : INotificationAsyncHandler<Cont
     }
 
     private void UpdateCrowdfundingCampaign(IContent crowdfundingCampaign, IContent campaign) {
-        if (!_contentCopier.UpdateFromCampaign(crowdfundingCampaign, campaign)) {
+        if (crowdfundingCampaign.GetCampaignKey() != campaign.Key ||
+            !_contentCopier.UpdateFromCampaign(crowdfundingCampaign, campaign)) {
             return;
         }
 
-        if (crowdfundingCampaign.Published && !crowdfundingCampaign.Edited) {
-            _contentService.SaveAndPublish(crowdfundingCampaign);
-        } else {
-            _contentService.Save(crowdfundingCampaign);
+        var saved = crowdfundingCampaign.Published && !crowdfundingCampaign.Edited
+                        ? _contentService.SaveAndPublish(crowdfundingCampaign).Success
+                        : _contentService.Save(crowdfundingCampaign).Success;
+
+        if (!saved) {
+            throw new Exception($"Saving crowdfunding campaign {crowdfundingCampaign.Key} did not succeed");
         }
     }
 
@@ -65,10 +68,6 @@ public class SyncCrowdfundingCampaignsOnPublish : INotificationAsyncHandler<Cont
                                              IEnumerable<IContent> crowdfundingCampaigns,
                                              IContent campaign) {
         foreach (var crowdfundingCampaign in crowdfundingCampaigns) {
-            if (crowdfundingCampaign.GetCampaignKey() != campaign.Key) {
-                continue;
-            }
-
             try {
                 UpdateCrowdfundingCampaign(crowdfundingCampaign, campaign);
             } catch (Exception ex) {

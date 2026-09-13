@@ -73,11 +73,11 @@ public class UmbracoBlocksCloner : IBlocksCloner {
             return value;
         }
 
-        // A culture-aware match also consumes neighbouring characters that collation ignores, deleting them
         var udis = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         TraverseObject(json, udis);
 
+        // A culture-aware match consumes neighbouring characters that collation ignores, deleting them
         var ordered = udis.OrderBy(x => value.IndexOf(x, StringComparison.OrdinalIgnoreCase)).ToList();
 
         foreach (var udi in ordered) {

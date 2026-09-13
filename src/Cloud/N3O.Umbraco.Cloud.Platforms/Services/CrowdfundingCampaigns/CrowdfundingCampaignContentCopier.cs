@@ -95,8 +95,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         foreach (var destinationAlias in destinationAliases) {
             var editorAlias = GetEditorAlias(crowdfundingCampaign, destinationAlias, source);
 
-            if (!editorAlias.HasValue() ||
-                !IsEmpty(editorAlias, crowdfundingCampaign.GetValue<string>(destinationAlias))) {
+            if (!editorAlias.HasValue() || crowdfundingCampaign.GetValue<string>(destinationAlias).HasValue()) {
                 continue;
             }
 
