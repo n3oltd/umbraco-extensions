@@ -45,7 +45,7 @@ public class CrowdfundingCampaignSending : INotificationAsyncHandler<SendingCont
     }
 
     private void HideContentSyncStamp(ContentVariantDisplay variant) {
-        var stampAlias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.ContentSyncStamp;
+        var stampAlias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
 
         foreach (var tab in variant.Tabs.OrEmpty()) {
             tab.Properties = tab.Properties.OrEmpty()

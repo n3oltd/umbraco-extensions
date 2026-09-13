@@ -17,15 +17,16 @@ public class FilterImportedProperties : INotificationAsyncHandler<uSyncImporting
     }
     
     public Task HandleAsync(uSyncImportingItemNotification notification, CancellationToken cancellationToken) {
-        if (notification.Handler is ContentHandler || notification.Handler is MediaHandler) {
-            var info = notification.Item.Element("Info");
-            var contentTypeAlias = info.Element("ContentType").Value;
+        var contentTypeAlias = notification.Item.Element("Info")?.Element("ContentType")?.Value;
+        var properties = notification.Item.Element("Properties");
 
+        if ((notification.Handler is ContentHandler || notification.Handler is MediaHandler) &&
+            contentTypeAlias.HasValue() &&
+            properties != null) {
             var filters = _syncFilters.Where(x => x.IsFilter(contentTypeAlias));
-            var properties = notification.Item.Element("Properties");
-            
+
             foreach (var filter in filters) {
-                foreach (var element in properties.Elements()) {
+                foreach (var element in properties.Elements().ToList()) {
                     if (!filter.ShouldImport(element.Name.LocalName)) {
                         element.Remove();
                     }

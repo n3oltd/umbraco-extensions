@@ -23,6 +23,16 @@ public static class ContentExtensions {
         return ParseCampaignKey(content.GetValue<string>(alias));
     }
 
+    public static string GetContentSyncStamp(this IContent content) {
+        var alias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+
+        if (HasContentSyncStamp(content, alias)) {
+            return content.GetValue<string>(alias);
+        } else {
+            return null;
+        }
+    }
+
     public static bool IsCampaign(this IContent content, IContentTypeService contentTypeService) {
         return HasComposition(contentTypeService, content, AliasHelper<CampaignContent>.ContentTypeAlias());
     }
@@ -71,6 +81,14 @@ public static class ContentExtensions {
         return content.ContentType.Alias.EqualsInvariant(PlatformsConstants.Zakat.Settings.Calculator.Field.Alias);
     }
 
+    public static void SetContentSyncStamp(this IContent content, string stamp) {
+        var alias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+
+        if (HasContentSyncStamp(content, alias)) {
+            content.SetValue(alias, stamp);
+        }
+    }
+
     private static string GetDataListItem(string value) {
         if (value.DetectIsJson()) {
             return (JToken.Parse(value) as JArray)?.FirstOrDefault()?.ToString();
@@ -85,6 +103,12 @@ public static class ContentExtensions {
         var contentType = contentTypeService.Get(content.ContentTypeId);
 
         return contentType.CompositionAliases().Contains(compositionAlias, true);
+    }
+
+    private static bool HasContentSyncStamp(IContent content, string alias) {
+        var property = content.HasProperty(alias) ? content.Properties[alias] : null;
+
+        return property != null && !property.PropertyType.VariesByCulture();
     }
 
     private static Guid? ParseCampaignKey(string value) {
