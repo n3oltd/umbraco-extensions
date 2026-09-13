@@ -66,14 +66,18 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
                 continue;
             }
 
-            var blockers = await GetCrowdfundingBlockersAsync(campaignKey.Value, cancellationToken);
+            var campaignAlias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
 
-            if (blockers.HasAny()) {
-                foreach (var blocker in blockers) {
-                    notification.CancelWithError(blocker);
+            if (creating || content.IsPropertyDirty(campaignAlias)) {
+                var blockers = await GetCrowdfundingBlockersAsync(campaignKey.Value, cancellationToken);
+
+                if (blockers.HasAny()) {
+                    foreach (var blocker in blockers) {
+                        notification.CancelWithError(blocker);
+                    }
+
+                    return;
                 }
-
-                return;
             }
 
             var campaign = _contentService.GetById(campaignKey.Value);
