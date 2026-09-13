@@ -36,6 +36,7 @@ public static class PlatformsConstants {
 
         public static class CrowdfundingCampaign {
             public const string Alias = "platformsCrowdfundingCampaign";
+            public const string CampaignTakenError = "This campaign already has a crowdfunding campaign";
             public const string NewContentName = "New Crowdfunding Campaign";
 
             public static class Properties {

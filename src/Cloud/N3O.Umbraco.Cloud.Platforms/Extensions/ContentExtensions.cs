@@ -11,17 +11,16 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
+    public static Guid? GetCampaignKey(this ContentProperties content) {
+        var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
+
+        return ParseCampaignKey(content.GetPropertyValueByAlias<string>(alias));
+    }
+
     public static Guid? GetCampaignKey(this IContent content) {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
-        var value = content.GetValue<string>(alias);
 
-        if (!value.HasValue()) {
-            return null;
-        } else if (Guid.TryParse(GetDataListItem(value), out var campaignKey)) {
-            return campaignKey;
-        } else {
-            return null;
-        }
+        return ParseCampaignKey(content.GetValue<string>(alias));
     }
 
     public static bool IsCampaign(this IContent content, IContentTypeService contentTypeService) {
@@ -86,5 +85,15 @@ public static class ContentExtensions {
         var contentType = contentTypeService.Get(content.ContentTypeId);
 
         return contentType.CompositionAliases().Contains(compositionAlias, true);
+    }
+
+    private static Guid? ParseCampaignKey(string value) {
+        if (!value.HasValue()) {
+            return null;
+        } else if (Guid.TryParse(GetDataListItem(value), out var campaignKey)) {
+            return campaignKey;
+        } else {
+            return null;
+        }
     }
 }
