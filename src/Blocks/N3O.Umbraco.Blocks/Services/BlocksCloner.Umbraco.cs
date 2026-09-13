@@ -30,12 +30,10 @@ public class UmbracoBlocksCloner : IBlocksCloner {
         return contentData != null && contentData.None();
     }
 
-    // Every % in the content is doubled so that no content can read as a token
     public string StripIdentifiers(string value) {
         var index = 0;
 
-        return Rewrite(value?.Replace("%", "%%", StringComparison.InvariantCulture),
-                       udi => $"%{udi.EntityType}/{index++}%");
+        return Rewrite(value?.Replace("%", "%%", StringComparison.Ordinal), udi => $"%{udi.EntityType}/{index++}%");
     }
 
     private string Escape(string udi) {
@@ -75,11 +73,12 @@ public class UmbracoBlocksCloner : IBlocksCloner {
             return value;
         }
 
-        var udis = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase);
+        // A culture-aware match also consumes neighbouring characters that collation ignores, deleting them
+        var udis = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         TraverseObject(json, udis);
 
-        var ordered = udis.OrderBy(x => value.IndexOf(x, StringComparison.InvariantCultureIgnoreCase)).ToList();
+        var ordered = udis.OrderBy(x => value.IndexOf(x, StringComparison.OrdinalIgnoreCase)).ToList();
 
         foreach (var udi in ordered) {
             if (!UdiParser.TryParse(udi, out var parsed) || parsed is not GuidUdi guidUdi) {
@@ -88,8 +87,8 @@ public class UmbracoBlocksCloner : IBlocksCloner {
 
             var replacement = getReplacement(guidUdi);
 
-            value = value.Replace(udi, replacement, StringComparison.InvariantCultureIgnoreCase);
-            value = value.Replace(Escape(udi), Escape(replacement), StringComparison.InvariantCultureIgnoreCase);
+            value = value.Replace(udi, replacement, StringComparison.OrdinalIgnoreCase);
+            value = value.Replace(Escape(udi), Escape(replacement), StringComparison.OrdinalIgnoreCase);
         }
 
         return value;

@@ -1,5 +1,6 @@
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Extensions;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Events;
@@ -34,7 +35,12 @@ public class CrowdfundingCampaignRollingBack :
             if (!stamp.EqualsInvariant(notification.Entity.GetContentSyncStamp())) {
                 notification.Entity.SetContentSyncStamp(stamp);
 
-                _contentService.Save(notification.Entity);
+                var result = _contentService.Save(notification.Entity);
+
+                if (!result.Success) {
+                    throw new Exception($"Rolled back crowdfunding campaign {notification.Entity.Key} " +
+                                        $"could not keep its content sync stamp: {result.Result}");
+                }
             }
         }
 

@@ -29,7 +29,7 @@ public class CampaignSaved : INotificationAsyncHandler<ContentSavedNotification>
     public Task HandleAsync(ContentSavedNotification notification, CancellationToken cancellationToken) {
         var campaigns = notification.SavedEntities.Where(x => x.IsCampaign(_contentTypeService)).ToList();
 
-        if (campaigns.Any()) {
+        if (campaigns.HasAny()) {
             var crowdfundingCampaigns = _contentHelper.GetCrowdfundingCampaigns();
 
             foreach (var campaign in campaigns) {
@@ -51,7 +51,7 @@ public class CampaignSaved : INotificationAsyncHandler<ContentSavedNotification>
 
             contentPublisher.SetName(campaign.Name);
 
-            if (crowdfundingCampaign.Published) {
+            if (crowdfundingCampaign.Published && !crowdfundingCampaign.Edited) {
                 contentPublisher.SaveAndPublish();
             } else {
                 contentPublisher.SaveUnpublished();

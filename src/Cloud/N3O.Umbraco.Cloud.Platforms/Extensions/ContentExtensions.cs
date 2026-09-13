@@ -11,8 +11,7 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
-    private static readonly string ContentSyncStampAlias =
-        AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+    private static readonly string ContentSyncStampAlias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
 
     public static Guid? GetCampaignKey(this ContentProperties content) {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;

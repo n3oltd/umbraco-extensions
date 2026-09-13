@@ -1,6 +1,7 @@
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
+using N3O.Umbraco.Extensions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -32,7 +33,7 @@ public class SyncCrowdfundingCampaignsOnPublish : INotificationAsyncHandler<Cont
     public Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken) {
         var campaigns = notification.PublishedEntities.Where(x => x.IsCampaign(_contentTypeService)).ToList();
 
-        if (campaigns.Any()) {
+        if (campaigns.HasAny()) {
             var crowdfundingCampaigns = _contentHelper.GetCrowdfundingCampaigns();
 
             foreach (var campaign in campaigns) {
