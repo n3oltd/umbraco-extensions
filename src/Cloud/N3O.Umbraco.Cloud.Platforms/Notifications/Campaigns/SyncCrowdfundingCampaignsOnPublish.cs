@@ -1,3 +1,4 @@
+using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using Umbraco.Cms.Core.Services;
 
 namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
+[SkipDuringSync]
 public class SyncCrowdfundingCampaignsOnPublish : INotificationAsyncHandler<ContentPublishedNotification> {
     private readonly ICrowdfundingCampaignContentCopier _contentCopier;
     private readonly IContentHelper _contentHelper;
