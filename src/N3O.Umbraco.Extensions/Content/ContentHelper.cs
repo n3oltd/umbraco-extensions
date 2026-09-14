@@ -109,15 +109,24 @@ public class ContentHelper : IContentHelper {
     
     public TProperty GetConvertedValue<TConverter, TProperty>(string contentTypeAlias,
                                                               string propertyTypeAlias,
-                                                              object propertyValue)
+                                                              object propertyValue,
+                                                              IPublishedElement owner = null)
         where TConverter : class, IPropertyValueConverter {
-        return GetConvertedValue<TProperty>(typeof(TConverter), contentTypeAlias, propertyTypeAlias, propertyValue);
+        return GetConvertedValue<TProperty>(typeof(TConverter),
+                                            contentTypeAlias,
+                                            propertyTypeAlias,
+                                            propertyValue,
+                                            owner);
     }
 
+    // The owner is the element the property belongs to. Block editors need it from v15: once a block value
+    // carries an expose entry, BlockEditorVarianceHandler reads owner.ContentType.Variations to align block
+    // variance, so converting a block value without one throws.
     public TProperty GetConvertedValue<TProperty>(Type converterType,
                                                   string contentTypeAlias,
                                                   string propertyTypeAlias,
-                                                  object propertyValue) {
+                                                  object propertyValue,
+                                                  IPublishedElement owner = null) {
         var converter = (IPropertyValueConverter) _serviceProvider.Value.GetRequiredService(converterType);
         var publishedContentType = _publishedContentTypeCache.Value.Get(_contentTypeService.Value, contentTypeAlias);
         var publishedPropertyType = publishedContentType?.GetPropertyType(propertyTypeAlias);
@@ -128,8 +137,8 @@ public class ContentHelper : IContentHelper {
             return default;
         }
 
-        var intermediate = converter.ConvertSourceToIntermediate(null, publishedPropertyType, source, false);
-        var result = (TProperty) converter.ConvertIntermediateToObject(null,
+        var intermediate = converter.ConvertSourceToIntermediate(owner, publishedPropertyType, source, false);
+        var result = (TProperty) converter.ConvertIntermediateToObject(owner,
                                                                        publishedPropertyType,
                                                                        PropertyCacheLevel.None,
                                                                        intermediate,

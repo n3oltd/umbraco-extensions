@@ -1,4 +1,14 @@
 <Project>
+    <!-- All 100 packable projects set <AssemblyVersion>/<FileVersion> to $(Version), but CI passes a
+         prerelease version (/property:Version=2026.8.21.45-beta from version-suffix) and those two
+         attributes are numeric-only, so the C# compiler rejects it (CS7034). This file is imported after
+         the csproj body, so it wins; strip the suffix here rather than editing 100 csprojs. No-op when
+         $(Version) carries no suffix, which is why main has never hit this. -->
+    <PropertyGroup Condition="$(Version.Contains('-'))">
+        <AssemblyVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(Version)', '-.*$', ''))</AssemblyVersion>
+        <FileVersion>$(AssemblyVersion)</FileVersion>
+    </PropertyGroup>
+
     <Import Project="$(MSBuildThisFileDirectory)src\build\N3O.Umbraco.ReactPlugin.props"
             Condition="'$(N3OReactPlugin)' == 'true'" />
 

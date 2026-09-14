@@ -62,9 +62,10 @@ public abstract class CmsStartup {
         
         var staticFileOptions = new StaticFileOptions();
         ConfigureStaticFiles(staticFileOptions);
-        
+        RevalidateBackofficePlugins(staticFileOptions);
+
         app.UseWhen(context => !context.Request.Path.StartsWithSegments("/media"),
-                    appBuilder => appBuilder.UseStaticFiles());
+                    appBuilder => appBuilder.UseStaticFiles(staticFileOptions));
         
         app.UseOpenApiWithUI();
 
@@ -98,6 +99,22 @@ public abstract class CmsStartup {
     protected virtual void ConfigureEndpoints(IUmbracoEndpointBuilderContext umbraco) { }
     protected virtual void ConfigureMiddleware(IUmbracoApplicationBuilderContext umbraco) { }
     protected virtual void ConfigureStaticFiles(StaticFileOptions staticFileOptions) { }
+
+    // A backoffice plugin bundle is rebuilt in place under a filename that never changes, so with no
+    // Cache-Control the browser falls back to heuristic freshness and can keep running an old bundle for hours
+    // without ever asking whether it changed. The response already carries an ETag, so requiring revalidation
+    // costs a 304 and makes a deployed plugin take effect on the next load.
+    private static void RevalidateBackofficePlugins(StaticFileOptions staticFileOptions) {
+        var configured = staticFileOptions.OnPrepareResponse;
+
+        staticFileOptions.OnPrepareResponse = ctx => {
+            configured?.Invoke(ctx);
+
+            if (ctx.Context.Request.Path.StartsWithSegments("/App_Plugins")) {
+                ctx.Context.Response.Headers.CacheControl = "no-cache";
+            }
+        };
+    }
 
     private RewriteOptions GetRewriteOptions() {
         var options = new RewriteOptions();

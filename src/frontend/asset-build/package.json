@@ -1,0 +1,27 @@
+{
+    "name": "@n3oltd/asset-build",
+    "version": "17.0.0",
+    "type": "module",
+    "description": "Build-time bundling, minification and content-hashing for N3O Umbraco site assets",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/n3oltd/umbraco-extensions"
+    },
+    "exports": {
+        ".": "./index.js"
+    },
+    "files": [
+        "index.js",
+        "assets.js",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "node --check index.js && node --check assets.js"
+    },
+    "dependencies": {
+        "esbuild": "^0.24.0",
+        "lightningcss": "^1.26.0",
+        "sass": "^1.80.0"
+    }
+}
