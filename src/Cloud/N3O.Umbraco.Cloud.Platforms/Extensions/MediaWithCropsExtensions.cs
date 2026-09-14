@@ -16,7 +16,7 @@ public static class MediaWithCropsExtensions {
         }
         
         var req = new ImageSimpleContentReq();
-        req.SourceFile = urlBuilder.ProductionUrl(mediaUrl.GetMediaUrl(media)).ToUri().ToString();
+        req.SourceFile = urlBuilder.MediaUrl(mediaUrl.GetMediaUrl(media)).ToUri().ToString();
         
         req.Main = new ImageSimpleProcessingReq();
         req.Main.Crop = new ImageCropReq();
@@ -36,7 +36,7 @@ public static class MediaWithCropsExtensions {
         }
         
         var req = new SvgContentReq();
-        req.SourceFile = urlBuilder.ProductionUrl(mediaUrl.GetMediaUrl(media)).ToUri().ToString();
+        req.SourceFile = urlBuilder.MediaUrl(mediaUrl.GetMediaUrl(media)).ToUri().ToString();
 
         return req;
     }

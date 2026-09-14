@@ -9,6 +9,7 @@ namespace N3O.Umbraco.Utilities;
 
 public class UrlSettingsContent : UmbracoContent<UrlSettingsContent> {
     public string DevelopmentBaseUrl => GetValue(x => x.DevelopmentBaseUrl);
+    public string MediaBaseUrl => GetValue(x => x.MediaBaseUrl);
     public string ProductionBaseUrl => GetValue(x => x.ProductionBaseUrl);
     public string StagingBaseUrl => GetValue(x => x.StagingBaseUrl);
     
