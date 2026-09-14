@@ -1,10 +1,10 @@
 {
   "name": "@n3oltd/umbraco-payments-paypal-client",
   "author": "N3O Ltd",
-  "description": "TODO",
+  "description": "Typed HTTP client for the PayPal payments API: captures transactions and subscriptions and manages billing plans.",
   "version": "1.0.0",
   "dependencies": {},
-  "license": "UNLICENSED",
+  "license": "MIT",
   "main": "./dist/index.js",
   "module": "./esm/index.js",
   "types": "./esm/index.d.ts",
@@ -16,7 +16,8 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/n3oltd/umbraco-extensions.git",
+    "directory": "clients/@n3oltd/umbraco-payments-paypal-client"
   },
   "files": [
     "dist/**/*.js",

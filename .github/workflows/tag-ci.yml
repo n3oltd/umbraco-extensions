@@ -175,6 +175,17 @@ jobs:
     secrets:
       npm-token: ${{ secrets.NPM_TOKEN }}
 
+  umbraco-engage-client:
+    name: 'npm Publish @n3oltd/umbraco-engage-client'
+    needs: prepare
+    if: needs.prepare.outputs.should_run == 'true'
+    uses: n3oltd/actions/.github/workflows/npm-publish.yml@main
+    with:
+      working-directory: 'clients/@n3oltd/umbraco-engage-client'
+      version: ${{ needs.prepare.outputs.version }}
+    secrets:
+      npm-token: ${{ secrets.NPM_TOKEN }}
+
   umbraco-giving-client:
     name: 'npm Publish @n3oltd/umbraco-giving-client'
     needs: prepare
