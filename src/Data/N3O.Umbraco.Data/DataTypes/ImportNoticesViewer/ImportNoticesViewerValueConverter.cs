@@ -3,7 +3,6 @@ using N3O.Umbraco.Extensions;
 using N3O.Umbraco.ValueConverters;
 using Newtonsoft.Json;
 using System;
-using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
 
@@ -19,13 +18,7 @@ public class ImportNoticesViewerValueConverter : PropertyValueConverter {
                                                        object source,
                                                        bool preview) {
         var importNotices = default(ImportNotices);
-        var json = default(string);
-        
-        if (source is string str) {
-            json = str;
-        } else if (source is JsonNode jsonNode) {
-            json = jsonNode.ToJsonString();
-        }
+        var json = source.ToSourceValueJson();
 
         if (json.HasValue()) {
             importNotices = JsonConvert.DeserializeObject<ImportNotices>(json);
