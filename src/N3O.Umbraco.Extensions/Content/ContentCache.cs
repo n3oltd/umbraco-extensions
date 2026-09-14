@@ -23,16 +23,15 @@ public class ContentCache : IContentCache {
         var cacheKey = GetCacheKey<T>();
 
         var all = (IReadOnlyList<T>) _typedStore.GetOrAdd(cacheKey, _ => _contentLocator.All<T>());
+
+        _heldContentTypes.AddIfNotExists(AliasHelper<T>.ContentTypeAlias().ToLowerInvariant());
+
         IReadOnlyList<T> res;
 
         if (predicate == null) {
             res = all;
         } else {
             res = all.Where(predicate).ToList();
-        }
-
-        if (res.HasAny()) {
-            _heldContentTypes.AddIfNotExists(AliasHelper<T>.ContentTypeAlias().ToLowerInvariant());
         }
 
         return res;
@@ -43,6 +42,11 @@ public class ContentCache : IContentCache {
         var cacheKey = GetCacheKey(contentTypeAlias);
 
         var all = _untypedStore.GetOrAdd(cacheKey, _ => _contentLocator.All(contentTypeAlias));
+
+        if (contentTypeAlias.HasValue()) {
+            _heldContentTypes.AddIfNotExists(contentTypeAlias.ToLowerInvariant());
+        }
+
         IReadOnlyList<IPublishedContent> res;
 
         if (predicate == null) {
@@ -50,8 +54,6 @@ public class ContentCache : IContentCache {
         } else {
             res = all.Where(predicate).ToList();
         }
-        
-        _heldContentTypes.AddRangeIfNotExists(res.Select(x => x.ContentType.Alias.ToLowerInvariant()));
 
         return res;
     }
@@ -69,23 +71,11 @@ public class ContentCache : IContentCache {
     }
 
     public T Single<T>(Func<T, bool> predicate = null) {
-        var res = All(predicate).SingleOrDefault();
-
-        if (res.HasValue()) {
-            _heldContentTypes.AddIfNotExists(AliasHelper<T>.ContentTypeAlias().ToLowerInvariant());
-        }
-
-        return res;
+        return All(predicate).SingleOrDefault();
     }
-    
-    public IPublishedContent Single(string contentTypeAlias, Func<IPublishedContent, bool> predicate = null) {
-        var res = All(contentTypeAlias, predicate).SingleOrDefault();
-        
-        if (res.HasValue()) {
-            _heldContentTypes.AddIfNotExists(res.ContentType.Alias.ToLowerInvariant());
-        }
 
-        return res;
+    public IPublishedContent Single(string contentTypeAlias, Func<IPublishedContent, bool> predicate = null) {
+        return All(contentTypeAlias, predicate).SingleOrDefault();
     }
 
     public event EventHandler Flushed;

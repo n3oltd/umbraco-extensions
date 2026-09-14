@@ -1,21 +1,21 @@
-﻿using N3O.Umbraco.Data.Lookups;
-using N3O.Umbraco.Data.Models;
+﻿using N3O.Umbraco.Data.Models;
 using NodaTime;
 using Umbraco.Extensions;
+using DataLookups = N3O.Umbraco.Data.Lookups;
 
-namespace N3O.Umbraco.Newsletters.SendGrid.Extensions; 
+namespace N3O.Umbraco.Newsletters.SendGrid.Extensions;
 
 public static class CellExtensions {
     public static object GetValue(this Cell cell) {
-        if (cell.Type == DataTypes.Date) {
+        if (cell.Type == DataLookups.DataTypes.Date) {
             var localDate = (LocalDate?) cell.Value;
 
             return localDate;
-        } else if (cell.Type == DataTypes.Integer) {
+        } else if (cell.Type == DataLookups.DataTypes.Integer) {
             var integer = (int?) cell.Value;
 
             return integer;
-        } else if (cell.Type == DataTypes.Decimal) {
+        } else if (cell.Type == DataLookups.DataTypes.Decimal) {
             var @decimal = (decimal?) cell.Value;
 
             return @decimal;
