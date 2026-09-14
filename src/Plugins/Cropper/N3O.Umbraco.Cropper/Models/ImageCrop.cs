@@ -13,8 +13,8 @@ public class ImageCrop : Value {
         Width = width;
     }
 
-    public string GetProductionUrl(IUrlBuilder urlBuilder) {
-        return urlBuilder.ProductionUrl(Src);
+    public string GetMediaUrl(IUrlBuilder urlBuilder) {
+        return urlBuilder.MediaUrl(Src);
     }
 
     public string Alias { get; }
