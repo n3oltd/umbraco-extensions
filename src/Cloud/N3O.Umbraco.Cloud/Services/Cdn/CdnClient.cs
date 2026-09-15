@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Cloud.Exceptions;
+using N3O.Umbraco.Cloud.Json;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Cloud.Options;
@@ -27,6 +28,7 @@ public class CdnClient : ICdnClient {
     private static readonly ConcurrentDictionary<string, CdnDownloadResult> Downloads = new(StringComparer.InvariantCultureIgnoreCase);
     private static readonly ConcurrentDictionary<string, Lazy<Task<CdnDownloadResult>>> Refreshes = new(StringComparer.InvariantCultureIgnoreCase);
     private static readonly ConcurrentDictionary<string, Instant> InvalidatedAt = new(StringComparer.InvariantCultureIgnoreCase);
+    private static readonly PublishedContentContractResolver PublishedContentContractResolver = new();
 
     private readonly ICloudUrl _cloudUrl;
     private readonly IClock _clock;
@@ -226,7 +228,10 @@ public class CdnClient : ICdnClient {
 
     private T Deserialize<T>(string json, JsonSerializer jsonSerializer) {
         if (jsonSerializer == JsonSerializers.JsonProvider) {
-            return _jsonProvider.DeserializeObject<T>(json);
+            var settings = _jsonProvider.GetSettings();
+            settings.ContractResolver = PublishedContentContractResolver;
+
+            return JsonConvert.DeserializeObject<T>(json, settings);
         } else if (jsonSerializer == JsonSerializers.Simple) {
             return JsonConvert.DeserializeObject<T>(json);
         } else {
