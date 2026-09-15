@@ -1,10 +1,12 @@
-﻿using N3O.Umbraco.Attributes;
+﻿using Microsoft.Extensions.Logging;
+using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Lookups;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,10 +16,14 @@ namespace N3O.Umbraco.Cloud.Platforms.Lookups;
 
 [Order(int.MaxValue)]
 public class ApiElements : ApiLookupsCollection<Element> {
-    private readonly ICdnClient _cdnClient;
+    private static readonly ConcurrentDictionary<string, bool> UnknownKindElementIds = new();
 
-    public ApiElements(ICdnClient cdnClient) {
+    private readonly ICdnClient _cdnClient;
+    private readonly ILogger<ApiElements> _logger;
+
+    public ApiElements(ICdnClient cdnClient, ILogger<ApiElements> logger) {
         _cdnClient = cdnClient;
+        _logger = logger;
     }
     
     protected override async Task<IReadOnlyList<Element>> FetchAsync(CancellationToken cancellationToken) {
@@ -28,10 +34,19 @@ public class ApiElements : ApiLookupsCollection<Element> {
         var elements = new List<Element>();
 
         foreach (var publishedElement in publishedElements.OrEmpty(x => x.Elements)) {
+            if (publishedElement.ElementKind == null) {
+                if (UnknownKindElementIds.TryAdd(publishedElement.Id, true)) {
+                    _logger.LogError("Skipping published element {ElementId} as its kind is not known to this site",
+                                     publishedElement.Id);
+                }
+
+                continue;
+            }
+
             var element = new Element(publishedElement.Id,
                                       publishedElement.Name,
                                       null,
-                                      publishedElement.ElementKind.GetValueOrThrow(),
+                                      publishedElement.ElementKind.Value,
                                       publishedElement.EmbedCode);
             
             elements.Add(element);
