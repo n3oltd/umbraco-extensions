@@ -1,4 +1,14 @@
 <Project>
+    <!-- Web projects carry <RazorCompileOnBuild>false</RazorCompileOnBuild>, copied from the demo site
+         template into every site since, so a view that does not compile is found only when someone
+         navigates to it. Compile them in CI: imported after the csproj body, this overrides that inherited
+         false without editing each project, while local builds keep the faster runtime-compilation loop the
+         templates are edited against. Catches view syntax and type errors — a missing @using, a renamed
+         model property — but not a view that names a real type and binds the wrong one at runtime. -->
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <RazorCompileOnBuild>true</RazorCompileOnBuild>
+    </PropertyGroup>
+
     <Import Project="$(MSBuildThisFileDirectory)src\build\N3O.Umbraco.ReactPlugin.props"
             Condition="'$(N3OReactPlugin)' == 'true'" />
 
