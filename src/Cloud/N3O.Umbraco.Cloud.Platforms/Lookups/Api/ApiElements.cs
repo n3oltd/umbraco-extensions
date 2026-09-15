@@ -6,6 +6,7 @@ using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Lookups;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -15,6 +16,8 @@ namespace N3O.Umbraco.Cloud.Platforms.Lookups;
 
 [Order(int.MaxValue)]
 public class ApiElements : ApiLookupsCollection<Element> {
+    private static readonly ConcurrentDictionary<string, bool> UnknownKindElementIds = new();
+
     private readonly ICdnClient _cdnClient;
     private readonly ILogger<ApiElements> _logger;
 
@@ -32,8 +35,10 @@ public class ApiElements : ApiLookupsCollection<Element> {
 
         foreach (var publishedElement in publishedElements.OrEmpty(x => x.Elements)) {
             if (publishedElement.ElementKind == null) {
-                _logger.LogError("Skipping published element {ElementId} as its kind is not known to this site",
-                                 publishedElement.Id);
+                if (UnknownKindElementIds.TryAdd(publishedElement.Id, true)) {
+                    _logger.LogError("Skipping published element {ElementId} as its kind is not known to this site",
+                                     publishedElement.Id);
+                }
 
                 continue;
             }

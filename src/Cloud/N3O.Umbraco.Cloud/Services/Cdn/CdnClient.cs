@@ -28,7 +28,7 @@ public class CdnClient : ICdnClient {
     private static readonly ConcurrentDictionary<string, CdnDownloadResult> Downloads = new(StringComparer.InvariantCultureIgnoreCase);
     private static readonly ConcurrentDictionary<string, Lazy<Task<CdnDownloadResult>>> Refreshes = new(StringComparer.InvariantCultureIgnoreCase);
     private static readonly ConcurrentDictionary<string, Instant> InvalidatedAt = new(StringComparer.InvariantCultureIgnoreCase);
-    private static readonly PublishedContentContractResolver PublishedContentContractResolver = new();
+    private static readonly PublishedContentJsonContractResolver PublishedContentJsonContractResolver = new();
 
     private readonly ICloudUrl _cloudUrl;
     private readonly IClock _clock;
@@ -229,7 +229,7 @@ public class CdnClient : ICdnClient {
     private T Deserialize<T>(string json, JsonSerializer jsonSerializer) {
         if (jsonSerializer == JsonSerializers.JsonProvider) {
             var settings = _jsonProvider.GetSettings();
-            settings.ContractResolver = PublishedContentContractResolver;
+            settings.ContractResolver = PublishedContentJsonContractResolver;
 
             return JsonConvert.DeserializeObject<T>(json, settings);
         } else if (jsonSerializer == JsonSerializers.Simple) {

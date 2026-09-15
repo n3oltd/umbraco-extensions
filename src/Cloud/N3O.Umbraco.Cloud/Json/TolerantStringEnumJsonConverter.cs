@@ -4,11 +4,11 @@ using System;
 
 namespace N3O.Umbraco.Cloud.Json;
 
-public class TolerantStringEnumConverter : StringEnumConverter {
+public class TolerantStringEnumJsonConverter : StringEnumConverter {
     public override object ReadJson(JsonReader reader,
                                     Type objectType,
                                     object existingValue,
-                                    Newtonsoft.Json.JsonSerializer serializer) {
+                                    JsonSerializer serializer) {
         if (reader.TokenType != JsonToken.String) {
             return base.ReadJson(reader, objectType, existingValue, serializer);
         }

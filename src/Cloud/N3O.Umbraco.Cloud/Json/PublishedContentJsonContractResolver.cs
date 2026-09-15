@@ -8,14 +8,14 @@ using System.Reflection;
 namespace N3O.Umbraco.Cloud.Json;
 
 // Published content is written by the cloud, which may already use enum values this site's generated client lacks.
-public class PublishedContentContractResolver : JsonContractResolver {
-    private static readonly TolerantStringEnumConverter TolerantStringEnumConverter = new();
+public class PublishedContentJsonContractResolver : JsonContractResolver {
+    private static readonly TolerantStringEnumJsonConverter TolerantStringEnumJsonConverter = new();
 
     protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization) {
         var jProperty = base.CreateProperty(member, memberSerialization);
 
         if (jProperty.Converter is StringEnumConverter && IsNullableEnum(jProperty.PropertyType)) {
-            jProperty.Converter = TolerantStringEnumConverter;
+            jProperty.Converter = TolerantStringEnumJsonConverter;
         }
 
         return jProperty;
