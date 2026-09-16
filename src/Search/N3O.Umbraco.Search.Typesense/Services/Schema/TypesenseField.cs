@@ -16,12 +16,12 @@ public static class TypesenseField {
 
     public static string Csv<TDocument>(params Expression<Func<TDocument, object>>[] fieldSelectors)
         where TDocument : SearchDocument {
-        return fieldSelectors.Select(Name).ToCsv();
+        return fieldSelectors.Select(x => Get(x)).ToCsv();
     }
 
-    public static string Name<TDocument>(Expression<Func<TDocument, object>> fieldSelector)
+    public static string Get<TDocument>(Expression<Func<TDocument, object>> pathExpression)
         where TDocument : SearchDocument {
-        return Get(fieldSelector);
+        return Get<TDocument, object>(pathExpression);
     }
 
     public static string Get<T, TField>(Expression<Func<T, TField>> pathExpression) {

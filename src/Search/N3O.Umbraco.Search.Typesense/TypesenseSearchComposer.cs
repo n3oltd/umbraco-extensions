@@ -51,7 +51,9 @@ public class TypesenseSearchComposer : Composer {
 
     private void InitializeTypesenseCollections(IUmbracoBuilder builder) {
         var collections = builder.Config.GetSection("Typesense").Get<TypesenseCollectionsOptions>();
-        
-        TypesenseCollections.Initialize(collections?.Collections);
+
+        if (collections != null) {
+            TypesenseCollections.Initialize(collections.Collections);
+        }
     }
 } 
