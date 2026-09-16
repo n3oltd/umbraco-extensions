@@ -24,6 +24,12 @@ public class PlatformsComposer : Composer {
         
         builder.Services.AddScoped<PlatformsCdnFailureMiddleware>();
         builder.Services.AddScoped<PlatformsTemplatesMiddleware>();
+
+        builder.Services.AddTransient<ILegacyFormReferenceCounter, LegacyFormReferenceCounter>();
+        builder.Services.AddTransient<ILegacyGivingTreeReader, LegacyGivingTreeReader>();
+        builder.Services.AddTransient<IGivingMigrationPlanner, GivingMigrationPlanner>();
+        builder.Services.AddTransient<IGivingMigrationWriter, GivingMigrationWriter>();
+        builder.Services.AddTransient<ILegacyGivingTreeLock, LegacyGivingTreeLock>();
         
         RegisterAll(t => t.ImplementsInterface<ICampaignIdProvider>(),
                     t => builder.Services.AddTransient(typeof(ICampaignIdProvider), t));
