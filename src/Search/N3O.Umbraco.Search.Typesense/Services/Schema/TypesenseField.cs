@@ -19,9 +19,6 @@ public static class TypesenseField {
         return fieldSelectors.Select(Name).ToCsv();
     }
 
-    // Get infers TField from the selector, so naming the document type means naming the field type too.
-    // Pinning TField to object leaves one type argument to write, which is what a view needs when it
-    // names the fields it is querying by. The resulting Convert node is handled by GetMemberExpression.
     public static string Name<TDocument>(Expression<Func<TDocument, object>> fieldSelector)
         where TDocument : SearchDocument {
         return Get(fieldSelector);
