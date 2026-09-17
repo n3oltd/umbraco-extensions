@@ -1,5 +1,6 @@
 using Flurl;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System;
@@ -7,10 +8,16 @@ using System;
 namespace N3O.Umbraco.Utilities;
 
 public class UrlBuilder : IUrlBuilder {
+    private const string MediaUrlKey = "Platforms:MediaUrl";
+
+    private readonly IConfiguration _configuration;
     private readonly IContentCache _contentCache;
     private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public UrlBuilder(IContentCache contentCache, IWebHostEnvironment webHostEnvironment) {
+    public UrlBuilder(IConfiguration configuration,
+                      IContentCache contentCache,
+                      IWebHostEnvironment webHostEnvironment) {
+        _configuration = configuration;
         _contentCache = contentCache;
         _webHostEnvironment = webHostEnvironment;
     }
@@ -20,11 +27,11 @@ public class UrlBuilder : IUrlBuilder {
             throw new Exception("Could not build a media URL as no URL was given");
         }
 
-        var urlSettings = _contentCache.Single<UrlSettingsContent>();
-        var mediaBaseUrl = urlSettings?.MediaBaseUrl;
+        var mediaBaseUrl = _configuration[MediaUrlKey];
 
+        // TODO Drop this leg once every deployed site has the platforms media URL in its configuration.
         if (!mediaBaseUrl.HasValue()) {
-            mediaBaseUrl = urlSettings?.ProductionBaseUrl;
+            mediaBaseUrl = _contentCache.Single<UrlSettingsContent>()?.ProductionBaseUrl;
         }
 
         if (!mediaBaseUrl.HasValue()) {
