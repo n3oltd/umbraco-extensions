@@ -224,7 +224,7 @@ namespace N3O.Umbraco.Cloud.Content.Clients
     }
 
     /// <summary>
-    /// One of 'contentFeed', 'createCrowdfunderButton', 'donationButton', 'donationForm', 'donationPopup', 'featuredCrowdfunders', 'featuredCrowdfundingCampaigns'
+    /// One of 'contentFeed', 'createCrowdfunderButton', 'donationButton', 'donationForm', 'donationPopup', 'featuredCampaigns', 'featuredCrowdfunders'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ElementCategory
@@ -245,107 +245,95 @@ namespace N3O.Umbraco.Cloud.Content.Clients
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopup")]
         DonationPopup = 4,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"featuredCrowdfunders")]
-        FeaturedCrowdfunders = 5,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCampaigns")]
+        FeaturedCampaigns = 5,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"featuredCrowdfundingCampaigns")]
-        FeaturedCrowdfundingCampaigns = 6,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCrowdfunders")]
+        FeaturedCrowdfunders = 6,
 
     }
 
     /// <summary>
-    /// One of 'allFeaturedCrowdfundingCampaigns', 'almostCompleteFeaturedCrowdfunders', 'contentFeedCollection', 'contentFeedCustom', 'contentFeedLibrary', 'createCrowdfunderButton', 'createCrowdfunderButtonCampaign', 'createCrowdfunderButtonCustom', 'customFeaturedCrowdfunders', 'customFeaturedCrowdfundingCampaigns', 'donationButton', 'donationButtonCampaign', 'donationButtonCustom', 'donationButtonMenu', 'donationButtonOffering', 'donationForm', 'donationFormCampaign', 'donationFormCustom', 'donationFormMenu', 'donationFormOffering', 'donationPopup', 'donationPopupCampaign', 'donationPopupCustom', 'donationPopupMenu', 'donationPopupOffering', 'endingSoonFeaturedCrowdfunders', 'popularFeaturedCrowdfunders', 'recentlyAddedFeaturedCrowdfundingCampaigns', 'recentlyStartedFeaturedCrowdfunders'
+    /// One of 'contentFeedCollection', 'contentFeedCustom', 'contentFeedLibrary', 'createCrowdfunderButton', 'createCrowdfunderButtonCampaign', 'createCrowdfunderButtonCustom', 'customFeaturedCrowdfunders', 'donationButton', 'donationButtonCampaign', 'donationButtonCustom', 'donationButtonMenu', 'donationButtonOffering', 'donationForm', 'donationFormCampaign', 'donationFormCustom', 'donationFormMenu', 'donationFormOffering', 'donationPopup', 'donationPopupCampaign', 'donationPopupCustom', 'donationPopupMenu', 'donationPopupOffering', 'featuredCampaigns', 'featuredCampaignsCustom', 'featuredCrowdfunders'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ElementKind
     {
 
-        [System.Runtime.Serialization.EnumMember(Value = @"allFeaturedCrowdfundingCampaigns")]
-        AllFeaturedCrowdfundingCampaigns = 0,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"almostCompleteFeaturedCrowdfunders")]
-        AlmostCompleteFeaturedCrowdfunders = 1,
-
         [System.Runtime.Serialization.EnumMember(Value = @"contentFeedCollection")]
-        ContentFeedCollection = 2,
+        ContentFeedCollection = 0,
 
         [System.Runtime.Serialization.EnumMember(Value = @"contentFeedCustom")]
-        ContentFeedCustom = 3,
+        ContentFeedCustom = 1,
 
         [System.Runtime.Serialization.EnumMember(Value = @"contentFeedLibrary")]
-        ContentFeedLibrary = 4,
+        ContentFeedLibrary = 2,
 
         [System.Runtime.Serialization.EnumMember(Value = @"createCrowdfunderButton")]
-        CreateCrowdfunderButton = 5,
+        CreateCrowdfunderButton = 3,
 
         [System.Runtime.Serialization.EnumMember(Value = @"createCrowdfunderButtonCampaign")]
-        CreateCrowdfunderButtonCampaign = 6,
+        CreateCrowdfunderButtonCampaign = 4,
 
         [System.Runtime.Serialization.EnumMember(Value = @"createCrowdfunderButtonCustom")]
-        CreateCrowdfunderButtonCustom = 7,
+        CreateCrowdfunderButtonCustom = 5,
 
         [System.Runtime.Serialization.EnumMember(Value = @"customFeaturedCrowdfunders")]
-        CustomFeaturedCrowdfunders = 8,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"customFeaturedCrowdfundingCampaigns")]
-        CustomFeaturedCrowdfundingCampaigns = 9,
+        CustomFeaturedCrowdfunders = 6,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButton")]
-        DonationButton = 10,
+        DonationButton = 7,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonCampaign")]
-        DonationButtonCampaign = 11,
+        DonationButtonCampaign = 8,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonCustom")]
-        DonationButtonCustom = 12,
+        DonationButtonCustom = 9,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonMenu")]
-        DonationButtonMenu = 13,
+        DonationButtonMenu = 10,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonOffering")]
-        DonationButtonOffering = 14,
+        DonationButtonOffering = 11,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationForm")]
-        DonationForm = 15,
+        DonationForm = 12,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormCampaign")]
-        DonationFormCampaign = 16,
+        DonationFormCampaign = 13,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormCustom")]
-        DonationFormCustom = 17,
+        DonationFormCustom = 14,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormMenu")]
-        DonationFormMenu = 18,
+        DonationFormMenu = 15,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormOffering")]
-        DonationFormOffering = 19,
+        DonationFormOffering = 16,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopup")]
-        DonationPopup = 20,
+        DonationPopup = 17,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupCampaign")]
-        DonationPopupCampaign = 21,
+        DonationPopupCampaign = 18,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupCustom")]
-        DonationPopupCustom = 22,
+        DonationPopupCustom = 19,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupMenu")]
-        DonationPopupMenu = 23,
+        DonationPopupMenu = 20,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupOffering")]
-        DonationPopupOffering = 24,
+        DonationPopupOffering = 21,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"endingSoonFeaturedCrowdfunders")]
-        EndingSoonFeaturedCrowdfunders = 25,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCampaigns")]
+        FeaturedCampaigns = 22,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"popularFeaturedCrowdfunders")]
-        PopularFeaturedCrowdfunders = 26,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCampaignsCustom")]
+        FeaturedCampaignsCustom = 23,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"recentlyAddedFeaturedCrowdfundingCampaigns")]
-        RecentlyAddedFeaturedCrowdfundingCampaigns = 27,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"recentlyStartedFeaturedCrowdfunders")]
-        RecentlyStartedFeaturedCrowdfunders = 28,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCrowdfunders")]
+        FeaturedCrowdfunders = 24,
 
     }
 
