@@ -1,8 +1,8 @@
-﻿using Humanizer;
-using Microsoft.AspNetCore.Html;
+﻿using Microsoft.AspNetCore.Html;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
+using Perplex.ContentBlocks.Definitions;
 using Perplex.ContentBlocks.Rendering;
 using System;
 using System.Collections.Generic;
@@ -15,13 +15,16 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 namespace N3O.Umbraco.Blocks.Perplex;
 
 public class PerplexBlocksRenderer : BlocksRenderer<ContentBlocks> {
+    private readonly IContentBlockDefinitionRepository _blockDefinitions;
     private readonly ModelsBuilderSettings _modelBuilderSettings;
     private readonly IServiceProvider _serviceProvider;
 
     public PerplexBlocksRenderer(IEnumerable<IBlocksRendererPostProcessor> postProcessors,
+                                 IContentBlockDefinitionRepository blockDefinitions,
                                  IOptions<ModelsBuilderSettings> modelBuilderSettings,
                                  IServiceProvider serviceProvider)
         : base(postProcessors) {
+        _blockDefinitions = blockDefinitions;
         _modelBuilderSettings = modelBuilderSettings.Value;
         _serviceProvider = serviceProvider;
     }
@@ -30,7 +33,7 @@ public class PerplexBlocksRenderer : BlocksRenderer<ContentBlocks> {
         var property = GetPropertyAs(content, propertyName);
         
         var viewModels = GetViewModels(property).ToList();
-        var viewPaths = GetViewPaths(property);
+        var viewPaths = GetViewPaths(property).ToList();
 
         if (viewModels.Count() != viewPaths.Count()) {
             throw new Exception($"{nameof(GetViewModels)} and {nameof(GetViewPaths)} returned different numbers of items");
@@ -68,8 +71,21 @@ public class PerplexBlocksRenderer : BlocksRenderer<ContentBlocks> {
     }
 
     private IEnumerable<string> GetViewPaths(ContentBlocks contentBlocks) {
-        foreach (var blockItem in contentBlocks.Blocks) {
-            yield return $"Views/Blocks/{blockItem.Content.ContentType.Alias.Pascalize()}/Default.cshtml";
+        foreach (var contentBlockModel in contentBlocks.Blocks) {
+            var definition = _blockDefinitions.GetById(contentBlockModel.DefinitionId);
+
+            if (definition == null) {
+                throw new Exception($"No block definition found with id {contentBlockModel.DefinitionId}");
+            }
+
+            var layout = definition.Layouts.FirstOrDefault(x => x.Id == contentBlockModel.LayoutId);
+
+            if (layout == null) {
+                throw new Exception($"Block definition {definition.Name.Quote()} has no layout with id " +
+                                    $"{contentBlockModel.LayoutId}");
+            }
+
+            yield return layout.ViewPath;
         }
     }
 }
