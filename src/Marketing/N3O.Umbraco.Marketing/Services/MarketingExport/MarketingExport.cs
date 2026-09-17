@@ -60,6 +60,32 @@ WHERE v.visitorType = 0
   AND (p.domain = @2 OR p.domain = @3)
   AND s.id IN (SELECT sessionId FROM CandidateSessions)";
 
+    // Cut by pageview rather than by session, so the domain filter is the page's own: a session that
+    // lands on one host variant and browses the other still counts each page against its own host
+    private const string PagesSql = @";WITH CandidateSessions AS (
+    SELECT DISTINCT pv.sessionId
+    FROM umbracoEngageAnalyticsPageview pv
+    WHERE pv.timestamp >= @0 AND pv.timestamp < @1
+),
+SessionFirstPageview AS (
+    SELECT pv.sessionId, MIN(pv.id) AS pageviewId
+    FROM umbracoEngageAnalyticsPageview pv
+    WHERE pv.sessionId IN (SELECT sessionId FROM CandidateSessions)
+    GROUP BY pv.sessionId
+)
+SELECT pv.timestamp AS Timestamp,
+       p.path AS Path,
+       CASE WHEN fp.pageviewId = pv.id THEN 1 ELSE 0 END AS IsEntrance
+FROM umbracoEngageAnalyticsPageview pv
+INNER JOIN umbracoEngageAnalyticsPage p ON p.id = pv.pageId
+INNER JOIN umbracoEngageAnalyticsSession s ON s.id = pv.sessionId
+INNER JOIN umbracoEngageAnalyticsVisitor v ON v.id = s.visitorId
+LEFT JOIN SessionFirstPageview fp ON fp.sessionId = pv.sessionId
+WHERE pv.timestamp >= @0 AND pv.timestamp < @1
+  AND v.visitorType = 0
+  AND p.path IS NOT NULL
+  AND (p.domain = @2 OR p.domain = @3)";
+
     private const string SessionsSql = @";WITH CandidateSessions AS (
     SELECT DISTINCT pv.sessionId
     FROM umbracoEngageAnalyticsPageview pv
@@ -140,6 +166,7 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
 
         List<SessionRow> sessionRows;
         List<GoalCompletionRow> goalRows;
+        List<PageviewRow> pageviewRows;
 
         using (var db = _umbracoDatabaseFactory.CreateDatabase()) {
             sessionRows = await db.FetchAsync<SessionRow>(SessionsSql,
@@ -149,10 +176,12 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
                                                           ToggleWww(host),
                                                           AnonymousVisitorExternalId);
             goalRows = await db.FetchAsync<GoalCompletionRow>(GoalsSql, fromUtc, toUtc, host, ToggleWww(host));
+            pageviewRows = await db.FetchAsync<PageviewRow>(PagesSql, fromUtc, toUtc, host, ToggleWww(host));
         }
 
         var res = new DailyRes();
         res.Goals = ToGoalRows(goalRows, zone, from, to);
+        res.Pages = ToPageRows(pageviewRows, zone, from, to);
         res.Traffic = ToTrafficRows(sessionRows, zone, from, to);
         res.Users = ToUserRows(sessionRows, zone, from, to);
 
@@ -245,6 +274,26 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
             row.Referrer = group.Key.Referrer;
             row.Source = group.Key.Source;
             row.Value = group.Sum(x => x.Row.Value);
+
+            yield return row;
+        }
+    }
+
+    private static IEnumerable<PageRow> ToPageRows(IEnumerable<PageviewRow> rows,
+                                                    DateTimeZone zone,
+                                                    LocalDate from,
+                                                    LocalDate to) {
+        var dated = rows.Select(x => new { Date = ToLocalDate(x.Timestamp, zone), Row = x })
+                        .Where(x => x.Date >= from && x.Date <= to);
+
+        var grouped = dated.GroupBy(x => new { x.Date, Path = Canonicalize(x.Row.Path) });
+
+        foreach (var group in grouped) {
+            var row = new PageRow();
+            row.Date = LocalDatePattern.Iso.Format(group.Key.Date);
+            row.Entrances = group.Count(x => x.Row.IsEntrance);
+            row.Pageviews = group.Count();
+            row.Path = group.Key.Path;
 
             yield return row;
         }
