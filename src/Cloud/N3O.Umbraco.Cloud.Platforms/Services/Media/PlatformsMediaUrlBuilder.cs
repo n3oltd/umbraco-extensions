@@ -21,7 +21,7 @@ public class PlatformsMediaUrlBuilder : IPlatformsMediaUrlBuilder {
             throw new Exception("Could not build a media URL as no URL was given");
         }
 
-        var section = _configuration.GetSection(PlatformsSchemaConstants.ConfigurationSection);
+        var section = _configuration.GetSection(PlatformsConstants.Configuration.Section);
         var mediaBaseUrl = section[nameof(PlatformsFeatureSettings.MediaUrl)];
 
         if (!mediaBaseUrl.HasValue()) {
