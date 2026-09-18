@@ -3,8 +3,6 @@
 namespace N3O.Umbraco.Cloud.Platforms;
 
 public static class PlatformsSchemaConstants {
-    public const string ConfigurationSection = "Platforms";
-
     public static class Migrations {
         public const string PlanName = "N3O.Platforms.Schema";
         public const string PlatformsContentTypesMigrationV2 = "2026.08.31";
