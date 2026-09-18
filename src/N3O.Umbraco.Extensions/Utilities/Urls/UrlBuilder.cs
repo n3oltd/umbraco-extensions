@@ -8,8 +8,6 @@ using System;
 namespace N3O.Umbraco.Utilities;
 
 public class UrlBuilder : IUrlBuilder {
-    private const string MediaUrlKey = "Platforms:MediaUrl";
-
     private readonly IConfiguration _configuration;
     private readonly IContentCache _contentCache;
     private readonly IWebHostEnvironment _webHostEnvironment;
@@ -27,9 +25,8 @@ public class UrlBuilder : IUrlBuilder {
             throw new Exception("Could not build a media URL as no URL was given");
         }
 
-        var mediaBaseUrl = _configuration[MediaUrlKey];
+        var mediaBaseUrl = _configuration.GetSection(UrlSettings.SectionName)[nameof(UrlSettings.MediaBaseUrl)];
 
-        // TODO Drop this leg once every deployed site has the platforms media URL in its configuration.
         if (!mediaBaseUrl.HasValue()) {
             mediaBaseUrl = _contentCache.Single<UrlSettingsContent>()?.ProductionBaseUrl;
         }

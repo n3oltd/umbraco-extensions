@@ -1,5 +1,4 @@
 using N3O.Umbraco.Attributes;
-using N3O.Umbraco.Utilities;
 
 namespace N3O.Umbraco.Cropper.Models;
 
@@ -11,10 +10,6 @@ public class ImageCrop : Value {
         Url = url;
         Height = height;
         Width = width;
-    }
-
-    public string GetMediaUrl(IUrlBuilder urlBuilder) {
-        return urlBuilder.MediaUrl(Src);
     }
 
     public string Alias { get; }
