@@ -8,6 +8,7 @@ using N3O.Umbraco.Lookups;
 using N3O.Umbraco.Utilities;
 using Perplex.ContentBlocks.Categories;
 using Perplex.ContentBlocks.Definitions;
+using Perplex.ContentBlocks.PropertyEditor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,6 +27,9 @@ public class PerplexBlocksComposer : Composer {
 
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
+
+        builder.DataEditors().Exclude<ContentBlocksPropertyEditor>();
+        builder.DataEditors().Add<PerplexContentBlocksPropertyEditor>();
 
         foreach (var blockDefinition in BlocksComponent.BlockDefinitions) {
             RegisterDefaultViewModel(builder, blockDefinition.Alias);
