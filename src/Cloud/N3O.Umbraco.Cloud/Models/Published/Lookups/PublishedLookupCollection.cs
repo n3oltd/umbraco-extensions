@@ -1,9 +1,9 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace N3O.Umbraco.Cloud.Models;
 
-public class PublishedLookupCollection<T> : Value {
+public class PublishedLookupCollection<T> : Value where T : PublishedLookup {
     [JsonProperty("items")]
     public IEnumerable<T> Items { get; set; }
 
