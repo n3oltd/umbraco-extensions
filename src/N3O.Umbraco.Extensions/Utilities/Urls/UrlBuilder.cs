@@ -1,5 +1,6 @@
 using Flurl;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System;
@@ -7,36 +8,44 @@ using System;
 namespace N3O.Umbraco.Utilities;
 
 public class UrlBuilder : IUrlBuilder {
+    private readonly IConfiguration _configuration;
     private readonly IContentCache _contentCache;
     private readonly IWebHostEnvironment _webHostEnvironment;
 
-    public UrlBuilder(IContentCache contentCache, IWebHostEnvironment webHostEnvironment) {
+    public UrlBuilder(IConfiguration configuration,
+                      IContentCache contentCache,
+                      IWebHostEnvironment webHostEnvironment) {
+        _configuration = configuration;
         _contentCache = contentCache;
         _webHostEnvironment = webHostEnvironment;
     }
     
-    public Url ProductionUrl(string url) {
+    public Url MediaUrl(string url) {
         if (!url.HasValue()) {
-            throw new Exception("Could not build a production URL as no URL was given");
+            throw new Exception("Could not build a media URL as no URL was given");
         }
 
-        var productionBaseUrl = _contentCache.Single<UrlSettingsContent>()?.ProductionBaseUrl;
+        var mediaBaseUrl = _configuration.GetSection(UrlSettings.SectionName)[nameof(UrlSettings.MediaBaseUrl)];
 
-        if (!productionBaseUrl.HasValue()) {
-            throw new Exception($"Could not build a production URL for {url.Quote()} as no production base URL is set");
+        if (!mediaBaseUrl.HasValue()) {
+            mediaBaseUrl = _contentCache.Single<UrlSettingsContent>()?.ProductionBaseUrl;
+        }
+
+        if (!mediaBaseUrl.HasValue()) {
+            throw new Exception($"Could not build a media URL for {url.Quote()} as no media base URL is set");
         }
 
         var src = new Url(url);
-        var productionUrl = new Url(productionBaseUrl);
+        var mediaUrl = new Url(mediaBaseUrl);
 
-        if (productionUrl.IsRelative) {
-            throw new Exception($"Could not build a production URL as {productionBaseUrl.Quote()} is not absolute");
+        if (mediaUrl.IsRelative) {
+            throw new Exception($"Could not build a media URL as {mediaBaseUrl.Quote()} is not absolute");
         }
 
-        productionUrl.AppendPathSegment(src.Path);
-        productionUrl.Query = src.Query;
+        mediaUrl.AppendPathSegment(src.Path);
+        mediaUrl.Query = src.Query;
 
-        return productionUrl;
+        return mediaUrl;
     }
 
     public Url Root() {
