@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using N3O.Umbraco.Cloud.Platforms.Models;
 using N3O.Umbraco.ContentTypes;
 using N3O.Umbraco.DataTypes;
 using N3O.Umbraco.Extensions;

@@ -1,4 +1,4 @@
-namespace N3O.Umbraco.Cloud.Platforms;
+namespace N3O.Umbraco.Cloud.Platforms.Models;
 
 public class PlatformsFeatureSettings {
     public bool Enabled { get; set; }

@@ -1,5 +1,6 @@
 using Flurl;
 using Microsoft.Extensions.Configuration;
+using N3O.Umbraco.Cloud.Platforms.Models;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Utilities;
