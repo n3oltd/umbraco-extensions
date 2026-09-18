@@ -4,7 +4,6 @@ using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Media;
-using N3O.Umbraco.Utilities;
 using Slugify;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,13 +16,15 @@ public class UpdateOfferingReqMapping : IMapDefinition {
     public const string PageContentContext = nameof(PageContentContext);
     
     private readonly IMediaUrl _mediaUrl;
+    private readonly IPlatformsMediaUrlBuilder _mediaUrlBuilder;
     private readonly ISlugHelper _slugHelper;
-    private readonly IUrlBuilder _urlBuilder;
 
-    public UpdateOfferingReqMapping(IMediaUrl mediaUrl, ISlugHelper slugHelper, IUrlBuilder urlBuilder) {
+    public UpdateOfferingReqMapping(IMediaUrl mediaUrl,
+                                    IPlatformsMediaUrlBuilder mediaUrlBuilder,
+                                    ISlugHelper slugHelper) {
         _mediaUrl = mediaUrl;
+        _mediaUrlBuilder = mediaUrlBuilder;
         _slugHelper = slugHelper;
-        _urlBuilder = urlBuilder;
     }
     
     public void DefineMaps(IUmbracoMapper mapper) {
@@ -36,7 +37,7 @@ public class UpdateOfferingReqMapping : IMapDefinition {
         dest.Notes = src.Notes;
         dest.Slug = _slugHelper.GenerateSlug(src.Name);
 
-        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _urlBuilder);
+        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);
         
         dest.Order = new OfferingOrderReq();
         dest.Order.Order = src.Content().Parent.Children.FindIndex(x => x.Id == src.Content().Id);

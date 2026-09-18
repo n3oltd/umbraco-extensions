@@ -121,7 +121,7 @@ public class PlatformsSchemaComponent : IComponent {
     }
 
     private bool IsEnabled() {
-        var section = _configuration.GetSection(PlatformsSchemaConstants.ConfigurationSection);
+        var section = _configuration.GetSection(PlatformsConstants.Configuration.Section);
 
         return bool.TryParse(section[nameof(PlatformsFeatureSettings.Enabled)], out var enabled) && enabled;
     }

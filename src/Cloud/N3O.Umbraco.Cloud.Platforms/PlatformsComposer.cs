@@ -24,6 +24,7 @@ public class PlatformsComposer : Composer {
         builder.Services.AddSingleton<INisab, Nisab>();
         builder.Services.AddTransient<IPlatformsContentTypeSeeder, PlatformsContentTypeSeeder>();
         builder.Services.AddTransient<IPlatformsDataTypeSeeder, PlatformsDataTypeSeeder>();
+        builder.Services.AddSingleton<IPlatformsMediaUrlBuilder, PlatformsMediaUrlBuilder>();
         builder.Services.AddSingleton<IPlatformsPageAccessor, PlatformsPageAccessor>();
         builder.Services.AddTransient<IPlatformsSchemaAudit, PlatformsSchemaAudit>();
         builder.Services.AddSingleton<ITagHelperComponent, PlatformsTagHelperComponent>();
