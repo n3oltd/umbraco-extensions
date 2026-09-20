@@ -25,6 +25,7 @@ public static class PlatformsConstants {
 
     public static class CrossSells {
         public const string CompositionAlias = "platformsCrossSell";
+        public const string ContainerAlias = "platformsCrossSells";
         public const string Feedback = "platformsFeedbackCrossSell";
         public const string Fund = "platformsFundCrossSell";
         public const string Qurbani = "platformsQurbaniCrossSell";
@@ -53,6 +54,17 @@ public static class PlatformsConstants {
 
     public static class DonationFormContent {
         public const string CompositionAlias = "platformsDonationFormContent";
+    }
+
+    public static class DonationFormItems {
+        public const string CompositionAlias = "platformsDonationFormItem";
+        public const string Campaign = "platformsCampaignDonationFormItem";
+        public const string Offering = "platformsOfferingDonationFormItem";
+
+        public static class Properties {
+            public const string Campaign = "campaign";
+            public const string Offering = "offering";
+        }
     }
 
     public static class DonationFormState {

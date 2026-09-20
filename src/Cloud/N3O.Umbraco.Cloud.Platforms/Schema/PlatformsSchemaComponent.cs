@@ -57,7 +57,7 @@ public class PlatformsSchemaComponent : IComponent {
             return;
         }
 
-        AllowCrowdfundingCampaignsUnderPlatforms();
+        AllowUnderPlatforms(PlatformsConstants.CrowdfundingCampaigns.Alias);
 
         if (!IsEnabled()) {
             return;
@@ -65,6 +65,8 @@ public class PlatformsSchemaComponent : IComponent {
 
         _dataTypeSeeder.Value.Seed();
         _contentTypeSeeder.Value.Seed();
+
+        AllowUnderPlatforms(PlatformsConstants.CrossSells.ContainerAlias);
 
         var blockers = FindMigrationBlockers();
 
@@ -90,24 +92,24 @@ public class PlatformsSchemaComponent : IComponent {
 
     public void Terminate() { }
 
-    private void AllowCrowdfundingCampaignsUnderPlatforms() {
-        var crowdfundingCampaigns = _contentTypeEditor.Find(PlatformsConstants.CrowdfundingCampaigns.Alias);
+    private void AllowUnderPlatforms(string childAlias) {
+        var child = _contentTypeEditor.Find(childAlias);
         var platforms = _contentTypeEditor.Find(PlatformsConstants.Platforms.Alias);
 
-        if (crowdfundingCampaigns == null ||
+        if (child == null ||
             platforms == null ||
-            platforms.AllowedContentTypes.OrEmpty().Any(x => x.Alias == crowdfundingCampaigns.Alias)) {
+            platforms.AllowedContentTypes.OrEmpty().Any(x => x.Alias == child.Alias)) {
             return;
         }
 
         try {
             var designer = (IDocumentTypeDesigner) _contentTypeEditor.ForExisting(platforms.Alias);
 
-            designer.AllowChildren(crowdfundingCampaigns.Alias);
+            designer.AllowChildren(child.Alias);
 
             designer.Save();
         } catch (Exception ex) {
-            _logger.LogError(ex, "Could not allow {Alias} under the platforms type", crowdfundingCampaigns.Alias);
+            _logger.LogError(ex, "Could not allow {Alias} under the platforms type", child.Alias);
         }
     }
 

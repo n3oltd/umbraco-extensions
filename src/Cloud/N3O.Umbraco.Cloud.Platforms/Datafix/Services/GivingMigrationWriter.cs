@@ -1,0 +1,722 @@
+using Microsoft.Extensions.Logging;
+using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Lookups;
+using N3O.Umbraco.Cloud.Platforms.Models;
+using N3O.Umbraco.Content;
+using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Giving.Allocations.Lookups;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Services;
+using Umbraco.Extensions;
+
+namespace N3O.Umbraco.Cloud.Platforms;
+
+// TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
+public class GivingMigrationWriter : IGivingMigrationWriter {
+    private const int PageSize = 200;
+    private const string NestedContentTypeAlias = "ncContentTypeAlias";
+    private const string NestedKey = "key";
+    private const string NestedName = "name";
+
+    // Copied straight across: the legacy and platforms properties use the same editor over the same lookup ids.
+    private static readonly string[] VerbatimStateAliases = [
+        GivingMigrationConstants.Properties.DonationItem,
+        GivingMigrationConstants.Properties.Scheme,
+        GivingMigrationConstants.Properties.Dimension1,
+        GivingMigrationConstants.Properties.Dimension2,
+        GivingMigrationConstants.Properties.Dimension3
+    ];
+
+    private static readonly string[] CampaignAliases = [
+        GivingMigrationConstants.Properties.AnalyticsTags,
+        GivingMigrationConstants.Properties.HeroImage
+    ];
+
+    private readonly IContentEditor _contentEditor;
+    private readonly IContentService _contentService;
+    private readonly IContentTypeService _contentTypeService;
+    private readonly IDataTypeService _dataTypeService;
+    private readonly ILogger<GivingMigrationWriter> _logger;
+
+    public GivingMigrationWriter(IContentEditor contentEditor,
+                                 IContentService contentService,
+                                 IContentTypeService contentTypeService,
+                                 IDataTypeService dataTypeService,
+                                 ILogger<GivingMigrationWriter> logger) {
+        _contentEditor = contentEditor;
+        _contentService = contentService;
+        _contentTypeService = contentTypeService;
+        _dataTypeService = dataTypeService;
+        _logger = logger;
+    }
+
+    public Guid? GetCampaignsContainerId() {
+        var containers = GetAllOfAlias(GivingMigrationConstants.Platforms.CampaignsAlias);
+
+        return containers.Count == 1 ? containers[0].Key : null;
+    }
+
+    // Umbraco only enforces allowed children in the backoffice, so the container can be created even though the
+    // platforms root does not list it as an allowed child.
+    public Guid? EnsureCrossSellsContainerId() {
+        var containers = GetAllOfAlias(PlatformsConstants.CrossSells.ContainerAlias);
+
+        if (containers.Count == 1) {
+            return containers[0].Key;
+        }
+
+        if (containers.Count > 1) {
+            return null;
+        }
+
+        if (_contentTypeService.Get(PlatformsConstants.CrossSells.ContainerAlias) == null) {
+            return null;
+        }
+
+        var roots = GetAllOfAlias(PlatformsConstants.Platforms.Alias);
+
+        if (roots.Count != 1) {
+            return null;
+        }
+
+        var publisher = _contentEditor.New("Cross Sells",
+                                           roots[0].Key,
+                                           PlatformsConstants.CrossSells.ContainerAlias);
+
+        var result = publisher.SaveAndPublish();
+
+        if (!result.Success) {
+            _logger.LogError("Could not create the cross sells container: {Reason}", DescribeResult(result));
+
+            return null;
+        }
+
+        var created = GetAllOfAlias(PlatformsConstants.CrossSells.ContainerAlias);
+
+        return created.Count == 1 ? created[0].Key : null;
+    }
+
+    public GivingMigrationRunItemRes CreateCampaign(GivingMigrationCampaignRes plan,
+                                                    Guid containerId,
+                                                    GivingPlaceholders placeholders,
+                                                    ICollection<GivingMigrationLedgerEntry> ledger) {
+        var item = NewItem(plan);
+        var campaignId = Guid.NewGuid();
+
+        try {
+            var publisher = _contentEditor.New(plan.CampaignName,
+                                               containerId,
+                                               plan.CampaignContentTypeAlias,
+                                               campaignId);
+
+            var missing = CampaignAliases.Where(x => !publisher.HasProperty(x)).ToList();
+
+            if (missing.Count > 0) {
+                item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+                item.InvalidProperties = missing;
+                item.Message = "The campaign content type is missing required properties: " +
+                               string.Join(", ", missing);
+
+                return item;
+            }
+
+            SetContentPlaceholders(publisher, plan.CampaignName, placeholders, null);
+
+            Set(publisher,
+                GivingMigrationConstants.Properties.AnalyticsTags,
+                BuildAnalyticsTagsJson(plan.CampaignName));
+            Set(publisher,
+                GivingMigrationConstants.Properties.HeroImage,
+                BuildHeroImageJson(plan.CampaignContentTypeAlias, placeholders.HeroImage));
+
+            var result = publisher.SaveAndPublish();
+
+            if (!result.Success) {
+                item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+                item.InvalidProperties = InvalidProperties(result);
+                item.Message = "The campaign could not be published: " + DescribeResult(result);
+
+                return item;
+            }
+
+            ledger.Add(Entry(plan.LegacyFormId,
+                             campaignId,
+                             GivingMigrationConstants.LedgerKinds.Campaign,
+                             plan.CampaignName));
+
+            item.CampaignId = campaignId;
+            item.OfferingsCreated = CreateOfferings(plan, campaignId, placeholders, item, ledger);
+            item.Outcome = GivingMigrationConstants.Outcomes.Created;
+        } catch (Exception ex) {
+            _logger.LogError(ex,
+                             "There was an error migrating legacy form with id {LegacyFormId}",
+                             plan.LegacyFormId.ToString());
+
+            item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+            item.Message = Describe(ex);
+        }
+
+        return item;
+    }
+
+    public GivingMigrationRunItemRes CreateCrossSell(GivingMigrationCrossSellRes plan,
+                                                     Guid containerId,
+                                                     GivingPlaceholders placeholders,
+                                                     ICollection<GivingMigrationLedgerEntry> ledger) {
+        var item = new GivingMigrationRunItemRes();
+        item.LegacyFormId = plan.LegacyUpsellId;
+        item.LegacyPath = plan.LegacyPath;
+        item.CampaignName = plan.CrossSellName;
+
+        var crossSellId = Guid.NewGuid();
+
+        try {
+            var upsell = _contentService.GetById(plan.LegacyUpsellId);
+
+            if (upsell == null) {
+                item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+                item.Message = "The legacy upsell offer could not be found";
+
+                return item;
+            }
+
+            var publisher = _contentEditor.New(plan.CrossSellName,
+                                               containerId,
+                                               plan.CrossSellContentTypeAlias,
+                                               crossSellId);
+
+            // The legacy upsell carries its own description, so it is not overwritten with the placeholder.
+            var description = upsell.GetValue<string>(GivingMigrationConstants.Properties.Description);
+
+            SetContentPlaceholders(publisher, plan.CrossSellName, placeholders, description);
+
+            CopyVerbatimState(upsell, publisher);
+            CopyGiftType(upsell, publisher, GivingMigrationConstants.Properties.GivingType);
+
+            CopySuggestedAmounts(upsell,
+                                 publisher,
+                                 GivingMigrationConstants.Properties.PriceHandles,
+                                 GivingMigrationConstants.Properties.OneTimeSuggestedAmounts,
+                                 plan.CrossSellContentTypeAlias);
+
+            Set(publisher,
+                GivingMigrationConstants.Properties.Stage,
+                BuildDataListJson(GivingMigrationConstants.Stages.Cart));
+
+            var fixedAmount = upsell.GetValue<decimal?>(GivingMigrationConstants.Properties.FixedAmount);
+
+            if (fixedAmount.HasValue) {
+                Set(publisher, GivingMigrationConstants.Properties.Amount, fixedAmount.Value);
+            }
+
+            var result = publisher.SaveAndPublish();
+
+            if (!result.Success) {
+                item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+                item.InvalidProperties = InvalidProperties(result);
+                item.Message = "The cross sell could not be published: " + DescribeResult(result);
+
+                return item;
+            }
+
+            ledger.Add(Entry(plan.LegacyUpsellId,
+                             crossSellId,
+                             GivingMigrationConstants.LedgerKinds.CrossSell,
+                             plan.CrossSellName));
+
+            item.CampaignId = crossSellId;
+            item.Outcome = GivingMigrationConstants.Outcomes.Created;
+        } catch (Exception ex) {
+            _logger.LogError(ex,
+                             "There was an error migrating legacy upsell offer with id {LegacyUpsellId}",
+                             plan.LegacyUpsellId.ToString());
+
+            item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+            item.Message = Describe(ex);
+        }
+
+        return item;
+    }
+
+    public GivingMigrationRunItemRes PublishOfferings(GivingMigrationCampaignRes plan) {
+        var item = NewItem(plan);
+        item.CampaignId = plan.TargetCampaignId;
+
+        if (plan.TargetCampaignId == null) {
+            item.Outcome = GivingMigrationConstants.Outcomes.NotAttempted;
+            item.Message = "The campaign has not been migrated";
+
+            return item;
+        }
+
+        var campaign = _contentService.GetById(plan.TargetCampaignId.Value);
+
+        if (campaign == null) {
+            item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+            item.Message = "The migrated campaign could not be found";
+
+            return item;
+        }
+
+        var published = 0;
+        var failures = new List<string>();
+        var invalidProperties = new List<string>();
+
+        foreach (var child in GetChildren(campaign.Id)) {
+            try {
+                var result = _contentEditor.ForExisting(child.Key).SaveAndPublish();
+
+                if (result.Success) {
+                    published++;
+                } else {
+                    invalidProperties.AddRange(InvalidProperties(result).Select(x => child.Name + "." + x));
+
+                    failures.Add(child.Name + ": " + DescribeResult(result));
+                }
+            } catch (Exception ex) {
+                _logger.LogError(ex,
+                                 "There was an error publishing offering with id {OfferingId}",
+                                 child.Key.ToString());
+
+                failures.Add(child.Name + ": " + Describe(ex));
+            }
+        }
+
+        item.OfferingsCreated = published;
+        item.InvalidProperties = invalidProperties;
+        item.Outcome = failures.Count == 0
+                           ? GivingMigrationConstants.Outcomes.Published
+                           : GivingMigrationConstants.Outcomes.Failed;
+
+        if (failures.Count > 0) {
+            item.Message = string.Join("; ", failures);
+        }
+
+        return item;
+    }
+
+    private int CreateOfferings(GivingMigrationCampaignRes plan,
+                                Guid campaignId,
+                                GivingPlaceholders placeholders,
+                                GivingMigrationRunItemRes item,
+                                ICollection<GivingMigrationLedgerEntry> ledger) {
+        var created = 0;
+        var failures = new List<string>();
+
+        foreach (var offering in plan.Offerings) {
+            if (!offering.OfferingContentTypeAlias.HasValue()) {
+                failures.Add(offering.OfferingName + ": no platforms offering type is mapped for " +
+                             offering.LegacyOptionAlias);
+
+                continue;
+            }
+
+            var offeringId = Guid.NewGuid();
+
+            var publisher = _contentEditor.New(offering.OfferingName,
+                                               campaignId,
+                                               offering.OfferingContentTypeAlias,
+                                               offeringId);
+
+            SetContentPlaceholders(publisher, offering.OfferingName, placeholders, null);
+            CopyOfferingState(offering, publisher);
+
+            var result = publisher.SaveUnpublished();
+
+            if (result.Success) {
+                created++;
+
+                ledger.Add(Entry(offering.LegacyOptionId,
+                                 offeringId,
+                                 GivingMigrationConstants.LedgerKinds.Offering,
+                                 offering.OfferingName));
+            } else {
+                failures.Add(offering.OfferingName + ": " + DescribeResult(result));
+            }
+        }
+
+        if (failures.Count > 0) {
+            item.Message = string.Join("; ", failures);
+        }
+
+        return created;
+    }
+
+    // Each offering type carries its own mandatory state property, so an offering whose state is not copied saves
+    // but can never be published.
+    private void CopyOfferingState(GivingMigrationOfferingRes offering, IContentPublisher publisher) {
+        var option = _contentService.GetById(offering.LegacyOptionId);
+
+        if (option == null) {
+            return;
+        }
+
+        CopyVerbatimState(option, publisher);
+        CopyGiftType(option, publisher, GivingMigrationConstants.Properties.DefaultGivingType);
+
+        CopySuggestedAmounts(option,
+                             publisher,
+                             GivingMigrationConstants.Properties.DonationPriceHandles,
+                             GivingMigrationConstants.Properties.OneTimeSuggestedAmounts,
+                             offering.OfferingContentTypeAlias);
+
+        CopySuggestedAmounts(option,
+                             publisher,
+                             GivingMigrationConstants.Properties.RegularGivingPriceHandles,
+                             GivingMigrationConstants.Properties.RecurringSuggestedAmounts,
+                             offering.OfferingContentTypeAlias);
+    }
+
+    private void CopyVerbatimState(IContent source, IContentPublisher publisher) {
+        foreach (var alias in VerbatimStateAliases) {
+            if (!publisher.HasProperty(alias)) {
+                continue;
+            }
+
+            var value = source.GetValue<string>(alias);
+
+            if (value.HasValue()) {
+                Set(publisher, alias, value);
+            }
+        }
+    }
+
+    // Both sides are data lists but over different lookups, so the ids have to be translated rather than copied.
+    private void CopyGiftType(IContent source, IContentPublisher publisher, string sourceAlias) {
+        var target = GivingMigrationConstants.Properties.SuggestedGiftType;
+
+        if (!publisher.HasProperty(target)) {
+            return;
+        }
+
+        var value = source.GetValue<string>(sourceAlias);
+
+        if (!value.HasValue()) {
+            return;
+        }
+
+        var giftTypes = ParseDataList(value).Select(MapGiftType)
+                                            .Where(x => x != null)
+                                            .Distinct()
+                                            .ToList();
+
+        if (giftTypes.Count > 0) {
+            Set(publisher, target, JsonConvert.SerializeObject(giftTypes));
+        }
+    }
+
+    // Publishing maps the allocation for the outbound webhook, and the framework dereferences the donation item
+    // or scheme lookup without a null check. An unresolved lookup therefore surfaces as a bare
+    // NullReferenceException, which says nothing about the actual cause.
+    private static string Describe(Exception ex) {
+        foreach (var inner in Flatten(ex)) {
+            if (inner is NullReferenceException &&
+                inner.StackTrace?.Contains(nameof(DonationFormStateContent.GetFundDimensionOptions),
+                                           StringComparison.Ordinal) == true) {
+                return "The donation item or scheme could not be resolved, so the allocation could not be mapped. " +
+                       "These lookups are served by the cloud, so this normally means the site is not reaching it " +
+                       "with a valid subscription.";
+            }
+        }
+
+        return ex.Message;
+    }
+
+    private static IEnumerable<Exception> Flatten(Exception ex) {
+        while (ex != null) {
+            if (ex is AggregateException aggregate) {
+                foreach (var inner in aggregate.Flatten().InnerExceptions.SelectMany(Flatten)) {
+                    yield return inner;
+                }
+
+                yield break;
+            }
+
+            yield return ex;
+
+            ex = ex.InnerException;
+        }
+    }
+
+    private static string BuildAnalyticsTagsJson(string campaignName) {
+        var tag = new {
+            icon = "icon-stop",
+            name = GivingMigrationConstants.Placeholders.AnalyticsTagName,
+            value = campaignName,
+            description = ""
+        };
+
+        return JsonConvert.SerializeObject(new[] { tag });
+    }
+
+    private static string MapGiftType(string givingTypeId) {
+        if (givingTypeId.EqualsInvariant(GivingTypes.Donation.Id)) {
+            return GiftTypes.OneTime.Id;
+        }
+
+        if (givingTypeId.EqualsInvariant(GivingTypes.RegularGiving.Id)) {
+            return GiftTypes.Recurring.Id;
+        }
+
+        return null;
+    }
+
+    private void CopySuggestedAmounts(IContent source,
+                                      IContentPublisher publisher,
+                                      string sourceAlias,
+                                      string targetAlias,
+                                      string targetContentTypeAlias) {
+        if (!publisher.HasProperty(targetAlias)) {
+            return;
+        }
+
+        var value = source.GetValue<string>(sourceAlias);
+
+        if (!value.HasValue()) {
+            return;
+        }
+
+        var elementAlias = ResolveNestedElementAlias(targetContentTypeAlias, targetAlias);
+
+        if (!elementAlias.HasValue()) {
+            _logger.LogWarning("Could not resolve the nested element alias for {ContentType}.{Property}",
+                               targetContentTypeAlias,
+                               targetAlias);
+
+            return;
+        }
+
+        var rewritten = RewriteNestedContent(value, elementAlias);
+
+        if (rewritten.HasValue()) {
+            Set(publisher, targetAlias, rewritten);
+        }
+    }
+
+    private static string RewriteNestedContent(string json, string elementAlias) {
+        JArray items;
+
+        try {
+            items = JArray.Parse(json);
+        } catch (JsonException) {
+            return null;
+        }
+
+        foreach (var item in items.OfType<JObject>()) {
+            item[NestedContentTypeAlias] = elementAlias;
+            item[NestedKey] = Guid.NewGuid().ToString();
+            item.Remove(NestedName);
+        }
+
+        return items.ToString(Formatting.None);
+    }
+
+    // The element alias is read from the target data type rather than assumed, because a site seeded before the
+    // element was renamed still uses the old alias and the seeder never updates an existing type.
+    private string ResolveNestedElementAlias(string contentTypeAlias, string propertyAlias) {
+        var configuration = GetDataTypeConfiguration(contentTypeAlias, propertyAlias);
+
+        if (Find(configuration, "contentTypes") is not JArray contentTypes) {
+            return null;
+        }
+
+        return contentTypes.OfType<JObject>()
+                           .Select(x => Find(x, "ncAlias")?.ToString() ?? Find(x, "alias")?.ToString())
+                           .FirstOrDefault(x => x.HasValue());
+    }
+
+    // The data type configuration is a strongly typed object, so JObject.FromObject emits the CLR property names
+    // rather than the camel cased ones stored in the database. Lookups therefore have to ignore case.
+    private static JToken Find(JObject json, string name) {
+        return json?.Property(name, StringComparison.OrdinalIgnoreCase)?.Value;
+    }
+
+    private JObject GetDataTypeConfiguration(string contentTypeAlias, string propertyAlias) {
+        var contentType = _contentTypeService.Get(contentTypeAlias);
+
+        var propertyType = contentType?.CompositionPropertyTypes
+                                       .FirstOrDefault(x => x.Alias.EqualsInvariant(propertyAlias));
+
+        if (propertyType == null) {
+            return null;
+        }
+
+        var dataType = _dataTypeService.GetDataType(propertyType.DataTypeKey);
+
+        return dataType?.Configuration == null ? null : JObject.FromObject(dataType.Configuration);
+    }
+
+    private void SetContentPlaceholders(IContentPublisher publisher,
+                                        string name,
+                                        GivingPlaceholders placeholders,
+                                        string description) {
+        Set(publisher,
+            GivingMigrationConstants.Properties.Description,
+            description.HasValue() ? description : name);
+
+        Set(publisher, GivingMigrationConstants.Properties.Summary, name);
+        Set(publisher, GivingMigrationConstants.Properties.Icon, BuildMediaPickerJson(placeholders.Icon.Id));
+        Set(publisher, GivingMigrationConstants.Properties.Image, BuildMediaPickerJson(placeholders.Image.Id));
+    }
+
+    private static void Set(IContentPublisher publisher, string alias, object value) {
+        if (!publisher.HasProperty(alias)) {
+            return;
+        }
+
+        publisher.Content.Property<RawPropertyBuilder>(alias).Set(value);
+    }
+
+    private string BuildHeroImageJson(string contentTypeAlias, GivingPlaceholderMedia media) {
+        var crops = GetCropDefinitions(contentTypeAlias, GivingMigrationConstants.Properties.HeroImage)
+                    .Select(x => AutoCrop(media.Width, media.Height, x.Item1, x.Item2))
+                    .ToList();
+
+        var source = new {
+            src = media.Src,
+            mediaId = media.MediaFileId,
+            filename = media.Filename,
+            width = media.Width,
+            height = media.Height,
+            crops
+        };
+
+        return JsonConvert.SerializeObject(source);
+    }
+
+    private IReadOnlyList<Tuple<int, int>> GetCropDefinitions(string contentTypeAlias, string propertyAlias) {
+        var configuration = GetDataTypeConfiguration(contentTypeAlias, propertyAlias);
+
+        if (Find(configuration, "cropDefinitions") is not JArray definitions) {
+            return [];
+        }
+
+        return definitions.Select(x => Tuple.Create(GetInt(x, "width"), GetInt(x, "height")))
+                          .Where(x => x.Item1 > 0 && x.Item2 > 0)
+                          .ToList();
+    }
+
+    private static IReadOnlyList<string> ParseDataList(string json) {
+        try {
+            return JArray.Parse(json).Select(x => x.ToString()).Where(x => x.HasValue()).ToList();
+        } catch (JsonException) {
+            return [];
+        }
+    }
+
+    private static string BuildDataListJson(string value) {
+        return JsonConvert.SerializeObject(new[] { value });
+    }
+
+    private static int GetInt(JToken token, string name) {
+        var value = Find(token as JObject, name);
+
+        return value == null ? 0 : value.Value<int>();
+    }
+
+    private static object AutoCrop(int imageWidth, int imageHeight, int cropWidth, int cropHeight) {
+        var aspectRatio = cropWidth / (decimal) cropHeight;
+
+        var candidates = new List<Tuple<int, int, int, int>>();
+        candidates.Add(Tuple.Create(0, 0, imageWidth, (int) (imageWidth / aspectRatio)));
+        candidates.Add(Tuple.Create(0, 0, (int) (imageHeight * aspectRatio), imageHeight));
+        candidates.Add(Tuple.Create((int) Math.Max(0, (imageWidth - cropWidth) / 2m),
+                                    (int) Math.Max(0, (imageHeight - cropHeight) / 2m),
+                                    Math.Min(cropWidth, imageWidth),
+                                    Math.Min(cropHeight, imageHeight)));
+
+        var crop = candidates.Where(x => x.Item1 + x.Item3 <= imageWidth && x.Item2 + x.Item4 <= imageHeight)
+                             .OrderByDescending(x => (long) x.Item3 * x.Item4)
+                             .FirstOrDefault();
+
+        if (crop == null) {
+            return new { x = 0, y = 0, width = imageWidth, height = imageHeight };
+        }
+
+        return new { x = crop.Item1, y = crop.Item2, width = crop.Item3, height = crop.Item4 };
+    }
+
+    private static string BuildMediaPickerJson(Guid mediaId) {
+        var value = new[] { new { key = Guid.NewGuid(), mediaKey = mediaId } };
+
+        return JsonConvert.SerializeObject(value);
+    }
+
+    private IReadOnlyList<IContent> GetAllOfAlias(string contentTypeAlias) {
+        var contentType = _contentTypeService.Get(contentTypeAlias);
+
+        if (contentType == null) {
+            return [];
+        }
+
+        var items = new List<IContent>();
+        long page = 0;
+        long total;
+
+        do {
+            var results = _contentService.GetPagedOfType(contentType.Id, page, PageSize, out total, null);
+
+            items.AddRange(results.Where(x => !x.Trashed));
+
+            page++;
+        } while (page * PageSize < total);
+
+        return items;
+    }
+
+    private IReadOnlyList<IContent> GetChildren(int parentId) {
+        var children = new List<IContent>();
+        long page = 0;
+        long total;
+
+        do {
+            children.AddRange(_contentService.GetPagedChildren(parentId, page, PageSize, out total)
+                                             .Where(x => !x.Trashed));
+
+            page++;
+        } while (page * PageSize < total);
+
+        return children;
+    }
+
+    private static IReadOnlyList<string> InvalidProperties(PublishResult result) {
+        return result.InvalidProperties.OrEmpty().Select(x => x.PropertyType.Alias).ToList();
+    }
+
+    private static string DescribeResult(PublishResult result) {
+        var messages = result.EventMessages?.GetAll().Select(x => x.Message).ToList();
+
+        return messages != null && messages.Count > 0 ? string.Join("; ", messages) : result.Result.ToString();
+    }
+
+    private static string DescribeResult(OperationResult result) {
+        var messages = result.EventMessages?.GetAll().Select(x => x.Message).ToList();
+
+        return messages != null && messages.Count > 0 ? string.Join("; ", messages) : result.Result.ToString();
+    }
+
+    private static GivingMigrationLedgerEntry Entry(Guid legacyId, Guid newId, string kind, string name) {
+        var entry = new GivingMigrationLedgerEntry();
+        entry.LegacyId = legacyId;
+        entry.NewId = newId;
+        entry.Kind = kind;
+        entry.Name = name;
+
+        return entry;
+    }
+
+    private static GivingMigrationRunItemRes NewItem(GivingMigrationCampaignRes plan) {
+        var item = new GivingMigrationRunItemRes();
+        item.LegacyFormId = plan.LegacyFormId;
+        item.LegacyPath = plan.LegacyPath;
+        item.CampaignName = plan.CampaignName;
+        item.OfferingsExpected = plan.ExpectedOfferings;
+
+        return item;
+    }
+}

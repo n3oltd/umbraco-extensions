@@ -1,6 +1,8 @@
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Serialization;
@@ -10,7 +12,8 @@ using UmbracoPropertyEditors = Umbraco.Cms.Core.Constants.PropertyEditors;
 namespace N3O.Umbraco.DataTypes;
 
 public class NestedContentDataTypeDesigner : DataTypeDesigner {
-    private string _elementTypeAlias;
+    private readonly List<string> _elementTypeAliases = [];
+
     private int _maxItems;
     private int _minItems;
     private string _nameTemplate;
@@ -22,7 +25,9 @@ public class NestedContentDataTypeDesigner : DataTypeDesigner {
         : base(dataTypeService, propertyEditors, configurationEditorJsonSerializer) { }
 
     public NestedContentDataTypeDesigner ElementType(string elementTypeAlias) {
-        _elementTypeAlias = elementTypeAlias;
+        if (!_elementTypeAliases.Contains(elementTypeAlias, true)) {
+            _elementTypeAliases.Add(elementTypeAlias);
+        }
 
         return this;
     }
@@ -51,19 +56,13 @@ public class NestedContentDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override object BuildConfiguration(IDataType existing) {
-        if (!_elementTypeAlias.HasValue()) {
+        if (_elementTypeAliases.None()) {
             throw new Exception($"Nested content {Name.Quote()} has no element type");
         }
 
-        var contentType = new NestedContentConfiguration.ContentType();
-
-        contentType.Alias = _elementTypeAlias;
-        contentType.TabAlias = _tabAlias;
-        contentType.Template = _nameTemplate;
-
         var configuration = new NestedContentConfiguration();
 
-        configuration.ContentTypes = [contentType];
+        configuration.ContentTypes = _elementTypeAliases.Select(BuildContentType).ToArray();
         configuration.MinItems = _minItems;
         configuration.MaxItems = _maxItems;
         configuration.ConfirmDeletes = true;
@@ -74,4 +73,14 @@ public class NestedContentDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.NestedContent;
+
+    private NestedContentConfiguration.ContentType BuildContentType(string elementTypeAlias) {
+        var contentType = new NestedContentConfiguration.ContentType();
+
+        contentType.Alias = elementTypeAlias;
+        contentType.TabAlias = _tabAlias;
+        contentType.Template = _nameTemplate;
+
+        return contentType;
+    }
 }

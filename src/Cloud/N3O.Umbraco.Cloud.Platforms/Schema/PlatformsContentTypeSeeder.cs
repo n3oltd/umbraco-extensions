@@ -38,6 +38,10 @@ public partial class PlatformsContentTypeSeeder : IPlatformsContentTypeSeeder {
             (PlatformsConstants.DonationFormState.Qurbani, SeedQurbaniDonationFormState),
             (PlatformsConstants.DonationFormState.Sponsorship, SeedSponsorshipDonationFormState),
 
+            (PlatformsConstants.DonationFormItems.CompositionAlias, SeedDonationFormItem),
+            (PlatformsConstants.DonationFormItems.Campaign, SeedCampaignDonationFormItem),
+            (PlatformsConstants.DonationFormItems.Offering, SeedOfferingDonationFormItem),
+
             (PlatformsConstants.Platforms.Alias, SeedPlatforms),
 
             (PlatformsConstants.Campaigns.CompositionAlias, SeedCampaign),

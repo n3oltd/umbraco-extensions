@@ -27,6 +27,9 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         Seed(DataTypeNames.CampaignsMultiple, SeedCampaigns);
         Seed(DataTypeNames.CampaignsSingle, SeedCampaign);
         Seed(DataTypeNames.DonateButtonAction, SeedDonateButtonAction);
+        Seed(DataTypeNames.DonationFormCampaign, SeedDonationFormCampaign);
+        Seed(DataTypeNames.DonationFormList, SeedDonationFormList);
+        Seed(DataTypeNames.DonationFormOffering, SeedDonationFormOffering);
         Seed(DataTypeNames.ECommerceStage, SeedECommerceStage);
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
         Seed(DataTypeNames.QurbaniItem, SeedQurbaniItem);
@@ -85,6 +88,40 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Limit(1);
         designer.InFolder(Folders.Platforms);
         designer.WithDeterministicId(DataTypeNames.DonateButtonAction);
+
+        designer.Save();
+    }
+
+    private void SeedDonationFormCampaign() {
+        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.DonationFormCampaign);
+
+        designer.DataSource<DonationFormCampaignElementKindDataSource>();
+        designer.Limit(1);
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithId(DataTypeKeys.DonationFormCampaign);
+
+        designer.Save();
+    }
+
+    private void SeedDonationFormList() {
+        var designer = _dataTypeEditor.NewNestedContent(DataTypeNames.DonationFormList);
+
+        designer.ElementType(PlatformsConstants.DonationFormItems.Campaign);
+        designer.ElementType(PlatformsConstants.DonationFormItems.Offering);
+        designer.Limit(0, 1);
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithDeterministicId(DataTypeNames.DonationFormList);
+
+        designer.Save();
+    }
+
+    private void SeedDonationFormOffering() {
+        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.DonationFormOffering);
+
+        designer.DataSource<DonationFormOfferingElementKindDataSource>();
+        designer.Limit(1);
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithId(DataTypeKeys.DonationFormOffering);
 
         designer.Save();
     }
