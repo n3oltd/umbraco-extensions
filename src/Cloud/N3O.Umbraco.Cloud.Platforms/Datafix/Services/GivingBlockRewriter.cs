@@ -250,6 +250,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                 }
 
                 var result = RewriteValue(original,
+                                          property.Alias,
                                           propertyAliases,
                                           campaigns,
                                           itemContentTypeAlias,
@@ -326,6 +327,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
     }
 
     private RewriteResult RewriteValue(string json,
+                                       string propertyAlias,
                                        IReadOnlyCollection<string> propertyAliases,
                                        IReadOnlyDictionary<Guid, GivingMigrationLedgerEntry> campaigns,
                                        string itemContentTypeAlias,
@@ -336,7 +338,13 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         try {
             token = JToken.Parse(json);
         } catch (JsonException) {
-            return RewriteResult.None;
+            return RewriteRawValue(json,
+                                   propertyAlias,
+                                   propertyAliases,
+                                   campaigns,
+                                   itemContentTypeAlias,
+                                   content,
+                                   issues);
         }
 
         var references = 0;
@@ -432,6 +440,39 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         }
 
         return objects;
+    }
+
+    // A picker bound straight to a page property stores a bare UDI rather than a JSON document, so the walk above
+    // never reaches it.
+    private RewriteResult RewriteRawValue(string value,
+                                          string propertyAlias,
+                                          IReadOnlyCollection<string> propertyAliases,
+                                          IReadOnlyDictionary<Guid, GivingMigrationLedgerEntry> campaigns,
+                                          string itemContentTypeAlias,
+                                          IContent content,
+                                          ICollection<GivingMigrationIssueRes> issues) {
+        if (!propertyAliases.Contains(propertyAlias, true)) {
+            return RewriteResult.None;
+        }
+
+        var match = DocumentUdi.Match(value.Trim());
+
+        if (!match.Success || !Guid.TryParseExact(match.Groups[1].Value, "N", out var legacyId)) {
+            return RewriteResult.None;
+        }
+
+        if (!campaigns.TryGetValue(legacyId, out var campaign)) {
+            issues.Add(Issue(GivingMigrationConstants.IssueKinds.UnmappedReference,
+                             GivingMigrationConstants.Severities.Blocker,
+                             legacyId,
+                             content.Name,
+                             propertyAlias,
+                             "The legacy form is not in the migration ledger so the reference was left as it is"));
+
+            return new RewriteResult(1, 0, null);
+        }
+
+        return new RewriteResult(1, 1, BuildDonationFormValue(itemContentTypeAlias, campaign));
     }
 
     private static bool Matches(string value) {
