@@ -243,6 +243,10 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
         foreach (var property in content.Properties) {
             foreach (var value in property.Values) {
+                if (!Supported(content, value)) {
+                    continue;
+                }
+
                 var original = value.EditedValue as string;
 
                 if (!Matches(original)) {
@@ -473,6 +477,16 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         }
 
         return new RewriteResult(1, 1, BuildDonationFormValue(itemContentTypeAlias, campaign));
+    }
+
+    // An invariant content type can still hold culture scoped rows left over from when it varied, and writing one back
+    // is rejected because the effective variation is the intersection of the content type and the property type.
+    private static bool Supported(IContent content, IPropertyValue value) {
+        if (value.Culture.HasValue() && !content.ContentType.Variations.HasFlag(ContentVariation.Culture)) {
+            return false;
+        }
+
+        return !value.Segment.HasValue() || content.ContentType.Variations.HasFlag(ContentVariation.Segment);
     }
 
     private static bool Matches(string value) {
