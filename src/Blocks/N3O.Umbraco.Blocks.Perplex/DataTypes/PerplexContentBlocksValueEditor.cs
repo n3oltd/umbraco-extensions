@@ -22,7 +22,6 @@ public class PerplexContentBlocksValueEditor : ContentBlocksValueEditor {
         _localizedTextService = localizedTextService;
     }
 
-    public override IValueRequiredValidator RequiredValidator {
-        get { return new PerplexContentBlocksRequiredValidator(_localizedTextService, _deserializer); }
-    }
+    public override IValueRequiredValidator RequiredValidator =>
+        new PerplexContentBlocksRequiredValidator(_localizedTextService, _deserializer);
 }

@@ -16,13 +16,13 @@ public class PerplexContentBlocksRequiredValidator : RequiredValidator {
         _deserializer = deserializer;
     }
 
-    // Content Blocks stores a versioned envelope, so a property holding nothing still reads as
+    // Content Blocks posts a versioned envelope, so a property holding nothing still arrives as
     // {"version":3,"header":null,"blocks":[]}, and the base validator counts only "{}" and "[]" as empty JSON.
     public override IEnumerable<ValidationResult> ValidateRequired(object value, string valueType) {
-        return base.ValidateRequired(IsEmpty(value) ? "{}" : value, valueType);
+        return base.ValidateRequired(IsEmptyEnvelope(value) ? "{}" : value, valueType);
     }
 
-    private bool IsEmpty(object value) {
+    private bool IsEmptyEnvelope(object value) {
         var modelValue = _deserializer.Deserialize(value?.ToString());
 
         if (modelValue == null) {

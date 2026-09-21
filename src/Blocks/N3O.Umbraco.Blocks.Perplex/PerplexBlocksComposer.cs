@@ -28,8 +28,7 @@ public class PerplexBlocksComposer : Composer {
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
 
-        builder.DataEditors().Exclude<ContentBlocksPropertyEditor>();
-        builder.DataEditors().Add<PerplexContentBlocksPropertyEditor>();
+        builder.DataEditors().Exclude<ContentBlocksPropertyEditor>().Add<PerplexContentBlocksPropertyEditor>();
 
         foreach (var blockDefinition in BlocksComponent.BlockDefinitions) {
             RegisterDefaultViewModel(builder, blockDefinition.Alias);

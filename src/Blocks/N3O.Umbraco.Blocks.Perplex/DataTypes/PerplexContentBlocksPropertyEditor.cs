@@ -1,4 +1,3 @@
-using N3O.Umbraco.Extensions;
 using Perplex.ContentBlocks.PropertyEditor;
 using Perplex.ContentBlocks.PropertyEditor.ModelValue;
 using Perplex.ContentBlocks.Utils;
@@ -60,7 +59,7 @@ public class PerplexContentBlocksPropertyEditor : ContentBlocksPropertyEditor, I
         valueEditor.HideLabel = perplexEditor.HideLabel;
         valueEditor.ValueType = perplexEditor.ValueType;
 
-        perplexEditor.Validators.Do(x => valueEditor.Validators.Add(x));
+        valueEditor.Validators.AddRange(perplexEditor.Validators);
 
         return valueEditor;
     }
