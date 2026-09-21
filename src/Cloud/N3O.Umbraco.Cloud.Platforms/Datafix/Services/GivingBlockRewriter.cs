@@ -208,6 +208,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                 res.PagesScanned++;
 
                 var item = RewriteContent(content,
+                                          false,
                                           propertyAliases,
                                           campaigns,
                                           itemContentType.Alias,
@@ -222,6 +223,24 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             page++;
         } while (page * PageSize < total);
 
+        // Blueprints are a separate node type and are not returned by the descendant walk, so a blueprint would keep
+        // its legacy reference and hand it to every page later created from it.
+        foreach (var blueprint in _contentService.GetBlueprintsForContentTypes()) {
+            res.PagesScanned++;
+
+            var item = RewriteContent(blueprint,
+                                      true,
+                                      propertyAliases,
+                                      campaigns,
+                                      itemContentType.Alias,
+                                      req.Preview,
+                                      issues);
+
+            if (item != null) {
+                items.Add(item);
+            }
+        }
+
         res.Items = items;
         res.Issues = issues;
         res.PagesMatched = items.Count;
@@ -235,6 +254,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
     }
 
     private GivingMigrationRewriteItemRes RewriteContent(IContent content,
+                                                         bool isBlueprint,
                                                          IReadOnlyCollection<string> propertyAliases,
                                                          IReadOnlyDictionary<Guid, GivingMigrationLedgerEntry> campaigns,
                                                          string itemContentTypeAlias,
@@ -281,6 +301,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         item.PageId = content.Id;
         item.PageKey = content.Key;
         item.PageName = content.Name;
+        item.IsBlueprint = isBlueprint;
         item.PropertyAlias = string.Join(", ", changes.Select(x => x.Alias).Distinct());
         item.References = references;
         item.Rewritten = rewritten;
@@ -303,8 +324,12 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                 content.SetValue(change.Alias, change.Json, change.Culture, change.Segment);
             }
 
-            // A page that is live has to be republished or the published version keeps the legacy reference.
-            if (content.Published) {
+            // A blueprint has no published version and is persisted through its own service method.
+            if (isBlueprint) {
+                _contentService.SaveBlueprint(content, UmbracoSecurity.SuperUserId);
+
+                item.Outcome = GivingMigrationConstants.Outcomes.Rewritten;
+            } else if (content.Published) {
                 var published = _contentService.SaveAndPublish(content, userId: UmbracoSecurity.SuperUserId);
 
                 if (published.Success) {
