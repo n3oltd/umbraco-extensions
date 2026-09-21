@@ -28,6 +28,9 @@ public class PerplexBlocksComposer : Composer {
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
 
+        // TODO Remove this swap once Content Blocks collapses an empty value to {} as the core block editors
+        // do, or overrides RequiredValidator itself; until then Umbraco's Mandatory flag is ignored on its
+        // properties.
         builder.DataEditors().Exclude<ContentBlocksPropertyEditor>().Add<PerplexContentBlocksPropertyEditor>();
 
         foreach (var blockDefinition in BlocksComponent.BlockDefinitions) {
