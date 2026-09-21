@@ -48,6 +48,20 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
         // Every form migrates, including those with no options, so a page that still points at one keeps working.
         var campaigns = forms.Select(x => BuildCampaign(x, campaignTypeAlias, offeringTypeAliases)).ToList();
 
+        // A site can nest a second grouping layer that is itself a form type. Each nested form migrates to its own
+        // campaign, so a page picking the outer form has to be pointed at one of them by hand afterwards.
+        foreach (var form in forms.Where(x => x.NestedForms.Count > 0)) {
+            warnings.Add(Issue(GivingMigrationConstants.IssueKinds.AmbiguousReference,
+                               GivingMigrationConstants.Severities.Warning,
+                               form.Content.Key,
+                               form.Content.Name,
+                               form.Path,
+                               detail: "The form contains " +
+                                       form.NestedForms.Count +
+                                       " nested forms, each migrating to its own campaign, so this form's own " +
+                                       "campaign holds only the options that are not inside one"));
+        }
+
         foreach (var campaign in campaigns.Where(x => x.ExpectedOfferings == 0)) {
             warnings.Add(Issue(GivingMigrationConstants.IssueKinds.EmptyForm,
                                GivingMigrationConstants.Severities.Warning,
@@ -413,6 +427,7 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
         summary.AlreadyMigratedCampaigns =
             campaigns.Count(x => x.Status == GivingMigrationConstants.EntryStatuses.AlreadyMigrated);
         summary.EmptyForms = campaigns.Count(x => x.ExpectedOfferings == 0);
+        summary.FormsWithNestedForms = forms.Count(x => x.NestedForms.Count > 0);
         summary.NamesPrefixedWithFolder = campaigns.Count(x => x.NameFromFolder);
         summary.BlockedCampaigns = campaigns.Count(x => x.Status == GivingMigrationConstants.EntryStatuses.Blocked);
         summary.Ready = blockers.Count == 0 &&

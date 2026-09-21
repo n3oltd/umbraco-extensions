@@ -13,6 +13,7 @@ public static class GivingMigrationConstants {
     }
 
     public static class IssueKinds {
+        public const string AmbiguousReference = nameof(AmbiguousReference);
         public const string DroppedProperty = nameof(DroppedProperty);
         public const string EmptyForm = nameof(EmptyForm);
         public const string LegacyTreeNotRecognised = nameof(LegacyTreeNotRecognised);

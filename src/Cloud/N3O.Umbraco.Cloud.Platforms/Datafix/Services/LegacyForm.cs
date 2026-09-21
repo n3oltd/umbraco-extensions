@@ -9,4 +9,9 @@ public class LegacyForm {
     public string FolderName { get; set; }
     public string Path { get; set; }
     public IReadOnlyList<IContent> Options { get; set; } = [];
+
+    // A site can nest a second grouping layer that is itself a form type, so a form is not always the whole of what
+    // a page picking it used to show. Each nested form migrates to its own campaign, which the picker cannot hold
+    // alongside this one.
+    public IReadOnlyList<IContent> NestedForms { get; set; } = [];
 }

@@ -48,6 +48,7 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
 
     public IReadOnlyList<LegacyForm> GetForms() {
         var optionTypeIds = GetOptionContentTypeIds();
+        var formTypeIds = GetFormContentTypes().Select(x => x.Id).ToHashSet();
         var forms = new List<LegacyForm>();
 
         foreach (var contentType in GetFormContentTypes()) {
@@ -63,6 +64,7 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
                 form.FolderName = IsUsableFolder(parent) ? parent.Name : null;
                 form.Path = BuildPath(content);
                 form.Options = GetOptions(content.Id, optionTypeIds);
+                form.NestedForms = GetNestedForms(content.Id, formTypeIds);
 
                 forms.Add(form);
             }
@@ -140,6 +142,12 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
                             .Where(x => x != null)
                             .Select(x => x.Id)
                             .ToList();
+    }
+
+    private IReadOnlyList<IContent> GetNestedForms(int formId, IReadOnlyCollection<int> formTypeIds) {
+        return GivingMigrationContent.GetChildren(_contentService, formId)
+                                     .Where(x => formTypeIds.Contains(x.ContentTypeId))
+                                     .ToList();
     }
 
     private IReadOnlyList<IContent> GetOptions(int formId, IReadOnlyList<int> optionTypeIds) {

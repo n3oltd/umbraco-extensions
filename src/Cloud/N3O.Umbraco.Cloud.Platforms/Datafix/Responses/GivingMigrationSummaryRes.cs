@@ -10,6 +10,7 @@ public class GivingMigrationSummaryRes {
     public int PlannedCrossSells { get; set; }
     public int AlreadyMigratedCampaigns { get; set; }
     public int EmptyForms { get; set; }
+    public int FormsWithNestedForms { get; set; }
     public int NamesPrefixedWithFolder { get; set; }
     public int BlockedCampaigns { get; set; }
     public bool Ready { get; set; }

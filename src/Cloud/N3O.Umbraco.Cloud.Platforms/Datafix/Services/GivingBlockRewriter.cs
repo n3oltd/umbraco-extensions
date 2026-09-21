@@ -35,18 +35,23 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                                                        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private readonly Dictionary<string, bool> _bindings = new(StringComparer.OrdinalIgnoreCase);
+    private HashSet<Guid> _nestedFormIds;
+
     private readonly IGivingMigrationStore _store;
+    private readonly ILegacyGivingTreeReader _reader;
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly IDataTypeEditor _dataTypeEditor;
     private readonly ILogger<GivingBlockRewriter> _logger;
 
     public GivingBlockRewriter(IGivingMigrationStore store,
+                               ILegacyGivingTreeReader reader,
                                IContentService contentService,
                                IContentTypeService contentTypeService,
                                IDataTypeEditor dataTypeEditor,
                                ILogger<GivingBlockRewriter> logger) {
         _store = store;
+        _reader = reader;
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _dataTypeEditor = dataTypeEditor;
@@ -529,6 +534,12 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
                 references++;
 
+                if (HasNestedForms(legacyId)) {
+                    issues.Add(Ambiguous(content, alias, legacyId));
+
+                    continue;
+                }
+
                 if (!campaigns.TryGetValue(legacyId, out var campaign)) {
                     issues.Add(Issue(GivingMigrationConstants.IssueKinds.UnmappedReference,
                                      GivingMigrationConstants.Severities.Blocker,
@@ -637,6 +648,12 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             return RewriteResult.None;
         }
 
+        if (HasNestedForms(legacyId)) {
+            issues.Add(Ambiguous(content, propertyAlias, legacyId));
+
+            return new RewriteResult(1, 0, null);
+        }
+
         if (!campaigns.TryGetValue(legacyId, out var campaign)) {
             issues.Add(Issue(GivingMigrationConstants.IssueKinds.UnmappedReference,
                              GivingMigrationConstants.Severities.Blocker,
@@ -737,6 +754,29 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
     private static bool Matches(string value) {
         return value.HasValue() && value.IndexOf(DocumentUdiPrefix, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    // A form holding a nested form layer becomes several campaigns, one for itself and one for each nested form, so
+    // a page picking it cannot simply be repointed: the picker takes a single item and the form's own campaign is
+    // only the part of the form that was not inside a nested one.
+    private bool HasNestedForms(Guid legacyId) {
+        _nestedFormIds ??= _reader.GetForms()
+                                  .Where(x => x.NestedForms.Count > 0)
+                                  .Select(x => x.Content.Key)
+                                  .ToHashSet();
+
+        return _nestedFormIds.Contains(legacyId);
+    }
+
+    private static GivingMigrationIssueRes Ambiguous(IContent content, string propertyAlias, Guid legacyId) {
+        return Issue(GivingMigrationConstants.IssueKinds.AmbiguousReference,
+                     GivingMigrationConstants.Severities.Blocker,
+                     legacyId,
+                     content,
+                     propertyAlias,
+                     "The legacy form contains nested forms, so it migrated to more than one campaign and the " +
+                     "picker holds only one. The reference was left as it is and has to be pointed at the right " +
+                     "campaign by hand");
     }
 
     private static GivingMigrationIssueRes NotRepointed(IContent content,
