@@ -9,18 +9,20 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingMigrationReporter : IGivingMigrationReporter {
-
+    private readonly IGivingMigrationPlanner _planner;
     private readonly IGivingMigrationStore _store;
     private readonly ILegacyGivingTreeReader _reader;
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly ISubscriptionAccessor _subscriptionAccessor;
 
-    public GivingMigrationReporter(IGivingMigrationStore store,
+    public GivingMigrationReporter(IGivingMigrationPlanner planner,
+                                   IGivingMigrationStore store,
                                    ILegacyGivingTreeReader reader,
                                    IContentService contentService,
                                    IContentTypeService contentTypeService,
                                    ISubscriptionAccessor subscriptionAccessor) {
+        _planner = planner;
         _store = store;
         _reader = reader;
         _contentService = contentService;
@@ -50,7 +52,7 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
 
         var optionCounts = forms.ToDictionary(x => x.Content.Key, x => x.Options.Count);
         var formNames = forms.ToDictionary(x => x.Content.Key, x => x.Content.Name);
-        var offeringTypeIds = GetOfferingContentTypeIds();
+        var offeringTypeIds = GivingMigrationContent.GetOfferingContentTypeIds(_contentTypeService);
         var items = new List<GivingMigrationStatusItemRes>();
 
         foreach (var entry in _store.GetLedger()
@@ -61,7 +63,7 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
                 continue;
             }
 
-            var offerings = GetChildren(campaign.Id)
+            var offerings = GivingMigrationContent.GetChildren(_contentService, campaign.Id)
                             .Where(x => offeringTypeIds.Contains(x.ContentTypeId))
                             .ToList();
 
@@ -79,27 +81,29 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
             items.Add(item);
         }
 
+        var plan = _planner.BuildPlan();
+
+        // A ledger entry for a form that no longer exists would otherwise stand in for a form that was never
+        // migrated, so the forms themselves are compared rather than how many of them there are.
+        var migratedFormIds = items.Select(x => x.LegacyFormId).ToHashSet();
+
         res.Items = items;
         res.Campaigns = items.Count;
         res.PublishedCampaigns = items.Count(x => x.Published);
         res.Offerings = items.Sum(x => x.Offerings);
         res.PublishedOfferings = items.Sum(x => x.PublishedOfferings);
+        res.UnmigratedForms = forms.Count(x => !migratedFormIds.Contains(x.Content.Key));
+        res.UnmigratedCrossSells =
+            plan.CrossSells.Count(x => x.Status != GivingMigrationConstants.EntryStatuses.AlreadyMigrated);
         res.CampaignsWithOfferingMismatch = items.Count(x => !x.OfferingsMatchOptions);
         res.Complete = res.Campaigns > 0 &&
-                       res.Campaigns == res.LegacyForms &&
+                       res.UnmigratedForms == 0 &&
+                       res.UnmigratedCrossSells == 0 &&
                        res.Campaigns == res.PublishedCampaigns &&
                        res.Offerings == res.PublishedOfferings &&
                        res.CampaignsWithOfferingMismatch == 0;
 
         return res;
-    }
-
-    private IReadOnlyList<int> GetOfferingContentTypeIds() {
-        return GivingMigrationContent.GetOfferingContentTypeIds(_contentTypeService);
-    }
-
-    private IReadOnlyList<IContent> GetChildren(int parentId) {
-        return GivingMigrationContent.GetChildren(_contentService, parentId);
     }
 
     private static GivingMigrationLedgerEntryRes Map(GivingMigrationLedgerEntry entry) {

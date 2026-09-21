@@ -166,8 +166,13 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
                              plan.CampaignName));
 
             item.CampaignId = campaignId;
-            item.OfferingsCreated = CreateOfferings(plan, campaignId, placeholders, item, ledger);
-            item.Outcome = GivingMigrationConstants.Outcomes.Created;
+            item.OfferingsCreated = CreateOfferings(plan, campaignId, plan.Offerings, placeholders, item, ledger);
+
+            // The campaign is committed by this point and the planner will call it already migrated from now on, so
+            // anything short of every offering is a failure.
+            item.Outcome = item.OfferingsCreated == plan.Offerings.Count()
+                               ? GivingMigrationConstants.Outcomes.Created
+                               : GivingMigrationConstants.Outcomes.Failed;
         } catch (Exception ex) {
             _logger.LogError(ex,
                              "There was an error migrating legacy form with id {LegacyFormId}",
@@ -262,6 +267,53 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         return item;
     }
 
+    // A campaign whose offerings only partly succeeded is still in the ledger and is reported as already migrated,
+    // so without this the offerings it is missing could not be created by any endpoint.
+    public GivingMigrationRunItemRes CreateMissingOfferings(GivingMigrationCampaignRes plan,
+                                                            IReadOnlyCollection<Guid> migratedOptionIds,
+                                                            GivingPlaceholders placeholders,
+                                                            ICollection<GivingMigrationLedgerEntry> ledger) {
+        var item = NewItem(plan);
+        item.CampaignId = plan.TargetCampaignId;
+
+        if (plan.TargetCampaignId == null) {
+            item.Outcome = GivingMigrationConstants.Outcomes.NotAttempted;
+            item.Message = "The campaign has not been migrated";
+
+            return item;
+        }
+
+        var missing = plan.Offerings.Where(x => !migratedOptionIds.Contains(x.LegacyOptionId)).ToList();
+
+        if (missing.Count == 0) {
+            item.Outcome = GivingMigrationConstants.Outcomes.NotAttempted;
+
+            return item;
+        }
+
+        try {
+            item.OfferingsCreated = CreateOfferings(plan,
+                                                    plan.TargetCampaignId.Value,
+                                                    missing,
+                                                    placeholders,
+                                                    item,
+                                                    ledger);
+
+            item.Outcome = item.OfferingsCreated == missing.Count
+                               ? GivingMigrationConstants.Outcomes.Created
+                               : GivingMigrationConstants.Outcomes.Failed;
+        } catch (Exception ex) {
+            _logger.LogError(ex,
+                             "There was an error creating missing offerings for legacy form with id {LegacyFormId}",
+                             plan.LegacyFormId.ToString());
+
+            item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+            item.Message = Describe(ex);
+        }
+
+        return item;
+    }
+
     public GivingMigrationRunItemRes PublishOfferings(GivingMigrationCampaignRes plan) {
         var item = NewItem(plan);
         item.CampaignId = plan.TargetCampaignId;
@@ -286,7 +338,7 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         var failures = new List<string>();
         var invalidProperties = new List<string>();
 
-        foreach (var child in GetChildren(campaign.Id)) {
+        foreach (var child in GivingMigrationContent.GetChildren(_contentService, campaign.Id)) {
             try {
                 var result = _contentEditor.ForExisting(child.Key).SaveAndPublish();
 
@@ -321,13 +373,14 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
     private int CreateOfferings(GivingMigrationCampaignRes plan,
                                 Guid campaignId,
+                                IEnumerable<GivingMigrationOfferingRes> offerings,
                                 GivingPlaceholders placeholders,
                                 GivingMigrationRunItemRes item,
                                 ICollection<GivingMigrationLedgerEntry> ledger) {
         var created = 0;
         var failures = new List<string>();
 
-        foreach (var offering in plan.Offerings) {
+        foreach (var offering in offerings) {
             if (!offering.OfferingContentTypeAlias.HasValue()) {
                 failures.Add(offering.OfferingName + ": no platforms offering type is mapped for " +
                              offering.LegacyOptionAlias);
@@ -699,10 +752,6 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         return GivingMigrationContent.GetAllOfAlias(_contentService, _contentTypeService, contentTypeAlias)
                                      .Where(x => !x.Trashed)
                                      .ToList();
-    }
-
-    private IReadOnlyList<IContent> GetChildren(int parentId) {
-        return GivingMigrationContent.GetChildren(_contentService, parentId);
     }
 
     private static IReadOnlyList<string> InvalidProperties(PublishResult result) {

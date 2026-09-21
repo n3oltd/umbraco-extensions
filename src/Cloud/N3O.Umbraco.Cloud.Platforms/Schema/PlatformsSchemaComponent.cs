@@ -96,9 +96,11 @@ public class PlatformsSchemaComponent : IComponent {
         var child = _contentTypeEditor.Find(childAlias);
         var platforms = _contentTypeEditor.Find(PlatformsConstants.Platforms.Alias);
 
+        // A site that does not use the child type simply does not have it, which is an ordinary state and happens
+        // on every start, so this is not a warning.
         if (child == null) {
-            _logger.LogWarning("Cannot allow {Alias} under the platforms type because no such content type exists",
-                               childAlias);
+            _logger.LogDebug("Cannot allow {Alias} under the platforms type because no such content type exists",
+                             childAlias);
 
             return;
         }

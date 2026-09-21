@@ -226,7 +226,7 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
             return;
         }
 
-        var offeringTypeIds = GetOfferingContentTypeIds();
+        var offeringTypeIds = GivingMigrationContent.GetOfferingContentTypeIds(_contentTypeService);
 
         foreach (var campaign in campaigns) {
             if (!ledger.TryGetValue(campaign.LegacyFormId, out var targetId)) {
@@ -265,10 +265,6 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
                                campaign.LegacyPath,
                                detail: "The campaign name was prefixed with the folder: " + campaign.CampaignName));
         }
-    }
-
-    private IReadOnlyList<int> GetOfferingContentTypeIds() {
-        return GivingMigrationContent.GetOfferingContentTypeIds(_contentTypeService);
     }
 
     private int CountOfferings(int campaignId, IReadOnlyList<int> offeringTypeIds) {

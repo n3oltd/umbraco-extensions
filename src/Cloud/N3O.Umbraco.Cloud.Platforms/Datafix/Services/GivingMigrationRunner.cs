@@ -9,6 +9,10 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingMigrationRunner : IGivingMigrationRunner {
+    // The ledger is a read, modify and write of one key value entry, so a second run started before the first
+    // finished - a proxy timeout retried by hand is the usual way - would drop the entries it did not read.
+    private static readonly SemaphoreSlim RunLock = new(1, 1);
+
     private readonly IGivingMigrationPlanner _planner;
     private readonly IGivingMigrationWriter _writer;
     private readonly IGivingMigrationMedia _media;
@@ -29,6 +33,21 @@ public class GivingMigrationRunner : IGivingMigrationRunner {
 
     public async Task<GivingMigrationRunRes> MigrateAsync(MigrateGivingReq req,
                                                           CancellationToken cancellationToken) {
+        if (!await RunLock.WaitAsync(0, cancellationToken)) {
+            var busy = NewRes();
+            busy.Message = "A migration run is already in progress";
+
+            return busy;
+        }
+
+        try {
+            return await RunAsync(req, cancellationToken);
+        } finally {
+            RunLock.Release();
+        }
+    }
+
+    private async Task<GivingMigrationRunRes> RunAsync(MigrateGivingReq req, CancellationToken cancellationToken) {
         var res = NewRes();
 
         var plan = _planner.BuildPlan();
@@ -76,17 +95,36 @@ public class GivingMigrationRunner : IGivingMigrationRunner {
             ledger.AddRange(entries);
         }
 
-        res.AlreadyMigrated =
-            plan.Campaigns.Count(x => x.Status == GivingMigrationConstants.EntryStatuses.AlreadyMigrated);
+        var alreadyMigrated = plan.Campaigns
+                                  .Where(x => x.Status == GivingMigrationConstants.EntryStatuses.AlreadyMigrated)
+                                  .ToList();
+
+        res.AlreadyMigrated = alreadyMigrated.Count;
+
+        // A campaign that lost some of its offerings to a failure is already in the ledger, so the run that finds
+        // it again is the only chance to finish it.
+        var migratedOptionIds = _store.GetLedger()
+                                      .Where(x => x.Kind == GivingMigrationConstants.LedgerKinds.Offering)
+                                      .Select(x => x.LegacyId)
+                                      .ToHashSet();
+
+        foreach (var campaign in alreadyMigrated) {
+            var entries = new List<GivingMigrationLedgerEntry>();
+
+            var item = _writer.CreateMissingOfferings(campaign, migratedOptionIds, placeholders, entries);
+
+            if (item.Outcome == GivingMigrationConstants.Outcomes.NotAttempted) {
+                continue;
+            }
+
+            _store.AppendLedger(entries);
+
+            ledger.AddRange(entries);
+            items.Add(item);
+        }
 
         if (req.IncludeCrossSells) {
-            var crossSells = new List<GivingMigrationLedgerEntry>();
-
-            items.AddRange(MigrateCrossSells(plan, placeholders, crossSells, res));
-
-            _store.AppendLedger(crossSells);
-
-            ledger.AddRange(crossSells);
+            items.AddRange(MigrateCrossSells(plan, placeholders, ledger, res));
         }
 
         res.Items = items;
@@ -146,8 +184,21 @@ public class GivingMigrationRunner : IGivingMigrationRunner {
             return [];
         }
 
-        var items = planned.Select(x => _writer.CreateCrossSell(x, containerId.Value, placeholders, ledger))
-                           .ToList();
+        var items = new List<GivingMigrationRunItemRes>();
+
+        foreach (var crossSell in planned) {
+            var entries = new List<GivingMigrationLedgerEntry>();
+
+            items.Add(_writer.CreateCrossSell(crossSell, containerId.Value, placeholders, entries));
+
+            // Recorded one at a time for the same reason the campaigns are: an interruption part way through would
+            // otherwise leave every cross sell created so far absent from the ledger and duplicated on the next run.
+            _store.AppendLedger(entries);
+
+            foreach (var entry in entries) {
+                ledger.Add(entry);
+            }
+        }
 
         res.CrossSellsCreated = items.Count(x => x.Outcome == GivingMigrationConstants.Outcomes.Created);
 

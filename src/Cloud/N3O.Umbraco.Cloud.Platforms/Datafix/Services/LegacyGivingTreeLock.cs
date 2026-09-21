@@ -65,14 +65,16 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
                                                      .Select(x => x.Alias)
                                                      .ToList();
 
+            // The snapshot is the only record of what a type allowed, so it is persisted before the type is
+            // stripped and a failure part way through the loop still leaves every earlier entry restorable.
+            _store.SaveLockSnapshot(snapshot);
+
             contentType.AllowedContentTypes = [];
 
             _contentTypeService.Save(contentType);
 
             locked.Add(contentType.Alias);
         }
-
-        _store.SaveLockSnapshot(snapshot);
 
         res.Locked = locked.Count > 0 || alreadyLocked.Count > 0;
 

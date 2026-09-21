@@ -11,4 +11,5 @@ public class GivingMigrationPurgeRes {
     public int Purged { get; set; }
     public int Failed { get; set; }
     public IEnumerable<GivingMigrationPurgeItemRes> Items { get; set; } = [];
+    public IEnumerable<GivingMigrationIssueRes> Issues { get; set; } = [];
 }

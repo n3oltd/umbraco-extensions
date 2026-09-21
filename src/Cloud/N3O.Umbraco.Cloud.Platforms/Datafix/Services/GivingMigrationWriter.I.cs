@@ -14,6 +14,10 @@ public interface IGivingMigrationWriter {
                                               Guid containerId,
                                               GivingPlaceholders placeholders,
                                               ICollection<GivingMigrationLedgerEntry> ledger);
+    GivingMigrationRunItemRes CreateMissingOfferings(GivingMigrationCampaignRes plan,
+                                                     IReadOnlyCollection<Guid> migratedOptionIds,
+                                                     GivingPlaceholders placeholders,
+                                                     ICollection<GivingMigrationLedgerEntry> ledger);
     Guid? EnsureCrossSellsContainerId(out string problem);
     Guid? GetCampaignsContainerId();
     GivingMigrationRunItemRes PublishOfferings(GivingMigrationCampaignRes plan);

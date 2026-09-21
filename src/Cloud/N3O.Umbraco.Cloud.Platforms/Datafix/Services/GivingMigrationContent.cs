@@ -6,7 +6,7 @@ using Umbraco.Cms.Core.Services;
 namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
-internal static class GivingMigrationContent {
+public static class GivingMigrationContent {
     private const int PageSize = 200;
 
     public static IReadOnlyList<IContent> GetAllOfAlias(IContentService contentService,

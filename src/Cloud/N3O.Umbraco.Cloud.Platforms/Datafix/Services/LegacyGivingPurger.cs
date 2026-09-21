@@ -10,9 +10,9 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class LegacyGivingPurger : ILegacyGivingPurger {
-
     private readonly IGivingMigrationPlanner _planner;
     private readonly IGivingMigrationReporter _reporter;
+    private readonly IGivingBlockRewriter _blockRewriter;
     private readonly ILegacyGivingTreeReader _reader;
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
@@ -20,12 +20,14 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
 
     public LegacyGivingPurger(IGivingMigrationPlanner planner,
                               IGivingMigrationReporter reporter,
+                              IGivingBlockRewriter blockRewriter,
                               ILegacyGivingTreeReader reader,
                               IContentService contentService,
                               IContentTypeService contentTypeService,
                               ISubscriptionAccessor subscriptionAccessor) {
         _planner = planner;
         _reporter = reporter;
+        _blockRewriter = blockRewriter;
         _reader = reader;
         _contentService = contentService;
         _contentTypeService = contentTypeService;
@@ -54,6 +56,20 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
             return res;
         }
 
+        // Campaign and offering counts say nothing about whether the rewrite ran, so the tree is not deleted until
+        // no content holds a reference to a node that is about to be destroyed.
+        var residual = _blockRewriter.FindReferences(_reader.GetForms().Select(x => x.Content.Key).ToList());
+
+        if (residual.Count > 0) {
+            res.Issues = residual;
+            res.Message = "There are still " +
+                          residual.Count +
+                          " references to the legacy forms, so nothing was purged. Run the rewrite and resolve " +
+                          "the reported issues first";
+
+            return res;
+        }
+
         var roots = GetLegacyRoots();
 
         if (roots.Count == 0) {
@@ -66,7 +82,7 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
 
         // Deleting a folder or form takes its whole subtree with it, so only the top level is walked.
         foreach (var root in roots) {
-            foreach (var child in GetChildren(root.Id)) {
+            foreach (var child in GivingMigrationContent.GetChildren(_contentService, root.Id)) {
                 items.Add(Purge(child, req.Permanent));
             }
         }
@@ -107,7 +123,4 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
                                      .ToList();
     }
 
-    private IReadOnlyList<IContent> GetChildren(int parentId) {
-        return GivingMigrationContent.GetChildren(_contentService, parentId);
-    }
 }

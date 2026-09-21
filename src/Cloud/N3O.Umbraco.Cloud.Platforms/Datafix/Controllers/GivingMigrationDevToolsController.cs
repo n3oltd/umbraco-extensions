@@ -1,14 +1,19 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Cloud.Platforms.Models;
 using N3O.Umbraco.Hosting;
 using System.Threading;
 using System.Threading.Tasks;
+using Umbraco.Cms.Web.Common.Authorization;
 
 namespace N3O.Umbraco.Cloud.Platforms.Controllers;
 
+// These endpoints migrate and permanently delete content across the whole site, so backoffice access alone is not
+// enough: they are restricted to the users who can reach the settings section.
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 [ApiDocument(PlatformsConstants.DevToolsApiName)]
+[Authorize(Policy = AuthorizationPolicies.SectionAccessSettings)]
 public class GivingMigrationDevToolsController : BackofficeAuthorizedApiController {
     private readonly IGivingMigrationPlanner _planner;
     private readonly IGivingMigrationRunner _runner;

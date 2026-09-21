@@ -7,6 +7,8 @@ public class GivingMigrationStatusRes {
     public bool Complete { get; set; }
     public int LegacyForms { get; set; }
     public int LegacyDonationOptions { get; set; }
+    public int UnmigratedForms { get; set; }
+    public int UnmigratedCrossSells { get; set; }
     public int CampaignsWithOfferingMismatch { get; set; }
     public int Campaigns { get; set; }
     public int PublishedCampaigns { get; set; }

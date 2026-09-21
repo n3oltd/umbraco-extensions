@@ -8,7 +8,6 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
-    private const int PageSize = 200;
     private const string PlatformsPrefix = "platforms";
 
     private static readonly string[] OptionAliases = [
@@ -133,23 +132,13 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
             return [];
         }
 
-        var options = new List<IContent>();
-        long page = 0;
-        long total;
-
-        do {
-            var children = _contentService.GetPagedChildren(formId, page, PageSize, out total);
-
-            options.AddRange(children.Where(x => !x.Trashed && optionTypeIds.Contains(x.ContentTypeId)));
-
-            page++;
-        } while (page * PageSize < total);
-
-        return options;
+        return GivingMigrationContent.GetChildren(_contentService, formId)
+                                     .Where(x => optionTypeIds.Contains(x.ContentTypeId))
+                                     .ToList();
     }
 
-    private List<IContent> GetAllOfType(int contentTypeId) {
-        return GivingMigrationContent.GetAllOfType(_contentService, contentTypeId).ToList();
+    private IReadOnlyList<IContent> GetAllOfType(int contentTypeId) {
+        return GivingMigrationContent.GetAllOfType(_contentService, contentTypeId);
     }
 
     private bool IsUsableFolder(IContent parent) {
