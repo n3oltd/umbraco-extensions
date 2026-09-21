@@ -29,7 +29,7 @@ public static class PlatformsSchemaConstants {
         public const string CampaignsSingle = "Platforms Campaigns Data List (0, 1)";
         public const string DonateButtonAction = "Platforms Donate Button Action Data List (0, 1)";
         public const string DonationFormCampaign = "Platforms Donation Form Campaign Data List (0, 1)";
-        public const string DonationFormList = "Platforms Donation Form List (0, 1)";
+        public const string DonationFormList = "Nested Platforms Donation Form Item (0, 1)";
         public const string DonationFormOffering = "Platforms Donation Form Offering Data List (0, 1)";
         public const string ECommerceStage = "Platforms Ecommerce Stage Data List (0, 1)";
         public const string ElementEmbedCodeLabel = "Platforms Element Embed Code Label";
