@@ -8,6 +8,12 @@ public class GivingMigrationIssueRes {
     public Guid? LegacyId { get; set; }
     public string LegacyName { get; set; }
     public string LegacyPath { get; set; }
+
+    // The page holding the reference, which is a different node from the legacy form the rest of these fields
+    // describe, and the one an operator has to open to clear a blocking issue.
+    public Guid? PageKey { get; set; }
+    public string PageName { get; set; }
+    public string PagePath { get; set; }
     public string PropertyAlias { get; set; }
     public string Detail { get; set; }
 }

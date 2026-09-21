@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
+using UmbracoSystem = Umbraco.Cms.Core.Constants.System;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -33,6 +34,37 @@ public static class GivingMigrationContent {
         } while (page * PageSize < total);
 
         return items;
+    }
+
+    // Recycle bin content is returned by the descendant walk but is not live, so it is filtered out everywhere.
+    public static IEnumerable<IContent> GetAllContent(IContentService contentService) {
+        long page = 0;
+        long total;
+
+        do {
+            foreach (var content in contentService.GetPagedDescendants(UmbracoSystem.Root, page, PageSize, out total)) {
+                if (!content.Trashed) {
+                    yield return content;
+                }
+            }
+
+            page++;
+        } while (page * PageSize < total);
+    }
+
+    public static IReadOnlyList<IContent> GetDescendants(IContentService contentService, int parentId) {
+        var descendants = new List<IContent>();
+        long page = 0;
+        long total;
+
+        do {
+            descendants.AddRange(contentService.GetPagedDescendants(parentId, page, PageSize, out total)
+                                               .Where(x => !x.Trashed));
+
+            page++;
+        } while (page * PageSize < total);
+
+        return descendants;
     }
 
     public static IReadOnlyList<IContent> GetChildren(IContentService contentService, int parentId) {

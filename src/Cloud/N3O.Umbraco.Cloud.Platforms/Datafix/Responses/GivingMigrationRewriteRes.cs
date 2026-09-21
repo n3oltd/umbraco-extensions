@@ -8,6 +8,8 @@ public class GivingMigrationRewriteRes {
     public int PagesScanned { get; set; }
     public int PagesMatched { get; set; }
     public int PagesRewritten { get; set; }
+    public int PagesSkipped { get; set; }
+    public int PagesWithPendingDraft { get; set; }
     public int ReferencesFound { get; set; }
     public int ReferencesRewritten { get; set; }
     public int ReferencesUnmapped { get; set; }

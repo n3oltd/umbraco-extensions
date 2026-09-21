@@ -11,8 +11,8 @@ public interface IGivingMigrationStore {
     void DeletePlan();
     IReadOnlyList<GivingMigrationLedgerEntry> GetLedger();
     IReadOnlyDictionary<string, IReadOnlyList<string>> GetLockSnapshot();
-    GivingMigrationPersistedPlanRes GetPlan();
     IReadOnlyDictionary<string, Guid> GetPlaceholderMedia();
+    GivingMigrationPersistedPlanRes GetPlan();
     void SaveLockSnapshot(IReadOnlyDictionary<string, IReadOnlyList<string>> snapshot);
     void SavePlaceholderMedia(IReadOnlyDictionary<string, Guid> media);
     GivingMigrationPersistedPlanRes SavePlan(GivingMigrationPlanRes plan);

@@ -106,11 +106,11 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
     private void SeedDonationFormList() {
         var designer = _dataTypeEditor.NewNestedContent(DataTypeNames.DonationFormList);
 
-        designer.ElementType(PlatformsConstants.DonationFormItems.Campaign);
-        designer.ElementType(PlatformsConstants.DonationFormItems.Offering);
+        designer.AddElementType(PlatformsConstants.DonationFormItems.Campaign);
+        designer.AddElementType(PlatformsConstants.DonationFormItems.Offering);
         designer.Limit(0, 1);
         designer.InFolder(Folders.Platforms, Folders.DonationForms);
-        designer.WithDeterministicId(DataTypeNames.DonationFormList);
+        designer.WithId(DataTypeKeys.DonationFormList);
 
         designer.Save();
     }

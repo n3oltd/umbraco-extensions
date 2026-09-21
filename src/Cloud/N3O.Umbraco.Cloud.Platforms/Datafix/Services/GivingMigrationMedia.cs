@@ -59,6 +59,7 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
     public async Task<GivingPlaceholders> ResolveAsync(Guid? iconMediaId,
                                                        Guid? imageMediaId,
                                                        Guid? heroImageMediaId,
+                                                       bool allowPlaceholder,
                                                        CancellationToken cancellationToken) {
         var cache = new Dictionary<string, Guid>(_store.GetPlaceholderMedia(), StringComparer.OrdinalIgnoreCase);
 
@@ -71,6 +72,7 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
                                                   UmbracoConventions.MediaTypes.VectorGraphicsAlias,
                                                   PlatformsSchemaConstants.SharedDataTypes.IconMediaPicker,
                                                   cache,
+                                                  allowPlaceholder,
                                                   cancellationToken);
 
         placeholders.Image = await ResolveOneAsync(imageMediaId,
@@ -80,6 +82,7 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
                                                   UmbracoConventions.MediaTypes.Image,
                                                   PlatformsSchemaConstants.SharedDataTypes.ImageMediaPicker,
                                                   cache,
+                                                  allowPlaceholder,
                                                   cancellationToken);
 
         // The hero image is the same kind of asset as the image, so it reuses it unless the caller supplies its own.
@@ -99,6 +102,7 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
                                                                string mediaTypeAlias,
                                                                string pickerDataTypeName,
                                                                IDictionary<string, Guid> cache,
+                                                               bool allowPlaceholder,
                                                                CancellationToken cancellationToken) {
         if (suppliedId.HasValue) {
             var supplied = Describe(suppliedId.Value, out var problem);
@@ -118,6 +122,13 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
             }
 
             cache.Remove(kind);
+        }
+
+        if (!allowPlaceholder) {
+            throw new InvalidOperationException("No " +
+                                                kind +
+                                                " media was supplied. Pass one from the site's own library, or set " +
+                                                "allowPlaceholderMedia to download a placeholder from a third party");
         }
 
         var created = await DownloadAsync(kind, url, filename, mediaTypeAlias, pickerDataTypeName, cancellationToken);

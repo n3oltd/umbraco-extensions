@@ -1,4 +1,5 @@
 using N3O.Umbraco.Cloud.Platforms.Models;
+using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,23 +54,31 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
         var snapshot = new Dictionary<string, IReadOnlyList<string>>(_store.GetLockSnapshot(),
                                                                     StringComparer.OrdinalIgnoreCase);
 
+        var legacyAliases = GetLegacyAliases();
+
         foreach (var contentType in GetContentTypesToLock()) {
-            if (!HasAllowedChildren(contentType)) {
+            // Only the legacy entries are taken. A type that allows a legacy form usually allows other things too,
+            // and clearing the lot would be a permanent loss the moment anyone forgets to unlock.
+            var removed = contentType.AllowedContentTypes.OrEmpty()
+                                     .Where(x => legacyAliases.Contains(x.Alias))
+                                     .OrderBy(x => x.SortOrder)
+                                     .Select(x => x.Alias)
+                                     .ToList();
+
+            if (removed.Count == 0) {
                 alreadyLocked.Add(contentType.Alias);
 
                 continue;
             }
 
-            snapshot[contentType.Alias] = contentType.AllowedContentTypes
-                                                     .OrderBy(x => x.SortOrder)
-                                                     .Select(x => x.Alias)
-                                                     .ToList();
+            snapshot[contentType.Alias] = removed;
 
-            // The snapshot is the only record of what a type allowed, so it is persisted before the type is
-            // stripped and a failure part way through the loop still leaves every earlier entry restorable.
+            // The snapshot is the only record of what was taken, so it is persisted before the type is changed and
+            // a failure part way through the loop still leaves every earlier entry restorable.
             _store.SaveLockSnapshot(snapshot);
 
-            contentType.AllowedContentTypes = [];
+            contentType.AllowedContentTypes = Resequence(contentType.AllowedContentTypes
+                                                                    .Where(x => !legacyAliases.Contains(x.Alias)));
 
             _contentTypeService.Save(contentType);
 
@@ -102,7 +111,11 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
                 continue;
             }
 
-            contentType.AllowedContentTypes = BuildAllowed(pair.Value, unrestored);
+            // Additive, because only the legacy entries were taken and anything else the type allows was left alone
+            // and may since have changed.
+            contentType.AllowedContentTypes = Resequence(contentType.AllowedContentTypes
+                                                                    .OrEmpty()
+                                                                    .Concat(BuildAllowed(pair.Value, unrestored)));
 
             _contentTypeService.Save(contentType);
 
@@ -124,6 +137,36 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
         }
 
         return res;
+    }
+
+    // The legacy surface an editor could otherwise keep adding to: the option, folder and price handle types named
+    // in the constants, plus whichever types this site actually uses as its forms.
+    private IReadOnlyCollection<string> GetLegacyAliases() {
+        var aliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            GivingMigrationConstants.Legacy.DonationFormAlias,
+            GivingMigrationConstants.Legacy.DonationFormFolderAlias,
+            GivingMigrationConstants.Legacy.FeedbackDonationOptionAlias,
+            GivingMigrationConstants.Legacy.FundDonationOptionAlias,
+            GivingMigrationConstants.Legacy.PriceHandleAlias,
+            GivingMigrationConstants.Legacy.SponsorshipDonationOptionAlias,
+            GivingMigrationConstants.Legacy.UpsellOfferAlias
+        };
+
+        foreach (var contentType in _reader.GetFormContentTypes()) {
+            aliases.Add(contentType.Alias);
+        }
+
+        return aliases;
+    }
+
+    private static IReadOnlyList<ContentTypeSort> Resequence(IEnumerable<ContentTypeSort> allowed) {
+        var resequenced = new List<ContentTypeSort>();
+
+        foreach (var entry in allowed.DistinctBy(x => x.Alias)) {
+            resequenced.Add(new ContentTypeSort(entry.Id, resequenced.Count, entry.Alias));
+        }
+
+        return resequenced;
     }
 
     private IReadOnlyList<ContentTypeSort> BuildAllowed(IEnumerable<string> aliases, ICollection<string> unrestored) {

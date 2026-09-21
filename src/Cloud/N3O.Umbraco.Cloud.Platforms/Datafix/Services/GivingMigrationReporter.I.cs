@@ -6,4 +6,5 @@ namespace N3O.Umbraco.Cloud.Platforms;
 public interface IGivingMigrationReporter {
     GivingMigrationLedgerRes BuildLedger();
     GivingMigrationStatusRes BuildStatus();
+    GivingMigrationStatusRes BuildStatus(GivingMigrationPlanRes plan);
 }

@@ -9,7 +9,9 @@ public class GivingMigrationStatusRes {
     public int LegacyDonationOptions { get; set; }
     public int UnmigratedForms { get; set; }
     public int UnmigratedCrossSells { get; set; }
+    public int BlockedCrossSells { get; set; }
     public int CampaignsWithOfferingMismatch { get; set; }
+    public int CampaignsWithMissingLegacyForm { get; set; }
     public int Campaigns { get; set; }
     public int PublishedCampaigns { get; set; }
     public int Offerings { get; set; }

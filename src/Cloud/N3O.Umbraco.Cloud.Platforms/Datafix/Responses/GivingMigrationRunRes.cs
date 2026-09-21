@@ -10,10 +10,13 @@ public class GivingMigrationRunRes {
     public int Created { get; set; }
     public int Failed { get; set; }
     public int AlreadyMigrated { get; set; }
+    public int Blocked { get; set; }
     public int OfferingsCreated { get; set; }
     public int CrossSellsCreated { get; set; }
+    public bool PlaceholderMedia { get; set; }
     public Guid? IconMediaId { get; set; }
     public Guid? ImageMediaId { get; set; }
     public Guid? HeroImageMediaId { get; set; }
     public IEnumerable<GivingMigrationRunItemRes> Items { get; set; } = [];
+    public IEnumerable<GivingMigrationIssueRes> Issues { get; set; } = [];
 }

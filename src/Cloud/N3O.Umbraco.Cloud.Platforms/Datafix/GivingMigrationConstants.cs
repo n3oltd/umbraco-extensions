@@ -19,7 +19,7 @@ public static class GivingMigrationConstants {
         public const string NameDisambiguated = nameof(NameDisambiguated);
         public const string NameNotDerivable = nameof(NameNotDerivable);
         public const string NotRepointed = nameof(NotRepointed);
-        public const string PartiallyMigrated = nameof(PartiallyMigrated);
+        public const string PendingDraft = nameof(PendingDraft);
         public const string PlatformsTreeMissing = nameof(PlatformsTreeMissing);
         public const string ResidualReference = nameof(ResidualReference);
         public const string TargetContentTypeMissing = nameof(TargetContentTypeMissing);

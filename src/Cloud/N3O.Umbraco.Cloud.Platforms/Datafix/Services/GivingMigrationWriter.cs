@@ -283,7 +283,25 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
             return item;
         }
 
-        var missing = plan.Offerings.Where(x => !migratedOptionIds.Contains(x.LegacyOptionId)).ToList();
+        var campaign = _contentService.GetById(plan.TargetCampaignId.Value);
+
+        if (campaign == null) {
+            item.Outcome = GivingMigrationConstants.Outcomes.Failed;
+            item.Message = "The migrated campaign could not be found";
+
+            return item;
+        }
+
+        // The ledger can be behind the content if a run was interrupted between the save and the append, so what is
+        // already under the campaign is checked too rather than creating a second copy of it.
+        var existingNames = GivingMigrationContent.GetChildren(_contentService, campaign.Id)
+                                                  .Select(x => x.Name)
+                                                  .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var missing = plan.Offerings
+                          .Where(x => !migratedOptionIds.Contains(x.LegacyOptionId))
+                          .Where(x => !existingNames.Contains(x.OfferingName))
+                          .ToList();
 
         if (missing.Count == 0) {
             item.Outcome = GivingMigrationConstants.Outcomes.NotAttempted;
@@ -338,7 +356,12 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         var failures = new List<string>();
         var invalidProperties = new List<string>();
 
-        foreach (var child in GivingMigrationContent.GetChildren(_contentService, campaign.Id)) {
+        // Only the offerings are published, the same set the reporter counts. A campaign can hold other children and
+        // this step has no mandate to push those live.
+        var offeringTypeIds = GivingMigrationContent.GetOfferingContentTypeIds(_contentTypeService);
+
+        foreach (var child in GivingMigrationContent.GetChildren(_contentService, campaign.Id)
+                                                    .Where(x => offeringTypeIds.Contains(x.ContentTypeId))) {
             try {
                 var result = _contentEditor.ForExisting(child.Key).SaveAndPublish();
 
@@ -574,7 +597,9 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
             return;
         }
 
-        var elementAlias = ResolveNestedElementAlias(targetContentTypeAlias, targetAlias);
+        var elementAlias = ResolveNestedElementAlias(targetContentTypeAlias,
+                                                     targetAlias,
+                                                     PlatformsConstants.DonationFormState.SuggestedAmount);
 
         if (!elementAlias.HasValue()) {
             _logger.LogWarning("Could not resolve the nested element alias for {ContentType}.{Property}",
@@ -619,7 +644,9 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
     // The element alias is read from the target data type rather than assumed, because a site seeded before the
     // element was renamed still uses the old alias and the seeder never updates an existing type.
-    private string ResolveNestedElementAlias(string contentTypeAlias, string propertyAlias) {
+    // A nested content data type may legitimately allow more than one element type, so the one being written is
+    // asserted to be among them rather than whichever happens to be listed first.
+    private string ResolveNestedElementAlias(string contentTypeAlias, string propertyAlias, string expectedAlias) {
         var configuration = GetDataTypeConfiguration(contentTypeAlias, propertyAlias);
 
         if (Find(configuration, "contentTypes") is not JArray contentTypes) {
@@ -628,7 +655,7 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
         return contentTypes.OfType<JObject>()
                            .Select(x => Find(x, "ncAlias")?.ToString() ?? Find(x, "alias")?.ToString())
-                           .FirstOrDefault(x => x.HasValue());
+                           .FirstOrDefault(x => x.EqualsInvariant(expectedAlias));
     }
 
     // The data type configuration is a strongly typed object, so JObject.FromObject emits the CLR property names
@@ -675,7 +702,7 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
     private string BuildHeroImageJson(string contentTypeAlias, GivingPlaceholderMedia media) {
         var crops = GetCropDefinitions(contentTypeAlias, GivingMigrationConstants.Properties.HeroImage)
-                    .Select(x => AutoCrop(media.Width, media.Height, x.Item1, x.Item2))
+                    .Select(x => AutoCrop(media.Width, media.Height, x.Width, x.Height))
                     .ToList();
 
         var source = new {
@@ -690,16 +717,16 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         return JsonConvert.SerializeObject(source);
     }
 
-    private IReadOnlyList<Tuple<int, int>> GetCropDefinitions(string contentTypeAlias, string propertyAlias) {
+    // Each stored crop is matched to its definition by position when the value is read, so one crop is emitted per
+    // definition in the configured order, including any whose dimensions are not set.
+    private IReadOnlyList<(int Width, int Height)> GetCropDefinitions(string contentTypeAlias, string propertyAlias) {
         var configuration = GetDataTypeConfiguration(contentTypeAlias, propertyAlias);
 
         if (Find(configuration, "cropDefinitions") is not JArray definitions) {
             return [];
         }
 
-        return definitions.Select(x => Tuple.Create(GetInt(x, "width"), GetInt(x, "height")))
-                          .Where(x => x.Item1 > 0 && x.Item2 > 0)
-                          .ToList();
+        return definitions.Select(x => (Width: GetInt(x, "width"), Height: GetInt(x, "height"))).ToList();
     }
 
     private static IReadOnlyList<string> ParseDataList(string json) {
@@ -721,25 +748,33 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
     }
 
     private static object AutoCrop(int imageWidth, int imageHeight, int cropWidth, int cropHeight) {
-        var aspectRatio = cropWidth / (decimal) cropHeight;
+        var whole = new { x = 0, y = 0, width = imageWidth, height = imageHeight };
 
-        var candidates = new List<Tuple<int, int, int, int>>();
-        candidates.Add(Tuple.Create(0, 0, imageWidth, (int) (imageWidth / aspectRatio)));
-        candidates.Add(Tuple.Create(0, 0, (int) (imageHeight * aspectRatio), imageHeight));
-        candidates.Add(Tuple.Create((int) Math.Max(0, (imageWidth - cropWidth) / 2m),
-                                    (int) Math.Max(0, (imageHeight - cropHeight) / 2m),
-                                    Math.Min(cropWidth, imageWidth),
-                                    Math.Min(cropHeight, imageHeight)));
-
-        var crop = candidates.Where(x => x.Item1 + x.Item3 <= imageWidth && x.Item2 + x.Item4 <= imageHeight)
-                             .OrderByDescending(x => (long) x.Item3 * x.Item4)
-                             .FirstOrDefault();
-
-        if (crop == null) {
-            return new { x = 0, y = 0, width = imageWidth, height = imageHeight };
+        // A definition with no dimensions still needs its position in the array, and the whole image is the only
+        // crop that can be derived without them.
+        if (cropWidth <= 0 || cropHeight <= 0) {
+            return whole;
         }
 
-        return new { x = crop.Item1, y = crop.Item2, width = crop.Item3, height = crop.Item4 };
+        var aspectRatio = cropWidth / (decimal) cropHeight;
+
+        var candidates = new List<(int X, int Y, int Width, int Height)>();
+        candidates.Add((0, 0, imageWidth, (int) (imageWidth / aspectRatio)));
+        candidates.Add((0, 0, (int) (imageHeight * aspectRatio), imageHeight));
+        candidates.Add(((int) Math.Max(0, (imageWidth - cropWidth) / 2m),
+                        (int) Math.Max(0, (imageHeight - cropHeight) / 2m),
+                        Math.Min(cropWidth, imageWidth),
+                        Math.Min(cropHeight, imageHeight)));
+
+        var crops = candidates.Where(x => x.X + x.Width <= imageWidth && x.Y + x.Height <= imageHeight)
+                              .OrderByDescending(x => (long) x.Width * x.Height)
+                              .ToList();
+
+        if (crops.Count == 0) {
+            return whole;
+        }
+
+        return new { x = crops[0].X, y = crops[0].Y, width = crops[0].Width, height = crops[0].Height };
     }
 
     private static string BuildMediaPickerJson(Guid mediaId) {

@@ -2,8 +2,10 @@ using N3O.Umbraco.Cloud.Platforms.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
+using UmbracoUdi = Umbraco.Cms.Core.Constants.UdiEntityType;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -57,11 +59,12 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
 
         FlagNameCollisions(campaigns, blockers);
         FlagAlreadyMigrated(campaigns);
+        FlagExistingCampaignNames(campaigns, blockers);
         FlagPrefixedNames(campaigns, warnings);
 
         var crossSells = BuildCrossSells(crossSellTypeAlias);
 
-        RecordDroppedProperties(campaigns, dataLoss);
+        RecordDroppedProperties(forms, dataLoss);
 
         var res = new GivingMigrationPlanRes();
         res.Summary = BuildSummary(forms, campaigns, crossSells, blockers);
@@ -81,7 +84,7 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
 
         var res = new GivingMigrationCampaignRes();
         res.LegacyFormId = form.Content.Key;
-        res.LegacyUdi = GivingMigrationUdi.ForDocument(form.Content.Key);
+        res.LegacyUdi = Udi.Create(UmbracoUdi.Document, form.Content.Key).ToString();
         res.LegacyFormName = form.Content.Name;
         res.LegacyFolderName = form.FolderName;
         res.LegacyPath = form.Path;
@@ -152,7 +155,13 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
             res.CrossSellContentTypeAlias = crossSellTypeAlias;
             res.Ready = crossSellTypeAlias != null;
 
-            if (ledger.TryGetValue(upsell.Key, out var existingId)) {
+            // The ledger records what was created, not what still exists, so the target is resolved the same way
+            // FlagAlreadyMigrated resolves a campaign's. A deleted cross sell falls back to being planned again.
+            var existing = ledger.TryGetValue(upsell.Key, out var existingId)
+                               ? _contentService.GetById(existingId)
+                               : null;
+
+            if (existing != null && !existing.Trashed) {
                 res.Status = GivingMigrationConstants.EntryStatuses.AlreadyMigrated;
                 res.TargetCrossSellId = existingId;
             } else if (crossSellTypeAlias == null) {
@@ -170,21 +179,16 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
 
     // These legacy properties have no platforms equivalent and are deliberately not carried over, so only an option
     // that actually sets one loses anything.
-    private void RecordDroppedProperties(IReadOnlyList<GivingMigrationCampaignRes> campaigns,
-                                         List<GivingMigrationIssueRes> dataLoss) {
-        string[] dropped = [GivingMigrationConstants.Properties.HideDonation,
-                            GivingMigrationConstants.Properties.HideQuantity,
-                            GivingMigrationConstants.Properties.HideRegularGiving];
+    private static void RecordDroppedProperties(IReadOnlyList<LegacyForm> forms,
+                                                List<GivingMigrationIssueRes> dataLoss) {
+        var dropped = new[] {
+            GivingMigrationConstants.Properties.HideDonation,
+            GivingMigrationConstants.Properties.HideQuantity,
+            GivingMigrationConstants.Properties.HideRegularGiving
+        };
 
-        var affected = 0;
-
-        foreach (var offering in campaigns.SelectMany(x => x.Offerings)) {
-            var option = _contentService.GetById(offering.LegacyOptionId);
-
-            if (option != null && dropped.Any(x => option.GetValue<bool>(x))) {
-                affected++;
-            }
-        }
+        // The options were already loaded by the tree read, so they are not fetched back one at a time.
+        var affected = forms.SelectMany(x => x.Options).Count(x => dropped.Any(a => x.GetValue<bool>(a)));
 
         if (affected == 0) {
             return;
@@ -213,6 +217,46 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
                                GivingMigrationConstants.Severities.Blocker,
                                detail: message + ": " + string.Join("; ", claimants.Select(x => x.LegacyPath))));
         }
+
+    }
+
+    // Comparing the forms only against each other would still let the migration create the twin of a campaign that
+    // is already in the container. Runs after the ledger pass, so a campaign matching its own migrated target is
+    // left alone.
+    private void FlagExistingCampaignNames(IReadOnlyList<GivingMigrationCampaignRes> campaigns,
+                                           List<GivingMigrationIssueRes> blockers) {
+        var existingNames = GetExistingCampaignNames();
+
+        if (existingNames.Count == 0) {
+            return;
+        }
+
+        foreach (var campaign in campaigns.Where(x => x.Status == GivingMigrationConstants.EntryStatuses.Planned &&
+                                                      !x.TargetExists &&
+                                                      existingNames.Contains(x.CampaignName))) {
+            var message = "A campaign named " + campaign.CampaignName + " already exists in the campaigns container";
+
+            Block(campaign, message);
+
+            blockers.Add(Issue(GivingMigrationConstants.IssueKinds.NameNotDerivable,
+                               GivingMigrationConstants.Severities.Blocker,
+                               campaign.LegacyFormId,
+                               campaign.LegacyFormName,
+                               campaign.LegacyPath,
+                               detail: message));
+        }
+    }
+
+    private IReadOnlyCollection<string> GetExistingCampaignNames() {
+        var containers = GivingMigrationContent.GetAllOfAlias(_contentService,
+                                                              _contentTypeService,
+                                                              GivingMigrationConstants.Platforms.CampaignsAlias)
+                                               .Where(x => !x.Trashed)
+                                               .ToList();
+
+        return containers.SelectMany(x => GivingMigrationContent.GetChildren(_contentService, x.Id))
+                         .Select(x => x.Name)
+                         .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 
     // The ledger is the only authority on what has already been migrated; matching on name would silently adopt
@@ -321,6 +365,19 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
             warnings.Add(Issue(GivingMigrationConstants.IssueKinds.TargetContentTypeMissing,
                                GivingMigrationConstants.Severities.Warning,
                                detail: "The target cross sell content type does not exist: " + alias));
+
+            return null;
+        }
+
+        // The container is site owned, like the campaigns container, and nothing here creates it. Without it the
+        // cross sells stay blocked and the migration cannot complete, so the plan says which one is missing rather
+        // than leaving it to be discovered at purge time.
+        if (_contentTypeService.Get(PlatformsConstants.CrossSells.ContainerAlias) == null) {
+            warnings.Add(Issue(GivingMigrationConstants.IssueKinds.TargetContentTypeMissing,
+                               GivingMigrationConstants.Severities.Warning,
+                               detail: "The cross sell container content type does not exist: " +
+                                       PlatformsConstants.CrossSells.ContainerAlias +
+                                       ". Create it and a container node before migrating cross sells"));
 
             return null;
         }

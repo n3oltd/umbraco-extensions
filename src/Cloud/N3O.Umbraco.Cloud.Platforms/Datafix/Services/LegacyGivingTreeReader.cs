@@ -25,6 +25,21 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
         _contentTypeService = contentTypeService;
     }
 
+    public string BuildPath(IContent content) {
+        var names = new List<string>();
+        var current = _contentService.GetParent(content);
+
+        while (current != null) {
+            names.Insert(0, current.Name);
+
+            current = _contentService.GetParent(current);
+        }
+
+        names.Add(content.Name);
+
+        return string.Join(GivingMigrationConstants.PathSeparator, names);
+    }
+
     public IReadOnlyList<IContentType> GetFormContentTypes() {
         return _contentTypeService.GetAll()
                                   .Where(IsLegacyFormContentType)
@@ -159,20 +174,5 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
         }
 
         return !IsLegacyFormContentType(contentType);
-    }
-
-    public string BuildPath(IContent content) {
-        var names = new List<string>();
-        var current = _contentService.GetParent(content);
-
-        while (current != null) {
-            names.Insert(0, current.Name);
-
-            current = _contentService.GetParent(current);
-        }
-
-        names.Add(content.Name);
-
-        return string.Join(GivingMigrationConstants.PathSeparator, names);
     }
 }

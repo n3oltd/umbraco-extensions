@@ -6,7 +6,9 @@ using NodaTime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Services;
+using UmbracoLocks = Umbraco.Cms.Core.Constants.Locks;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -14,22 +16,32 @@ namespace N3O.Umbraco.Cloud.Platforms;
 public class GivingMigrationStore : IGivingMigrationStore {
     private readonly IKeyValueService _keyValueService;
     private readonly IJsonProvider _jsonProvider;
+    private readonly ICoreScopeProvider _scopeProvider;
     private readonly IClock _clock;
 
-    public GivingMigrationStore(IKeyValueService keyValueService, IJsonProvider jsonProvider, IClock clock) {
+    public GivingMigrationStore(IKeyValueService keyValueService,
+                                IJsonProvider jsonProvider,
+                                ICoreScopeProvider scopeProvider,
+                                IClock clock) {
         _keyValueService = keyValueService;
         _jsonProvider = jsonProvider;
+        _scopeProvider = scopeProvider;
         _clock = clock;
     }
 
+    // The ledger is one key value row read, modified and written back, so two overlapping runs would each write a
+    // version missing the other's entries. The lock is taken in the database, which covers every caller and every
+    // instance, rather than in this process.
     public void AppendLedger(IEnumerable<GivingMigrationLedgerEntry> entries) {
-        var byLegacyId = GetLedger().ToDictionary(x => x.LegacyId);
+        InLock(() => {
+            var byLegacyId = GetLedger().ToDictionary(x => x.LegacyId);
 
-        foreach (var entry in entries.OrEmpty()) {
-            byLegacyId[entry.LegacyId] = entry;
-        }
+            foreach (var entry in entries.OrEmpty()) {
+                byLegacyId[entry.LegacyId] = entry;
+            }
 
-        Save(GivingMigrationConstants.KeyValueKeys.Ledger, byLegacyId.Values.ToList());
+            Save(GivingMigrationConstants.KeyValueKeys.Ledger, byLegacyId.Values.ToList());
+        });
     }
 
     public void DeleteLockSnapshot() {
@@ -51,22 +63,22 @@ public class GivingMigrationStore : IGivingMigrationStore {
         return snapshot ?? new Dictionary<string, IReadOnlyList<string>>();
     }
 
-    public GivingMigrationPersistedPlanRes GetPlan() {
-        return Read<GivingMigrationPersistedPlanRes>(GivingMigrationConstants.KeyValueKeys.PersistedPlan);
-    }
-
     public IReadOnlyDictionary<string, Guid> GetPlaceholderMedia() {
         var media = Read<Dictionary<string, Guid>>(GivingMigrationConstants.KeyValueKeys.Placeholders);
 
         return media ?? new Dictionary<string, Guid>();
     }
 
+    public GivingMigrationPersistedPlanRes GetPlan() {
+        return Read<GivingMigrationPersistedPlanRes>(GivingMigrationConstants.KeyValueKeys.PersistedPlan);
+    }
+
     public void SaveLockSnapshot(IReadOnlyDictionary<string, IReadOnlyList<string>> snapshot) {
-        Save(GivingMigrationConstants.KeyValueKeys.TreeLockSnapshot, snapshot);
+        InLock(() => Save(GivingMigrationConstants.KeyValueKeys.TreeLockSnapshot, snapshot));
     }
 
     public void SavePlaceholderMedia(IReadOnlyDictionary<string, Guid> media) {
-        Save(GivingMigrationConstants.KeyValueKeys.Placeholders, media);
+        InLock(() => Save(GivingMigrationConstants.KeyValueKeys.Placeholders, media));
     }
 
     public GivingMigrationPersistedPlanRes SavePlan(GivingMigrationPlanRes plan) {
@@ -74,9 +86,19 @@ public class GivingMigrationStore : IGivingMigrationStore {
         res.SavedAt = _clock.GetCurrentInstant();
         res.Plan = plan;
 
-        Save(GivingMigrationConstants.KeyValueKeys.PersistedPlan, res);
+        InLock(() => Save(GivingMigrationConstants.KeyValueKeys.PersistedPlan, res));
 
         return res;
+    }
+
+    private void InLock(Action action) {
+        using (var scope = _scopeProvider.CreateCoreScope()) {
+            scope.EagerWriteLock(UmbracoLocks.KeyValues);
+
+            action();
+
+            scope.Complete();
+        }
     }
 
     // NodaTime values do not round-trip through a bare JsonConvert, so persisted state always goes through the

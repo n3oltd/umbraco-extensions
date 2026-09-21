@@ -43,6 +43,11 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
     }
 
     public GivingMigrationStatusRes BuildStatus() {
+        return BuildStatus(_planner.BuildPlan());
+    }
+
+    // The purge already holds a plan and building one walks the whole legacy tree, so the caller can hand its own in.
+    public GivingMigrationStatusRes BuildStatus(GivingMigrationPlanRes plan) {
         var res = new GivingMigrationStatusRes();
         res.SubscriptionId = _subscriptionAccessor.GetSubscription().Id.ToString();
         var forms = _reader.GetForms();
@@ -64,8 +69,8 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
             }
 
             var offerings = GivingMigrationContent.GetChildren(_contentService, campaign.Id)
-                            .Where(x => offeringTypeIds.Contains(x.ContentTypeId))
-                            .ToList();
+                                                  .Where(x => offeringTypeIds.Contains(x.ContentTypeId))
+                                                  .ToList();
 
             var item = new GivingMigrationStatusItemRes();
             item.LegacyFormId = entry.LegacyId;
@@ -76,12 +81,14 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
             item.Published = campaign.Published;
             item.Offerings = offerings.Count;
             item.PublishedOfferings = offerings.Count(x => x.Published);
-            item.OfferingsMatchOptions = item.Offerings == item.LegacyDonationOptions;
+            // A form trashed after it was migrated is no longer read from the tree, so there is nothing left to
+            // compare its campaign against and it is not held open as a mismatch.
+            item.LegacyFormExists = optionCounts.ContainsKey(entry.LegacyId);
+            item.OfferingsMatchOptions = !item.LegacyFormExists ||
+                                         item.Offerings == item.LegacyDonationOptions;
 
             items.Add(item);
         }
-
-        var plan = _planner.BuildPlan();
 
         // A ledger entry for a form that no longer exists would otherwise stand in for a form that was never
         // migrated, so the forms themselves are compared rather than how many of them there are.
@@ -93,12 +100,19 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
         res.Offerings = items.Sum(x => x.Offerings);
         res.PublishedOfferings = items.Sum(x => x.PublishedOfferings);
         res.UnmigratedForms = forms.Count(x => !migratedFormIds.Contains(x.Content.Key));
+
+        // Planned and blocked are counted apart because they need different things from the operator: one more run
+        // of migrate, against a schema problem the run cannot solve.
         res.UnmigratedCrossSells =
-            plan.CrossSells.Count(x => x.Status != GivingMigrationConstants.EntryStatuses.AlreadyMigrated);
+            plan.CrossSells.Count(x => x.Status == GivingMigrationConstants.EntryStatuses.Planned);
+        res.BlockedCrossSells =
+            plan.CrossSells.Count(x => x.Status == GivingMigrationConstants.EntryStatuses.Blocked);
         res.CampaignsWithOfferingMismatch = items.Count(x => !x.OfferingsMatchOptions);
+        res.CampaignsWithMissingLegacyForm = items.Count(x => !x.LegacyFormExists);
         res.Complete = res.Campaigns > 0 &&
                        res.UnmigratedForms == 0 &&
                        res.UnmigratedCrossSells == 0 &&
+                       res.BlockedCrossSells == 0 &&
                        res.Campaigns == res.PublishedCampaigns &&
                        res.Offerings == res.PublishedOfferings &&
                        res.CampaignsWithOfferingMismatch == 0;

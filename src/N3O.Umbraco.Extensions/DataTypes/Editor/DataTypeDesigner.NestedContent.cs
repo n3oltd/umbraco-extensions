@@ -24,10 +24,23 @@ public class NestedContentDataTypeDesigner : DataTypeDesigner {
                                          IConfigurationEditorJsonSerializer configurationEditorJsonSerializer)
         : base(dataTypeService, propertyEditors, configurationEditorJsonSerializer) { }
 
-    public NestedContentDataTypeDesigner ElementType(string elementTypeAlias) {
+    // A nested content data type may allow more than one element type, so adding and setting are separate: the
+    // name ElementType reads as a setter and behaves as one.
+    public NestedContentDataTypeDesigner AddElementType(string elementTypeAlias) {
         if (!_elementTypeAliases.Contains(elementTypeAlias, true)) {
             _elementTypeAliases.Add(elementTypeAlias);
         }
+
+        return this;
+    }
+
+    public NestedContentDataTypeDesigner AddElementType<T>() where T : IUmbracoElement {
+        return AddElementType(AliasHelper.ContentTypeAlias(typeof(T)));
+    }
+
+    public NestedContentDataTypeDesigner ElementType(string elementTypeAlias) {
+        _elementTypeAliases.Clear();
+        _elementTypeAliases.Add(elementTypeAlias);
 
         return this;
     }

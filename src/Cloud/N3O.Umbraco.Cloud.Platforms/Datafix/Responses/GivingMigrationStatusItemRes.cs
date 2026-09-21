@@ -5,6 +5,7 @@ namespace N3O.Umbraco.Cloud.Platforms.Models;
 public class GivingMigrationStatusItemRes {
     public Guid LegacyFormId { get; set; }
     public string LegacyFormName { get; set; }
+    public bool LegacyFormExists { get; set; }
     public int LegacyDonationOptions { get; set; }
     public Guid CampaignId { get; set; }
     public string CampaignName { get; set; }

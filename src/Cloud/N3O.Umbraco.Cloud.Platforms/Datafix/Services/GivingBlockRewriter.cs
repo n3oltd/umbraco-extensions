@@ -10,11 +10,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using UmbracoPropertyEditors = Umbraco.Cms.Core.Constants.PropertyEditors;
 using UmbracoSecurity = Umbraco.Cms.Core.Constants.Security;
-using UmbracoSystem = Umbraco.Cms.Core.Constants.System;
+using UmbracoUdi = Umbraco.Cms.Core.Constants.UdiEntityType;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -22,15 +23,14 @@ namespace N3O.Umbraco.Cloud.Platforms;
 // value, so the blocks render the migrated campaign instead of the legacy form.
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingBlockRewriter : IGivingBlockRewriter {
-    private const int PageSize = 200;
     private const string DocumentUdiPrefix = "umb://document/";
+    private const string BlockContentTypeKey = "contentTypeKey";
     private const string NestedContentTypeAlias = "ncContentTypeAlias";
     private const string NestedKey = "key";
     private const string NestedName = "name";
 
-    private static readonly Regex DocumentUdi = new("^umb://document/([0-9a-fA-F]{32})$",
-                                                    RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
+    // A whole value is parsed by the framework, but a reference buried in a JSON blob has to be found before it can
+    // be parsed and no framework helper searches free text.
     private static readonly Regex AnyDocumentUdi = new("umb://document/([0-9a-fA-F]{32})",
                                                        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
@@ -98,10 +98,13 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             propertyAliases.Add(GivingMigrationConstants.Legacy.DonationFormAlias);
         }
 
-        var itemContentType = _contentTypeService.Get(req.ItemContentTypeAlias);
+        // The value written names the campaign property, so the campaign item type is the only one that produces a
+        // populated block. It is not a choice the caller can be given.
+        var itemContentType = _contentTypeService.Get(PlatformsConstants.DonationFormItems.Campaign);
 
         if (itemContentType == null) {
-            res.Message = "The donation form item element type does not exist: " + req.ItemContentTypeAlias;
+            res.Message = "The donation form item element type does not exist: " +
+                          PlatformsConstants.DonationFormItems.Campaign;
 
             return res;
         }
@@ -127,7 +130,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         var items = new List<GivingMigrationRewriteItemRes>();
         var issues = new List<GivingMigrationIssueRes>();
 
-        foreach (var content in GetAllContent()) {
+        foreach (var content in GivingMigrationContent.GetAllContent(_contentService)) {
             res.PagesScanned++;
 
             var item = RewriteOne(content,
@@ -167,6 +170,8 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         res.Issues = issues;
         res.PagesMatched = items.Count;
         res.PagesRewritten = items.Count(x => x.Outcome == GivingMigrationConstants.Outcomes.Rewritten);
+        res.PagesSkipped = items.Count(x => x.Outcome == GivingMigrationConstants.Outcomes.Skipped);
+        res.PagesWithPendingDraft = issues.Count(x => x.Kind == GivingMigrationConstants.IssueKinds.PendingDraft);
         res.Failed = items.Count(x => x.Outcome == GivingMigrationConstants.Outcomes.Failed);
         res.ReferencesFound = items.Sum(x => x.References);
         res.ReferencesRewritten = items.Sum(x => x.Rewritten);
@@ -186,12 +191,14 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             return issues;
         }
 
-        foreach (var content in GetAllContent()) {
-            FindReferences(content, legacyIds, issues);
+        var propertyAliases = new[] { GivingMigrationConstants.Legacy.DonationFormAlias };
+
+        foreach (var content in GivingMigrationContent.GetAllContent(_contentService)) {
+            FindReferences(content, legacyIds, propertyAliases, issues);
         }
 
         foreach (var blueprint in _contentService.GetBlueprintsForContentTypes()) {
-            FindReferences(blueprint, legacyIds, issues);
+            FindReferences(blueprint, legacyIds, propertyAliases, issues);
         }
 
         return issues;
@@ -218,16 +225,21 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                 return item;
             }
 
-            var property = contentType.PropertyTypes.FirstOrDefault(x => x.Alias.EqualsInvariant(propertyAlias));
+            // The property can be declared on a composition rather than on the type itself, and the change is only
+            // persisted by saving the type that declares it.
+            var declaringType = FindDeclaringType(contentType, propertyAlias);
 
-            if (property == null) {
+            if (declaringType == null) {
                 item.Outcome = GivingMigrationConstants.Outcomes.Failed;
                 item.Message = "The content type has no property named " + propertyAlias.Quote();
 
                 return item;
             }
 
+            var property = declaringType.PropertyTypes.First(x => x.Alias.EqualsInvariant(propertyAlias));
+
             item.FromEditorAlias = property.PropertyEditorAlias;
+            item.DeclaringContentTypeAlias = declaringType.Alias;
 
             if (property.DataTypeKey == dataType.Key) {
                 item.Outcome = GivingMigrationConstants.Outcomes.Skipped;
@@ -257,7 +269,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             property.DataTypeId = dataType.Id;
             property.DataTypeKey = dataType.Key;
 
-            _contentTypeService.Save(contentType);
+            _contentTypeService.Save(declaringType);
 
             item.Outcome = GivingMigrationConstants.Outcomes.Rewritten;
         } catch (Exception ex) {
@@ -275,24 +287,41 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
     private static void FindReferences(IContent content,
                                        IReadOnlyCollection<Guid> legacyIds,
+                                       IReadOnlyCollection<string> propertyAliases,
                                        ICollection<GivingMigrationIssueRes> issues) {
         foreach (var property in content.Properties) {
             var found = new HashSet<Guid>();
+            var repairable = propertyAliases.Contains(property.Alias, true);
 
             foreach (var value in property.Values) {
+                repairable |= HoldsPicker(value.EditedValue as string, propertyAliases);
+                repairable |= HoldsPicker(value.PublishedValue as string, propertyAliases);
+
                 Collect(value.EditedValue as string, legacyIds, found);
                 Collect(value.PublishedValue as string, legacyIds, found);
             }
+
+            // The rewrite only repairs a reference held in the picker, so one found anywhere else is reported as
+            // needing a hand rather than sending the operator to run a step that will not touch it.
+            var detail = repairable
+                             ? "The content still references a legacy node that the purge would delete. Run the " +
+                               "rewrite to replace it"
+                             : "The content references a legacy node outside the donation form picker, which the " +
+                               "rewrite does not touch, so it has to be cleared by hand";
 
             foreach (var legacyId in found) {
                 issues.Add(Issue(GivingMigrationConstants.IssueKinds.ResidualReference,
                                  GivingMigrationConstants.Severities.Blocker,
                                  legacyId,
-                                 content.Name,
+                                 content,
                                  property.Alias,
-                                 "The content still references a legacy form that the purge would delete"));
+                                 detail));
             }
         }
+    }
+
+    private static bool HoldsPicker(string value, IReadOnlyCollection<string> propertyAliases) {
+        return value.HasValue() && propertyAliases.Any(x => value.Contains("\"" + x + "\""));
     }
 
     private static void Collect(string value, IReadOnlyCollection<Guid> legacyIds, ISet<Guid> found) {
@@ -305,26 +334,6 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                 found.Add(legacyId);
             }
         }
-    }
-
-    // Recycle bin content is returned by the descendant walk but is not live, so it is filtered out rather than
-    // being rewritten and reported as an unclearable issue.
-    private IEnumerable<IContent> GetAllContent() {
-        long page = 0;
-        long total;
-
-        do {
-            foreach (var content in _contentService.GetPagedDescendants(UmbracoSystem.Root,
-                                                                        page,
-                                                                        PageSize,
-                                                                        out total)) {
-                if (!content.Trashed) {
-                    yield return content;
-                }
-            }
-
-            page++;
-        } while (page * PageSize < total);
     }
 
     private GivingMigrationRewriteItemRes RewriteOne(IContent content,
@@ -393,16 +402,20 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             return item;
         }
 
-        if (preview) {
-            item.Outcome = GivingMigrationConstants.Outcomes.NotAttempted;
+        // Checked ahead of preview so a dry run reveals the pages a real run would skip, and raised as an issue as
+        // well as on the item because this is the condition most likely to hold the purge open.
+        if (pendingDraft) {
+            issues.Add(PendingDraft(content));
+
+            item.Outcome = GivingMigrationConstants.Outcomes.Skipped;
+            item.Message = "The page has unpublished changes, so publishing the rewrite would publish them too. " +
+                           "Publish or discard the draft and run the rewrite again";
 
             return item;
         }
 
-        if (pendingDraft) {
-            item.Outcome = GivingMigrationConstants.Outcomes.Skipped;
-            item.Message = "The page has unpublished changes, so publishing the rewrite would publish them too. " +
-                           "Publish or discard the draft and run the rewrite again";
+        if (preview) {
+            item.Outcome = GivingMigrationConstants.Outcomes.NotAttempted;
 
             return item;
         }
@@ -418,9 +431,15 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
                 item.Outcome = GivingMigrationConstants.Outcomes.Rewritten;
             } else if (content.Published) {
-                var published = _contentService.SaveAndPublish(content,
-                                                               PublishedCultures(content),
-                                                               UmbracoSecurity.SuperUserId);
+                // Publishing with the single culture overload's default of every culture would push live any
+                // culture an editor had deliberately left unpublished, but the array overload rejects the wildcard
+                // that same default relies on, so an invariant page has to go through the other one.
+                var published = content.ContentType.Variations.HasFlag(ContentVariation.Culture)
+                                    ? _contentService.SaveAndPublish(content,
+                                                                     content.PublishedCultures.ToArray(),
+                                                                     UmbracoSecurity.SuperUserId)
+                                    : _contentService.SaveAndPublish(content,
+                                                                     userId: UmbracoSecurity.SuperUserId);
 
                 if (published.Success) {
                     item.Outcome = GivingMigrationConstants.Outcomes.Rewritten;
@@ -478,7 +497,8 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             // Repoint takes an operator supplied list of block types, so a type left out of it would otherwise have
             // its legacy value overwritten with nested content JSON its editor cannot read, destroying the original
             // reference. The binding itself is the authority for what may be written, never the supplied list.
-            var holderAlias = holder[NestedContentTypeAlias]?.Value<string>();
+            var holderAlias = holder[NestedContentTypeAlias]?.Value<string>() ??
+                              ResolveHolderAlias(holder[BlockContentTypeKey]?.Value<string>());
 
             foreach (var alias in propertyAliases) {
                 if (holder[alias] != null && !IsBound(holderAlias, alias, dataTypeKey)) {
@@ -498,9 +518,8 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                 }
 
                 var raw = candidate.Value<string>() ?? string.Empty;
-                var match = DocumentUdi.Match(raw);
 
-                if (!match.Success || !Guid.TryParseExact(match.Groups[1].Value, "N", out var legacyId)) {
+                if (!TryParseDocument(raw, out var legacyId)) {
                     if (Matches(raw)) {
                         issues.Add(Unrecognised(content, alias));
                     }
@@ -514,7 +533,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                     issues.Add(Issue(GivingMigrationConstants.IssueKinds.UnmappedReference,
                                      GivingMigrationConstants.Severities.Blocker,
                                      legacyId,
-                                     content.Name,
+                                     content,
                                      alias,
                                      "The legacy form is not in the migration ledger so the reference was left " +
                                      "as it is"));
@@ -612,9 +631,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             return RewriteResult.None;
         }
 
-        var match = DocumentUdi.Match(value.Trim());
-
-        if (!match.Success || !Guid.TryParseExact(match.Groups[1].Value, "N", out var legacyId)) {
+        if (!TryParseDocument(value.Trim(), out var legacyId)) {
             issues.Add(Unrecognised(content, propertyAlias));
 
             return RewriteResult.None;
@@ -624,7 +641,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             issues.Add(Issue(GivingMigrationConstants.IssueKinds.UnmappedReference,
                              GivingMigrationConstants.Severities.Blocker,
                              legacyId,
-                             content.Name,
+                             content,
                              propertyAlias,
                              "The legacy form is not in the migration ledger so the reference was left as it is"));
 
@@ -661,7 +678,11 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         }
 
         var contentType = _contentTypeService.Get(contentTypeAlias);
-        var property = contentType?.PropertyTypes.FirstOrDefault(x => x.Alias.EqualsInvariant(propertyAlias));
+
+        // CompositionPropertyTypes rather than PropertyTypes: the latter is local declarations only, so a donation
+        // form property inherited from a composition would read as unbound and never be rewritten.
+        var property = contentType?.CompositionPropertyTypes
+                                   .FirstOrDefault(x => x.Alias.EqualsInvariant(propertyAlias));
 
         bound = property != null && property.DataTypeKey == dataTypeKey;
 
@@ -670,12 +691,48 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         return bound;
     }
 
-    private static string[] PublishedCultures(IContent content) {
-        // Publishing with the default of every culture would push live any culture an editor had deliberately left
-        // unpublished, so only the cultures already published are republished.
-        return content.ContentType.Variations.HasFlag(ContentVariation.Culture)
-                   ? content.PublishedCultures.ToArray()
-                   : ["*"];
+    // A Block List or Block Grid item names its element type by key rather than by alias, so the holder is resolved
+    // from whichever of the two it carries.
+    private string ResolveHolderAlias(string contentTypeKey) {
+        if (!Guid.TryParse(contentTypeKey, out var key)) {
+            return null;
+        }
+
+        return _contentTypeService.Get(key)?.Alias;
+    }
+
+    private IContentType FindDeclaringType(IContentType contentType, string propertyAlias) {
+        if (contentType.PropertyTypes.Any(x => x.Alias.EqualsInvariant(propertyAlias))) {
+            return contentType;
+        }
+
+        foreach (var composition in contentType.ContentTypeComposition) {
+            var composed = _contentTypeService.Get(composition.Alias);
+
+            if (composed == null) {
+                continue;
+            }
+
+            var declaring = FindDeclaringType(composed, propertyAlias);
+
+            if (declaring != null) {
+                return declaring;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryParseDocument(string value, out Guid key) {
+        key = Guid.Empty;
+
+        if (!UdiParser.TryParse(value, out GuidUdi udi) || !udi.EntityType.EqualsInvariant(UmbracoUdi.Document)) {
+            return false;
+        }
+
+        key = udi.Guid;
+
+        return true;
     }
 
     private static bool Matches(string value) {
@@ -687,8 +744,8 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                                                         string propertyAlias) {
         return Issue(GivingMigrationConstants.IssueKinds.NotRepointed,
                      GivingMigrationConstants.Severities.Blocker,
-                     Guid.Empty,
-                     content.Name,
+                     null,
+                     content,
                      propertyAlias,
                      "The property on " +
                      (contentTypeAlias.HasValue() ? contentTypeAlias : "an unidentified element type").Quote() +
@@ -696,27 +753,41 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                      "content type and run the rewrite again");
     }
 
+    private static GivingMigrationIssueRes PendingDraft(IContent content) {
+        return Issue(GivingMigrationConstants.IssueKinds.PendingDraft,
+                     GivingMigrationConstants.Severities.Blocker,
+                     null,
+                     content,
+                     null,
+                     "The page has unpublished changes, so publishing the rewrite would publish them too. Publish " +
+                     "or discard the draft and run the rewrite again");
+    }
+
     private static GivingMigrationIssueRes Unrecognised(IContent content, string propertyAlias) {
         return Issue(GivingMigrationConstants.IssueKinds.UnrecognisedReference,
                      GivingMigrationConstants.Severities.Blocker,
-                     Guid.Empty,
-                     content.Name,
+                     null,
+                     content,
                      propertyAlias,
                      "The picker holds a document reference in a shape the rewriter does not recognise, such as a " +
                      "multiple item value, so it was left as it is");
     }
 
+    // The legacy fields describe the form being migrated, so the page holding the reference goes in its own,
+    // otherwise the one field means two different nodes depending on which service produced the issue.
     private static GivingMigrationIssueRes Issue(string kind,
                                                  string severity,
-                                                 Guid legacyId,
-                                                 string pageName,
+                                                 Guid? legacyId,
+                                                 IContent page,
                                                  string propertyAlias,
                                                  string detail) {
         var res = new GivingMigrationIssueRes();
         res.Kind = kind;
         res.Severity = severity;
         res.LegacyId = legacyId;
-        res.LegacyName = pageName;
+        res.PageKey = page.Key;
+        res.PageName = page.Name;
+        res.PagePath = page.Path;
         res.PropertyAlias = propertyAlias;
         res.Detail = detail;
 

@@ -46,6 +46,11 @@ public static class PlatformsSchemaConstants {
         // The donation form types are referenced by key from the sites' own block definitions, so seeding them
         // under a generated key would leave those definitions pointing at nothing
         public static readonly Guid DonationFormCampaign = new("127ddbb5-d4b0-429c-ba19-6b4987b834e4");
+
+        // Held explicitly for the same reason, and set to the value the name derived key already produced so a site
+        // seeded before it was pinned keeps the type it has. Renaming the data type no longer moves its key.
+        public static readonly Guid DonationFormList = new("7018b08b-c643-5150-912d-e28d074ddf71");
+
         public static readonly Guid DonationFormOffering = new("3deb19db-3bf1-467f-85c4-531bd67a4c34");
     }
 
