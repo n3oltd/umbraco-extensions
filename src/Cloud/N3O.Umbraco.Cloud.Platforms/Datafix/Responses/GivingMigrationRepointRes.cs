@@ -9,5 +9,5 @@ public class GivingMigrationRepointRes {
     public int Repointed { get; set; }
     public int Skipped { get; set; }
     public int Failed { get; set; }
-    public IReadOnlyList<GivingMigrationRepointItemRes> Items { get; set; } = [];
+    public IEnumerable<GivingMigrationRepointItemRes> Items { get; set; } = [];
 }

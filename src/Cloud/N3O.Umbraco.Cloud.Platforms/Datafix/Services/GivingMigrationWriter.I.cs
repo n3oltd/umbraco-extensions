@@ -14,7 +14,7 @@ public interface IGivingMigrationWriter {
                                               Guid containerId,
                                               GivingPlaceholders placeholders,
                                               ICollection<GivingMigrationLedgerEntry> ledger);
-    Guid? EnsureCrossSellsContainerId();
+    Guid? EnsureCrossSellsContainerId(out string problem);
     Guid? GetCampaignsContainerId();
     GivingMigrationRunItemRes PublishOfferings(GivingMigrationCampaignRes plan);
 }

@@ -18,7 +18,6 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingMigrationWriter : IGivingMigrationWriter {
-    private const int PageSize = 200;
     private const string NestedContentTypeAlias = "ncContentTypeAlias";
     private const string NestedKey = "key";
     private const string NestedName = "name";
@@ -61,9 +60,9 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         return containers.Count == 1 ? containers[0].Key : null;
     }
 
-    // Umbraco only enforces allowed children in the backoffice, so the container can be created even though the
-    // platforms root does not list it as an allowed child.
-    public Guid? EnsureCrossSellsContainerId() {
+    public Guid? EnsureCrossSellsContainerId(out string problem) {
+        problem = null;
+
         var containers = GetAllOfAlias(PlatformsConstants.CrossSells.ContainerAlias);
 
         if (containers.Count == 1) {
@@ -71,16 +70,25 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         }
 
         if (containers.Count > 1) {
+            problem = "There is more than one cross sells container, so the migration cannot tell which to use";
+
             return null;
         }
 
         if (_contentTypeService.Get(PlatformsConstants.CrossSells.ContainerAlias) == null) {
+            problem = "The " + PlatformsConstants.CrossSells.ContainerAlias + " content type does not exist on this " +
+                      "site, so the container cannot be created";
+
             return null;
         }
 
         var roots = GetAllOfAlias(PlatformsConstants.Platforms.Alias);
 
         if (roots.Count != 1) {
+            problem = roots.Count == 0
+                          ? "There is no platforms root to create the cross sells container under"
+                          : "There is more than one platforms root, so the migration cannot tell which to use";
+
             return null;
         }
 
@@ -91,6 +99,8 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         var result = publisher.SaveAndPublish();
 
         if (!result.Success) {
+            problem = "The cross sells container could not be published: " + DescribeResult(result);
+
             _logger.LogError("Could not create the cross sells container: {Reason}", DescribeResult(result));
 
             return null;
@@ -98,7 +108,13 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
         var created = GetAllOfAlias(PlatformsConstants.CrossSells.ContainerAlias);
 
-        return created.Count == 1 ? created[0].Key : null;
+        if (created.Count != 1) {
+            problem = "The cross sells container was published but could not be read back";
+
+            return null;
+        }
+
+        return created[0].Key;
     }
 
     public GivingMigrationRunItemRes CreateCampaign(GivingMigrationCampaignRes plan,
@@ -195,14 +211,17 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
             SetContentPlaceholders(publisher, plan.CrossSellName, placeholders, description);
 
+            var problems = new List<string>();
+
             CopyVerbatimState(upsell, publisher);
-            CopyGiftType(upsell, publisher, GivingMigrationConstants.Properties.GivingType);
+            CopyGiftType(upsell, publisher, GivingMigrationConstants.Properties.GivingType, problems);
 
             CopySuggestedAmounts(upsell,
                                  publisher,
                                  GivingMigrationConstants.Properties.PriceHandles,
                                  GivingMigrationConstants.Properties.OneTimeSuggestedAmounts,
-                                 plan.CrossSellContentTypeAlias);
+                                 plan.CrossSellContentTypeAlias,
+                                 problems);
 
             Set(publisher,
                 GivingMigrationConstants.Properties.Stage,
@@ -324,7 +343,7 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
                                                offeringId);
 
             SetContentPlaceholders(publisher, offering.OfferingName, placeholders, null);
-            CopyOfferingState(offering, publisher);
+            CopyOfferingState(offering, publisher, failures);
 
             var result = publisher.SaveUnpublished();
 
@@ -349,27 +368,34 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
     // Each offering type carries its own mandatory state property, so an offering whose state is not copied saves
     // but can never be published.
-    private void CopyOfferingState(GivingMigrationOfferingRes offering, IContentPublisher publisher) {
+    private void CopyOfferingState(GivingMigrationOfferingRes offering,
+                                   IContentPublisher publisher,
+                                   ICollection<string> problems) {
         var option = _contentService.GetById(offering.LegacyOptionId);
 
         if (option == null) {
+            problems.Add(offering.OfferingName + ": the legacy donation option no longer exists so its state could " +
+                         "not be copied");
+
             return;
         }
 
         CopyVerbatimState(option, publisher);
-        CopyGiftType(option, publisher, GivingMigrationConstants.Properties.DefaultGivingType);
+        CopyGiftType(option, publisher, GivingMigrationConstants.Properties.DefaultGivingType, problems);
 
         CopySuggestedAmounts(option,
                              publisher,
                              GivingMigrationConstants.Properties.DonationPriceHandles,
                              GivingMigrationConstants.Properties.OneTimeSuggestedAmounts,
-                             offering.OfferingContentTypeAlias);
+                             offering.OfferingContentTypeAlias,
+                             problems);
 
         CopySuggestedAmounts(option,
                              publisher,
                              GivingMigrationConstants.Properties.RegularGivingPriceHandles,
                              GivingMigrationConstants.Properties.RecurringSuggestedAmounts,
-                             offering.OfferingContentTypeAlias);
+                             offering.OfferingContentTypeAlias,
+                             problems);
     }
 
     private void CopyVerbatimState(IContent source, IContentPublisher publisher) {
@@ -387,7 +413,10 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
     }
 
     // Both sides are data lists but over different lookups, so the ids have to be translated rather than copied.
-    private void CopyGiftType(IContent source, IContentPublisher publisher, string sourceAlias) {
+    private void CopyGiftType(IContent source,
+                              IContentPublisher publisher,
+                              string sourceAlias,
+                              ICollection<string> problems) {
         var target = GivingMigrationConstants.Properties.SuggestedGiftType;
 
         if (!publisher.HasProperty(target)) {
@@ -400,14 +429,24 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
             return;
         }
 
-        var giftTypes = ParseDataList(value).Select(MapGiftType)
-                                            .Where(x => x != null)
-                                            .Distinct()
-                                            .ToList();
+        var parsed = ParseDataList(value);
 
-        if (giftTypes.Count > 0) {
-            Set(publisher, target, JsonConvert.SerializeObject(giftTypes));
+        if (parsed.None()) {
+            problems.Add(target + ": the legacy " + sourceAlias + " value could not be read so no gift type was set");
+
+            return;
         }
+
+        var giftTypes = parsed.Select(MapGiftType).Where(x => x != null).Distinct().ToList();
+
+        if (giftTypes.Count == 0) {
+            problems.Add(target + ": none of the legacy giving types in " + sourceAlias + " map to a platforms gift " +
+                         "type, so the offering cannot be published");
+
+            return;
+        }
+
+        Set(publisher, target, JsonConvert.SerializeObject(giftTypes));
     }
 
     // Publishing maps the allocation for the outbound webhook, and the framework dereferences the donation item
@@ -418,9 +457,9 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
             if (inner is NullReferenceException &&
                 inner.StackTrace?.Contains(nameof(DonationFormStateContent.GetFundDimensionOptions),
                                            StringComparison.Ordinal) == true) {
-                return "The donation item or scheme could not be resolved, so the allocation could not be mapped. " +
-                       "These lookups are served by the cloud, so this normally means the site is not reaching it " +
-                       "with a valid subscription.";
+                return "The allocation could not be mapped because the donation item or scheme lookup returned " +
+                       "nothing. Those lookups are served by the cloud, so the usual cause is the site not reaching " +
+                       "it with a valid subscription. Original error: " + inner.Message;
             }
         }
 
@@ -470,7 +509,8 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
                                       IContentPublisher publisher,
                                       string sourceAlias,
                                       string targetAlias,
-                                      string targetContentTypeAlias) {
+                                      string targetContentTypeAlias,
+                                      ICollection<string> problems) {
         if (!publisher.HasProperty(targetAlias)) {
             return;
         }
@@ -488,14 +528,22 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
                                targetContentTypeAlias,
                                targetAlias);
 
+            problems.Add(targetAlias + ": the nested element type behind " + targetContentTypeAlias +
+                         " could not be resolved so the suggested amounts were dropped");
+
             return;
         }
 
         var rewritten = RewriteNestedContent(value, elementAlias);
 
-        if (rewritten.HasValue()) {
-            Set(publisher, targetAlias, rewritten);
+        if (!rewritten.HasValue()) {
+            problems.Add(targetAlias + ": the legacy " + sourceAlias + " value is not valid JSON so the suggested " +
+                         "amounts were dropped");
+
+            return;
         }
+
+        Set(publisher, targetAlias, rewritten);
     }
 
     private static string RewriteNestedContent(string json, string elementAlias) {
@@ -648,40 +696,13 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
     }
 
     private IReadOnlyList<IContent> GetAllOfAlias(string contentTypeAlias) {
-        var contentType = _contentTypeService.Get(contentTypeAlias);
-
-        if (contentType == null) {
-            return [];
-        }
-
-        var items = new List<IContent>();
-        long page = 0;
-        long total;
-
-        do {
-            var results = _contentService.GetPagedOfType(contentType.Id, page, PageSize, out total, null);
-
-            items.AddRange(results.Where(x => !x.Trashed));
-
-            page++;
-        } while (page * PageSize < total);
-
-        return items;
+        return GivingMigrationContent.GetAllOfAlias(_contentService, _contentTypeService, contentTypeAlias)
+                                     .Where(x => !x.Trashed)
+                                     .ToList();
     }
 
     private IReadOnlyList<IContent> GetChildren(int parentId) {
-        var children = new List<IContent>();
-        long page = 0;
-        long total;
-
-        do {
-            children.AddRange(_contentService.GetPagedChildren(parentId, page, PageSize, out total)
-                                             .Where(x => !x.Trashed));
-
-            page++;
-        } while (page * PageSize < total);
-
-        return children;
+        return GivingMigrationContent.GetChildren(_contentService, parentId);
     }
 
     private static IReadOnlyList<string> InvalidProperties(PublishResult result) {

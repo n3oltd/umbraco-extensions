@@ -147,6 +147,7 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
             var res = new GivingMigrationCrossSellRes();
             res.LegacyUpsellId = upsell.Key;
             res.LegacyUpsellName = upsell.Name;
+            res.LegacyPath = _reader.BuildPath(upsell);
             res.CrossSellName = upsell.Name;
             res.CrossSellContentTypeAlias = crossSellTypeAlias;
             res.Ready = crossSellTypeAlias != null;
@@ -167,19 +168,32 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
         return crossSells;
     }
 
-    // These legacy properties have no platforms equivalent and are deliberately not carried over.
+    // These legacy properties have no platforms equivalent and are deliberately not carried over, so only an option
+    // that actually sets one loses anything.
     private void RecordDroppedProperties(IReadOnlyList<GivingMigrationCampaignRes> campaigns,
                                          List<GivingMigrationIssueRes> dataLoss) {
-        var options = campaigns.Sum(x => x.ExpectedOfferings);
+        string[] dropped = [GivingMigrationConstants.Properties.HideDonation,
+                            GivingMigrationConstants.Properties.HideQuantity,
+                            GivingMigrationConstants.Properties.HideRegularGiving];
 
-        if (options == 0) {
+        var affected = 0;
+
+        foreach (var offering in campaigns.SelectMany(x => x.Offerings)) {
+            var option = _contentService.GetById(offering.LegacyOptionId);
+
+            if (option != null && dropped.Any(x => option.GetValue<bool>(x))) {
+                affected++;
+            }
+        }
+
+        if (affected == 0) {
             return;
         }
 
-        dataLoss.Add(Issue(GivingMigrationConstants.IssueKinds.UnmappedReference,
+        dataLoss.Add(Issue(GivingMigrationConstants.IssueKinds.DroppedProperty,
                            GivingMigrationConstants.Severities.DataLoss,
-                           detail: "hideDonation, hideRegularGiving and hideQuantity have no platforms equivalent " +
-                                   "and will not be migrated for " + options + " options"));
+                           detail: string.Join(", ", dropped) + " have no platforms equivalent and will not be " +
+                                   "migrated for " + affected + " options that set one"));
     }
 
     private void FlagNameCollisions(IReadOnlyList<GivingMigrationCampaignRes> campaigns,
@@ -228,6 +242,13 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
             campaign.TargetExists = true;
             campaign.TargetCampaignId = targetId;
             campaign.CreatedOfferings = CountOfferings(target.Id, offeringTypeIds);
+
+            // A campaign blocked by a name collision keeps that status, otherwise it reports as already migrated
+            // while staying not ready, with nothing saying why.
+            if (campaign.Status == GivingMigrationConstants.EntryStatuses.Blocked) {
+                continue;
+            }
+
             campaign.Status = GivingMigrationConstants.EntryStatuses.AlreadyMigrated;
             campaign.Message = "A platforms campaign already exists with " + campaign.CreatedOfferings + " of " +
                                campaign.ExpectedOfferings + " offerings";
@@ -247,13 +268,7 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
     }
 
     private IReadOnlyList<int> GetOfferingContentTypeIds() {
-        var composition = _contentTypeService.Get(PlatformsConstants.Offerings.CompositionAlias);
-
-        if (composition == null) {
-            return [];
-        }
-
-        return _contentTypeService.GetComposedOf(composition.Id).Select(x => x.Id).ToList();
+        return GivingMigrationContent.GetOfferingContentTypeIds(_contentTypeService);
     }
 
     private int CountOfferings(int campaignId, IReadOnlyList<int> offeringTypeIds) {
@@ -261,19 +276,8 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
             return 0;
         }
 
-        var count = 0;
-        long page = 0;
-        long total;
-
-        do {
-            var children = _contentService.GetPagedChildren(campaignId, page, 200, out total);
-
-            count += children.Count(x => !x.Trashed && offeringTypeIds.Contains(x.ContentTypeId));
-
-            page++;
-        } while (page * 200 < total);
-
-        return count;
+        return GivingMigrationContent.GetChildren(_contentService, campaignId)
+                                     .Count(x => offeringTypeIds.Contains(x.ContentTypeId));
     }
 
     private string ResolveCampaignContentTypeAlias(List<GivingMigrationIssueRes> blockers) {

@@ -10,21 +10,23 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class LegacyGivingPurger : ILegacyGivingPurger {
-    private const int PageSize = 200;
 
     private readonly IGivingMigrationPlanner _planner;
     private readonly IGivingMigrationReporter _reporter;
+    private readonly ILegacyGivingTreeReader _reader;
     private readonly IContentService _contentService;
     private readonly IContentTypeService _contentTypeService;
     private readonly ISubscriptionAccessor _subscriptionAccessor;
 
     public LegacyGivingPurger(IGivingMigrationPlanner planner,
                               IGivingMigrationReporter reporter,
+                              ILegacyGivingTreeReader reader,
                               IContentService contentService,
                               IContentTypeService contentTypeService,
                               ISubscriptionAccessor subscriptionAccessor) {
         _planner = planner;
         _reporter = reporter;
+        _reader = reader;
         _contentService = contentService;
         _contentTypeService = contentTypeService;
         _subscriptionAccessor = subscriptionAccessor;
@@ -80,7 +82,7 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
     private GivingMigrationPurgeItemRes Purge(IContent content, bool permanent) {
         var item = new GivingMigrationPurgeItemRes();
         item.LegacyId = content.Key;
-        item.LegacyPath = content.Name;
+        item.LegacyPath = _reader.BuildPath(content);
         item.ContentTypeAlias = content.ContentType.Alias;
 
         var result = permanent
@@ -98,39 +100,14 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
     }
 
     private IReadOnlyList<IContent> GetLegacyRoots() {
-        var contentType = _contentTypeService.Get(GivingMigrationConstants.Legacy.DonationFormsAlias);
-
-        if (contentType == null) {
-            return [];
-        }
-
-        var roots = new List<IContent>();
-        long page = 0;
-        long total;
-
-        do {
-            var items = _contentService.GetPagedOfType(contentType.Id, page, PageSize, out total, null);
-
-            roots.AddRange(items.Where(x => !x.Trashed));
-
-            page++;
-        } while (page * PageSize < total);
-
-        return roots;
+        return GivingMigrationContent.GetAllOfAlias(_contentService,
+                                                    _contentTypeService,
+                                                    GivingMigrationConstants.Legacy.DonationFormsAlias)
+                                     .Where(x => !x.Trashed)
+                                     .ToList();
     }
 
     private IReadOnlyList<IContent> GetChildren(int parentId) {
-        var children = new List<IContent>();
-        long page = 0;
-        long total;
-
-        do {
-            children.AddRange(_contentService.GetPagedChildren(parentId, page, PageSize, out total)
-                                             .Where(x => !x.Trashed));
-
-            page++;
-        } while (page * PageSize < total);
-
-        return children;
+        return GivingMigrationContent.GetChildren(_contentService, parentId);
     }
 }

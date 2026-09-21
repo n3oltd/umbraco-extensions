@@ -9,7 +9,6 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingMigrationReporter : IGivingMigrationReporter {
-    private const int PageSize = 200;
 
     private readonly IGivingMigrationStore _store;
     private readonly ILegacyGivingTreeReader _reader;
@@ -87,35 +86,20 @@ public class GivingMigrationReporter : IGivingMigrationReporter {
         res.PublishedOfferings = items.Sum(x => x.PublishedOfferings);
         res.CampaignsWithOfferingMismatch = items.Count(x => !x.OfferingsMatchOptions);
         res.Complete = res.Campaigns > 0 &&
+                       res.Campaigns == res.LegacyForms &&
                        res.Campaigns == res.PublishedCampaigns &&
-                       res.Offerings == res.PublishedOfferings;
+                       res.Offerings == res.PublishedOfferings &&
+                       res.CampaignsWithOfferingMismatch == 0;
 
         return res;
     }
 
     private IReadOnlyList<int> GetOfferingContentTypeIds() {
-        var composition = _contentTypeService.Get(PlatformsConstants.Offerings.CompositionAlias);
-
-        if (composition == null) {
-            return [];
-        }
-
-        return _contentTypeService.GetComposedOf(composition.Id).Select(x => x.Id).ToList();
+        return GivingMigrationContent.GetOfferingContentTypeIds(_contentTypeService);
     }
 
     private IReadOnlyList<IContent> GetChildren(int parentId) {
-        var children = new List<IContent>();
-        long page = 0;
-        long total;
-
-        do {
-            children.AddRange(_contentService.GetPagedChildren(parentId, page, PageSize, out total)
-                                             .Where(x => !x.Trashed));
-
-            page++;
-        } while (page * PageSize < total);
-
-        return children;
+        return GivingMigrationContent.GetChildren(_contentService, parentId);
     }
 
     private static GivingMigrationLedgerEntryRes Map(GivingMigrationLedgerEntry entry) {

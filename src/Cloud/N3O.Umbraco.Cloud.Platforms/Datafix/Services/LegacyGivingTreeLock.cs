@@ -34,7 +34,12 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
             }
         }
 
-        res.Locked = open.Count == 0;
+        res.Locked = locked.Count > 0 && open.Count == 0;
+
+        if (locked.Count == 0 && open.Count == 0) {
+            res.Message = "No legacy giving content types are present, so there is nothing to lock";
+        }
+
         res.LockedContentTypes = [];
         res.AlreadyLockedContentTypes = locked.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
 
@@ -69,7 +74,12 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
 
         _store.SaveLockSnapshot(snapshot);
 
-        res.Locked = true;
+        res.Locked = locked.Count > 0 || alreadyLocked.Count > 0;
+
+        if (!res.Locked) {
+            res.Message = "No legacy giving content types are present, so there was nothing to lock";
+        }
+
         res.LockedContentTypes = locked.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
         res.AlreadyLockedContentTypes = alreadyLocked.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
 
@@ -79,15 +89,18 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
     public GivingMigrationLockRes Unlock() {
         var snapshot = _store.GetLockSnapshot();
         var restored = new List<string>();
+        var unrestored = new List<string>();
 
         foreach (var pair in snapshot) {
             var contentType = _contentTypeService.Get(pair.Key);
 
             if (contentType == null) {
+                unrestored.AddRange(pair.Value);
+
                 continue;
             }
 
-            contentType.AllowedContentTypes = BuildAllowed(pair.Value);
+            contentType.AllowedContentTypes = BuildAllowed(pair.Value, unrestored);
 
             _contentTypeService.Save(contentType);
 
@@ -101,17 +114,25 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
         res.LockedContentTypes = [];
         res.AlreadyLockedContentTypes = [];
         res.RestoredContentTypes = restored.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+        res.UnrestoredContentTypes = unrestored.Distinct().OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList();
+
+        if (unrestored.Count > 0) {
+            res.Message = "Some allowed children no longer exist and could not be restored, and the snapshot has " +
+                          "now been deleted";
+        }
 
         return res;
     }
 
-    private IReadOnlyList<ContentTypeSort> BuildAllowed(IEnumerable<string> aliases) {
+    private IReadOnlyList<ContentTypeSort> BuildAllowed(IEnumerable<string> aliases, ICollection<string> unrestored) {
         var allowed = new List<ContentTypeSort>();
 
         foreach (var alias in aliases) {
             var child = _contentTypeService.Get(alias);
 
             if (child == null) {
+                unrestored.Add(alias);
+
                 continue;
             }
 

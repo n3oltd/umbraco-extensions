@@ -10,5 +10,4 @@ public class GivingMigrationOfferingRes {
     public string OfferingName { get; set; }
     public string OfferingContentTypeAlias { get; set; }
     public string Status { get; set; }
-    public Guid? TargetOfferingId { get; set; }
 }

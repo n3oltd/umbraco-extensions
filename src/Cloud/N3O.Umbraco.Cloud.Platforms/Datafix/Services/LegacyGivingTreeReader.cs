@@ -149,17 +149,7 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
     }
 
     private List<IContent> GetAllOfType(int contentTypeId) {
-        var results = new List<IContent>();
-        long page = 0;
-        long total;
-
-        do {
-            results.AddRange(_contentService.GetPagedOfType(contentTypeId, page, PageSize, out total, null));
-
-            page++;
-        } while (page * PageSize < total);
-
-        return results;
+        return GivingMigrationContent.GetAllOfType(_contentService, contentTypeId).ToList();
     }
 
     private bool IsUsableFolder(IContent parent) {
@@ -182,7 +172,7 @@ public class LegacyGivingTreeReader : ILegacyGivingTreeReader {
         return !IsLegacyFormContentType(contentType);
     }
 
-    private string BuildPath(IContent content) {
+    public string BuildPath(IContent content) {
         var names = new List<string>();
         var current = _contentService.GetParent(content);
 

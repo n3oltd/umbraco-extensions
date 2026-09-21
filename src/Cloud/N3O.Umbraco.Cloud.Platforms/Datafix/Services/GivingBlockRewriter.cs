@@ -148,7 +148,10 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
             item.Outcome = GivingMigrationConstants.Outcomes.Rewritten;
         } catch (Exception ex) {
-            _logger.LogError(ex, "Could not repoint {ContentTypeAlias}.{PropertyAlias}", contentTypeAlias, propertyAlias);
+            _logger.LogError(ex,
+                             "Could not repoint {ContentTypeAlias}.{PropertyAlias}",
+                             contentTypeAlias,
+                             propertyAlias);
 
             item.Outcome = GivingMigrationConstants.Outcomes.Failed;
             item.Message = ex.Message;
@@ -357,12 +360,21 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         foreach (var holder in GetObjects(token)) {
             foreach (var alias in propertyAliases) {
                 if (holder[alias] is not JValue candidate || candidate.Type != JTokenType.String) {
+                    if (Matches(holder[alias]?.ToString())) {
+                        issues.Add(Unrecognised(content, alias));
+                    }
+
                     continue;
                 }
 
-                var match = DocumentUdi.Match(candidate.Value<string>() ?? string.Empty);
+                var raw = candidate.Value<string>() ?? string.Empty;
+                var match = DocumentUdi.Match(raw);
 
                 if (!match.Success || !Guid.TryParseExact(match.Groups[1].Value, "N", out var legacyId)) {
+                    if (Matches(raw)) {
+                        issues.Add(Unrecognised(content, alias));
+                    }
+
                     continue;
                 }
 
@@ -462,6 +474,8 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         var match = DocumentUdi.Match(value.Trim());
 
         if (!match.Success || !Guid.TryParseExact(match.Groups[1].Value, "N", out var legacyId)) {
+            issues.Add(Unrecognised(content, propertyAlias));
+
             return RewriteResult.None;
         }
 
@@ -491,6 +505,16 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
     private static bool Matches(string value) {
         return value.HasValue() && value.IndexOf(DocumentUdiPrefix, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static GivingMigrationIssueRes Unrecognised(IContent content, string propertyAlias) {
+        return Issue(GivingMigrationConstants.IssueKinds.UnrecognisedReference,
+                     GivingMigrationConstants.Severities.Blocker,
+                     Guid.Empty,
+                     content.Name,
+                     propertyAlias,
+                     "The picker holds a document reference in a shape the rewriter does not recognise, such as a " +
+                     "multiple item value, so it was left as it is");
     }
 
     private static GivingMigrationIssueRes Issue(string kind,

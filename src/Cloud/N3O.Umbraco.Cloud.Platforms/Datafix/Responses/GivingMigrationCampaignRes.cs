@@ -20,5 +20,5 @@ public class GivingMigrationCampaignRes {
     public Guid? TargetCampaignId { get; set; }
     public int ExpectedOfferings { get; set; }
     public int CreatedOfferings { get; set; }
-    public IReadOnlyList<GivingMigrationOfferingRes> Offerings { get; set; } = [];
+    public IEnumerable<GivingMigrationOfferingRes> Offerings { get; set; } = [];
 }

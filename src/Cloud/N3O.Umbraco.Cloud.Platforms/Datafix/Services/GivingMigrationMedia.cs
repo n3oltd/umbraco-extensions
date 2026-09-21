@@ -101,10 +101,10 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
                                                                IDictionary<string, Guid> cache,
                                                                CancellationToken cancellationToken) {
         if (suppliedId.HasValue) {
-            var supplied = Describe(suppliedId.Value);
+            var supplied = Describe(suppliedId.Value, out var problem);
 
             if (supplied == null) {
-                throw new InvalidOperationException("No media item exists with id " + suppliedId.Value);
+                throw new InvalidOperationException(problem);
             }
 
             return supplied;
@@ -138,55 +138,72 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
         // Both placeholder services redirect to a CDN, so the handler must follow redirects (the default).
         var client = _httpClientFactory.CreateClient();
 
-        using var response = await client.GetAsync(url, cancellationToken);
+        byte[] bytes;
 
-        response.EnsureSuccessStatusCode();
+        using (var response = await client.GetAsync(url, cancellationToken)) {
+            response.EnsureSuccessStatusCode();
 
-        var bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
-
-        using var stream = new MemoryStream(bytes);
-
-        var media = _mediaService.CreateMedia(GivingMigrationConstants.Placeholders.MediaFolderName + " " + kind,
-                                              GetPickerStartNodeId(pickerDataTypeName),
-                                              mediaTypeAlias);
-
-        media.SetValue(_mediaFileManager,
-                       _mediaUrlGenerators,
-                       _shortStringHelper,
-                       _contentTypeBaseServiceProvider,
-                       UmbracoFile,
-                       filename,
-                       stream);
-
-        _mediaService.Save(media);
-
-        var descriptor = Describe(media.Key);
-
-        if (descriptor == null) {
-            throw new InvalidOperationException("The " + kind + " placeholder media could not be read back");
+            bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken);
         }
 
-        descriptor.Created = true;
+        using (var stream = new MemoryStream(bytes)) {
+            var media = _mediaService.CreateMedia(GivingMigrationConstants.Placeholders.MediaFolderName + " " + kind,
+                                                  GetPickerStartNodeId(pickerDataTypeName),
+                                                  mediaTypeAlias);
 
-        return descriptor;
+            media.SetValue(_mediaFileManager,
+                           _mediaUrlGenerators,
+                           _shortStringHelper,
+                           _contentTypeBaseServiceProvider,
+                           UmbracoFile,
+                           filename,
+                           stream);
+
+            _mediaService.Save(media);
+
+            var descriptor = Describe(media.Key);
+
+            if (descriptor == null) {
+                throw new InvalidOperationException("The " + kind + " placeholder media could not be read back");
+            }
+
+            descriptor.Created = true;
+
+            return descriptor;
+        }
     }
 
     private GivingPlaceholderMedia Describe(Guid mediaId) {
+        return Describe(mediaId, out _);
+    }
+
+    private GivingPlaceholderMedia Describe(Guid mediaId, out string problem) {
+        problem = null;
+
         var media = _mediaService.GetById(mediaId);
 
         if (media == null) {
+            problem = "No media item exists with id " + mediaId;
+
             return null;
         }
 
         var src = GetSrc(media);
 
         if (!src.HasValue()) {
+            problem = "Media item " + mediaId + " has no " + UmbracoFile + " value";
+
             return null;
         }
 
         var segments = src.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
+        // The file id is the folder the upload was placed in, so a src that is not in that shape would yield a
+        // plausible but wrong id rather than an obvious failure.
         if (segments.Length < 2) {
+            problem = "Media item " + mediaId + " has an unexpected file path (" + src + "), so its file id cannot " +
+                      "be determined";
+
             return null;
         }
 
@@ -227,10 +244,23 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
         var json = JObject.FromObject(dataType.Configuration);
         var startNodeId = json.Property("startNodeId", StringComparison.OrdinalIgnoreCase)?.Value?.ToString();
 
-        if (!startNodeId.HasValue() || !UdiParser.TryParse(startNodeId, out GuidUdi udi)) {
+        if (!startNodeId.HasValue()) {
             return UmbracoSystem.Root;
         }
 
-        return _mediaService.GetById(udi.Guid)?.Id ?? UmbracoSystem.Root;
+        // Falling back to the root here would place the media outside the start node the picker restricts browsing
+        // to, which only shows up later as a validation failure on an editor's screen.
+        if (!UdiParser.TryParse(startNodeId, out GuidUdi udi)) {
+            throw new InvalidOperationException("The start node of " + pickerDataTypeName + " is not a valid udi (" +
+                                                startNodeId + ")");
+        }
+
+        var startNode = _mediaService.GetById(udi.Guid);
+
+        if (startNode == null) {
+            throw new InvalidOperationException("The start node of " + pickerDataTypeName + " does not exist");
+        }
+
+        return startNode.Id;
     }
 }

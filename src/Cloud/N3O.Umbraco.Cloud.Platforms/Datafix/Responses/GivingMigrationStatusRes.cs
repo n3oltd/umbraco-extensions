@@ -12,5 +12,5 @@ public class GivingMigrationStatusRes {
     public int PublishedCampaigns { get; set; }
     public int Offerings { get; set; }
     public int PublishedOfferings { get; set; }
-    public IReadOnlyList<GivingMigrationStatusItemRes> Items { get; set; } = [];
+    public IEnumerable<GivingMigrationStatusItemRes> Items { get; set; } = [];
 }

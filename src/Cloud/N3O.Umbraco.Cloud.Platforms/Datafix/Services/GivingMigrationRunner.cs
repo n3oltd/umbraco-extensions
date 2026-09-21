@@ -33,8 +33,10 @@ public class GivingMigrationRunner : IGivingMigrationRunner {
 
         var plan = _planner.BuildPlan();
 
-        if (plan.Blockers.Count > 0) {
-            res.Message = "The plan has " + plan.Blockers.Count + " blockers so nothing was migrated";
+        var blockers = plan.Blockers.Count();
+
+        if (blockers > 0) {
+            res.Message = "The plan has " + blockers + " blockers so nothing was migrated";
 
             return res;
         }
@@ -63,18 +65,29 @@ public class GivingMigrationRunner : IGivingMigrationRunner {
         foreach (var campaign in plan.Campaigns
                                      .Where(x => x.Status == GivingMigrationConstants.EntryStatuses.Planned)
                                      .Take(limit)) {
-            items.Add(_writer.CreateCampaign(campaign, containerId.Value, placeholders, ledger));
+            var entries = new List<GivingMigrationLedgerEntry>();
+
+            items.Add(_writer.CreateCampaign(campaign, containerId.Value, placeholders, entries));
+
+            // The campaign is already committed to Umbraco by this point, and a re-run finds it only through the
+            // ledger, so each one is recorded before the next is started rather than after the whole loop.
+            _store.AppendLedger(entries);
+
+            ledger.AddRange(entries);
         }
 
         res.AlreadyMigrated =
             plan.Campaigns.Count(x => x.Status == GivingMigrationConstants.EntryStatuses.AlreadyMigrated);
 
         if (req.IncludeCrossSells) {
-            items.AddRange(MigrateCrossSells(plan, placeholders, ledger, res));
-        }
+            var crossSells = new List<GivingMigrationLedgerEntry>();
 
-        // The ledger is written even on a partial run so a re-run knows exactly what already exists.
-        _store.AppendLedger(ledger);
+            items.AddRange(MigrateCrossSells(plan, placeholders, crossSells, res));
+
+            _store.AppendLedger(crossSells);
+
+            ledger.AddRange(crossSells);
+        }
 
         res.Items = items;
         res.Attempted = items.Count;
@@ -125,10 +138,10 @@ public class GivingMigrationRunner : IGivingMigrationRunner {
             return [];
         }
 
-        var containerId = _writer.EnsureCrossSellsContainerId();
+        var containerId = _writer.EnsureCrossSellsContainerId(out var containerProblem);
 
         if (containerId == null) {
-            res.Message = "The cross sells container could not be created so cross sells were not migrated";
+            res.Message = "Cross sells were not migrated. " + containerProblem;
 
             return [];
         }

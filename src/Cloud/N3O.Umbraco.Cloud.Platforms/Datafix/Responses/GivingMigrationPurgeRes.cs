@@ -10,5 +10,5 @@ public class GivingMigrationPurgeRes {
     public int Expected { get; set; }
     public int Purged { get; set; }
     public int Failed { get; set; }
-    public IReadOnlyList<GivingMigrationPurgeItemRes> Items { get; set; } = [];
+    public IEnumerable<GivingMigrationPurgeItemRes> Items { get; set; } = [];
 }

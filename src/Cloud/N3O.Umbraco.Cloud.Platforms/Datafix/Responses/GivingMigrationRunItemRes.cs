@@ -12,5 +12,5 @@ public class GivingMigrationRunItemRes {
     public int OfferingsCreated { get; set; }
     public string Outcome { get; set; }
     public string Message { get; set; }
-    public IReadOnlyList<string> InvalidProperties { get; set; } = [];
+    public IEnumerable<string> InvalidProperties { get; set; } = [];
 }

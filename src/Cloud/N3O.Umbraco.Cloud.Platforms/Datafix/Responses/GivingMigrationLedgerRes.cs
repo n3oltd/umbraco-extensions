@@ -6,5 +6,5 @@ public class GivingMigrationLedgerRes {
     public int Campaigns { get; set; }
     public int Offerings { get; set; }
     public int CrossSells { get; set; }
-    public IReadOnlyList<GivingMigrationLedgerEntryRes> Entries { get; set; } = [];
+    public IEnumerable<GivingMigrationLedgerEntryRes> Entries { get; set; } = [];
 }

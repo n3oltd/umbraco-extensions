@@ -15,5 +15,5 @@ public class GivingMigrationRunRes {
     public Guid? IconMediaId { get; set; }
     public Guid? ImageMediaId { get; set; }
     public Guid? HeroImageMediaId { get; set; }
-    public IReadOnlyList<GivingMigrationRunItemRes> Items { get; set; } = [];
+    public IEnumerable<GivingMigrationRunItemRes> Items { get; set; } = [];
 }

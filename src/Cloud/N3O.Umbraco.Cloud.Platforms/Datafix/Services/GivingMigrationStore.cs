@@ -32,10 +32,6 @@ public class GivingMigrationStore : IGivingMigrationStore {
         Save(GivingMigrationConstants.KeyValueKeys.Ledger, byLegacyId.Values.ToList());
     }
 
-    public void DeleteLedger() {
-        _keyValueService.SetValue(GivingMigrationConstants.KeyValueKeys.Ledger, string.Empty);
-    }
-
     public void DeleteLockSnapshot() {
         _keyValueService.SetValue(GivingMigrationConstants.KeyValueKeys.TreeLockSnapshot, string.Empty);
     }

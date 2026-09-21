@@ -2,6 +2,7 @@ using System;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
+// TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingPlaceholderMedia {
     public Guid Id { get; set; }
     public string Src { get; set; }

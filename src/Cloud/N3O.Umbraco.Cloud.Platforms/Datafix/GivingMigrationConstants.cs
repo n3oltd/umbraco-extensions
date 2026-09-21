@@ -36,6 +36,9 @@ public static class GivingMigrationConstants {
         public const string FixedAmount = "fixedAmount";
         public const string GivingType = "givingType";
         public const string HeroImage = "heroImage";
+        public const string HideDonation = "hideDonation";
+        public const string HideQuantity = "hideQuantity";
+        public const string HideRegularGiving = "hideRegularGiving";
         public const string Icon = "icon";
         public const string Image = "image";
         public const string OneTimeSuggestedAmounts = "oneTimeSuggestedAmounts";
@@ -82,6 +85,7 @@ public static class GivingMigrationConstants {
     }
 
     public static class IssueKinds {
+        public const string DroppedProperty = nameof(DroppedProperty);
         public const string EmptyForm = nameof(EmptyForm);
         public const string LegacyTreeNotRecognised = nameof(LegacyTreeNotRecognised);
         public const string NameDisambiguated = nameof(NameDisambiguated);
@@ -90,6 +94,7 @@ public static class GivingMigrationConstants {
         public const string PlatformsTreeMissing = nameof(PlatformsTreeMissing);
         public const string TargetContentTypeMissing = nameof(TargetContentTypeMissing);
         public const string UnmappedReference = nameof(UnmappedReference);
+        public const string UnrecognisedReference = nameof(UnrecognisedReference);
     }
 
     public static class EntryStatuses {

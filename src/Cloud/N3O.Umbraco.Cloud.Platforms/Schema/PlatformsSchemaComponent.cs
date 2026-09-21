@@ -96,8 +96,14 @@ public class PlatformsSchemaComponent : IComponent {
         var child = _contentTypeEditor.Find(childAlias);
         var platforms = _contentTypeEditor.Find(PlatformsConstants.Platforms.Alias);
 
-        if (child == null ||
-            platforms == null ||
+        if (child == null) {
+            _logger.LogWarning("Cannot allow {Alias} under the platforms type because no such content type exists",
+                               childAlias);
+
+            return;
+        }
+
+        if (platforms == null ||
             platforms.AllowedContentTypes.OrEmpty().Any(x => x.Alias == child.Alias)) {
             return;
         }
