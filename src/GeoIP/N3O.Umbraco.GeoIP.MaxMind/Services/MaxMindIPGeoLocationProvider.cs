@@ -7,6 +7,7 @@ using N3O.Umbraco.GeoIP.Models;
 using N3O.Umbraco.Lookups;
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,17 +37,20 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
             return GeoLookupResult.ForFailure();
         }
 
-        var result = await ResultsCache.GetOrCreateAsync(ipAddress, async c => {
-            c.AbsoluteExpirationRelativeToNow = ResultsCacheLifetime;
-            c.Size = 1;
+        var cachedResult = ResultsCache.Get<GeoLookupResult>(ipAddress);
 
-            return await LookupAsync(ipAddress);
-        });
+        if (cachedResult != null) {
+            return cachedResult;
+        }
 
-        // A failure says nothing about the address, only that this lookup did not answer, so it is not kept:
-        // caching it would report no location for this address until the entry expired.
-        if (!result.Success) {
-            ResultsCache.Remove(ipAddress);
+        var result = await LookupAsync(ipAddress);
+
+        if (result.Success) {
+            var entryOptions = new MemoryCacheEntryOptions();
+            entryOptions.AbsoluteExpirationRelativeToNow = ResultsCacheLifetime;
+            entryOptions.Size = 1;
+
+            ResultsCache.Set(ipAddress, result, entryOptions);
         }
 
         return result;
@@ -62,9 +66,11 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
                                               cityResponse.City?.Name,
                                               cityResponse.MostSpecificSubdivision?.Name);
         } catch (GeoIP2Exception) {
-            // The service answered but could not locate the address, or rejected the request.
         } catch (HttpException) {
-            // The service could not be reached. The result is not cached, so the next lookup retries.
+        } catch (HttpRequestException) {
+        } catch (InvalidOperationException) {
+        } catch (OperationCanceledException) {
+            // Nothing here passes cancellationToken down, so this is the MaxMind client's own timeout
         }
 
         return GeoLookupResult.ForFailure();
