@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Models;
 using N3O.Umbraco.UserProvisioning.Security;
@@ -9,7 +10,6 @@ using Rsk.AspNetCore.Scim.Configuration;
 using Rsk.AspNetCore.Scim.Constants;
 using System;
 using System.Linq;
-using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using ScimGroup = Rsk.AspNetCore.Scim.Models.Group;
@@ -17,8 +17,8 @@ using ScimUser = Rsk.AspNetCore.Scim.Models.User;
 
 namespace N3O.Umbraco.UserProvisioning;
 
-public class UserProvisioningComposer : IComposer {
-    public void Compose(IUmbracoBuilder builder) {
+public class UserProvisioningComposer : Composer {
+    public override void Compose(IUmbracoBuilder builder) {
         var settings = builder.Config
                               .GetSection(UserProvisioningSettings.SectionName)
                               .Get<UserProvisioningSettings>();

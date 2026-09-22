@@ -233,7 +233,7 @@ public class UserStore : IScimStore<ScimUser> {
         }
     }
 
-    internal static BackOfficeUser Map(IUser user) {
+    public static BackOfficeUser Map(IUser user) {
         var backOfficeUser = new BackOfficeUser();
         backOfficeUser.Active = IsActive(user);
         backOfficeUser.Email = user.Email;
@@ -244,7 +244,28 @@ public class UserStore : IScimStore<ScimUser> {
         return backOfficeUser;
     }
 
-    internal static ScimUser ToScim(BackOfficeUser user) {
+    private static string GetEmail(ScimUser resource) {
+        var primary = resource.Emails?.FirstOrDefault(x => x.Primary)?.Value;
+
+        return primary.HasValue() ? primary : resource.UserName;
+    }
+
+    private static string GetName(ScimUser resource, string fallback) {
+        var parts = new[] { resource.Name?.GivenName, resource.Name?.FamilyName };
+        var name = string.Join(" ", parts.Where(x => x.HasValue()));
+
+        if (name.HasValue()) {
+            return name;
+        }
+
+        return resource.DisplayName.HasValue() ? resource.DisplayName : fallback;
+    }
+
+    private static bool IsActive(IUser user) {
+        return user.UserState != UserState.Disabled;
+    }
+
+    private static ScimUser ToScim(BackOfficeUser user) {
         var email = new Email();
         email.Primary = true;
         email.Type = "work";
@@ -262,26 +283,5 @@ public class UserStore : IScimStore<ScimUser> {
         scimUser.UserName = user.UserName;
 
         return scimUser;
-    }
-
-    private static string GetEmail(ScimUser resource) {
-        var primary = resource.Emails?.FirstOrDefault(x => x.Primary)?.Value;
-
-        return primary.HasValue() ? primary : resource.UserName;
-    }
-
-    private static bool IsActive(IUser user) {
-        return user.UserState != UserState.Disabled;
-    }
-
-    private static string GetName(ScimUser resource, string fallback) {
-        var parts = new[] { resource.Name?.GivenName, resource.Name?.FamilyName };
-        var name = string.Join(" ", parts.Where(x => x.HasValue()));
-
-        if (name.HasValue()) {
-            return name;
-        }
-
-        return resource.DisplayName.HasValue() ? resource.DisplayName : fallback;
     }
 }
