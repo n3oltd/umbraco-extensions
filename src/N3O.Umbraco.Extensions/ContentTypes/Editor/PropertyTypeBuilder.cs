@@ -1,5 +1,6 @@
 using Humanizer;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Utilities;
 using System;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
@@ -23,8 +24,10 @@ public abstract class PropertyTypeBuilder<TSelf> : IPropertyTypeBuilder where TS
         _dataTypeService = dataTypeService;
     }
 
-    public virtual void Apply(IPropertyType propertyType, PropertyTypeContext context) {
-        propertyType.Name = _name ?? context.PropertyAlias.Titleize();
+    public virtual void Apply(IPropertyType propertyType, PropertyTypeContext context, bool isNew) {
+        if (isNew) {
+            propertyType.Name = _name ?? context.PropertyAlias.Titleize();
+        }
 
         if (_description.HasValue()) {
             propertyType.Description = _description;
@@ -94,15 +97,17 @@ public abstract class PropertyTypeBuilder<TSelf> : IPropertyTypeBuilder where TS
             if (Guid.TryParse(_dataTypeNameOrKey, out var key)) {
                 dataType = _dataTypeService.GetDataType(key);
             } else {
-                dataType = _dataTypeService.GetDataType(_dataTypeNameOrKey);
+                var deterministicKey = UmbracoId.Deterministic(IdScope.DataType, _dataTypeNameOrKey);
+
+                dataType = _dataTypeService.GetDataType(deterministicKey) ??
+                           _dataTypeService.GetDataType(_dataTypeNameOrKey);
             }
         } else {
             dataType = GetDefaultDataType(context);
         }
 
         if (dataType == null) {
-            throw new Exception($"Could not resolve a data type for property {context.PropertyAlias.Quote()} " +
-                                $"on content type {context.ContentTypeAlias.Quote()}");
+            throw new DataTypeNotFoundException(_dataTypeNameOrKey, context.ContentTypeAlias, context.PropertyAlias);
         }
 
         return dataType;

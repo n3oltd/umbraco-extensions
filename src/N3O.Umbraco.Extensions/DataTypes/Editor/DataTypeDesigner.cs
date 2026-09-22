@@ -78,6 +78,8 @@ public abstract class DataTypeDesigner : IDataTypeDesigner {
 
     protected abstract string EditorAlias { get; }
 
+    protected string Name => _name;
+
     private IDataType Create() {
         var parentId = GetOrCreateFolder();
         var dataType = new DataType(ResolveEditor(), _configurationEditorJsonSerializer, parentId);

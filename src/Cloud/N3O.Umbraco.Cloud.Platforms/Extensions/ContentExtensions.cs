@@ -1,8 +1,9 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
+using Newtonsoft.Json.Linq;
 using System;
-using Umbraco.Cms.Core;
+using System.Linq;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Extensions;
@@ -10,15 +11,26 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
-    public static Guid? GetCrowdfunderCampaignKey(this IContent content) {
+    public static Guid? GetCampaignKey(this ContentProperties content) {
         var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
-        var value = content.GetValue<string>(alias);
 
-        if (UdiParser.TryParse(value, out GuidUdi udi)) {
-            return udi.Guid;
+        return ParseCampaignKey(content.GetPropertyValueByAlias<string>(alias));
+    }
+
+    public static Guid? GetCampaignKey(this IContent content) {
+        var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
+
+        return ParseCampaignKey(content.GetValue<string>(alias));
+    }
+
+    public static string GetContentSyncStamp(this IContent content) {
+        var alias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+
+        if (HasContentSyncStamp(content, alias)) {
+            return content.GetValue<string>(alias);
+        } else {
+            return null;
         }
-
-        return null;
     }
 
     public static bool IsCampaign(this IContent content, IContentTypeService contentTypeService) {
@@ -29,7 +41,7 @@ public static class ContentExtensions {
         return HasComposition(contentTypeService, content, AliasHelper<CrossSellContent>.ContentTypeAlias());
     }
 
-    public static bool IsCrowdfunder(this IContent content) {
+    public static bool IsCrowdfundingCampaign(this IContent content) {
         return content.ContentType.Alias == PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Alias;
     }
 
@@ -69,11 +81,43 @@ public static class ContentExtensions {
         return content.ContentType.Alias.EqualsInvariant(PlatformsConstants.Zakat.Settings.Calculator.Field.Alias);
     }
 
+    public static void SetContentSyncStamp(this IContent content, string stamp) {
+        var alias = AliasHelper<CrowdfundingCampaignContent>.PropertyAlias(x => x.ContentSyncStamp);
+
+        if (HasContentSyncStamp(content, alias)) {
+            content.SetValue(alias, stamp);
+        }
+    }
+
+    private static string GetDataListItem(string value) {
+        if (value.DetectIsJson()) {
+            return (JToken.Parse(value) as JArray)?.FirstOrDefault()?.ToString();
+        } else {
+            return value;
+        }
+    }
+
     private static bool HasComposition(IContentTypeService contentTypeService,
                                        IContent content,
                                        string compositionAlias) {
         var contentType = contentTypeService.Get(content.ContentTypeId);
 
         return contentType.CompositionAliases().Contains(compositionAlias, true);
+    }
+
+    private static bool HasContentSyncStamp(IContent content, string alias) {
+        var property = content.HasProperty(alias) ? content.Properties[alias] : null;
+
+        return property != null && !property.PropertyType.VariesByCulture();
+    }
+
+    private static Guid? ParseCampaignKey(string value) {
+        if (!value.HasValue()) {
+            return null;
+        } else if (Guid.TryParse(GetDataListItem(value), out var campaignKey)) {
+            return campaignKey;
+        } else {
+            return null;
+        }
     }
 }

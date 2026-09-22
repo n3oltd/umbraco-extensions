@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Cloud.Hosting;
+using N3O.Umbraco.Cloud.Options;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Localization;
@@ -16,9 +17,11 @@ namespace N3O.Umbraco.Cloud;
 public class CloudComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.Services.AddOpenApiDocument(CloudConstants.BackOfficeApiName);
-        
-        builder.Services.AddScoped(typeof(ClientFactory<>));
+        builder.Services.Configure<CdnCacheOptions>(builder.Config.GetSection(CloudConstants.Configuration.CdnCacheSection));
+
+        builder.Services.AddSingleton(typeof(ClientFactory<>));
         builder.Services.AddSingleton<ICdnClient, CdnClient>();
+        builder.Services.AddSingleton<ICloudApiHttpClientFactory, CloudApiHttpClientFactory>();
         builder.Services.AddSingleton<ICloudUrl, CloudUrl>();
         builder.Services.AddSingleton<ILocalizationSettingsAccessor, PublishedLocalizationSettingsAccessor>();
         builder.Services.AddSingleton<IOrganizationInfoAccessor, OrganizationInfoAccessor>();

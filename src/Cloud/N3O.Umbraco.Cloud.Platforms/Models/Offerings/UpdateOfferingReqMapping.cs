@@ -16,10 +16,14 @@ public class UpdateOfferingReqMapping : IMapDefinition {
     public const string PageContentContext = nameof(PageContentContext);
     
     private readonly IMediaUrl _mediaUrl;
+    private readonly IPlatformsMediaUrlBuilder _mediaUrlBuilder;
     private readonly ISlugHelper _slugHelper;
 
-    public UpdateOfferingReqMapping(IMediaUrl mediaUrl, ISlugHelper slugHelper) {
+    public UpdateOfferingReqMapping(IMediaUrl mediaUrl,
+                                    IPlatformsMediaUrlBuilder mediaUrlBuilder,
+                                    ISlugHelper slugHelper) {
         _mediaUrl = mediaUrl;
+        _mediaUrlBuilder = mediaUrlBuilder;
         _slugHelper = slugHelper;
     }
     
@@ -33,7 +37,7 @@ public class UpdateOfferingReqMapping : IMapDefinition {
         dest.Notes = src.Notes;
         dest.Slug = _slugHelper.GenerateSlug(src.Name);
 
-        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl);
+        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);
         
         dest.Order = new OfferingOrderReq();
         dest.Order.Order = src.Content().Parent.Children.FindIndex(x => x.Id == src.Content().Id);

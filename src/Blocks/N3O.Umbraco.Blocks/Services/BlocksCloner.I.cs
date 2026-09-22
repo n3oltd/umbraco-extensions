@@ -1,0 +1,8 @@
+namespace N3O.Umbraco.Blocks;
+
+public interface IBlocksCloner {
+    bool CanClone(string propertyEditorAlias);
+    string Clone(string value);
+    bool IsEmpty(string value);
+    string StripIdentifiers(string value);
+}

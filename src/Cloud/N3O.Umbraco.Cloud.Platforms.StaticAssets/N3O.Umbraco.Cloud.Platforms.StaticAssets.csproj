@@ -33,6 +33,10 @@
         <DebugType>pdbonly</DebugType>
     </PropertyGroup>
     <ItemGroup>
+        <Content Include="App_Plugins\N3O.Umbraco.Cloud.Platforms.CrowdfundingCampaign\**\*.*">
+            <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
         <Content Include="App_Plugins\N3O.Umbraco.Cloud.Platforms.Preview\**\*.*">
             <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
             <CopyToPublishDirectory>Always</CopyToPublishDirectory>

@@ -44,6 +44,40 @@ public static class PropertyContainerBuilderExtensions {
         return builder.Property<ColorPickerPropertyTypeBuilder, TProperty>(expression);
     }
 
+    public static ContentmentDataListPropertyTypeBuilder ContentmentDataList(this IPropertyContainerBuilder builder,
+                                                                             string propertyAlias) {
+        return builder.Property<ContentmentDataListPropertyTypeBuilder>(propertyAlias);
+    }
+
+    public static ContentmentDataListPropertyTypeBuilder ContentmentDataList<T, TProperty>(
+        this IPropertyContainerBuilder<T> builder,
+        Expression<Func<T, TProperty>> expression) {
+        return builder.Property<ContentmentDataListPropertyTypeBuilder, TProperty>(expression);
+    }
+
+    public static ContentmentListItemsPropertyTypeBuilder ContentmentListItems(this IPropertyContainerBuilder builder,
+                                                                               string propertyAlias) {
+        return builder.Property<ContentmentListItemsPropertyTypeBuilder>(propertyAlias);
+    }
+
+    public static ContentmentListItemsPropertyTypeBuilder ContentmentListItems<T, TProperty>(
+        this IPropertyContainerBuilder<T> builder,
+        Expression<Func<T, TProperty>> expression) {
+        return builder.Property<ContentmentListItemsPropertyTypeBuilder, TProperty>(expression);
+    }
+
+    public static ContentmentTemplatedLabelPropertyTypeBuilder ContentmentTemplatedLabel(
+        this IPropertyContainerBuilder builder,
+        string propertyAlias) {
+        return builder.Property<ContentmentTemplatedLabelPropertyTypeBuilder>(propertyAlias);
+    }
+
+    public static ContentmentTemplatedLabelPropertyTypeBuilder ContentmentTemplatedLabel<T, TProperty>(
+        this IPropertyContainerBuilder<T> builder,
+        Expression<Func<T, TProperty>> expression) {
+        return builder.Property<ContentmentTemplatedLabelPropertyTypeBuilder, TProperty>(expression);
+    }
+
     public static ContentPickerPropertyTypeBuilder ContentPicker(this IPropertyContainerBuilder builder,
                                                                  string propertyAlias) {
         return builder.Property<ContentPickerPropertyTypeBuilder>(propertyAlias);
@@ -202,6 +236,17 @@ public static class PropertyContainerBuilderExtensions {
         this IPropertyContainerBuilder<T> builder,
         Expression<Func<T, TProperty>> expression) {
         return builder.Property<MultiUrlPickerPropertyTypeBuilder, TProperty>(expression);
+    }
+
+    public static NestedContentPropertyTypeBuilder NestedContent(this IPropertyContainerBuilder builder,
+                                                                 string propertyAlias) {
+        return builder.Property<NestedContentPropertyTypeBuilder>(propertyAlias);
+    }
+
+    public static NestedContentPropertyTypeBuilder NestedContent<T, TProperty>(
+        this IPropertyContainerBuilder<T> builder,
+        Expression<Func<T, TProperty>> expression) {
+        return builder.Property<NestedContentPropertyTypeBuilder, TProperty>(expression);
     }
 
     public static NumericPropertyTypeBuilder Numeric(this IPropertyContainerBuilder builder, string propertyAlias) {

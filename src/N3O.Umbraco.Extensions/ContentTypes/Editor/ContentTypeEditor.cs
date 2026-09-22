@@ -1,7 +1,9 @@
 using Humanizer;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Exceptions;
+using N3O.Umbraco.Utilities;
 using System;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 
@@ -20,8 +22,13 @@ public class ContentTypeEditor : IContentTypeEditor {
         _shortStringHelper = shortStringHelper;
     }
 
+    public IContentType Find(string alias) {
+        return _contentTypeService.Get(UmbracoId.Deterministic(IdScope.ContentType, alias)) ??
+               _contentTypeService.Get(alias);
+    }
+
     public IContentTypeDesigner ForExisting(string alias) {
-        var contentType = _contentTypeService.Get(alias);
+        var contentType = Find(alias);
 
         if (contentType == null) {
             throw new ResourceNotFoundException(nameof(alias), alias);
@@ -32,13 +39,13 @@ public class ContentTypeEditor : IContentTypeEditor {
                                            _contentTypeService,
                                            _shortStringHelper,
                                            contentType.Name,
-                                           alias);
+                                           contentType.Alias);
         } else {
             return new DocumentTypeDesigner(_serviceProvider,
                                             _contentTypeService,
                                             _shortStringHelper,
                                             contentType.Name,
-                                            alias);
+                                            contentType.Alias);
         }
     }
 

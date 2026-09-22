@@ -2,10 +2,12 @@
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Exceptions;
+using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Json;
 using N3O.Umbraco.Validation;
 using Newtonsoft.Json;
 using System;
+using System.Net;
 using System.Threading.Tasks;
 using ProblemDetails = N3O.Umbraco.Exceptions.ProblemDetails;
 
@@ -42,26 +44,32 @@ public class CloudApiClient<TClient> {
     
     private ExceptionWithProblemDetails ToExceptionWithProblemDetails(Exception exception) {
         try {
-            var content = JsonConvert.SerializeObject(exception.GetType().GetProperty("Result").GetValue(exception));
+            var result = exception.GetType().GetProperty("Result")?.GetValue(exception);
             var statusCode = (int) exception.GetType().GetProperty("StatusCode").GetValue(exception);
 
-            if (statusCode >= 500) {
-                _logger.LogError(exception, "Error calling API: {Error}", exception.Message);
+            if (result == null) {
+                var status = (HttpStatusCode) statusCode;
+
+                return new CloudApiException(new ProblemDetails(status, status.ToString(), exception.Message),
+                                             exception);
             }
 
-            if (statusCode == StatusCodes.Status412PreconditionFailed) {
-                var problemDetails = _jsonProvider.DeserializeObject<ValidationProblemDetails>(content);
+            var content = JsonConvert.SerializeObject(result);
 
-                return new ValidationException(problemDetails.Errors);
-            } else {
-                var problemDetails = JsonConvert.DeserializeObject<ProblemDetails>(content);
+            if (statusCode == StatusCodes.Status412PreconditionFailed ||
+                statusCode == StatusCodes.Status422UnprocessableEntity) {
+                var validationProblemDetails = _jsonProvider.DeserializeObject<ValidationProblemDetails>(content);
 
-                return new CloudApiException(problemDetails, exception);
+                if (validationProblemDetails.HasAny(x => x.Errors)) {
+                    return new ValidationException(validationProblemDetails.Errors);
+                }
             }
+
+            var problemDetails = JsonConvert.DeserializeObject<ProblemDetails>(content);
+
+            return new CloudApiException(problemDetails, exception);
         } catch (Exception ex) {
-            _logger.LogError(ex,
-                             $"Error occured converting exception to {nameof(CloudApiException)}: {{Error}}",
-                             exception.Message);
+            _logger.LogError(ex, "Could not read the API's error response: {Error}", exception.Message);
             
             throw;
         }

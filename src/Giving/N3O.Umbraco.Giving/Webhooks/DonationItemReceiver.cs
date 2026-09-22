@@ -24,6 +24,14 @@ namespace N3O.Umbraco.Giving.Webhooks;
 
 [WebhookReceiver(HookIds.DonationItem)]
 public class DonationItemReceiver : WebhookReceiver {
+    // Maps the webhook's DonationTypes vocabulary onto GivingTypes, whose ids are persisted in site
+    // content; scheduledDonation has no counterpart on this platform.
+    private static readonly IReadOnlyDictionary<string, GivingType> GivingTypesByDonationTypeId =
+        new Dictionary<string, GivingType> {
+            ["singleDonation"] = GivingTypes.Donation,
+            ["regularDonation"] = GivingTypes.RegularGiving
+        };
+
     private readonly IJsonProvider _jsonProvider;
     private readonly IContentCache _contentCache;
     private readonly IContentEditor _contentEditor;
@@ -67,7 +75,7 @@ public class DonationItemReceiver : WebhookReceiver {
     }
 
     private void CreateOrUpdate(WebhookPayload payload, WebhookDonationItem webhookDonationItem) {
-        var collection = _contentCache.Single<DonationItemsContent>();
+        var collection = GetDonationItems();
         
         var existingContent = GetExistingContent(webhookDonationItem.Name, payload.GetHeader(Headers.PreviousName));
 
@@ -77,7 +85,7 @@ public class DonationItemReceiver : WebhookReceiver {
                                                     collection.Content().Key,
                                                     AllocationsConstants.Aliases.DonationItem.ContentType);
         
-        var allowedGivingTypes = ToLookups<GivingType>(webhookDonationItem.AllowedGivingTypes);
+        var allowedGivingTypes = ToGivingTypes(webhookDonationItem.AllowedDonationTypes);
         var dimension1Options = GetLookupsByName<FundDimension1Value>(webhookDonationItem.FundDimensionOptions.Dimension1);
         var dimension2Options = GetLookupsByName<FundDimension2Value>(webhookDonationItem.FundDimensionOptions.Dimension2);
         var dimension3Options = GetLookupsByName<FundDimension3Value>(webhookDonationItem.FundDimensionOptions.Dimension3);
@@ -113,8 +121,18 @@ public class DonationItemReceiver : WebhookReceiver {
         }
     }
 
+    private DonationItemsContent GetDonationItems() {
+        var donationItems = _contentCache.Single<DonationItemsContent>();
+
+        if (donationItems == null) {
+            throw new Exception($"Could not resolve {AliasHelper<DonationItemsContent>.ContentTypeAlias()} content");
+        }
+
+        return donationItems;
+    }
+
     private IContent GetExistingContent(string name, string previousName) {
-        var collectionPublished = _contentCache.Single<DonationItemsContent>();
+        var collectionPublished = GetDonationItems();
         var collection = _contentService.GetById(collectionPublished.Content().Key);
         var donationItems = _contentHelper.GetChildren(collection);
         var matches = donationItems.Where(x => x.Name.EqualsInvariant(name) || x.Name.EqualsInvariant(previousName))
@@ -129,8 +147,11 @@ public class DonationItemReceiver : WebhookReceiver {
         }
     }
 
-    private IReadOnlyList<T> ToLookups<T>(IEnumerable<WebhookLookup> webhookLookups) where T : ILookup {
-        return webhookLookups.OrEmpty().Select(x => _lookups.FindById<T>(x.Id)).ExceptNull().ToList();
+    private IReadOnlyList<GivingType> ToGivingTypes(IEnumerable<WebhookLookup> webhookLookups) {
+        return webhookLookups.OrEmpty()
+                             .Select(x => GivingTypesByDonationTypeId.GetValueOrDefault(x.Id))
+                             .ExceptNull()
+                             .ToList();
     }
     
     private IReadOnlyList<T> GetLookupsByName<T>(IEnumerable<string> names) where T : ILookup {
@@ -150,7 +171,7 @@ public class DonationItemReceiver : WebhookReceiver {
         public WebhookDonationItem(WebhookRevision revision,
                                    WebhookReference reference,
                                    string name,
-                                   IEnumerable<WebhookLookup> allowedGivingTypes,
+                                   IEnumerable<WebhookLookup> allowedDonationTypes,
                                    WebhookFundDimensionOptions fundDimensionOptions,
                                    WebhookPrice price,
                                    IEnumerable<WebhookPricingRule> pricingRules,
@@ -158,7 +179,7 @@ public class DonationItemReceiver : WebhookReceiver {
                                    bool isActive)
             : base(revision, reference) {
             Name = name;
-            AllowedGivingTypes = allowedGivingTypes;
+            AllowedDonationTypes = allowedDonationTypes;
             FundDimensionOptions = fundDimensionOptions;
             Price = price;
             PricingRules = pricingRules;
@@ -167,7 +188,7 @@ public class DonationItemReceiver : WebhookReceiver {
         }
 
         public string Name { get; }
-        public IEnumerable<WebhookLookup> AllowedGivingTypes { get; }
+        public IEnumerable<WebhookLookup> AllowedDonationTypes { get; }
         public WebhookFundDimensionOptions FundDimensionOptions { get; }
         public WebhookPrice Price { get; }
         public IEnumerable<WebhookPricingRule> PricingRules { get; }
@@ -176,7 +197,7 @@ public class DonationItemReceiver : WebhookReceiver {
 
         protected override IEnumerable<object> GetValues() {
             yield return Name;
-            yield return AllowedGivingTypes;
+            yield return AllowedDonationTypes;
             yield return FundDimensionOptions;
             yield return Price;
             yield return PricingRules;
