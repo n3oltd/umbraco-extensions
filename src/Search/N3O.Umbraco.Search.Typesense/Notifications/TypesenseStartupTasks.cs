@@ -17,15 +17,18 @@ using Umbraco.Cms.Core.Notifications;
 namespace N3O.Umbraco.Search.Typesense.Notifications;
 
 public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicationStartedNotification> {
+    private readonly ICollectionNameResolver _collectionNameResolver;
     private readonly ILogger _logger;
     private readonly ITypesenseClient _typesenseClient;
     private readonly ITypesenseJsonProvider _typesenseJsonProvider;
     private readonly IBackgroundJob _backgroundJob;
 
-    public TypesenseStartupTasks(ILogger<TypesenseStartupTasks> logger,
+    public TypesenseStartupTasks(ICollectionNameResolver collectionNameResolver,
+                                 ILogger<TypesenseStartupTasks> logger,
                                  ITypesenseClient typesenseClient,
                                  ITypesenseJsonProvider typesenseJsonProvider,
                                  IBackgroundJob backgroundJob) {
+        _collectionNameResolver = collectionNameResolver;
         _logger = logger;
         _typesenseClient = typesenseClient;
         _typesenseJsonProvider = typesenseJsonProvider;
@@ -39,22 +42,25 @@ public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicatio
                 try {
                     await MigrateCollectionAsync(collection);
                 } catch (Exception ex) {
+                    // Resolution is one of the things that can fail here, so the log reports the
+                    // declared name rather than calling back into the resolver
                     _logger.LogError(ex,
                                      "Failed to migrate Typesense collection {Collection}",
-                                     collection.Name.Resolve());
+                                     collection.Name.Base);
                 }
             }
         }
     }
 
     private async Task MigrateCollectionAsync(CollectionInfo collectionInfo) {
-        var collection = await TryGetCollectionAsync(collectionInfo.Name.Resolve());
+        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
+        var collection = await TryGetCollectionAsync(collectionName);
 
-        collection = await TryDropCollectionIfOldVersionAsync(collection, collectionInfo);
-        
+        collection = await TryDropCollectionIfOldVersionAsync(collection, collectionInfo, collectionName);
+
         if (collection == null) {
-            await CreateCollectionAsync(collectionInfo);
-            
+            await CreateCollectionAsync(collectionInfo, collectionName);
+
             EnqueueIndexing(collectionInfo);
         }
     }
@@ -68,12 +74,13 @@ public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicatio
     }
     
     private async Task<CollectionResponse> TryDropCollectionIfOldVersionAsync(CollectionResponse collection,
-                                                                              CollectionInfo collectionInfo) {
+                                                                              CollectionInfo collectionInfo,
+                                                                              string collectionName) {
         if (collection != null) {
             var metadataVersion = GetVersionFromMetadata(collection);
 
             if (metadataVersion != collectionInfo.Version) {
-                await _typesenseClient.DeleteCollection(collectionInfo.Name.Resolve());
+                await _typesenseClient.DeleteCollection(collectionName);
 
                 return null;
             }
@@ -82,9 +89,7 @@ public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicatio
         return collection;
     }
 
-    private async Task CreateCollectionAsync(CollectionInfo collectionInfo) {
-        var collectionName = collectionInfo.Name.Resolve();
-        
+    private async Task CreateCollectionAsync(CollectionInfo collectionInfo, string collectionName) {
         var schema = new Schema(collectionName, collectionInfo.Fields) {
             EnableNestedFields =  true,
             Metadata = new Dictionary<string, object> {

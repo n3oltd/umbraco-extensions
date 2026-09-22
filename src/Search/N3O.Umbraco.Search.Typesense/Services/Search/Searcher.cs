@@ -10,15 +10,18 @@ using Typesense;
 namespace N3O.Umbraco.Search.Typesense;
 
 public class Searcher<TDocument> : ISearcher<TDocument> where TDocument : SearchDocument {
+    private readonly ICollectionNameResolver _collectionNameResolver;
     private readonly ITypesenseClient _typesenseClient;
     private readonly ITypesenseJsonProvider _typesenseJsonProvider;
     private readonly ITypesenseSearchFactory _typesenseSearchFactory;
     private readonly IServiceProvider _serviceProvider;
 
-    public Searcher(ITypesenseClient typesenseClient,
+    public Searcher(ICollectionNameResolver collectionNameResolver,
+                    ITypesenseClient typesenseClient,
                     ITypesenseJsonProvider typesenseJsonProvider,
                     ITypesenseSearchFactory typesenseSearchFactory,
                     IServiceProvider serviceProvider) {
+        _collectionNameResolver = collectionNameResolver;
         _typesenseClient = typesenseClient;
         _typesenseJsonProvider = typesenseJsonProvider;
         _typesenseSearchFactory = typesenseSearchFactory;
@@ -32,8 +35,9 @@ public class Searcher<TDocument> : ISearcher<TDocument> where TDocument : Search
         }
 
         var collectionInfo = TypesenseHelper.GetCollection<TDocument>();
+        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
 
-        var results = await _typesenseClient.Search<object>(collectionInfo.Name.Resolve(), searchParameters, cancellationToken);
+        var results = await _typesenseClient.Search<object>(collectionName, searchParameters, cancellationToken);
 
         return ToTypedResults(results);
     }

@@ -12,13 +12,16 @@ namespace N3O.Umbraco.Search.Typesense;
 public abstract class SearchIndexer<TContent, TDocument> : ISearchIndexer
     where TContent : IPublishedContent
     where TDocument : SearchDocument, new() {
+    private readonly ICollectionNameResolver _collectionNameResolver;
     private readonly ITypesenseClient _typesenseClient;
     private readonly ISearchDocumentBuilder<TDocument> _searchDocumentBuilder;
     private readonly IVariationContextAccessor _variationContextAccessor;
 
-    protected SearchIndexer(ITypesenseClient typesenseClient,
+    protected SearchIndexer(ICollectionNameResolver collectionNameResolver,
+                            ITypesenseClient typesenseClient,
                             ISearchDocumentBuilder<TDocument> searchDocumentBuilder,
                             IVariationContextAccessor variationContextAccessor) {
+        _collectionNameResolver = collectionNameResolver;
         _typesenseClient = typesenseClient;
         _searchDocumentBuilder = searchDocumentBuilder;
         _variationContextAccessor = variationContextAccessor;
@@ -40,8 +43,9 @@ public abstract class SearchIndexer<TContent, TDocument> : ISearchIndexer
         }
 
         var collectionInfo = TypesenseHelper.GetCollection<TDocument>();
+        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
 
-        await _typesenseClient.DeleteDocuments(collectionInfo.Name.Resolve(), $"content_key:=`{contentKey}`");
+        await _typesenseClient.DeleteDocuments(collectionName, $"content_key:=`{contentKey}`");
     }
 
     public async Task IndexAsync(IPublishedContent content, string culture = null) {
@@ -63,8 +67,9 @@ public abstract class SearchIndexer<TContent, TDocument> : ISearchIndexer
 
         var document = _searchDocumentBuilder.Build();
         var collectionInfo = TypesenseHelper.GetCollection<TDocument>();
-        
-        await _typesenseClient.UpsertDocument(collectionInfo.Name.Resolve(), document);
+        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
+
+        await _typesenseClient.UpsertDocument(collectionName, document);
     }
 
     protected abstract Task ProcessContentAsync(ISearchDocumentBuilder<TDocument> builder, TContent content);
