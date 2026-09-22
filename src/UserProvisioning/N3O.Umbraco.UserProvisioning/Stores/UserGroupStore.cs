@@ -23,20 +23,17 @@ namespace N3O.Umbraco.UserProvisioning.Stores;
 
 public class UserGroupStore : IScimStore<ScimGroup> {
     private readonly ILogger<UserGroupStore> _logger;
-    private readonly IPatchCommandExecutor _patchCommandExecutor;
     private readonly IScimQueryBuilderFactory _queryBuilderFactory;
     private readonly UserProvisioningSettings _settings;
     private readonly IUserGroupService _userGroupService;
     private readonly IUserService _userService;
 
     public UserGroupStore(ILogger<UserGroupStore> logger,
-                          IPatchCommandExecutor patchCommandExecutor,
                           IScimQueryBuilderFactory queryBuilderFactory,
                           UserProvisioningSettings settings,
                           IUserGroupService userGroupService,
                           IUserService userService) {
         _logger = logger;
-        _patchCommandExecutor = patchCommandExecutor;
         _queryBuilderFactory = queryBuilderFactory;
         _settings = settings;
         _userGroupService = userGroupService;
@@ -74,10 +71,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     public async Task<ScimPageResults<ScimGroup>> GetAll(IIndexResourceQuery query) {
         var all = await GetAllAsync();
 
-        var matching = _queryBuilderFactory.CreateQueryBuilder(all.AsQueryable())
-                                           .Filter(query.Filter)
-                                           .Build()
-                                           .ToList();
+        var matching = Build(_queryBuilderFactory.CreateQueryBuilder(all.AsQueryable()).Filter(query.Filter));
 
         var builder = _queryBuilderFactory.CreateQueryBuilder(matching.AsQueryable())
                                           .Page(query.StartIndex, query.Count);
@@ -86,7 +80,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             builder = builder.Sort(query.Sort.By, query.Sort.Direction);
         }
 
-        var page = builder.Build().ToList();
+        var page = Build(builder);
 
         return new ScimPageResults<ScimGroup>(page.Select(ToScim).ToList(), matching.Count);
     }
@@ -100,8 +94,15 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     public async Task<ScimGroup> PartialUpdate(string resourceId, IEnumerable<PatchCommand> updates) {
         var group = await GetRequiredAsync(resourceId);
         var members = group.Members.Select(x => Guid.Parse(x.Id)).ToHashSet();
+        var applicable = updates.Where(x => IsMembersPath(x.Path)).ToList();
 
-        foreach (var update in updates.Where(x => IsMembersPath(x.Path))) {
+        if (!applicable.Any() && updates.Any()) {
+            _logger.LogWarning("Patch of group {DisplayName} changed no membership; paths were {Paths}",
+                               group.DisplayName,
+                               string.Join(", ", updates.Select(x => x.Path?.ToString() ?? "(none)")));
+        }
+
+        foreach (var update in applicable) {
             var keys = GetMemberKeys(update);
 
             if (update.Operation == PatchOperation.Add) {
@@ -232,11 +233,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
                 }
             }
         } else {
-            var property = value.GetType().GetProperty("Value");
-
-            if (property != null) {
-                yield return property.GetValue(value)?.ToString();
-            }
+            throw new ScimStoreException($"Cannot read member values from {value.GetType().Name}");
         }
     }
 
@@ -252,6 +249,16 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         } else if (json.ValueKind == JsonValueKind.String) {
             yield return json.GetString();
         }
+    }
+
+    private static IReadOnlyList<T> Build<T>(IScimQueryBuilder<T> builder) {
+        var results = builder.Build().ToList();
+
+        if (builder.Errors.OrEmpty().Any()) {
+            throw new ScimStoreInvalidQueryException("The filter could not be applied", builder.Errors);
+        }
+
+        return results;
     }
 
     private static ISet<Guid> GetMemberKeys(PatchCommand command) {

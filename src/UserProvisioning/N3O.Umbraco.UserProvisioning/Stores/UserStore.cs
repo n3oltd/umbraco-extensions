@@ -103,10 +103,7 @@ public class UserStore : IScimStore<ScimUser> {
     public async Task<ScimPageResults<ScimUser>> GetAll(IIndexResourceQuery query) {
         var all = await GetAllAsync();
 
-        var matching = _queryBuilderFactory.CreateQueryBuilder(all.AsQueryable())
-                                           .Filter(query.Filter)
-                                           .Build()
-                                           .ToList();
+        var matching = Build(_queryBuilderFactory.CreateQueryBuilder(all.AsQueryable()).Filter(query.Filter));
 
         var builder = _queryBuilderFactory.CreateQueryBuilder(matching.AsQueryable())
                                           .Page(query.StartIndex, query.Count);
@@ -115,7 +112,7 @@ public class UserStore : IScimStore<ScimUser> {
             builder = builder.Sort(query.Sort.By, query.Sort.Direction);
         }
 
-        var page = builder.Build().ToList();
+        var page = Build(builder);
 
         return new ScimPageResults<ScimUser>(page.Select(ToScim).ToList(), matching.Count);
     }
@@ -252,6 +249,16 @@ public class UserStore : IScimStore<ScimUser> {
         backOfficeUser.UserName = user.Username;
 
         return backOfficeUser;
+    }
+
+    private static IReadOnlyList<T> Build<T>(IScimQueryBuilder<T> builder) {
+        var results = builder.Build().ToList();
+
+        if (builder.Errors.OrEmpty().Any()) {
+            throw new ScimStoreInvalidQueryException("The filter could not be applied", builder.Errors);
+        }
+
+        return results;
     }
 
     private static string GetEmail(ScimUser resource) {
