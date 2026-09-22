@@ -16,6 +16,23 @@ public partial class PlatformsContentTypeSeeder {
         return AliasHelper<T>.PropertyAlias(expression);
     }
 
+    private void SeedCampaignDonationFormItem() {
+        var designer = _contentTypeEditor.NewElement("Platforms Donation Form Item (Campaign)",
+                                                     PlatformsConstants.DonationFormItems.Campaign);
+
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithDeterministicId();
+        designer.SetIcon("icon-categories color-black");
+        designer.AddComposition(PlatformsConstants.DonationFormItems.CompositionAlias);
+
+        designer.Group(Groups.General)
+                .ContentmentDataList(PlatformsConstants.DonationFormItems.Properties.Campaign)
+                .DataType(DataTypeNames.DonationFormCampaign)
+                .Mandatory();
+
+        designer.Save();
+    }
+
     private void SeedDonationFormContent() {
         var designer = _contentTypeEditor.NewElement("Donation Form Content",
                                                      PlatformsConstants.DonationFormContent.CompositionAlias);
@@ -40,6 +57,17 @@ public partial class PlatformsContentTypeSeeder {
         general.Textarea(Of((DonationFormContentContent x) => x.Summary))
                .DataType(DataTypeNames.Summary)
                .Mandatory();
+
+        designer.Save();
+    }
+
+    private void SeedDonationFormItem() {
+        var designer = _contentTypeEditor.NewElement("Platforms Donation Form Item",
+                                                     PlatformsConstants.DonationFormItems.CompositionAlias);
+
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithDeterministicId();
+        designer.SetIcon("icon-donate color-black");
 
         designer.Save();
     }
@@ -106,6 +134,23 @@ public partial class PlatformsContentTypeSeeder {
 
         suggestions.NestedContent(Of((FundDonationFormStateContent x) => x.RecurringSuggestedAmounts))
                    .DataType(DataTypeNames.SuggestedAmounts);
+
+        designer.Save();
+    }
+
+    private void SeedOfferingDonationFormItem() {
+        var designer = _contentTypeEditor.NewElement("Platforms Donation Form Item (Offering)",
+                                                     PlatformsConstants.DonationFormItems.Offering);
+
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithDeterministicId();
+        designer.SetIcon("icon-donate color-black");
+        designer.AddComposition(PlatformsConstants.DonationFormItems.CompositionAlias);
+
+        designer.Group(Groups.General)
+                .ContentmentDataList(PlatformsConstants.DonationFormItems.Properties.Offering)
+                .DataType(DataTypeNames.DonationFormOffering)
+                .Mandatory();
 
         designer.Save();
     }

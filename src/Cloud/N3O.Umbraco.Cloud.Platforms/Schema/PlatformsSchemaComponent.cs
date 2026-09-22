@@ -58,7 +58,7 @@ public class PlatformsSchemaComponent : IComponent {
             return;
         }
 
-        AllowCrowdfundingCampaignsUnderPlatforms();
+        AllowUnderPlatforms(PlatformsConstants.CrowdfundingCampaigns.Alias);
 
         if (!IsEnabled()) {
             return;
@@ -66,6 +66,9 @@ public class PlatformsSchemaComponent : IComponent {
 
         _dataTypeSeeder.Value.Seed();
         _contentTypeSeeder.Value.Seed();
+        _dataTypeSeeder.Value.SeedDonationFormList();
+
+        AllowUnderPlatforms(PlatformsConstants.CrossSells.ContainerAlias);
 
         var blockers = FindMigrationBlockers();
 
@@ -91,24 +94,32 @@ public class PlatformsSchemaComponent : IComponent {
 
     public void Terminate() { }
 
-    private void AllowCrowdfundingCampaignsUnderPlatforms() {
-        var crowdfundingCampaigns = _contentTypeEditor.Find(PlatformsConstants.CrowdfundingCampaigns.Alias);
+    private void AllowUnderPlatforms(string childAlias) {
+        var child = _contentTypeEditor.Find(childAlias);
         var platforms = _contentTypeEditor.Find(PlatformsConstants.Platforms.Alias);
 
-        if (crowdfundingCampaigns == null ||
-            platforms == null ||
-            platforms.AllowedContentTypes.OrEmpty().Any(x => x.Alias == crowdfundingCampaigns.Alias)) {
+        // A site that does not use the child type simply does not have it, which is an ordinary state and happens
+        // on every start, so this is not a warning.
+        if (child == null) {
+            _logger.LogDebug("Cannot allow {Alias} under the platforms type because no such content type exists",
+                             childAlias);
+
+            return;
+        }
+
+        if (platforms == null ||
+            platforms.AllowedContentTypes.OrEmpty().Any(x => x.Alias == child.Alias)) {
             return;
         }
 
         try {
             var designer = (IDocumentTypeDesigner) _contentTypeEditor.ForExisting(platforms.Alias);
 
-            designer.AllowChildren(crowdfundingCampaigns.Alias);
+            designer.AllowChildren(child.Alias);
 
             designer.Save();
         } catch (Exception ex) {
-            _logger.LogError(ex, "Could not allow {Alias} under the platforms type", crowdfundingCampaigns.Alias);
+            _logger.LogError(ex, "Could not allow {Alias} under the platforms type", child.Alias);
         }
     }
 

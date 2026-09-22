@@ -26,6 +26,9 @@ public static class PlatformsSchemaConstants {
         public const string CampaignsMultiple = "Platforms Campaigns Data List (0, n)";
         public const string CampaignsSingle = "Platforms Campaigns Data List (0, 1)";
         public const string DonateButtonAction = "Platforms Donate Button Action Data List (0, 1)";
+        public const string DonationFormCampaign = "Platforms Donation Form Campaign Data List (0, 1)";
+        public const string DonationFormList = "Nested Platforms Donation Form Item (0, 1)";
+        public const string DonationFormOffering = "Platforms Donation Form Offering Data List (0, 1)";
         public const string ECommerceStage = "Platforms Ecommerce Stage Data List (0, 1)";
         public const string ElementEmbedCodeLabel = "Platforms Element Embed Code Label";
         public const string QurbaniItem = "Platforms Qurbani Item Data List (0, 1)";
@@ -37,6 +40,16 @@ public static class PlatformsSchemaConstants {
     public static class DataTypeKeys {
         // The key the sites' uSync exports hold for the type, save Muslim Hands, whose own key is matched by name
         public static readonly Guid CampaignsSingle = new("d51913ab-a36d-4d15-9c5c-7876319e967e");
+
+        // The donation form types are referenced by key from the sites' own block definitions, so seeding them
+        // under a generated key would leave those definitions pointing at nothing
+        public static readonly Guid DonationFormCampaign = new("127ddbb5-d4b0-429c-ba19-6b4987b834e4");
+
+        // Held explicitly for the same reason, and set to the value the name derived key already produced so a site
+        // seeded before it was pinned keeps the type it has. Renaming the data type no longer moves its key.
+        public static readonly Guid DonationFormList = new("7018b08b-c643-5150-912d-e28d074ddf71");
+
+        public static readonly Guid DonationFormOffering = new("3deb19db-3bf1-467f-85c4-531bd67a4c34");
     }
 
     public static class SharedDataTypes {
