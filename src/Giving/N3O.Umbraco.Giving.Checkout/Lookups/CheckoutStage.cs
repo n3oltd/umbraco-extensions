@@ -39,7 +39,7 @@ public class CheckoutStage : NamedLookup {
     
     public bool IsRequired(Entities.Checkout checkout) => _isRequired(checkout);
     
-    public string GetUrl(IContentCache contentCache) => _getPage(contentCache).Content().AbsoluteUrl();
+    public string GetUrl(IContentCache contentCache) => _getPage(contentCache)?.Content()?.AbsoluteUrl();
 }
 
 public class CheckoutStagesCollection : LookupsCollection<CheckoutStage> {

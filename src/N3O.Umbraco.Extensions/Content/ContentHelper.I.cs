@@ -8,6 +8,8 @@ using Umbraco.Cms.Core.PropertyEditors;
 namespace N3O.Umbraco.Content;
 
 public interface IContentHelper {
+    IReadOnlyList<IContent> GetAllOfType(string contentTypeAlias);
+
     IReadOnlyList<IContent> GetAncestors(IContent content);
     
     IReadOnlyList<IContent> GetChildren(IContent content);

@@ -13,6 +13,10 @@ public static class SendingContentNotificationExtensions {
                                         string path) {
         var urlSettings = contentCache.Single<UrlSettingsContent>();
 
+        if (urlSettings == null) {
+            return;
+        }
+
         var stagingUrl = new Url(urlSettings.StagingBaseUrl).AppendPathSegment(path);
         var productionUrl = new Url(urlSettings.ProductionBaseUrl).AppendPathSegment(path);
 

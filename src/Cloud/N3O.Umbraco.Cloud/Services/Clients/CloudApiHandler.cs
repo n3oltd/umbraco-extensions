@@ -25,7 +25,9 @@ public class CloudApiHandler : DelegatingHandler {
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
                                                                  CancellationToken cancellationToken) {
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _bearerToken);
+        if (_bearerToken.HasValue()) {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _bearerToken);
+        }
 
         request.Headers.Add("N3O-Subscription-Id", _subscriptionId.Value);
 

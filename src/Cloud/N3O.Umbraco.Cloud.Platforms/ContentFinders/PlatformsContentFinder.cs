@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
@@ -11,15 +12,19 @@ namespace N3O.Umbraco.Cloud.Platforms.ContentFinders;
 public class PlatformsContentFinder : IContentFinder {
     private readonly IPlatformsPageAccessor _platformsPageAccessor;
     private readonly IContentCache _contentCache;
+    private readonly ILogger<PlatformsContentFinder> _logger;
 
-    public PlatformsContentFinder(IPlatformsPageAccessor platformsPageAccessor, IContentCache contentCache) {
+    public PlatformsContentFinder(IPlatformsPageAccessor platformsPageAccessor,
+                                  IContentCache contentCache,
+                                  ILogger<PlatformsContentFinder> logger) {
         _platformsPageAccessor = platformsPageAccessor;
         _contentCache = contentCache;
+        _logger = logger;
     }
-    
+
     public async Task<bool> TryFindContent(IPublishedRequestBuilder request) {
         var found = false;
-        
+
         var getPageResult = await _platformsPageAccessor.GetAsync();
 
         if (getPageResult.HasValue(x => x.Redirect)) {
@@ -36,6 +41,12 @@ public class PlatformsContentFinder : IContentFinder {
                 request.SetPublishedContent(content);
 
                 found = true;
+            } else if (specialPage.HasValue()) {
+                _logger.LogError("The CDN has the {Kind} page at {Path} but the URL Settings {Picker} picker " +
+                                 "is empty, so the page cannot be served",
+                                 getPageResult.Page.Kind.Id,
+                                 getPageResult.Page.Path,
+                                 specialPage.UrlSettingsPropertyAlias);
             }
         }
 

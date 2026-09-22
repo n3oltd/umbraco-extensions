@@ -40,12 +40,6 @@ public class CampaignSending : INotificationAsyncHandler<SendingContentNotificat
             foreach (var variant in notification.Content.Variants) {
                 SetEmbedCode(variant, notification.Content.Key.GetValueOrDefault());
                 SetUrl(notification, variant);
-
-                if (variant.State == ContentSavedState.NotCreated) {
-                    var tabs = variant.Tabs.Where(x => x.Alias.InvariantContains("crowdfunding"));
-
-                    variant.Tabs = variant.Tabs.Except(tabs).ToList();
-                }
             }
         }
         

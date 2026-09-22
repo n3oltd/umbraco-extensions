@@ -34,7 +34,13 @@ public class OpenGraphBuilder : IOpenGraphBuilder {
     }
 
     public IOpenGraphBuilder WithRelativeImageUrl(string relativeImageUrl) {
-        var imageUrl = Url.Combine(_urlBuilder.Root(), relativeImageUrl);
+        var rootUrl = _urlBuilder.Root();
+
+        if (rootUrl == null) {
+            return this;
+        }
+
+        var imageUrl = Url.Combine(rootUrl, relativeImageUrl);
 
         return WithImageUrl(imageUrl);
     }

@@ -176,7 +176,9 @@ export class MarketingExportClient {
 
 export interface DailyRes {
     goals?: GoalRow[] | undefined;
+    pages?: PageRow[] | undefined;
     traffic?: TrafficRow[] | undefined;
+    users?: UserRow[] | undefined;
 }
 
 export interface GoalRow {
@@ -190,6 +192,13 @@ export interface GoalRow {
     value?: number;
 }
 
+export interface PageRow {
+    date?: string | undefined;
+    entrances?: number;
+    pageviews?: number;
+    path?: string | undefined;
+}
+
 export interface TrafficRow {
     campaign?: string | undefined;
     date?: string | undefined;
@@ -199,6 +208,11 @@ export interface TrafficRow {
     referrer?: string | undefined;
     sessions?: number;
     source?: string | undefined;
+}
+
+export interface UserRow {
+    count?: number;
+    date?: string | undefined;
 }
 
 export interface ProblemDetails {
