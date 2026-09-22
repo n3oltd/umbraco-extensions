@@ -39,6 +39,7 @@ public class UserProvisioningComposer : Composer {
 
         var configOptions = new ScimServiceProviderConfigOptions();
         configOptions.EnableAzureAdCompatibility = true;
+        configOptions.EnableRequestAndResponseLogging = settings.LogRequests;
         configOptions.FilteringSupported = true;
         configOptions.PaginationOptions = new PaginationOptions(true, true, PaginationMethod.Index);
         configOptions.PatchSupported = true;
@@ -102,6 +103,10 @@ public class UserProvisioningComposer : Composer {
     }
 
     private void Validate(UserProvisioningSettings settings) {
+        if (!settings.BaseRoute.HasValue()) {
+            throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but has no BaseRoute");
+        }
+
         if (!settings.BearerToken.HasValue()) {
             throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but has no BearerToken");
         }
@@ -112,6 +117,11 @@ public class UserProvisioningComposer : Composer {
 
         if (!settings.UserGroups.Any()) {
             throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but maps no user groups");
+        }
+
+        if (!settings.UserGroups.Values.Any(x => x.EqualsInvariant(settings.DefaultUserGroupAlias))) {
+            throw new Exception($"{UserProvisioningSettings.SectionName} default user group " +
+                                $"{settings.DefaultUserGroupAlias.Quote()} is not one of the mapped user groups");
         }
 
         var duplicated = settings.UserGroups

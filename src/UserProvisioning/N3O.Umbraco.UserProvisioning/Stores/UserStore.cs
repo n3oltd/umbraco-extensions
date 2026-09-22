@@ -144,7 +144,7 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     private async Task ApplyAsync(IUser user, BackOfficeUser updated) {
-        if (!updated.Name.EqualsInvariant(user.Name) || !updated.Email.EqualsInvariant(user.Email)) {
+        if (RequiresUpdate(Map(user), updated)) {
             // Umbraco marks ExistingUserKey required, so this one model cannot be built by assignment
             var model = new UserUpdateModel { ExistingUserKey = user.Key };
             model.ContentStartNodeKeys = GetKeys(user.StartContentIds, UmbracoObjectTypes.Document);
@@ -286,6 +286,10 @@ public class UserStore : IScimStore<ScimUser> {
 
     private static bool IsActive(IUser user) {
         return user.UserState != UserState.Disabled;
+    }
+
+    private static bool RequiresUpdate(BackOfficeUser current, BackOfficeUser updated) {
+        return !updated.Email.EqualsInvariant(current.Email) || !updated.Name.EqualsInvariant(current.Name);
     }
 
     private static ScimUser ToScim(BackOfficeUser user) {

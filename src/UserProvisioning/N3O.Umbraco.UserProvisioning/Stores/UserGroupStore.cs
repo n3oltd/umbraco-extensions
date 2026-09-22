@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Models;
 using Rsk.AspNetCore.Scim.Exceptions;
@@ -21,17 +22,20 @@ using UmbracoConstants = Umbraco.Cms.Core.Constants;
 namespace N3O.Umbraco.UserProvisioning.Stores;
 
 public class UserGroupStore : IScimStore<ScimGroup> {
+    private readonly ILogger<UserGroupStore> _logger;
     private readonly IPatchCommandExecutor _patchCommandExecutor;
     private readonly IScimQueryBuilderFactory _queryBuilderFactory;
     private readonly UserProvisioningSettings _settings;
     private readonly IUserGroupService _userGroupService;
     private readonly IUserService _userService;
 
-    public UserGroupStore(IPatchCommandExecutor patchCommandExecutor,
+    public UserGroupStore(ILogger<UserGroupStore> logger,
+                          IPatchCommandExecutor patchCommandExecutor,
                           IScimQueryBuilderFactory queryBuilderFactory,
                           UserProvisioningSettings settings,
                           IUserGroupService userGroupService,
                           IUserService userService) {
+        _logger = logger;
         _patchCommandExecutor = patchCommandExecutor;
         _queryBuilderFactory = queryBuilderFactory;
         _settings = settings;
@@ -138,6 +142,11 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             var userGroup = await _userGroupService.GetAsync(alias);
 
             if (userGroup == null) {
+                _logger.LogWarning("Directory group {DisplayName} maps to user group {Alias}, which this site does " +
+                                   "not have, so nobody in it can be provisioned",
+                                   displayName,
+                                   alias);
+
                 continue;
             }
 

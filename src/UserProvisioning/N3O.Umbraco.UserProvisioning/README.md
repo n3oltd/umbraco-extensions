@@ -46,6 +46,7 @@ is the seam for enabling provisioning in one environment and not another.
       "BearerToken": "<from the secret store>",
       "DefaultUserGroupAlias": "editor",
       "Licensee": "<licensee>",
+      "LogRequests": false,
       "LicenseKey": "<licence key>",
       "UserGroups": {
         "CMS Editors": "editor",
@@ -62,7 +63,9 @@ value is what Umbraco calls the user group. Two directory groups cannot map to o
 startup fails if they do.
 
 `DefaultUserGroupAlias` is the user group a person lands in when the provisioning service creates
-them, before it sends their group membership. `BearerToken` is the credential the identity provider
+them, before it sends their group membership, and it has to be one of the mapped user groups.
+`LogRequests` logs each SCIM request and response, which is how a rejected call is diagnosed. It is
+off by default because those bodies carry names and email addresses. `BearerToken` is the credential the identity provider
 presents; it is compared over a fixed-time hash and belongs in a secret store rather than in
 `appsettings.json`. A missing token, licence or group map fails startup rather than serving an
 endpoint that would accept anything or provision nobody.
