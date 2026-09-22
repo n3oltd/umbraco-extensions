@@ -18,6 +18,7 @@ public class GivingMigrationDevToolsController : BackofficeAuthorizedApiControll
     private readonly IGivingMigrationPlanner _planner;
     private readonly IGivingMigrationRunner _runner;
     private readonly IGivingMigrationReporter _reporter;
+    private readonly IGivingMigrationSchemaSeeder _schemaSeeder;
     private readonly IGivingMigrationStore _store;
     private readonly IGivingBlockRewriter _blockRewriter;
     private readonly ILegacyGivingTreeLock _treeLock;
@@ -26,6 +27,7 @@ public class GivingMigrationDevToolsController : BackofficeAuthorizedApiControll
     public GivingMigrationDevToolsController(IGivingMigrationPlanner planner,
                                              IGivingMigrationRunner runner,
                                              IGivingMigrationReporter reporter,
+                                             IGivingMigrationSchemaSeeder schemaSeeder,
                                              IGivingMigrationStore store,
                                              IGivingBlockRewriter blockRewriter,
                                              ILegacyGivingTreeLock treeLock,
@@ -33,10 +35,16 @@ public class GivingMigrationDevToolsController : BackofficeAuthorizedApiControll
         _planner = planner;
         _runner = runner;
         _reporter = reporter;
+        _schemaSeeder = schemaSeeder;
         _store = store;
         _blockRewriter = blockRewriter;
         _treeLock = treeLock;
         _purger = purger;
+    }
+
+    [HttpPost("giving-migration/schema/seed")]
+    public ActionResult<GivingMigrationSeedRes> SeedSchema() {
+        return Ok(_schemaSeeder.Seed());
     }
 
     [HttpGet("giving-migration/plan")]

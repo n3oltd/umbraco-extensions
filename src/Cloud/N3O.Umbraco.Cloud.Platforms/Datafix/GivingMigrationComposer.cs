@@ -14,6 +14,7 @@ public class GivingMigrationComposer : Composer {
         builder.Services.AddTransient<IGivingMigrationPlanner, GivingMigrationPlanner>();
         builder.Services.AddTransient<IGivingMigrationReporter, GivingMigrationReporter>();
         builder.Services.AddTransient<IGivingMigrationRunner, GivingMigrationRunner>();
+        builder.Services.AddTransient<IGivingMigrationSchemaSeeder, GivingMigrationSchemaSeeder>();
         builder.Services.AddTransient<IGivingMigrationStore, GivingMigrationStore>();
         builder.Services.AddTransient<IGivingMigrationWriter, GivingMigrationWriter>();
         builder.Services.AddTransient<ILegacyGivingPurger, LegacyGivingPurger>();

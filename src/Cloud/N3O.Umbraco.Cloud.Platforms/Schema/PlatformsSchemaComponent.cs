@@ -65,6 +65,7 @@ public class PlatformsSchemaComponent : IComponent {
 
         _dataTypeSeeder.Value.Seed();
         _contentTypeSeeder.Value.Seed();
+        _dataTypeSeeder.Value.SeedDonationFormList();
 
         AllowUnderPlatforms(PlatformsConstants.CrossSells.ContainerAlias);
 
