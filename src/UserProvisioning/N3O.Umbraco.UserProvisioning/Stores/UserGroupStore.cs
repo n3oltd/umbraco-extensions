@@ -3,10 +3,13 @@ using N3O.Umbraco.UserProvisioning.Models;
 using Rsk.AspNetCore.Scim.Exceptions;
 using Rsk.AspNetCore.Scim.Filters;
 using Rsk.AspNetCore.Scim.Models;
+using Rsk.AspNetCore.Scim.Parsers;
 using Rsk.AspNetCore.Scim.Stores;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Membership;
@@ -43,7 +46,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             throw new ScimStoreException($"No user group is mapped to {resource.DisplayName.Quote()}");
         }
 
-        await SetMembersAsync(group, resource.Members?.Select(x => x.Value));
+        await SetMembersAsync(group, ParseKeys(resource.Members));
 
         return ToScim(await GetRequiredAsync(group.Id));
     }
@@ -88,15 +91,28 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return ToScim(await GetRequiredAsync(id));
     }
 
+    // The patch executor replaces a collection rather than appending to it, so an add of one member
+    // would drop everybody already in the group
     public async Task<ScimGroup> PartialUpdate(string resourceId, IEnumerable<PatchCommand> updates) {
         var group = await GetRequiredAsync(resourceId);
-        var patched = ToScim(group);
+        var members = group.Members.Select(x => Guid.Parse(x.Id)).ToHashSet();
 
-        foreach (var update in updates) {
-            _patchCommandExecutor.Execute(patched, update);
+        foreach (var update in updates.Where(x => IsMembersPath(x.Path))) {
+            var keys = GetMemberKeys(update);
+
+            if (update.Operation == PatchOperation.Add) {
+                members.UnionWith(keys);
+            } else if (update.Operation == PatchOperation.Replace) {
+                members.Clear();
+                members.UnionWith(keys);
+            } else if (keys.Any()) {
+                members.ExceptWith(keys);
+            } else {
+                members.Clear();
+            }
         }
 
-        await SetMembersAsync(group, patched.Members?.Select(x => x.Value));
+        await SetMembersAsync(group, members);
 
         return ToScim(await GetRequiredAsync(resourceId));
     }
@@ -104,7 +120,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     public async Task<ScimGroup> Update(ScimGroup resource) {
         var group = await GetRequiredAsync(resource.Id);
 
-        await SetMembersAsync(group, resource.Members?.Select(x => x.Value));
+        await SetMembersAsync(group, ParseKeys(resource.Members));
 
         return ToScim(await GetRequiredAsync(resource.Id));
     }
@@ -154,22 +170,12 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return group;
     }
 
-    private async Task SetMembersAsync(BackOfficeUserGroup group, IEnumerable<string> memberIds) {
-        if (memberIds == null) {
+    private async Task SetMembersAsync(BackOfficeUserGroup group, ISet<Guid> wanted) {
+        if (wanted == null) {
             return;
         }
 
         var groupKey = Guid.Parse(group.Id);
-        var wanted = new HashSet<Guid>();
-
-        foreach (var memberId in memberIds.Where(x => x.HasValue())) {
-            if (!Guid.TryParse(memberId, out var memberKey)) {
-                throw new ScimStoreException($"Member {memberId.Quote()} is not a user id");
-            }
-
-            wanted.Add(memberKey);
-        }
-
         var held = group.Members.Select(x => Guid.Parse(x.Id)).ToHashSet();
 
         var added = wanted.Except(held).ToArray();
@@ -177,8 +183,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
         if (added.Any()) {
             var model = new UsersToUserGroupManipulationModel(groupKey, added);
-            var attempt = await _userGroupService.AddUsersToUserGroupAsync(model,
-                                                                           UmbracoConstants.Security.SuperUserKey);
+            var attempt = await _userGroupService.AddUsersToUserGroupAsync(model, UmbracoConstants.Security.SuperUserKey);
 
             if (!attempt.Success) {
                 throw new ScimStoreException($"Could not add users to group {group.Alias.Quote()}: {attempt.Result}");
@@ -191,10 +196,91 @@ public class UserGroupStore : IScimStore<ScimGroup> {
                                                                                 UmbracoConstants.Security.SuperUserKey);
 
             if (!attempt.Success) {
-                throw new ScimStoreException($"Could not remove users from group " +
-                                             $"{group.Alias.Quote()}: {attempt.Result}");
+                throw new ScimStoreException($"Could not remove users from group {group.Alias.Quote()}: " +
+                                             $"{attempt.Result}");
             }
         }
+    }
+
+    private static IEnumerable<string> EnumerateValues(object value) {
+        if (value == null) {
+            yield break;
+        }
+
+        if (value is string text) {
+            yield return text;
+        } else if (value is ScimMember member) {
+            yield return member.Value;
+        } else if (value is JsonElement json) {
+            foreach (var jsonValue in EnumerateJson(json)) {
+                yield return jsonValue;
+            }
+        } else if (value is IEnumerable items) {
+            foreach (var item in items) {
+                foreach (var itemValue in EnumerateValues(item)) {
+                    yield return itemValue;
+                }
+            }
+        } else {
+            var property = value.GetType().GetProperty("Value");
+
+            if (property != null) {
+                yield return property.GetValue(value)?.ToString();
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateJson(JsonElement json) {
+        if (json.ValueKind == JsonValueKind.Array) {
+            foreach (var item in json.EnumerateArray()) {
+                foreach (var itemValue in EnumerateJson(item)) {
+                    yield return itemValue;
+                }
+            }
+        } else if (json.ValueKind == JsonValueKind.Object && json.TryGetProperty("value", out var value)) {
+            yield return value.GetString();
+        } else if (json.ValueKind == JsonValueKind.String) {
+            yield return json.GetString();
+        }
+    }
+
+    private static ISet<Guid> GetMemberKeys(PatchCommand command) {
+        var values = EnumerateValues(command.Value).ToList();
+
+        foreach (var element in command.Path.PathElements.OfType<ValuePathExpression>()) {
+            if (element.ValueFilter is AttributeComparisonFilterExpression comparison &&
+                comparison.Literal is LiteralStringFilterExpression literal) {
+                values.Add(literal.Value);
+            }
+        }
+
+        return ParseKeys(values);
+    }
+
+    private static bool IsMembersPath(PathExpression path) {
+        var element = path?.PathElements?.FirstOrDefault();
+
+        return element != null &&
+               element.PathElements.Length > 0 &&
+               element.PathElements[0].EqualsInvariant("members");
+    }
+
+    private static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
+        return members == null ? null : ParseKeys(members.Select(x => x.Value));
+    }
+
+    private static ISet<Guid> ParseKeys(IEnumerable<string> values) {
+        var keys = new HashSet<Guid>();
+
+        foreach (var value in values.OrEmpty().Where(x => x.HasValue())) {
+            if (!Guid.TryParse(value, out var key)) {
+                throw new ScimStoreException($"Member {value.Quote()} is not a user id");
+            }
+
+            keys.Add(key);
+        }
+
+        return keys;
     }
 
     private static ScimGroup ToScim(BackOfficeUserGroup group) {
