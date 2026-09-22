@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Models;
 using Rsk.AspNetCore.Scim.Exceptions;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Membership;
 using Umbraco.Cms.Core.Services;
@@ -21,6 +23,7 @@ public class UserStore : IScimStore<ScimUser> {
     private const int PageSize = 500;
 
     private readonly IEntityService _entityService;
+    private readonly GlobalSettings _globalSettings;
     private readonly IPatchCommandExecutor _patchCommandExecutor;
     private readonly IScimQueryBuilderFactory _queryBuilderFactory;
     private readonly UserProvisioningSettings _settings;
@@ -28,12 +31,14 @@ public class UserStore : IScimStore<ScimUser> {
     private readonly IUserService _userService;
 
     public UserStore(IEntityService entityService,
+                     IOptions<GlobalSettings> globalSettings,
                      IPatchCommandExecutor patchCommandExecutor,
                      IScimQueryBuilderFactory queryBuilderFactory,
                      UserProvisioningSettings settings,
                      IUserGroupService userGroupService,
                      IUserService userService) {
         _entityService = entityService;
+        _globalSettings = globalSettings.Value;
         _patchCommandExecutor = patchCommandExecutor;
         _queryBuilderFactory = queryBuilderFactory;
         _settings = settings;
@@ -148,7 +153,7 @@ public class UserStore : IScimStore<ScimUser> {
             model.Email = updated.Email;
             model.HasContentRootAccess = HasRootAccess(user.StartContentIds);
             model.HasMediaRootAccess = HasRootAccess(user.StartMediaIds);
-            model.LanguageIsoCode = user.Language;
+            model.LanguageIsoCode = user.Language.HasValue() ? user.Language : _globalSettings.DefaultUILanguage;
             model.MediaStartNodeKeys = GetKeys(user.StartMediaIds, UmbracoObjectTypes.Media);
             model.Name = updated.Name;
             model.UserGroupKeys = user.Groups.Select(x => x.Key).ToHashSet();
@@ -284,7 +289,27 @@ public class UserStore : IScimStore<ScimUser> {
             return name;
         }
 
+        if (resource.Name?.Formatted.HasValue() == true) {
+            return resource.Name.Formatted;
+        }
+
         return resource.DisplayName.HasValue() ? resource.DisplayName : fallback;
+    }
+
+    private static string FamilyName(string name) {
+        var parts = SplitName(name);
+
+        return parts.Length > 1 ? parts[1] : null;
+    }
+
+    private static string GivenName(string name) {
+        var parts = SplitName(name);
+
+        return parts.Length > 0 ? parts[0] : null;
+    }
+
+    private static string[] SplitName(string name) {
+        return name.HasValue() ? name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries) : [];
     }
 
     private static bool HasRootAccess(IEnumerable<int> startNodeIds) {
@@ -306,7 +331,9 @@ public class UserStore : IScimStore<ScimUser> {
         email.Value = user.Email;
 
         var name = new Name();
+        name.FamilyName = FamilyName(user.Name);
         name.Formatted = user.Name;
+        name.GivenName = GivenName(user.Name);
 
         var scimUser = new ScimUser();
         scimUser.Active = user.Active;

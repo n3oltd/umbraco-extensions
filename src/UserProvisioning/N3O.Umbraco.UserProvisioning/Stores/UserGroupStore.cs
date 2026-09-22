@@ -110,10 +110,12 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             } else if (update.Operation == PatchOperation.Replace) {
                 members.Clear();
                 members.UnionWith(keys);
+            } else if (NamesNobody(update)) {
+                members.Clear();
             } else if (keys.Any()) {
                 members.ExceptWith(keys);
             } else {
-                members.Clear();
+                throw new ScimStoreException("The members to remove could not be read from the patch");
             }
         }
 
@@ -221,7 +223,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         if (value is string text) {
             yield return text;
         } else if (value is ScimMember member) {
-            yield return member.Value;
+            yield return member.Value.HasValue() ? member.Value : LastSegment(member.ScimRef);
         } else if (value is JsonElement json) {
             foreach (var jsonValue in EnumerateJson(json)) {
                 yield return jsonValue;
@@ -272,6 +274,14 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         }
 
         return ParseKeys(values);
+    }
+
+    private static string LastSegment(string reference) {
+        return reference?.Split('/').LastOrDefault();
+    }
+
+    private static bool NamesNobody(PatchCommand command) {
+        return command.Value == null && !command.Path.PathElements.OfType<ValuePathExpression>().Any();
     }
 
     private static bool IsMembersPath(PathExpression path) {
