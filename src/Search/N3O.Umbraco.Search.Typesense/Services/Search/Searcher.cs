@@ -35,7 +35,7 @@ public class Searcher<TDocument> : ISearcher<TDocument> where TDocument : Search
         }
 
         var collectionInfo = TypesenseHelper.GetCollection<TDocument>();
-        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
+        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name);
 
         var results = await _typesenseClient.Search<object>(collectionName, searchParameters, cancellationToken);
 

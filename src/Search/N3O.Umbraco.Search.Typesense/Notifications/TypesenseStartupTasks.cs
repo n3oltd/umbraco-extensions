@@ -39,21 +39,18 @@ public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicatio
                                   CancellationToken cancellationToken) {
         if (_typesenseClient.HasValue()) {
             foreach (var collection in TypesenseHelper.GetAllCollections()) {
+                var collectionName = _collectionNameResolver.Resolve(collection.Name);
+
                 try {
-                    await MigrateCollectionAsync(collection);
+                    await MigrateCollectionAsync(collection, collectionName);
                 } catch (Exception ex) {
-                    // Resolution is one of the things that can fail here, so the log reports the
-                    // declared name rather than calling back into the resolver
-                    _logger.LogError(ex,
-                                     "Failed to migrate Typesense collection {Collection}",
-                                     collection.Name.Base);
+                    _logger.LogError(ex, "Failed to migrate Typesense collection {Collection}", collectionName);
                 }
             }
         }
     }
 
-    private async Task MigrateCollectionAsync(CollectionInfo collectionInfo) {
-        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
+    private async Task MigrateCollectionAsync(CollectionInfo collectionInfo, string collectionName) {
         var collection = await TryGetCollectionAsync(collectionName);
 
         collection = await TryDropCollectionIfOldVersionAsync(collection, collectionInfo, collectionName);

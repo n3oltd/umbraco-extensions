@@ -43,7 +43,7 @@ public abstract class SearchIndexer<TContent, TDocument> : ISearchIndexer
         }
 
         var collectionInfo = TypesenseHelper.GetCollection<TDocument>();
-        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
+        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name);
 
         await _typesenseClient.DeleteDocuments(collectionName, $"content_key:=`{contentKey}`");
     }
@@ -67,7 +67,7 @@ public abstract class SearchIndexer<TContent, TDocument> : ISearchIndexer
 
         var document = _searchDocumentBuilder.Build();
         var collectionInfo = TypesenseHelper.GetCollection<TDocument>();
-        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name.Base);
+        var collectionName = _collectionNameResolver.Resolve(collectionInfo.Name);
 
         await _typesenseClient.UpsertDocument(collectionName, document);
     }
