@@ -8,6 +8,7 @@ public class GivingMigrationRunRes {
     public string Message { get; set; }
     public int Attempted { get; set; }
     public int Created { get; set; }
+    public int Published { get; set; }
     public int Failed { get; set; }
     public int AlreadyMigrated { get; set; }
     public int Blocked { get; set; }

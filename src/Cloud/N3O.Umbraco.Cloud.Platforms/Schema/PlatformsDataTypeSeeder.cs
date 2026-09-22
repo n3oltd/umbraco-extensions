@@ -108,17 +108,6 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Save();
     }
 
-    private void SeedDonationFormCampaign() {
-        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.DonationFormCampaign);
-
-        designer.DataSource<DonationFormCampaignElementKindDataSource>();
-        designer.Limit(1);
-        designer.InFolder(Folders.Platforms, Folders.DonationForms);
-        designer.WithId(DataTypeKeys.DonationFormCampaign);
-
-        designer.Save();
-    }
-
     private void SeedDonationFormBlockList() {
         var designer = _dataTypeEditor.NewBlockList(DataTypeNames.DonationFormList);
 
@@ -127,6 +116,17 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Limit(0, 1);
         designer.InFolder(Folders.Platforms, Folders.DonationForms);
         designer.WithId(DataTypeKeys.DonationFormList);
+
+        designer.Save();
+    }
+
+    private void SeedDonationFormCampaign() {
+        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.DonationFormCampaign);
+
+        designer.DataSource<DonationFormCampaignElementKindDataSource>();
+        designer.Limit(1);
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithId(DataTypeKeys.DonationFormCampaign);
 
         designer.Save();
     }

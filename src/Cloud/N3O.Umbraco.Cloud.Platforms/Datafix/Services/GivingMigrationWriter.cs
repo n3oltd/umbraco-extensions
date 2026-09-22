@@ -18,9 +18,6 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingMigrationWriter : IGivingMigrationWriter {
-    private const string NestedContentTypeAlias = "ncContentTypeAlias";
-    private const string NestedKey = "key";
-    private const string NestedName = "name";
 
     // Copied straight across: the legacy and platforms properties use the same editor over the same lookup ids.
     private static readonly string[] VerbatimStateAliases = [
@@ -634,9 +631,9 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         }
 
         foreach (var item in items.OfType<JObject>()) {
-            item[NestedContentTypeAlias] = elementAlias;
-            item[NestedKey] = Guid.NewGuid().ToString();
-            item.Remove(NestedName);
+            item[GivingMigrationConstants.NestedContent.ContentTypeAlias] = elementAlias;
+            item[GivingMigrationConstants.NestedContent.Key] = Guid.NewGuid().ToString();
+            item.Remove(GivingMigrationConstants.NestedContent.Name);
         }
 
         return items.ToString(Formatting.None);

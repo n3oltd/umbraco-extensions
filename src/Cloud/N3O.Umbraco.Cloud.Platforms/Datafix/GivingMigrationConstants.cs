@@ -14,6 +14,7 @@ public static class GivingMigrationConstants {
 
     public static class IssueKinds {
         public const string AmbiguousReference = nameof(AmbiguousReference);
+        public const string BinnedReference = nameof(BinnedReference);
         public const string DroppedProperty = nameof(DroppedProperty);
         public const string EmptyForm = nameof(EmptyForm);
         public const string LegacyTreeNotRecognised = nameof(LegacyTreeNotRecognised);
@@ -50,6 +51,15 @@ public static class GivingMigrationConstants {
         public const string PriceHandleAlias = "priceHandle";
         public const string SponsorshipDonationOptionAlias = "sponsorshipDonationOption";
         public const string UpsellOfferAlias = "upsellOffer";
+        public const string UpsellOffersAlias = "upsellOffers";
+    }
+
+    // The shape Umbraco stores a nested content item and a block list item in
+    public static class NestedContent {
+        public const string BlockContentTypeKey = "contentTypeKey";
+        public const string ContentTypeAlias = "ncContentTypeAlias";
+        public const string Key = "key";
+        public const string Name = "name";
     }
 
     public static class Outcomes {

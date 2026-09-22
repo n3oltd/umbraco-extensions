@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Cms.Core.Models;
@@ -9,6 +10,28 @@ namespace N3O.Umbraco.Cloud.Platforms;
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public static class GivingMigrationContent {
     private const int PageSize = 200;
+
+    // The form types are read from the site rather than named here because a site can call its form type anything,
+    // and both the tree lock and the purge have to agree on what counts as legacy.
+    public static IReadOnlyCollection<string> GetLegacyAliases(ILegacyGivingTreeReader reader) {
+        var aliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            GivingMigrationConstants.Legacy.DonationFormAlias,
+            GivingMigrationConstants.Legacy.DonationFormFolderAlias,
+            GivingMigrationConstants.Legacy.DonationFormsAlias,
+            GivingMigrationConstants.Legacy.FeedbackDonationOptionAlias,
+            GivingMigrationConstants.Legacy.FundDonationOptionAlias,
+            GivingMigrationConstants.Legacy.PriceHandleAlias,
+            GivingMigrationConstants.Legacy.SponsorshipDonationOptionAlias,
+            GivingMigrationConstants.Legacy.UpsellOfferAlias,
+            GivingMigrationConstants.Legacy.UpsellOffersAlias
+        };
+
+        foreach (var contentType in reader.GetFormContentTypes()) {
+            aliases.Add(contentType.Alias);
+        }
+
+        return aliases;
+    }
 
     public static IReadOnlyList<IContent> GetAllOfAlias(IContentService contentService,
                                                         IContentTypeService contentTypeService,
@@ -36,14 +59,16 @@ public static class GivingMigrationContent {
         return items;
     }
 
-    // Recycle bin content is returned by the descendant walk but is not live, so it is filtered out everywhere.
-    public static IEnumerable<IContent> GetAllContent(IContentService contentService) {
+    // Yielded rather than collected because this walks every node on the site and the caller reads one at a time.
+    // Recycle bin content is not live so the rewrite skips it, but it can be restored at any time and so still holds
+    // a reference that would outlive the purge.
+    public static IEnumerable<IContent> GetAllContent(IContentService contentService, bool includeTrashed) {
         long page = 0;
         long total;
 
         do {
             foreach (var content in contentService.GetPagedDescendants(UmbracoSystem.Root, page, PageSize, out total)) {
-                if (!content.Trashed) {
+                if (includeTrashed || !content.Trashed) {
                     yield return content;
                 }
             }

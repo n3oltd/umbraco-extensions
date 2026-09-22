@@ -54,7 +54,7 @@ public class GivingMigrationRunner : IGivingMigrationRunner {
 
         res.Items = items;
         res.Attempted = items.Count;
-        res.Created = items.Count(x => x.Outcome == GivingMigrationConstants.Outcomes.Published);
+        res.Published = items.Count(x => x.Outcome == GivingMigrationConstants.Outcomes.Published);
         res.Failed = items.Count(x => x.Outcome == GivingMigrationConstants.Outcomes.Failed);
         res.OfferingsCreated = items.Sum(x => x.OfferingsCreated);
 

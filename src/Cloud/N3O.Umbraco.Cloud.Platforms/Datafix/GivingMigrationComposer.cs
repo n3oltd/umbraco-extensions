@@ -4,8 +4,6 @@ using Umbraco.Cms.Core.DependencyInjection;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
-// Registrations live here rather than in PlatformsComposer so the whole migration is removed by deleting this
-// folder.
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingMigrationComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {

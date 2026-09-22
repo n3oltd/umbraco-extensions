@@ -24,10 +24,6 @@ namespace N3O.Umbraco.Cloud.Platforms;
 // TODO Delete along with the rest of the Datafix folder once every site has completed the migration.
 public class GivingBlockRewriter : IGivingBlockRewriter {
     private const string DocumentUdiPrefix = "umb://document/";
-    private const string BlockContentTypeKey = "contentTypeKey";
-    private const string NestedContentTypeAlias = "ncContentTypeAlias";
-    private const string NestedKey = "key";
-    private const string NestedName = "name";
 
     // A whole value is parsed by the framework, but a reference buried in a JSON blob has to be found before it can
     // be parsed and no framework helper searches free text.
@@ -135,7 +131,7 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         var items = new List<GivingMigrationRewriteItemRes>();
         var issues = new List<GivingMigrationIssueRes>();
 
-        foreach (var content in GivingMigrationContent.GetAllContent(_contentService)) {
+        foreach (var content in GivingMigrationContent.GetAllContent(_contentService, false)) {
             res.PagesScanned++;
 
             var item = RewriteOne(content,
@@ -198,7 +194,13 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
 
         var propertyAliases = new[] { GivingMigrationConstants.Legacy.DonationFormAlias };
 
-        foreach (var content in GivingMigrationContent.GetAllContent(_contentService)) {
+        foreach (var content in GivingMigrationContent.GetAllContent(_contentService, true)) {
+            // A doomed node referencing another doomed node is not a reason to refuse: both go in the same purge,
+            // and the rewrite does not touch the legacy tree, so reporting it would block with no way to clear it.
+            if (legacyIds.Contains(content.Key)) {
+                continue;
+            }
+
             FindReferences(content, legacyIds, propertyAliases, issues);
         }
 
@@ -306,16 +308,28 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
                 Collect(value.PublishedValue as string, legacyIds, found);
             }
 
-            // The rewrite only repairs a reference held in the picker, so one found anywhere else is reported as
-            // needing a hand rather than sending the operator to run a step that will not touch it.
-            var detail = repairable
-                             ? "The content still references a legacy node that the purge would delete. Run the " +
-                               "rewrite to replace it"
-                             : "The content references a legacy node outside the donation form picker, which the " +
-                               "rewrite does not touch, so it has to be cleared by hand";
+            // The rewrite only repairs a reference held in the picker, and it skips the recycle bin, so anything it
+            // will not touch is reported as needing a hand rather than sending the operator to run it again.
+            string kind;
+            string detail;
+
+            if (content.Trashed) {
+                kind = GivingMigrationConstants.IssueKinds.BinnedReference;
+                detail = "The content is in the recycle bin, which the rewrite skips, but it can be restored after " +
+                         "the purge and would then hold a reference to deleted content. Empty the bin, or restore " +
+                         "it and run the rewrite again";
+            } else if (repairable) {
+                kind = GivingMigrationConstants.IssueKinds.ResidualReference;
+                detail = "The content still references a legacy node that the purge would delete. Run the rewrite " +
+                         "to replace it";
+            } else {
+                kind = GivingMigrationConstants.IssueKinds.ResidualReference;
+                detail = "The content references a legacy node outside the donation form picker, which the rewrite " +
+                         "does not touch, so it has to be cleared by hand";
+            }
 
             foreach (var legacyId in found) {
-                issues.Add(Issue(GivingMigrationConstants.IssueKinds.ResidualReference,
+                issues.Add(Issue(kind,
                                  GivingMigrationConstants.Severities.Blocker,
                                  legacyId,
                                  content,
@@ -502,8 +516,10 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
             // Repoint takes an operator supplied list of block types, so a type left out of it would otherwise have
             // its legacy value overwritten with nested content JSON its editor cannot read, destroying the original
             // reference. The binding itself is the authority for what may be written, never the supplied list.
-            var holderAlias = holder[NestedContentTypeAlias]?.Value<string>() ??
-                              ResolveHolderAlias(holder[BlockContentTypeKey]?.Value<string>());
+            var blockKey = holder[GivingMigrationConstants.NestedContent.BlockContentTypeKey]?.Value<string>();
+
+            var holderAlias = holder[GivingMigrationConstants.NestedContent.ContentTypeAlias]?.Value<string>() ??
+                              ResolveHolderAlias(blockKey);
 
             foreach (var alias in propertyAliases) {
                 if (holder[alias] != null && !IsBound(holderAlias, alias, dataTypeKey)) {
@@ -567,9 +583,9 @@ public class GivingBlockRewriter : IGivingBlockRewriter {
         var elementId = ElementKind.DonationFormCampaign.ToEnumString() + "/" + campaign.NewId.ToString("D");
 
         var item = new JObject();
-        item[NestedKey] = Guid.NewGuid().ToString();
-        item[NestedName] = campaign.Name;
-        item[NestedContentTypeAlias] = itemContentTypeAlias;
+        item[GivingMigrationConstants.NestedContent.Key] = Guid.NewGuid().ToString();
+        item[GivingMigrationConstants.NestedContent.Name] = campaign.Name;
+        item[GivingMigrationConstants.NestedContent.ContentTypeAlias] = itemContentTypeAlias;
         item[PlatformsConstants.DonationFormItems.Properties.Campaign] =
             JsonConvert.SerializeObject(new[] { elementId });
 

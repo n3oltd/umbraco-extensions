@@ -201,7 +201,6 @@ public class GivingMigrationPlanner : IGivingMigrationPlanner {
             GivingMigrationConstants.Properties.HideRegularGiving
         };
 
-        // The options were already loaded by the tree read, so they are not fetched back one at a time.
         var affected = forms.SelectMany(x => x.Options).Count(x => dropped.Any(a => x.GetValue<bool>(a)));
 
         if (affected == 0) {

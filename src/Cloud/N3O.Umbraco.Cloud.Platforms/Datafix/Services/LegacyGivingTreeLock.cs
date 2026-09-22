@@ -27,8 +27,12 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
         var open = new List<string>();
         var locked = new List<string>();
 
+        var legacyAliases = GivingMigrationContent.GetLegacyAliases(_reader);
+
+        // Lock takes only the legacy entries, so a type that allowed a legacy form alongside anything else still
+        // has children afterwards. Asking whether it has any would report a locked tree as open.
         foreach (var contentType in GetContentTypesToLock()) {
-            if (HasAllowedChildren(contentType)) {
+            if (AllowsLegacy(contentType, legacyAliases)) {
                 open.Add(contentType.Alias);
             } else {
                 locked.Add(contentType.Alias);
@@ -54,7 +58,7 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
         var snapshot = new Dictionary<string, IReadOnlyList<string>>(_store.GetLockSnapshot(),
                                                                     StringComparer.OrdinalIgnoreCase);
 
-        var legacyAliases = GetLegacyAliases();
+        var legacyAliases = GivingMigrationContent.GetLegacyAliases(_reader);
 
         foreach (var contentType in GetContentTypesToLock()) {
             // Only the legacy entries are taken. A type that allows a legacy form usually allows other things too,
@@ -139,26 +143,6 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
         return res;
     }
 
-    // The legacy surface an editor could otherwise keep adding to: the option, folder and price handle types named
-    // in the constants, plus whichever types this site actually uses as its forms.
-    private IReadOnlyCollection<string> GetLegacyAliases() {
-        var aliases = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-            GivingMigrationConstants.Legacy.DonationFormAlias,
-            GivingMigrationConstants.Legacy.DonationFormFolderAlias,
-            GivingMigrationConstants.Legacy.FeedbackDonationOptionAlias,
-            GivingMigrationConstants.Legacy.FundDonationOptionAlias,
-            GivingMigrationConstants.Legacy.PriceHandleAlias,
-            GivingMigrationConstants.Legacy.SponsorshipDonationOptionAlias,
-            GivingMigrationConstants.Legacy.UpsellOfferAlias
-        };
-
-        foreach (var contentType in _reader.GetFormContentTypes()) {
-            aliases.Add(contentType.Alias);
-        }
-
-        return aliases;
-    }
-
     private static IReadOnlyList<ContentTypeSort> Resequence(IEnumerable<ContentTypeSort> allowed) {
         var resequenced = new List<ContentTypeSort>();
 
@@ -228,7 +212,7 @@ public class LegacyGivingTreeLock : ILegacyGivingTreeLock {
         return contentTypes.Values.ToList();
     }
 
-    private static bool HasAllowedChildren(IContentType contentType) {
-        return contentType.AllowedContentTypes?.Any() == true;
+    private static bool AllowsLegacy(IContentType contentType, IReadOnlyCollection<string> legacyAliases) {
+        return contentType.AllowedContentTypes.OrEmpty().Any(x => legacyAliases.Contains(x.Alias));
     }
 }

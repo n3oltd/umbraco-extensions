@@ -21,6 +21,7 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
     private readonly IContentTypeService _contentTypeService;
     private readonly ISubscriptionAccessor _subscriptionAccessor;
     private readonly ILogger<LegacyGivingPurger> _logger;
+    private IReadOnlyCollection<string> _legacyAliases;
 
     public LegacyGivingPurger(IGivingMigrationPlanner planner,
                               IGivingMigrationReporter reporter,
@@ -74,9 +75,23 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
         // whole subtree is what is destroyed.
         var topLevel = roots.SelectMany(x => GivingMigrationContent.GetChildren(_contentService, x.Id)).ToList();
 
-        var doomedKeys = roots.SelectMany(x => GivingMigrationContent.GetDescendants(_contentService, x.Id))
-                              .Select(x => x.Key)
-                              .ToHashSet();
+        var doomed = roots.SelectMany(x => GivingMigrationContent.GetDescendants(_contentService, x.Id)).ToList();
+        var doomedKeys = doomed.Select(x => x.Key).ToHashSet();
+
+        // The confirmed count covers the forms, but the delete takes whole subtrees, so anything an editor parked
+        // in the tree goes with them without ever having been counted or shown.
+        var collateral = doomed.Where(x => !IsLegacyContentType(x.ContentTypeId)).ToList();
+
+        if (collateral.Count > 0) {
+            res.Message = "The tree holds " +
+                          collateral.Count +
+                          " nodes that are not legacy giving content and are not covered by the confirmed count, " +
+                          "but would be deleted with it, starting with " +
+                          collateral[0].Name.Quote() +
+                          ". Move them out of the legacy tree first";
+
+            return res;
+        }
 
         // Forms are discovered by content type anywhere in the tree but only the ones under a legacy root are
         // deleted, so a form the confirmed count included but the delete cannot reach stops the call rather than
@@ -158,6 +173,14 @@ public class LegacyGivingPurger : ILegacyGivingPurger {
         }
 
         return item;
+    }
+
+    private bool IsLegacyContentType(int contentTypeId) {
+        _legacyAliases ??= GivingMigrationContent.GetLegacyAliases(_reader);
+
+        var contentType = _contentTypeService.Get(contentTypeId);
+
+        return contentType != null && _legacyAliases.Contains(contentType.Alias);
     }
 
     private IReadOnlyList<IContent> GetLegacyRoots() {

@@ -86,9 +86,17 @@ public class GivingMigrationMedia : IGivingMigrationMedia {
                                                   cancellationToken);
 
         // The hero image is the same kind of asset as the image, so it reuses it unless the caller supplies its own.
-        placeholders.HeroImage = heroImageMediaId.HasValue
-                                     ? Describe(heroImageMediaId.Value)
-                                     : placeholders.Image;
+        if (heroImageMediaId.HasValue) {
+            var heroImage = Describe(heroImageMediaId.Value, out var heroImageProblem);
+
+            if (heroImage == null) {
+                throw new InvalidOperationException(heroImageProblem);
+            }
+
+            placeholders.HeroImage = heroImage;
+        } else {
+            placeholders.HeroImage = placeholders.Image;
+        }
 
         _store.SavePlaceholderMedia(cache);
 
