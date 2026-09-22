@@ -8,6 +8,7 @@ using N3O.Umbraco.UserProvisioning.Security;
 using N3O.Umbraco.UserProvisioning.Stores;
 using Rsk.AspNetCore.Scim.Configuration;
 using Rsk.AspNetCore.Scim.Constants;
+using Rsk.AspNetCore.Scim.Models;
 using System;
 using System.Linq;
 using Umbraco.Cms.Core.DependencyInjection;
@@ -57,6 +58,28 @@ public class UserProvisioningComposer : Composer {
                .MapScimAttributes<BackOfficeUserGroup>(ScimSchemas.Group,
                                                        mapper => mapper.Map("id", x => x.Id)
                                                                        .Map("displayName", x => x.DisplayName))
+               .MapScimAttributes<ScimUser>(ScimSchemas.User,
+                                            mapper => mapper.Map("id", x => x.Id)
+                                                            .Map("userName", x => x.UserName)
+                                                            .Map("externalId", x => x.ExternalId)
+                                                            .Map("active", x => x.Active)
+                                                            .Map("displayName", x => x.DisplayName)
+                                                            .MapComplex("name", x => x.Name,
+                                                                        name => name.Map("formatted", x => x.Formatted)
+                                                                                    .Map("givenName", x => x.GivenName)
+                                                                                    .Map("familyName", x => x.FamilyName))
+                                                            .MapCollection<Email>("emails", x => x.Emails,
+                                                                                  email => email.Map("primary", x => x.Primary)
+                                                                                                .Map("type", x => x.Type)
+                                                                                                .Map("value", x => x.Value)))
+               .MapScimAttributes<ScimGroup>(ScimSchemas.Group,
+                                             mapper => mapper.Map("id", x => x.Id)
+                                                             .Map("displayName", x => x.DisplayName)
+                                                             .Map("externalId", x => x.ExternalId)
+                                                             .MapCollection<Member>("members", x => x.Members,
+                                                                                    member => member.Map("display", x => x.Display)
+                                                                                                    .Map("type", x => x.Type)
+                                                                                                    .Map("value", x => x.Value)))
                .AddScimAuthorization<BearerTokenAuthorizer>();
 
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {

@@ -125,28 +125,19 @@ public class UserStore : IScimStore<ScimUser> {
 
     public async Task<ScimUser> PartialUpdate(string resourceId, IEnumerable<PatchCommand> updates) {
         var user = await GetRequiredAsync(resourceId);
-        var patched = Map(user);
+        var patched = ToScim(Map(user));
 
         foreach (var update in updates) {
             _patchCommandExecutor.Execute(patched, update);
         }
 
-        await ApplyAsync(user, patched);
-
-        return ToScim(patched);
+        return await ApplyResourceAsync(user, patched);
     }
 
     public async Task<ScimUser> Update(ScimUser resource) {
         var user = await GetRequiredAsync(resource.Id);
 
-        var updated = Map(user);
-        updated.Active = resource.Active ?? updated.Active;
-        updated.Email = GetEmail(resource).HasValue() ? GetEmail(resource) : updated.Email;
-        updated.Name = GetName(resource, updated.Name);
-
-        await ApplyAsync(user, updated);
-
-        return ToScim(updated);
+        return await ApplyResourceAsync(user, resource);
     }
 
     private async Task ApplyAsync(IUser user, BackOfficeUser updated) {
@@ -168,6 +159,17 @@ public class UserStore : IScimStore<ScimUser> {
         if (updated.Active != IsActive(user)) {
             await SetActiveAsync(user.Key, updated.Active);
         }
+    }
+
+    private async Task<ScimUser> ApplyResourceAsync(IUser user, ScimUser resource) {
+        var updated = Map(user);
+        updated.Active = resource.Active ?? updated.Active;
+        updated.Email = GetEmail(resource).HasValue() ? GetEmail(resource) : updated.Email;
+        updated.Name = GetName(resource, updated.Name);
+
+        await ApplyAsync(user, updated);
+
+        return ToScim(updated);
     }
 
     private async Task<IUser> FindByEmailAsync(string email) {
