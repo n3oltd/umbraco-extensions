@@ -6,6 +6,7 @@ public static class PlatformsSchemaConstants {
     public static class Migrations {
         public const string PlanName = "N3O.Platforms.Schema";
         public const string PlatformsContentTypesMigrationV2 = "2026.08.31";
+        public const string PlatformsContentTypesMigrationV3 = "2026.09.21";
     }
 
     public static class Folders {
