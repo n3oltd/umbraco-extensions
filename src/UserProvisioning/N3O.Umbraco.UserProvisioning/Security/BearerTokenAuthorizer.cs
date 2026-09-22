@@ -36,7 +36,7 @@ public class BearerTokenAuthorizer : IAuthorizeScimRequest {
         return ValueTask.FromResult(ScimAuthorizationResult.Authorized);
     }
 
-    // Compared over fixed-length hashes so the comparison cost does not reveal the token's length
+    // Hashed first because FixedTimeEquals short circuits on unequal lengths, which leaks the token's length
     private static bool FixedTimeEquals(string presented, string expected) {
         var presentedHash = SHA256.HashData(Encoding.UTF8.GetBytes(presented));
         var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(expected));

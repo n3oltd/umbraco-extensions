@@ -36,8 +36,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         _userService = userService;
     }
 
-    // Umbraco user groups are created by the site, never by the identity provider, so a create is
-    // only ever the provisioning service reconciling a group the configuration already names
     public async Task<ScimGroup> Add(ScimGroup resource) {
         var group = await FindByDisplayNameAsync(resource.DisplayName);
 
