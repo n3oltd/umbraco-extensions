@@ -100,7 +100,7 @@ public class UserStore : IScimStore<ScimUser> {
     public async Task<ScimPageResults<ScimUser>> GetAll(IIndexResourceQuery query) {
         var all = await GetAllAsync();
 
-        var matching = _queryBuilderFactory.CreateQueryBuilder(all)
+        var matching = _queryBuilderFactory.CreateQueryBuilder(all.AsQueryable())
                                            .Filter(query.Filter)
                                            .Build()
                                            .ToList();
@@ -176,10 +176,10 @@ public class UserStore : IScimStore<ScimUser> {
         return all.SingleOrDefault(x => x.Email.EqualsInvariant(email));
     }
 
-    private async Task<IQueryable<BackOfficeUser>> GetAllAsync() {
+    private async Task<IReadOnlyList<BackOfficeUser>> GetAllAsync() {
         var all = await GetAllUsersAsync();
 
-        return all.Select(Map).AsQueryable();
+        return all.Select(Map).ToList();
     }
 
     private async Task<IReadOnlyList<IUser>> GetAllUsersAsync() {
