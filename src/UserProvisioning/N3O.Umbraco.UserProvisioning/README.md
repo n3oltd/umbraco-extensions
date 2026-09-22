@@ -65,10 +65,11 @@ startup fails if they do.
 `DefaultUserGroupAlias` is the user group a person lands in when the provisioning service creates
 them, before it sends their group membership, and it has to be one of the mapped user groups.
 `LogRequests` logs each SCIM request and response, which is how a rejected call is diagnosed. It is
-off by default because those bodies carry names and email addresses. `BearerToken` is the credential the identity provider
-presents; it is compared over a fixed-time hash and belongs in a secret store rather than in
-`appsettings.json`. A missing token, licence or group map fails startup rather than serving an
-endpoint that would accept anything or provision nobody.
+off by default because those bodies carry names and email addresses. `BearerToken` is the credential
+the identity provider presents; it is compared over a fixed-time hash and belongs in a secret store
+rather than in `appsettings.json`. An absent route, token, licence or group map fails startup, as
+does a default user group that is not one of the mapped ones, rather than serving an endpoint that
+would accept anything or provision nobody.
 
 ## Connecting Microsoft Entra
 
