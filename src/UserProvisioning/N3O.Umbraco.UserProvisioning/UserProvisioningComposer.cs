@@ -97,7 +97,6 @@ public class UserProvisioningComposer : Composer {
     private static void MapUserProjection(IScimAttributeToPropertyBuilder<BackOfficeUser> mapper) {
         mapper.Map("active", x => x.Active)
               .Map("displayName", x => x.Name)
-              .Map("externalId", x => x.UserName)
               .Map("id", x => x.Id)
               .Map("userName", x => x.UserName);
     }

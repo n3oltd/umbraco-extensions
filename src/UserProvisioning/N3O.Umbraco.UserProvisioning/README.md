@@ -80,6 +80,11 @@ the gallery, then under Provisioning:
 2. Set the secret token to the configured `BearerToken`.
 3. Test the connection, then assign the directory groups named in `UserGroups`.
 
+**Leave the matching attribute as `userName`.** Umbraco has nowhere to keep the directory's own
+identifier for a person, so this endpoint does not answer a query on `externalId`. A provisioning
+job configured to match on it finds nobody, creates everybody again, and is answered with a
+conflict on every cycle.
+
 Two behaviours are worth knowing before the first cycle. The provisioning service caches the `id`
 this endpoint returns for each person and never searches for them again, so restoring the site's
 database from elsewhere leaves those cached identifiers pointing at nothing and the job has to be

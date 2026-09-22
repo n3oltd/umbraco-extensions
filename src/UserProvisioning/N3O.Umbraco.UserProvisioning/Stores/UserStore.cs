@@ -292,7 +292,7 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     private static bool IsActive(IUser user) {
-        return user.UserState != UserState.Disabled;
+        return user.IsApproved;
     }
 
     private static bool RequiresUpdate(BackOfficeUser current, BackOfficeUser updated) {
