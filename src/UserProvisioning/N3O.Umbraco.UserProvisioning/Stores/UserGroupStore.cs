@@ -183,7 +183,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
         if (added.Any()) {
             var model = new UsersToUserGroupManipulationModel(groupKey, added);
-            var attempt = await _userGroupService.AddUsersToUserGroupAsync(model, UmbracoConstants.Security.SuperUserKey);
+            var attempt = await _userGroupService.AddUsersToUserGroupAsync(model,
+                                                                           UmbracoConstants.Security.SuperUserKey);
 
             if (!attempt.Success) {
                 throw new ScimStoreException($"Could not add users to group {group.Alias.Quote()}: {attempt.Result}");

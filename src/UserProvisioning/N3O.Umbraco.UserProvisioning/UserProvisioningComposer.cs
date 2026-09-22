@@ -49,37 +49,10 @@ public class UserProvisioningComposer : Composer {
                .AddResource<ScimUser, UserStore>(ScimSchemas.User, UserProvisioningConstants.Resources.Users)
                .AddResource<ScimGroup, UserGroupStore>(ScimSchemas.Group, UserProvisioningConstants.Resources.Groups)
                .AddFilterPropertyExpressionCompiler()
-               .MapScimAttributes<BackOfficeUser>(ScimSchemas.User,
-                                                  mapper => mapper.Map("id", x => x.Id)
-                                                                  .Map("userName", x => x.UserName)
-                                                                  .Map("externalId", x => x.UserName)
-                                                                  .Map("active", x => x.Active)
-                                                                  .Map("displayName", x => x.Name))
-               .MapScimAttributes<BackOfficeUserGroup>(ScimSchemas.Group,
-                                                       mapper => mapper.Map("id", x => x.Id)
-                                                                       .Map("displayName", x => x.DisplayName))
-               .MapScimAttributes<ScimUser>(ScimSchemas.User,
-                                            mapper => mapper.Map("id", x => x.Id)
-                                                            .Map("userName", x => x.UserName)
-                                                            .Map("externalId", x => x.ExternalId)
-                                                            .Map("active", x => x.Active)
-                                                            .Map("displayName", x => x.DisplayName)
-                                                            .MapComplex("name", x => x.Name,
-                                                                        name => name.Map("formatted", x => x.Formatted)
-                                                                                    .Map("givenName", x => x.GivenName)
-                                                                                    .Map("familyName", x => x.FamilyName))
-                                                            .MapCollection<Email>("emails", x => x.Emails,
-                                                                                  email => email.Map("primary", x => x.Primary)
-                                                                                                .Map("type", x => x.Type)
-                                                                                                .Map("value", x => x.Value)))
-               .MapScimAttributes<ScimGroup>(ScimSchemas.Group,
-                                             mapper => mapper.Map("id", x => x.Id)
-                                                             .Map("displayName", x => x.DisplayName)
-                                                             .Map("externalId", x => x.ExternalId)
-                                                             .MapCollection<Member>("members", x => x.Members,
-                                                                                    member => member.Map("display", x => x.Display)
-                                                                                                    .Map("type", x => x.Type)
-                                                                                                    .Map("value", x => x.Value)))
+               .MapScimAttributes<BackOfficeUser>(ScimSchemas.User, MapUserProjection)
+               .MapScimAttributes<BackOfficeUserGroup>(ScimSchemas.Group, MapUserGroupProjection)
+               .MapScimAttributes<ScimUser>(ScimSchemas.User, MapUser)
+               .MapScimAttributes<ScimGroup>(ScimSchemas.Group, MapUserGroup)
                .AddScimAuthorization<BearerTokenAuthorizer>();
 
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {
@@ -88,6 +61,44 @@ public class UserProvisioningComposer : Composer {
 
             opt.AddFilter(filter);
         });
+    }
+
+    // The filter compiler binds against the projections the stores query, and the patch executor
+    // against the resources they hand it, and the map is keyed on the type rather than the schema
+    private static void MapUser(IScimAttributeToPropertyBuilder<ScimUser> mapper) {
+        mapper.Map("active", x => x.Active)
+              .Map("displayName", x => x.DisplayName)
+              .Map("externalId", x => x.ExternalId)
+              .Map("id", x => x.Id)
+              .Map("userName", x => x.UserName)
+              .MapComplex("name", x => x.Name, n => n.Map("familyName", x => x.FamilyName)
+                                                     .Map("formatted", x => x.Formatted)
+                                                     .Map("givenName", x => x.GivenName))
+              .MapCollection<Email>("emails", x => x.Emails, e => e.Map("primary", x => x.Primary)
+                                                                   .Map("type", x => x.Type)
+                                                                   .Map("value", x => x.Value));
+    }
+
+    private static void MapUserGroup(IScimAttributeToPropertyBuilder<ScimGroup> mapper) {
+        mapper.Map("displayName", x => x.DisplayName)
+              .Map("externalId", x => x.ExternalId)
+              .Map("id", x => x.Id)
+              .MapCollection<Member>("members", x => x.Members, m => m.Map("display", x => x.Display)
+                                                                      .Map("type", x => x.Type)
+                                                                      .Map("value", x => x.Value));
+    }
+
+    private static void MapUserGroupProjection(IScimAttributeToPropertyBuilder<BackOfficeUserGroup> mapper) {
+        mapper.Map("displayName", x => x.DisplayName)
+              .Map("id", x => x.Id);
+    }
+
+    private static void MapUserProjection(IScimAttributeToPropertyBuilder<BackOfficeUser> mapper) {
+        mapper.Map("active", x => x.Active)
+              .Map("displayName", x => x.Name)
+              .Map("externalId", x => x.UserName)
+              .Map("id", x => x.Id)
+              .Map("userName", x => x.UserName);
     }
 
     private void Validate(UserProvisioningSettings settings) {

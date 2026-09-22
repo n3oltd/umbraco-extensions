@@ -20,17 +20,20 @@ namespace N3O.Umbraco.UserProvisioning.Stores;
 public class UserStore : IScimStore<ScimUser> {
     private const int PageSize = 500;
 
+    private readonly IEntityService _entityService;
     private readonly IPatchCommandExecutor _patchCommandExecutor;
     private readonly IScimQueryBuilderFactory _queryBuilderFactory;
     private readonly UserProvisioningSettings _settings;
     private readonly IUserGroupService _userGroupService;
     private readonly IUserService _userService;
 
-    public UserStore(IPatchCommandExecutor patchCommandExecutor,
+    public UserStore(IEntityService entityService,
+                     IPatchCommandExecutor patchCommandExecutor,
                      IScimQueryBuilderFactory queryBuilderFactory,
                      UserProvisioningSettings settings,
                      IUserGroupService userGroupService,
                      IUserService userService) {
+        _entityService = entityService;
         _patchCommandExecutor = patchCommandExecutor;
         _queryBuilderFactory = queryBuilderFactory;
         _settings = settings;
@@ -144,7 +147,12 @@ public class UserStore : IScimStore<ScimUser> {
         if (!updated.Name.EqualsInvariant(user.Name) || !updated.Email.EqualsInvariant(user.Email)) {
             // Umbraco marks ExistingUserKey required, so this one model cannot be built by assignment
             var model = new UserUpdateModel { ExistingUserKey = user.Key };
+            model.ContentStartNodeKeys = GetKeys(user.StartContentIds, UmbracoObjectTypes.Document);
             model.Email = updated.Email;
+            model.HasContentRootAccess = HasRootAccess(user.StartContentIds);
+            model.HasMediaRootAccess = HasRootAccess(user.StartMediaIds);
+            model.LanguageIsoCode = user.Language;
+            model.MediaStartNodeKeys = GetKeys(user.StartMediaIds, UmbracoObjectTypes.Media);
             model.Name = updated.Name;
             model.UserGroupKeys = user.Groups.Select(x => x.Key).ToHashSet();
             model.UserName = updated.Email;
@@ -252,6 +260,15 @@ public class UserStore : IScimStore<ScimUser> {
         return primary.HasValue() ? primary : resource.UserName;
     }
 
+    private ISet<Guid> GetKeys(IEnumerable<int> ids, UmbracoObjectTypes objectType) {
+        var keys = ids.OrEmpty()
+                      .Select(x => _entityService.GetKey(x, objectType))
+                      .Where(x => x.Success)
+                      .Select(x => x.Result);
+
+        return new HashSet<Guid>(keys);
+    }
+
     private static string GetName(ScimUser resource, string fallback) {
         var parts = new[] { resource.Name?.GivenName, resource.Name?.FamilyName };
         var name = string.Join(" ", parts.Where(x => x.HasValue()));
@@ -261,6 +278,10 @@ public class UserStore : IScimStore<ScimUser> {
         }
 
         return resource.DisplayName.HasValue() ? resource.DisplayName : fallback;
+    }
+
+    private static bool HasRootAccess(IEnumerable<int> startNodeIds) {
+        return startNodeIds.OrEmpty().Contains(UmbracoConstants.System.Root);
     }
 
     private static bool IsActive(IUser user) {
