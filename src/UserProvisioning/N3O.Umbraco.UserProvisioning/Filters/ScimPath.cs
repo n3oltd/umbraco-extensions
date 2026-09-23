@@ -6,6 +6,8 @@ using System.Linq;
 namespace N3O.Umbraco.UserProvisioning.Filters;
 
 public class ScimPath {
+    private const int MaxLength = 1024;
+
     private ScimPath(ScimAttributePath attribute, ScimExpression valueFilter, string subAttribute) {
         Attribute = attribute;
         SubAttribute = subAttribute;
@@ -21,6 +23,10 @@ public class ScimPath {
     public static ScimPath Parse(string text) {
         if (!text.HasValue()) {
             return null;
+        }
+
+        if (text.Length > MaxLength) {
+            throw ScimException.InvalidPath($"A path may not exceed {MaxLength} characters");
         }
 
         var tokens = ScimLexer.Tokenise(text);

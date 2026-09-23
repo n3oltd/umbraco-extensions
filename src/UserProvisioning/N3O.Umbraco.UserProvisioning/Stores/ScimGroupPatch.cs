@@ -30,6 +30,11 @@ public static class ScimGroupPatch {
 
         foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
             var op = operation.Op ?? "";
+
+            if (!op.EqualsInvariant("add") && !op.EqualsInvariant("remove") && !op.EqualsInvariant("replace")) {
+                throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
+            }
+
             var keys = ReadKeys(held, operation);
 
             if (op.EqualsInvariant("add")) {

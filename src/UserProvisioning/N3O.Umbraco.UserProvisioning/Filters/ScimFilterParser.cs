@@ -6,7 +6,11 @@ using System.Globalization;
 namespace N3O.Umbraco.UserProvisioning.Filters;
 
 public class ScimFilterParser {
+    private const int MaxDepth = 20;
+    private const int MaxLength = 2048;
+
     private readonly IReadOnlyList<ScimToken> _tokens;
+    private int _depth;
     private int _index;
 
     private ScimFilterParser(IReadOnlyList<ScimToken> tokens) {
@@ -16,6 +20,11 @@ public class ScimFilterParser {
     public static ScimExpression Parse(string filter) {
         if (!filter.HasValue()) {
             return null;
+        }
+
+        // A stack overflow cannot be caught, so nesting is refused rather than allowed to reach the stack
+        if (filter.Length > MaxLength) {
+            throw ScimException.InvalidFilter($"A filter may not exceed {MaxLength} characters");
         }
 
         var parser = new ScimFilterParser(ScimLexer.Tokenise(filter));
@@ -58,7 +67,7 @@ public class ScimFilterParser {
 
             Expect(ScimTokenType.OpenParen);
 
-            var inner = ParseOr();
+            var inner = Nested();
 
             Expect(ScimTokenType.CloseParen);
 
@@ -68,7 +77,7 @@ public class ScimFilterParser {
         if (Current.Type == ScimTokenType.OpenParen) {
             _index++;
 
-            var inner = ParseOr();
+            var inner = Nested();
 
             Expect(ScimTokenType.CloseParen);
 
@@ -76,6 +85,18 @@ public class ScimFilterParser {
         }
 
         return ParseComparison();
+    }
+
+    private ScimExpression Nested() {
+        if (++_depth > MaxDepth) {
+            throw ScimException.InvalidFilter($"A filter may not nest more than {MaxDepth} deep");
+        }
+
+        var expression = ParseOr();
+
+        _depth--;
+
+        return expression;
     }
 
     private ScimExpression ParseComparison() {
