@@ -105,20 +105,49 @@ public class StagingMiddleware : IMiddleware {
             isAuthorized = true;
         } else {
             string header = context.Request.Headers["Authorization"];
-        
-            if (header.HasValue()) {
-                var auth = header.Split(' ')[1];
-                var usernameAndPassword = Encoding.UTF8.GetString(Convert.FromBase64String(auth)).Split(':');
-                var username = usernameAndPassword[0];
-                var password = usernameAndPassword[1];
-                
-                if (username.EqualsInvariant(stagingSettings.Username) && password == stagingSettings.Password) {
-                    isAuthorized = true;
-                }
+
+            if (TryReadBasicCredentials(header, out var username, out var password) &&
+                username.EqualsInvariant(stagingSettings.Username) &&
+                password == stagingSettings.Password) {
+                isAuthorized = true;
             }
         }
 
         return isAuthorized;
+    }
+
+    // Anything can send an arbitrary Authorization header, so every stage of the parse has to be able
+    // to fail rather than throw out of the middleware
+    private bool TryReadBasicCredentials(string header, out string username, out string password) {
+        username = null;
+        password = null;
+
+        if (!header.HasValue()) {
+            return false;
+        }
+
+        var parts = header.Split(' ');
+
+        if (parts.Length != 2 || !parts[0].EqualsInvariant("Basic")) {
+            return false;
+        }
+
+        var decoded = new byte[parts[1].Length];
+
+        if (!Convert.TryFromBase64String(parts[1], decoded, out var decodedLength)) {
+            return false;
+        }
+
+        var usernameAndPassword = Encoding.UTF8.GetString(decoded, 0, decodedLength).Split(':');
+
+        if (usernameAndPassword.Length < 2) {
+            return false;
+        }
+
+        username = usernameAndPassword[0];
+        password = usernameAndPassword[1];
+
+        return true;
     }
 
     private bool IsSignedIntoBackOffice(HttpContext context) {
