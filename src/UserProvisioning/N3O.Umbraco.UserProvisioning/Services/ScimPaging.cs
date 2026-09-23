@@ -1,8 +1,8 @@
-using N3O.Umbraco.UserProvisioning.Scim;
+using N3O.Umbraco.UserProvisioning.Models;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace N3O.Umbraco.UserProvisioning.Stores;
+namespace N3O.Umbraco.UserProvisioning.Services;
 
 public static class ScimPaging {
     // startIndex is 1-based in SCIM, and a count of zero asks for the total without any resources

@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.UserProvisioning.Exceptions;
+using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Filters;
 using N3O.Umbraco.UserProvisioning.Models;
-using N3O.Umbraco.UserProvisioning.Scim;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.OperationStatus;
 using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
-namespace N3O.Umbraco.UserProvisioning.Stores;
+namespace N3O.Umbraco.UserProvisioning.Services;
 
 public class UserGroupStore : IScimStore<ScimGroup> {
     private readonly ILogger<UserGroupStore> _logger;

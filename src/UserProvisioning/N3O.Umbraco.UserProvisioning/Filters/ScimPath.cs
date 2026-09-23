@@ -1,5 +1,5 @@
 using N3O.Umbraco.Extensions;
-using N3O.Umbraco.UserProvisioning.Scim;
+using N3O.Umbraco.UserProvisioning.Exceptions;
 using System.Collections.Generic;
 using System.Linq;
 

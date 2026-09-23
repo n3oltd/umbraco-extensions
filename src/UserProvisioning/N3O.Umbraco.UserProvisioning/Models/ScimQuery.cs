@@ -1,6 +1,6 @@
 using N3O.Umbraco.UserProvisioning.Filters;
 
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning.Models;
 
 public class ScimQuery {
     public int Count { get; set; } = 100;

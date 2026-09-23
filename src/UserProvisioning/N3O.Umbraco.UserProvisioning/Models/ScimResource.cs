@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning.Models;
 
 public abstract class ScimResource {
     [JsonProperty("externalId", NullValueHandling = NullValueHandling.Ignore)]

@@ -1,8 +1,8 @@
-using N3O.Umbraco.UserProvisioning.Scim;
+using N3O.Umbraco.UserProvisioning.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace N3O.Umbraco.UserProvisioning.Stores;
+namespace N3O.Umbraco.UserProvisioning.Services;
 
 public interface IScimStore<TResource> where TResource : ScimResource {
     Task<TResource> CreateAsync(TResource resource);

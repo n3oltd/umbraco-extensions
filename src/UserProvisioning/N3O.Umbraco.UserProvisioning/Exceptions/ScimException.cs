@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning.Exceptions;
 
 public class ScimException : Exception {
     public ScimException(HttpStatusCode status, string detail, string scimType = null) : base(detail) {

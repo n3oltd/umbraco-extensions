@@ -1,19 +1,22 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.UserProvisioning.Exceptions;
+using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Filters;
-using N3O.Umbraco.UserProvisioning.Scim;
+using N3O.Umbraco.UserProvisioning.Json;
+using N3O.Umbraco.UserProvisioning.Models;
 using N3O.Umbraco.UserProvisioning.Security;
-using N3O.Umbraco.UserProvisioning.Stores;
-using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Services;
+using N3O.Umbraco.UserProvisioning.Services;
 using System;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Services;
 
-namespace N3O.Umbraco.UserProvisioning.Endpoints;
+namespace N3O.Umbraco.UserProvisioning.Hosting;
 
 public class ScimMiddleware : IMiddleware {
     private readonly IBearerTokenAuthorizer _authorizer;

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace N3O.Umbraco.UserProvisioning.Endpoints;
+namespace N3O.Umbraco.UserProvisioning.Json;
 
 public static class ScimJson {
     // CamelCasePropertyNamesContractResolver rewrites explicitly named properties as well as the rest,

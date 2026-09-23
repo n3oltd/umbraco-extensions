@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using System;
 
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning.Models;
 
 public class ScimMeta {
     [JsonProperty("created", NullValueHandling = NullValueHandling.Ignore)]

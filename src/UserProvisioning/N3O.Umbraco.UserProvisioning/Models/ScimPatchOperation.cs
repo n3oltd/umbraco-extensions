@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning.Models;
 
 public class ScimPatchOperation {
     [JsonProperty("op")]

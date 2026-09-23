@@ -1,13 +1,14 @@
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.UserProvisioning.Exceptions;
+using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Filters;
 using N3O.Umbraco.UserProvisioning.Models;
-using N3O.Umbraco.UserProvisioning.Scim;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace N3O.Umbraco.UserProvisioning.Stores;
+namespace N3O.Umbraco.UserProvisioning.Services;
 
 public static class ScimGroupPatch {
 

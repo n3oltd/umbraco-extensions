@@ -1,7 +1,7 @@
-using N3O.Umbraco.UserProvisioning.Scim;
+using N3O.Umbraco.UserProvisioning.Models;
 using System.Collections.Generic;
 
-namespace N3O.Umbraco.UserProvisioning.Endpoints;
+namespace N3O.Umbraco.UserProvisioning.Hosting;
 
 public static class ScimDiscovery {
     public static ScimListResponse<object> ResourceTypes(string baseRoute) {

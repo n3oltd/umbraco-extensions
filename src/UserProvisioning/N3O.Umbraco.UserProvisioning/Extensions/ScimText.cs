@@ -1,6 +1,6 @@
 using System;
 
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning.Extensions;
 
 public static class ScimText {
     // A protocol keyword is compared without collation, because a linguistic comparison treats some

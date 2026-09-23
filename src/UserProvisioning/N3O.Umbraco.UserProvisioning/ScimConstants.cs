@@ -1,4 +1,4 @@
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning;
 
 public static class ScimConstants {
     public const string ContentType = "application/scim+json";

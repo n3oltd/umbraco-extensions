@@ -1,4 +1,4 @@
-using N3O.Umbraco.UserProvisioning.Scim;
+using N3O.Umbraco.UserProvisioning.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Text;

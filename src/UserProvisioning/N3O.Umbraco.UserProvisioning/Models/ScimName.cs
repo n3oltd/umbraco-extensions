@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace N3O.Umbraco.UserProvisioning.Scim;
+namespace N3O.Umbraco.UserProvisioning.Models;
 
 public class ScimName {
     [JsonProperty("familyName", NullValueHandling = NullValueHandling.Ignore)]
