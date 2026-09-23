@@ -34,6 +34,10 @@ public class UserStore : IScimStore<ScimUser> {
             throw ScimException.InvalidValue("A user requires either userName or a primary email address");
         }
 
+        if (!_settings.Governs(email)) {
+            throw ScimException.InvalidValue($"Email {email.Quote()} is not in a governed domain");
+        }
+
         if (_userService.GetByEmail(email) != null || _userService.GetByUsername(email) != null) {
             throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
@@ -194,7 +198,8 @@ public class UserStore : IScimStore<ScimUser> {
     // Scoping every read and write to the mapped groups is what keeps users created by hand outside
     // the directory's reach
     private bool IsGoverned(IUser user) {
-        return user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
+        return _settings.Governs(user.Username) &&
+               user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
     }
 
     private void SetActive(IUser user, bool active) {
