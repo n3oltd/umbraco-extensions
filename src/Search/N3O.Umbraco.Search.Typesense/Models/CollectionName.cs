@@ -14,8 +14,6 @@ public class CollectionName : Value {
     
     public string Base { get; }
 
-
-    
     protected override IEnumerable<object> GetAtomicValues() {
         yield return Base;
     }
@@ -30,6 +28,6 @@ public class CollectionName : Value {
                                 $"{EnvironmentData.GetOurKey(EnvironmentVariables.SiteId).Quote()} are both required");
         }
 
-        return $"{environment}_{siteId}_{Base}";
+        return $"{Base}_{siteId}_{environment}";
     }
 }
