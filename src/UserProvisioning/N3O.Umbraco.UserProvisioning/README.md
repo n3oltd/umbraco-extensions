@@ -15,6 +15,7 @@ is off until `Enabled` is true, and only users in one of the named groups are vi
       "Enabled": true,
       "BaseRoute": "/umbraco/scim",
       "BearerToken": "<from the secret store>",
+      "GovernedDomains": "example.org;example.com",
       "AdministratorGroups": "CMS Administrators",
       "EditorGroups": "CMS Editors;CMS Contributors",
       "LogRequests": false
@@ -22,6 +23,10 @@ is off until `Enabled` is true, and only users in one of the named groups are vi
   }
 }
 ```
+
+`GovernedDomains` lists the email domains the identity provider owns. A user whose address is outside
+them is invisible to the endpoint whatever user group holds them, so accounts created by hand for
+people the directory does not know are never read, changed or disabled.
 
 A directory group named in neither setting is refused, and a group named in both fails startup.
 `BearerToken` belongs in a secret store. `LogRequests` is off by default because request bodies
