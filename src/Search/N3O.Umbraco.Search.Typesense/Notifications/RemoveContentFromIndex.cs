@@ -1,4 +1,3 @@
-using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Parameters;
 using N3O.Umbraco.Scheduler;
 using N3O.Umbraco.Scheduler.Extensions;
@@ -14,7 +13,6 @@ using ContentType = N3O.Umbraco.Parameters.ContentType;
 
 namespace N3O.Umbraco.Search.Typesense.Notifications;
 
-[SkipDuringSync]
 public class RemoveContentFromIndex : INotificationAsyncHandler<ContentUnpublishedNotification>,
                                       INotificationAsyncHandler<ContentMovedToRecycleBinNotification>,
                                       INotificationAsyncHandler<ContentDeletedNotification> {
