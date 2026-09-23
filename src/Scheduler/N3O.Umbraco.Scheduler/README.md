@@ -13,12 +13,13 @@ worker count. Putting a slow job on the long jobs queue is what keeps it from oc
 that short jobs need.
 
 A recurring job declares itself with `[RecurringJob]`, giving a name and a cron expression, and is
-registered at startup; recurring jobs that no longer exist in code are removed, so a renamed job does
-not leave its old schedule running. A command marked `[RunsWhereQueued]` must execute on the
+registered at startup; recurring jobs that no longer exist in code are removed, so a renamed job
+does not leave its old schedule running. A command marked `[RunsWhereQueued]` must execute on the
 instance that enqueued it: when a worker on another instance picks it up it is proxied over HTTP to
 the originating one, identified by machine name and version, rather than run locally.
 
-The Hangfire dashboard is mounted inside the back office and requires access to the settings section.
+The Hangfire dashboard is mounted inside the back office and requires access to the settings
+section.
 
 ```json
 {

@@ -3,7 +3,7 @@
 The payment abstraction the provider packages implement. A payment method is a lookup that declares
 the two things a provider may offer — taking a payment now, and storing a credential for taking
 payments later — by naming the CLR type it uses for each, so a provider that only stores credentials
-is simply one whose payment type is null and is never offered for a one-off gift.
+is one whose payment type is null and is never offered for a one-off gift.
 
 A payment method also names the Umbraco content type that holds its settings, which is how a site
 enables a provider: create its settings node. It may restrict itself by country and currency, and
