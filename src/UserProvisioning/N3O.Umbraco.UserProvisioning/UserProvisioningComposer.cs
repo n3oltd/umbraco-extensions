@@ -45,6 +45,13 @@ public class UserProvisioningComposer : Composer {
             throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but has no BaseRoute");
         }
 
+        // PathString throws on a route with no leading slash and matches every path when it is empty, and
+        // the match runs ahead of the handler that would turn either into a refusal
+        if (!settings.BaseRoute.StartsWith('/') || !settings.BaseRoute.Trim('/').HasValue()) {
+            throw new Exception($"{UserProvisioningSettings.SectionName} BaseRoute " +
+                                $"{settings.BaseRoute.Quote()} must begin with a slash and name a path");
+        }
+
         if (!settings.BearerToken.HasValue()) {
             throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but has no BearerToken");
         }

@@ -9,6 +9,7 @@ public static class ScimConstants {
         public const string ListResponse = "urn:ietf:params:scim:api:messages:2.0:ListResponse";
         public const string PatchOp = "urn:ietf:params:scim:api:messages:2.0:PatchOp";
         public const string ResourceType = "urn:ietf:params:scim:schemas:core:2.0:ResourceType";
+        public const string Schema = "urn:ietf:params:scim:schemas:core:2.0:Schema";
         public const string ServiceProviderConfig = "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig";
         public const string User = "urn:ietf:params:scim:schemas:core:2.0:User";
     }

@@ -4,31 +4,15 @@ using System.Collections.Generic;
 namespace N3O.Umbraco.UserProvisioning.Endpoints;
 
 public static class ScimDiscovery {
-    public static object ResourceTypes(string baseRoute) {
-        var resources = new List<object> {
+    public static ScimListResponse<object> ResourceTypes(string baseRoute) {
+        return List(new List<object> {
             ResourceType("User", "Users", ScimConstants.Schemas.User, baseRoute),
             ResourceType("Group", "Groups", ScimConstants.Schemas.Group, baseRoute)
-        };
-
-        return new {
-            schemas = new[] { ScimConstants.Schemas.ListResponse },
-            totalResults = resources.Count,
-            itemsPerPage = resources.Count,
-            startIndex = 1,
-            Resources = resources
-        };
+        });
     }
 
-    public static object Schemas() {
-        var schemas = new List<object> { UserSchema(), GroupSchema() };
-
-        return new {
-            schemas = new[] { ScimConstants.Schemas.ListResponse },
-            totalResults = schemas.Count,
-            itemsPerPage = schemas.Count,
-            startIndex = 1,
-            Resources = schemas
-        };
+    public static ScimListResponse<object> Schemas() {
+        return List(new List<object> { UserSchema(), GroupSchema() });
     }
 
     public static object ServiceProviderConfig() {
@@ -56,6 +40,7 @@ public static class ScimDiscovery {
             name,
             type,
             multiValued,
+            description = name,
             required,
             caseExact = false,
             mutability,
@@ -64,11 +49,23 @@ public static class ScimDiscovery {
         };
     }
 
+    private static ScimListResponse<object> List(IReadOnlyList<object> resources) {
+        var response = new ScimListResponse<object>();
+        response.ItemsPerPage = resources.Count;
+        response.Resources = resources;
+        response.StartIndex = 1;
+        response.TotalResults = resources.Count;
+
+        return response;
+    }
+
     private static object GroupSchema() {
         return new {
+            schemas = new[] { ScimConstants.Schemas.Schema },
             id = ScimConstants.Schemas.Group,
             name = "Group",
             description = "Group",
+            meta = new { resourceType = "Schema", location = $"/Schemas/{ScimConstants.Schemas.Group}" },
             attributes = new[] {
                 Attribute("displayName", "string", false, true, "readWrite"),
                 Attribute("externalId", "string", false, false, "readWrite"),
@@ -91,9 +88,11 @@ public static class ScimDiscovery {
 
     private static object UserSchema() {
         return new {
+            schemas = new[] { ScimConstants.Schemas.Schema },
             id = ScimConstants.Schemas.User,
             name = "User",
             description = "User",
+            meta = new { resourceType = "Schema", location = $"/Schemas/{ScimConstants.Schemas.User}" },
             attributes = new[] {
                 Attribute("userName", "string", false, true, "readWrite"),
                 Attribute("displayName", "string", false, false, "readWrite"),

@@ -5,6 +5,8 @@ using N3O.Umbraco.UserProvisioning.Filters;
 using N3O.Umbraco.UserProvisioning.Scim;
 using N3O.Umbraco.UserProvisioning.Security;
 using N3O.Umbraco.UserProvisioning.Stores;
+using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Services;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,17 +19,20 @@ public class ScimMiddleware : IMiddleware {
     private readonly IBearerTokenAuthorizer _authorizer;
     private readonly IScimStore<ScimGroup> _groupStore;
     private readonly ILogger<ScimMiddleware> _logger;
+    private readonly IRuntimeState _runtimeState;
     private readonly UserProvisioningSettings _settings;
     private readonly IScimStore<ScimUser> _userStore;
 
     public ScimMiddleware(IBearerTokenAuthorizer authorizer,
                           IScimStore<ScimGroup> groupStore,
                           ILogger<ScimMiddleware> logger,
+                          IRuntimeState runtimeState,
                           UserProvisioningSettings settings,
                           IScimStore<ScimUser> userStore) {
         _authorizer = authorizer;
         _groupStore = groupStore;
         _logger = logger;
+        _runtimeState = runtimeState;
         _settings = settings;
         _userStore = userStore;
     }
@@ -39,6 +44,16 @@ public class ScimMiddleware : IMiddleware {
                                                      StringComparison.InvariantCultureIgnoreCase,
                                                      out var rest)) {
             await next(context);
+
+            return;
+        }
+
+        // BootFailed can be reached after the server is up, so this is asked on every request rather than
+        // once while the pipeline is built
+        if (_runtimeState.Level != RuntimeLevel.Run) {
+            await WriteErrorAsync(context,
+                                  new ScimException(HttpStatusCode.ServiceUnavailable,
+                                                    $"The site is not running ({_runtimeState.Level})"));
 
             return;
         }

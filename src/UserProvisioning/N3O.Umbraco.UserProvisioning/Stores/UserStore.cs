@@ -117,10 +117,17 @@ public class UserStore : IScimStore<ScimUser> {
 
     public async Task<ScimUser> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
         var user = await GetRequiredAsync(id);
+        var original = ToScim(Map(user));
         var patched = ToScim(Map(user));
 
         foreach (var operation in operations.OrEmpty()) {
             ScimUserPatch.Apply(patched, operation);
+        }
+
+        // The name parts are split out of the stored name on every read, so they would always outrank a
+        // display name the patch did change
+        if (Unchanged(original.Name, patched.Name) && !Same(original.DisplayName, patched.DisplayName)) {
+            patched.Name = null;
         }
 
         return await ApplyAsync(user, patched);
@@ -282,6 +289,16 @@ public class UserStore : IScimStore<ScimUser> {
 
     private static bool HasRootAccess(IEnumerable<int> startNodeIds) {
         return startNodeIds.OrEmpty().Contains(UmbracoConstants.System.Root);
+    }
+
+    private static bool Same(string left, string right) {
+        return string.Equals(left, right, StringComparison.InvariantCulture);
+    }
+
+    private static bool Unchanged(ScimName before, ScimName after) {
+        return Same(before?.FamilyName, after?.FamilyName) &&
+               Same(before?.Formatted, after?.Formatted) &&
+               Same(before?.GivenName, after?.GivenName);
     }
 
     private static bool RequiresUpdate(BackOfficeUser current, BackOfficeUser updated) {

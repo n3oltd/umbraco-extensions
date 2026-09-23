@@ -119,8 +119,14 @@ public class ScimFilterParser {
             case ScimTokenType.String:
                 return token.Text;
 
+            case ScimTokenType.Number when decimal.TryParse(token.Text,
+                                                           NumberStyles.Number,
+                                                           CultureInfo.InvariantCulture,
+                                                           out var number):
+                return number;
+
             case ScimTokenType.Number:
-                return decimal.Parse(token.Text, CultureInfo.InvariantCulture);
+                throw ScimException.InvalidFilter($"{token.Text.Quote()} is not a number");
 
             case ScimTokenType.Identifier when token.Text.EqualsInvariant("true"):
                 return true;
