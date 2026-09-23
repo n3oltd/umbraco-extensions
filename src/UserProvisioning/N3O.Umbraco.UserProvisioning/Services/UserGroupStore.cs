@@ -128,12 +128,14 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     }
 
     private bool IsGoverned(IUser user) {
-        return user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
+        return _settings.Governs(user.Username) &&
+               user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
     }
 
     private BackOfficeUserGroup Map(string displayName, IUserGroup userGroup) {
         var members = _userService.GetAllInGroup(userGroup.Id)
                                   .Where(x => x.Id != UmbracoConstants.Security.SuperUserId)
+                                  .Where(x => _settings.Governs(x.Username))
                                   .Select(UserStore.Map)
                                   .ToList();
 
@@ -160,7 +162,9 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         }
 
         var userGroup = _userService.GetUserGroupByAlias(group.Alias);
-        var users = UserStore.GetAll(_userService).Where(x => added.Contains(x.Key) || removed.Contains(x.Key));
+        var users = UserStore.GetAll(_userService)
+                             .Where(x => added.Contains(x.Key) || removed.Contains(x.Key))
+                             .Where(x => _settings.Governs(x.Username));
 
         // Membership is set on each user rather than on the group, because assigning a user set to a
         // group replaces the whole set and would drop anyone the directory does not know about

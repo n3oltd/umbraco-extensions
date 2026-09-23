@@ -1,4 +1,5 @@
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Models;
 using System;
 using System.Collections.Generic;
@@ -13,9 +14,10 @@ public class UserProvisioningSettings {
     public string AdministratorGroups { get; set; }
     public string BaseRoute { get; set; } = "/umbraco/scim";
     public string BearerToken { get; set; }
-    public bool Enabled { get; set; }
-    public bool LogRequests { get; set; }
     public string EditorGroups { get; set; }
+    public bool Enabled { get; set; }
+    public string GovernedDomains { get; set; }
+    public bool LogRequests { get; set; }
 
     public IReadOnlyList<UserProvisioningGroup> UserGroups => Named(AdministratorGroups,
                                                                    UmbracoConstants.Security.AdminGroupAlias)
@@ -23,12 +25,27 @@ public class UserProvisioningSettings {
                                                                           UmbracoConstants.Security.EditorGroupAlias))
                                                             .ToList();
 
-    private static IEnumerable<UserProvisioningGroup> Named(string groups, string alias) {
-        if (!groups.HasValue()) {
-            return Enumerable.Empty<UserProvisioningGroup>();
+    // An address the directory cannot own is somebody the directory must not manage, whichever user
+    // group holds them
+    public bool Governs(string email) {
+        if (!email.HasValue()) {
+            return false;
         }
 
-        return groups.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                     .Select(x => new UserProvisioningGroup(x, alias));
+        var at = email.LastIndexOf('@');
+
+        return at >= 0 && Split(GovernedDomains).Any(x => x.Is(email.Substring(at + 1)));
+    }
+
+    private static IEnumerable<UserProvisioningGroup> Named(string groups, string alias) {
+        return Split(groups).Select(x => new UserProvisioningGroup(x, alias));
+    }
+
+    private static IEnumerable<string> Split(string value) {
+        if (!value.HasValue()) {
+            return Enumerable.Empty<string>();
+        }
+
+        return value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
 }

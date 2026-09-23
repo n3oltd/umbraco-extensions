@@ -57,6 +57,11 @@ public class UserProvisioningComposer : Composer {
             throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but has no BearerToken");
         }
 
+        if (!settings.GovernedDomains.HasValue()) {
+            throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but names no " +
+                                $"GovernedDomains");
+        }
+
         if (!settings.UserGroups.Any()) {
             throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but names no groups in " +
                                 $"AdministratorGroups or EditorGroups");
