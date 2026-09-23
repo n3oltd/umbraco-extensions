@@ -24,8 +24,6 @@ public class CollectionName : Value {
         var environment = Site.Environment;
         var siteId = Site.Id;
 
-        // Every site in an environment shares one Typesense cluster, so the environment and the site
-        // are what keep one site's documents apart from another's.
         if (!environment.HasValue() || !siteId.HasValue()) {
             throw new Exception($"Cannot resolve the Typesense collection {Base.Quote()} because " +
                                 $"{EnvironmentData.GetOurKey(EnvironmentVariables.Environment).Quote()} and " +
