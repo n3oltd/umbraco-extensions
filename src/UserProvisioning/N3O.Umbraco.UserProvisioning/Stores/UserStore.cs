@@ -195,7 +195,7 @@ public class UserStore : IScimStore<ScimUser> {
 
             var items = attempt.Result.Items.ToList();
 
-            users.AddRange(items.Where(x => x.Key != UmbracoConstants.Security.SuperUserKey));
+            users.AddRange(items.Where(x => x.Key != UmbracoConstants.Security.SuperUserKey && IsGoverned(x)));
 
             skip += PageSize;
 
@@ -223,11 +223,18 @@ public class UserStore : IScimStore<ScimUser> {
 
         var user = await _userService.GetAsync(key);
 
-        if (user == null) {
+        if (user == null || !IsGoverned(user)) {
             throw ScimException.NotFound($"No user found with id {id.Quote()}");
         }
 
         return user;
+    }
+
+    // A user the configuration does not govern is not the directory's to read or change, the same way a
+    // group outside the map is not. Anyone this endpoint creates lands in a mapped group, so the only
+    // users it withholds are those somebody made by hand
+    private bool IsGoverned(IUser user) {
+        return user.Groups.Any(x => _settings.UserGroups.Values.Any(alias => alias.Is(x.Alias)));
     }
 
     private async Task SetActiveAsync(Guid key, bool active) {

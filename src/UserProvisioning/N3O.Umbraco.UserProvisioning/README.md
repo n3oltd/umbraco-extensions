@@ -29,6 +29,13 @@ User groups are never created, renamed or deleted through the endpoint. They bel
 the configuration decides which directory group governs which of them. A directory group the
 configuration does not name is rejected.
 
+The same boundary applies to users. Only a person in one of the mapped user groups is visible to the
+endpoint, so an account made by hand in some other group cannot be read or changed through it, and
+nor can the site's own super user. Anybody the endpoint creates lands in a mapped group, so the only
+users it withholds are the ones it did not make. Leaving the last mapped group is leaving the back
+office, so a person removed from all of them is disabled at that moment rather than left enabled and
+beyond reach.
+
 Umbraco holds one name per user where SCIM sends `givenName` and `familyName` separately, so the two
 are joined on write, and the single name is returned as `name.formatted` on read.
 

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Membership;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.OperationStatus;
 using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace N3O.Umbraco.UserProvisioning.Stores;
@@ -171,6 +172,35 @@ public class UserGroupStore : IScimStore<ScimGroup> {
                 throw new ScimException(HttpStatusCode.InternalServerError,
                                         $"Could not remove users from group {group.Alias.Quote()}: {attempt.Result}");
             }
+
+            await DisableUngovernedAsync(removed);
+        }
+    }
+
+    // Leaving a mapped group is leaving the back office, and a user in none of them is one this endpoint
+    // can no longer read, so they are disabled here rather than left enabled and out of reach
+    private async Task DisableUngovernedAsync(IEnumerable<Guid> removed) {
+        var ungoverned = new HashSet<Guid>();
+
+        foreach (var key in removed) {
+            var user = await _userService.GetAsync(key);
+
+            if (user != null &&
+                user.IsApproved &&
+                !user.Groups.Any(x => _settings.UserGroups.Values.Any(alias => alias.Is(x.Alias)))) {
+                ungoverned.Add(key);
+            }
+        }
+
+        if (!ungoverned.Any()) {
+            return;
+        }
+
+        var status = await _userService.DisableAsync(UmbracoConstants.Security.SuperUserKey, ungoverned);
+
+        if (status != UserOperationStatus.Success) {
+            throw new ScimException(HttpStatusCode.InternalServerError,
+                                    $"Could not disable users left in no mapped group: {status}");
         }
     }
 
