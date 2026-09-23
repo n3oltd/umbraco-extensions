@@ -19,7 +19,6 @@ public static class ScimUserPatch {
 
         var path = ScimPath.Parse(operation.Path);
 
-        // A patch with no path carries a whole resource, each of whose attributes is one assignment
         if (path == null) {
             foreach (var property in AsObject(operation.Value).Properties()) {
                 Set(user, ScimPath.Parse(property.Name), property.Value, op);
