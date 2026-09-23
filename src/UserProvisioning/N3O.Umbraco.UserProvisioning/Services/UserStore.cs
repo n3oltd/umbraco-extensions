@@ -53,8 +53,7 @@ public class UserStore : IScimStore<ScimUser> {
 
         _userService.Save(user);
 
-        // Saving assigns the persisted key, so the in-memory entity's is not the one this user will be
-        // read by, and the provisioning service caches whichever id the create returns
+        // Saving assigns the persisted key, so the in-memory entity is not the one this user is read by
         var created = _userService.GetByUsername(email);
 
         if (created == null) {
