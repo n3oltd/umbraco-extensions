@@ -27,6 +27,22 @@ public static class ScimUserPatch {
         }
     }
 
+    private static JObject AsObject(JToken value) {
+        if (value is JObject json) {
+            return json;
+        }
+
+        throw ScimException.InvalidValue("A patch without a path carries a resource");
+    }
+
+    private static IEnumerable<JObject> AsObjects(JToken value) {
+        if (value is JArray array) {
+            return array.OfType<JObject>();
+        }
+
+        return value is JObject json ? [json] : [];
+    }
+
     private static void Set(ScimUser user, ScimPath path, JToken value, string op) {
         var removing = op.EqualsInvariant("remove");
 
@@ -42,32 +58,6 @@ public static class ScimUserPatch {
             SetName(user, path, value, removing);
         } else if (path.Is("emails")) {
             SetEmails(user, path, value, removing);
-        } else {
-            throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
-        }
-    }
-
-    private static void SetName(ScimUser user, ScimPath path, JToken value, bool removing) {
-        user.Name ??= new ScimName();
-
-        var element = path.Attribute.Elements.Length > 1 ? path.Attribute.Elements[1] : path.SubAttribute;
-
-        if (!element.HasValue()) {
-            var replacement = removing ? null : value?.ToObject<ScimName>();
-
-            user.Name = replacement ?? new ScimName();
-
-            return;
-        }
-
-        var text = removing ? null : value?.Value<string>();
-
-        if (element.EqualsInvariant("familyName")) {
-            user.Name.FamilyName = text;
-        } else if (element.EqualsInvariant("formatted")) {
-            user.Name.Formatted = text;
-        } else if (element.EqualsInvariant("givenName")) {
-            user.Name.GivenName = text;
         } else {
             throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
         }
@@ -98,19 +88,30 @@ public static class ScimUserPatch {
         user.Emails = [email];
     }
 
-    private static JObject AsObject(JToken value) {
-        if (value is JObject json) {
-            return json;
+    private static void SetName(ScimUser user, ScimPath path, JToken value, bool removing) {
+        user.Name ??= new ScimName();
+
+        var element = path.Attribute.Elements.Length > 1 ? path.Attribute.Elements[1] : path.SubAttribute;
+
+        if (!element.HasValue()) {
+            var replacement = removing ? null : value?.ToObject<ScimName>();
+
+            user.Name = replacement ?? new ScimName();
+
+            return;
         }
 
-        throw ScimException.InvalidValue("A patch without a path carries a resource");
-    }
+        var text = removing ? null : value?.Value<string>();
 
-    private static IEnumerable<JObject> AsObjects(JToken value) {
-        if (value is JArray array) {
-            return array.OfType<JObject>();
+        if (element.EqualsInvariant("familyName")) {
+            user.Name.FamilyName = text;
+        } else if (element.EqualsInvariant("formatted")) {
+            user.Name.Formatted = text;
+        } else if (element.EqualsInvariant("givenName")) {
+            user.Name.GivenName = text;
+        } else {
+            throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
         }
-
-        return value is JObject json ? [json] : [];
     }
+
 }

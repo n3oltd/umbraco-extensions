@@ -10,6 +10,21 @@ using System.Linq;
 namespace N3O.Umbraco.UserProvisioning.Stores;
 
 public static class ScimGroupPatch {
+
+    public static bool IsMembership(ScimPatchOperation operation) {
+        var path = ScimPath.Parse(operation.Path);
+
+        if (path != null) {
+            return path.Is("members");
+        }
+
+        return operation.Value is JObject json && json.Property("members") != null;
+    }
+
+    public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
+        return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
+    }
+
     public static ISet<Guid> Resolve(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
         var members = held.Select(x => Guid.Parse(x.Id)).ToHashSet();
 
@@ -34,34 +49,6 @@ public static class ScimGroupPatch {
         return members;
     }
 
-    public static bool IsMembership(ScimPatchOperation operation) {
-        var path = ScimPath.Parse(operation.Path);
-
-        if (path != null) {
-            return path.Is("members");
-        }
-
-        return operation.Value is JObject json && json.Property("members") != null;
-    }
-
-    public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
-        return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
-    }
-
-    // A filter on the path selects among the members the group already holds, which answers any shape of
-    // reference without having to read the literal out of the expression
-    private static ISet<Guid> ReadKeys(IReadOnlyList<BackOfficeUser> held, ScimPatchOperation operation) {
-        var path = ScimPath.Parse(operation.Path);
-
-        if (path?.ValueFilter != null) {
-            var selected = held.Where(x => path.ValueFilter.Matches(Describe(x))).Select(x => Guid.Parse(x.Id));
-
-            return new HashSet<Guid>(selected);
-        }
-
-        return ParseKeys(ReadValues(operation.Value));
-    }
-
     private static ScimAttributes Describe(BackOfficeUser member) {
         return new ScimAttributes().Add("display", member.Name)
                                    .Add("type", "User")
@@ -78,6 +65,7 @@ public static class ScimGroupPatch {
         return operation.Value == null && path?.ValueFilter == null;
     }
 
+    // A filter on the path selects among the members the group already holds, which answers any shape of
     private static ISet<Guid> ParseKeys(IEnumerable<string> values) {
         var keys = new HashSet<Guid>();
 
@@ -90,6 +78,19 @@ public static class ScimGroupPatch {
         }
 
         return keys;
+    }
+
+    // reference without having to read the literal out of the expression
+    private static ISet<Guid> ReadKeys(IReadOnlyList<BackOfficeUser> held, ScimPatchOperation operation) {
+        var path = ScimPath.Parse(operation.Path);
+
+        if (path?.ValueFilter != null) {
+            var selected = held.Where(x => path.ValueFilter.Matches(Describe(x))).Select(x => Guid.Parse(x.Id));
+
+            return new HashSet<Guid>(selected);
+        }
+
+        return ParseKeys(ReadValues(operation.Value));
     }
 
     private static IEnumerable<string> ReadValues(JToken value) {
@@ -115,4 +116,5 @@ public static class ScimGroupPatch {
             yield return value.Value<string>();
         }
     }
+
 }

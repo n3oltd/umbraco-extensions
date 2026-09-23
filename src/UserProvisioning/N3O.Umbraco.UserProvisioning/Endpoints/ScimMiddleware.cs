@@ -129,12 +129,19 @@ public class ScimMiddleware : IMiddleware {
         return query;
     }
 
-    private static async Task<T> ReadBodyAsync<T>(HttpContext context) {
+    private async Task<T> ReadBodyAsync<T>(HttpContext context) {
         using (var reader = new StreamReader(context.Request.Body)) {
             var body = await reader.ReadToEndAsync();
 
             if (!body.HasValue()) {
                 throw ScimException.InvalidValue("The request carries no body");
+            }
+
+            if (_settings.LogRequests) {
+                _logger.LogInformation("SCIM {Method} {Path} request {Body}",
+                                       context.Request.Method,
+                                       context.Request.Path,
+                                       body);
             }
 
             try {
@@ -145,14 +152,24 @@ public class ScimMiddleware : IMiddleware {
         }
     }
 
-    private static async Task WriteAsync(HttpContext context, HttpStatusCode status, object body) {
+    private async Task WriteAsync(HttpContext context, HttpStatusCode status, object body) {
+        var json = ScimJson.Write(body);
+
+        if (_settings.LogRequests) {
+            _logger.LogInformation("SCIM {Method} {Path} answered {Status} {Body}",
+                                   context.Request.Method,
+                                   context.Request.Path,
+                                   (int) status,
+                                   json);
+        }
+
         context.Response.ContentType = ScimConstants.ContentType;
         context.Response.StatusCode = (int) status;
 
-        await context.Response.WriteAsync(ScimJson.Write(body));
+        await context.Response.WriteAsync(json);
     }
 
-    private static async Task WriteErrorAsync(HttpContext context, ScimException exception) {
+    private async Task WriteErrorAsync(HttpContext context, ScimException exception) {
         var error = new ScimError();
         error.Detail = exception.Message;
         error.ScimType = exception.ScimType;

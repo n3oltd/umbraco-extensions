@@ -1,47 +1,53 @@
 using N3O.Umbraco.UserProvisioning.Scim;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace N3O.Umbraco.UserProvisioning.Filters;
 
-public static class ScimLexer {
-    public static IReadOnlyList<ScimToken> Tokenise(string text) {
-        var tokens = new List<ScimToken>();
-        var index = 0;
+public class ScimLexer {
+    private readonly string _text;
+    private int _index;
 
-        while (index < text.Length) {
-            var c = text[index];
+    private ScimLexer(string text) {
+        _text = text;
+    }
+
+    public static IReadOnlyList<ScimToken> Tokenise(string text) {
+        return new ScimLexer(text).Run();
+    }
+
+    private IReadOnlyList<ScimToken> Run() {
+        var tokens = new List<ScimToken>();
+
+        while (_index < _text.Length) {
+            var c = _text[_index];
 
             if (char.IsWhiteSpace(c)) {
-                index++;
+                _index++;
             } else if (c == '(') {
-                tokens.Add(new ScimToken(ScimTokenType.OpenParen, "("));
-                index++;
+                tokens.Add(Single(ScimTokenType.OpenParen, "("));
             } else if (c == ')') {
-                tokens.Add(new ScimToken(ScimTokenType.CloseParen, ")"));
-                index++;
+                tokens.Add(Single(ScimTokenType.CloseParen, ")"));
             } else if (c == '[') {
-                tokens.Add(new ScimToken(ScimTokenType.OpenBracket, "["));
-                index++;
+                tokens.Add(Single(ScimTokenType.OpenBracket, "["));
             } else if (c == ']') {
-                tokens.Add(new ScimToken(ScimTokenType.CloseBracket, "]"));
-                index++;
+                tokens.Add(Single(ScimTokenType.CloseBracket, "]"));
             } else if (c == '"') {
-                tokens.Add(new ScimToken(ScimTokenType.String, ReadString(text, ref index)));
+                tokens.Add(new ScimToken(ScimTokenType.String, ReadString()));
             } else if (char.IsDigit(c) || c == '-') {
-                tokens.Add(new ScimToken(ScimTokenType.Number, ReadWhile(text, ref index, x => char.IsDigit(x) ||
-                                                                                               x == '.' ||
-                                                                                               x == '-')));
+                tokens.Add(new ScimToken(ScimTokenType.Number,
+                                         ReadWhile(x => char.IsDigit(x) || x == '.' || x == '-')));
             } else {
-                var word = ReadWhile(text, ref index, x => char.IsLetterOrDigit(x) ||
-                                                           x == '_' ||
-                                                           x == '-' ||
-                                                           x == '.' ||
-                                                           x == ':' ||
-                                                           x == '$');
+                var word = ReadWhile(x => char.IsLetterOrDigit(x) ||
+                                          x == '_' ||
+                                          x == '-' ||
+                                          x == '.' ||
+                                          x == ':' ||
+                                          x == '$');
 
                 if (word.Length == 0) {
-                    throw ScimException.InvalidFilter($"Unexpected character '{c}' at position {index}");
+                    throw ScimException.InvalidFilter($"Unexpected character '{c}' at position {_index}");
                 }
 
                 tokens.Add(new ScimToken(IsKeyword(word) ? ScimTokenType.Keyword : ScimTokenType.Identifier, word));
@@ -51,6 +57,53 @@ public static class ScimLexer {
         tokens.Add(new ScimToken(ScimTokenType.End, null));
 
         return tokens;
+    }
+
+    private string ReadString() {
+        var builder = new StringBuilder();
+
+        _index++;
+
+        while (_index < _text.Length && _text[_index] != '"') {
+            if (_text[_index] == '\\' && _index + 1 < _text.Length) {
+                _index++;
+
+                builder.Append(_text[_index] switch {
+                    'n' => '\n',
+                    'r' => '\r',
+                    't' => '\t',
+                    _ => _text[_index]
+                });
+            } else {
+                builder.Append(_text[_index]);
+            }
+
+            _index++;
+        }
+
+        if (_index >= _text.Length) {
+            throw ScimException.InvalidFilter("Unterminated string");
+        }
+
+        _index++;
+
+        return builder.ToString();
+    }
+
+    private string ReadWhile(Func<char, bool> predicate) {
+        var start = _index;
+
+        while (_index < _text.Length && predicate(_text[_index])) {
+            _index++;
+        }
+
+        return _text.Substring(start, _index - start);
+    }
+
+    private ScimToken Single(ScimTokenType type, string text) {
+        _index++;
+
+        return new ScimToken(type, text);
     }
 
     private static bool IsKeyword(string word) {
@@ -73,46 +126,5 @@ public static class ScimLexer {
             default:
                 return false;
         }
-    }
-
-    private static string ReadString(string text, ref int index) {
-        var builder = new StringBuilder();
-
-        index++;
-
-        while (index < text.Length && text[index] != '"') {
-            if (text[index] == '\\' && index + 1 < text.Length) {
-                index++;
-
-                builder.Append(text[index] switch {
-                    'n' => '\n',
-                    'r' => '\r',
-                    't' => '\t',
-                    _ => text[index]
-                });
-            } else {
-                builder.Append(text[index]);
-            }
-
-            index++;
-        }
-
-        if (index >= text.Length) {
-            throw ScimException.InvalidFilter("Unterminated string");
-        }
-
-        index++;
-
-        return builder.ToString();
-    }
-
-    private static string ReadWhile(string text, ref int index, System.Func<char, bool> predicate) {
-        var start = index;
-
-        while (index < text.Length && predicate(text[index])) {
-            index++;
-        }
-
-        return text.Substring(start, index - start);
     }
 }

@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 namespace N3O.Umbraco.UserProvisioning.Stores;
 
 public interface IScimStore<TResource> where TResource : ScimResource {
-    string ResourceType { get; }
-
     Task<TResource> CreateAsync(TResource resource);
     Task DeleteAsync(string id);
     Task<TResource> GetAsync(string id);

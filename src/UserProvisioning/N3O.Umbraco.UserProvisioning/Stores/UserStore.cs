@@ -42,8 +42,6 @@ public class UserStore : IScimStore<ScimUser> {
         _userService = userService;
     }
 
-    public string ResourceType => "User";
-
     public async Task<ScimUser> CreateAsync(ScimUser resource) {
         var email = GetEmail(resource);
 
@@ -106,6 +104,17 @@ public class UserStore : IScimStore<ScimUser> {
         return ScimPaging.Page(matching, query);
     }
 
+    public static BackOfficeUser Map(IUser user) {
+        var backOfficeUser = new BackOfficeUser();
+        backOfficeUser.Active = user.IsApproved;
+        backOfficeUser.Email = user.Email;
+        backOfficeUser.Id = user.Key.ToString();
+        backOfficeUser.Name = user.Name;
+        backOfficeUser.UserName = user.Username;
+
+        return backOfficeUser;
+    }
+
     public async Task<ScimUser> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
         var user = await GetRequiredAsync(id);
         var patched = ToScim(Map(user));
@@ -121,44 +130,6 @@ public class UserStore : IScimStore<ScimUser> {
         var user = await GetRequiredAsync(resource.Id);
 
         return await ApplyAsync(user, resource);
-    }
-
-    internal static BackOfficeUser Map(IUser user) {
-        var backOfficeUser = new BackOfficeUser();
-        backOfficeUser.Active = user.IsApproved;
-        backOfficeUser.Email = user.Email;
-        backOfficeUser.Id = user.Key.ToString();
-        backOfficeUser.Name = user.Name;
-        backOfficeUser.UserName = user.Username;
-
-        return backOfficeUser;
-    }
-
-    internal static ScimUser ToScim(BackOfficeUser user) {
-        var email = new ScimEmail();
-        email.Primary = true;
-        email.Type = "work";
-        email.Value = user.Email;
-
-        var name = new ScimName();
-        name.FamilyName = FamilyName(user.Name);
-        name.Formatted = user.Name;
-        name.GivenName = GivenName(user.Name);
-
-        var meta = new ScimMeta();
-        meta.ResourceType = "User";
-
-        var scimUser = new ScimUser();
-        scimUser.Active = user.Active;
-        scimUser.DisplayName = user.Name;
-        scimUser.Emails = [email];
-        scimUser.Id = user.Id;
-        scimUser.Meta = meta;
-        scimUser.Name = name;
-        scimUser.Schemas = [ScimConstants.Schemas.User];
-        scimUser.UserName = user.UserName;
-
-        return scimUser;
     }
 
     private async Task<ScimUser> ApplyAsync(IUser user, ScimUser resource) {
@@ -265,7 +236,7 @@ public class UserStore : IScimStore<ScimUser> {
         }
     }
 
-    internal static ScimAttributes Describe(BackOfficeUser user) {
+    private static ScimAttributes Describe(BackOfficeUser user) {
         return new ScimAttributes().Add("active", user.Active)
                                    .Add("displayName", user.Name)
                                    .Add("emails.value", user.Email)
@@ -320,4 +291,32 @@ public class UserStore : IScimStore<ScimUser> {
     private static string[] SplitName(string name) {
         return name.HasValue() ? name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries) : [];
     }
+
+    private static ScimUser ToScim(BackOfficeUser user) {
+        var email = new ScimEmail();
+        email.Primary = true;
+        email.Type = "work";
+        email.Value = user.Email;
+
+        var name = new ScimName();
+        name.FamilyName = FamilyName(user.Name);
+        name.Formatted = user.Name;
+        name.GivenName = GivenName(user.Name);
+
+        var meta = new ScimMeta();
+        meta.ResourceType = "User";
+
+        var scimUser = new ScimUser();
+        scimUser.Active = user.Active;
+        scimUser.DisplayName = user.Name;
+        scimUser.Emails = [email];
+        scimUser.Id = user.Id;
+        scimUser.Meta = meta;
+        scimUser.Name = name;
+        scimUser.Schemas = [ScimConstants.Schemas.User];
+        scimUser.UserName = user.UserName;
+
+        return scimUser;
+    }
+
 }

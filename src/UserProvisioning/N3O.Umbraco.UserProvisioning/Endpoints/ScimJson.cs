@@ -9,8 +9,11 @@ public static class ScimJson {
     public static readonly JsonSerializerSettings Settings = Build();
 
     private static JsonSerializerSettings Build() {
+        var namingStrategy = new CamelCaseNamingStrategy();
+        namingStrategy.OverrideSpecifiedNames = false;
+
         var resolver = new DefaultContractResolver();
-        resolver.NamingStrategy = new CamelCaseNamingStrategy { OverrideSpecifiedNames = false };
+        resolver.NamingStrategy = namingStrategy;
 
         var settings = new JsonSerializerSettings();
         settings.ContractResolver = resolver;

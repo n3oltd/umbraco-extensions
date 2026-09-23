@@ -32,8 +32,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         _userService = userService;
     }
 
-    public string ResourceType => "Group";
-
     // User groups belong to the site, so a create is only ever the provisioning service reconciling one
     // the configuration already names
     public async Task<ScimGroup> CreateAsync(ScimGroup resource) {
@@ -142,9 +140,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return group;
     }
 
-    // A filter on the path selects among the members the group already holds, which answers any shape of
-    // reference without having to read the literal out of the expression
-
     private async Task SetMembersAsync(BackOfficeUserGroup group, ISet<Guid> wanted) {
         if (wanted == null) {
             return;
@@ -179,7 +174,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         }
     }
 
-    internal static ScimAttributes Describe(BackOfficeUserGroup group) {
+    private static ScimAttributes Describe(BackOfficeUserGroup group) {
         return new ScimAttributes().Add("displayName", group.DisplayName)
                                    .Add("id", group.Id);
     }
