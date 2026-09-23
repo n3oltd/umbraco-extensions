@@ -11,7 +11,7 @@ public static class ScimUserPatch {
     public static void Apply(ScimUser user, ScimPatchOperation operation) {
         var op = operation.Op ?? "";
 
-        if (!op.EqualsInvariant("add") && !op.EqualsInvariant("replace") && !op.EqualsInvariant("remove")) {
+        if (!op.Is("add") && !op.Is("replace") && !op.Is("remove")) {
             throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
         }
 
@@ -44,7 +44,7 @@ public static class ScimUserPatch {
     }
 
     private static void Set(ScimUser user, ScimPath path, JToken value, string op) {
-        var removing = op.EqualsInvariant("remove");
+        var removing = op.Is("remove");
 
         if (path.Is("active")) {
             user.Active = removing ? null : value?.Value<bool?>();
@@ -103,11 +103,11 @@ public static class ScimUserPatch {
 
         var text = removing ? null : value?.Value<string>();
 
-        if (element.EqualsInvariant("familyName")) {
+        if (element.Is("familyName")) {
             user.Name.FamilyName = text;
-        } else if (element.EqualsInvariant("formatted")) {
+        } else if (element.Is("formatted")) {
             user.Name.Formatted = text;
-        } else if (element.EqualsInvariant("givenName")) {
+        } else if (element.Is("givenName")) {
             user.Name.GivenName = text;
         } else {
             throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");

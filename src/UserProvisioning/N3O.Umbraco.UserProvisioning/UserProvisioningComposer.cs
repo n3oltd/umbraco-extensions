@@ -60,13 +60,13 @@ public class UserProvisioningComposer : Composer {
             throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but maps no user groups");
         }
 
-        if (!settings.UserGroups.Values.Any(x => x.EqualsInvariant(settings.DefaultUserGroupAlias))) {
+        if (!settings.UserGroups.Values.Any(x => x.Is(settings.DefaultUserGroupAlias))) {
             throw new Exception($"{UserProvisioningSettings.SectionName} default user group " +
                                 $"{settings.DefaultUserGroupAlias.Quote()} is not one of the mapped user groups");
         }
 
         var duplicated = settings.UserGroups
-                                 .GroupBy(x => x.Value, StringComparer.InvariantCultureIgnoreCase)
+                                 .GroupBy(x => x.Value, ScimText.Comparer)
                                  .Where(x => x.Count() > 1)
                                  .Select(x => x.Key)
                                  .ToList();

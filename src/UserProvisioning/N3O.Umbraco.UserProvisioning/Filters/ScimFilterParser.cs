@@ -92,11 +92,11 @@ public class ScimFilterParser {
             throw ScimException.InvalidFilter($"A filter may not nest more than {MaxDepth} deep");
         }
 
-        var expression = ParseOr();
-
-        _depth--;
-
-        return expression;
+        try {
+            return ParseOr();
+        } finally {
+            _depth--;
+        }
     }
 
     private ScimExpression ParseComparison() {
@@ -149,13 +149,13 @@ public class ScimFilterParser {
             case ScimTokenType.Number:
                 throw ScimException.InvalidFilter($"{token.Text.Quote()} is not a number");
 
-            case ScimTokenType.Identifier when token.Text.EqualsInvariant("true"):
+            case ScimTokenType.Identifier when token.Text.Is("true"):
                 return true;
 
-            case ScimTokenType.Identifier when token.Text.EqualsInvariant("false"):
+            case ScimTokenType.Identifier when token.Text.Is("false"):
                 return false;
 
-            case ScimTokenType.Identifier when token.Text.EqualsInvariant("null"):
+            case ScimTokenType.Identifier when token.Text.Is("null"):
                 return null;
 
             default:
@@ -172,7 +172,7 @@ public class ScimFilterParser {
     }
 
     private bool IsKeyword(string keyword) {
-        return Current.Type == ScimTokenType.Keyword && Current.Text.EqualsInvariant(keyword);
+        return Current.Type == ScimTokenType.Keyword && Current.Text.Is(keyword);
     }
 
     private static string Describe(ScimToken token) {

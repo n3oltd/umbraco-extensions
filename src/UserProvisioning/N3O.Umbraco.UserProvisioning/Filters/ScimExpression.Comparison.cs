@@ -38,15 +38,15 @@ public class ComparisonScimExpression : ScimExpression {
         var right = AsString(Value);
 
         return Operator switch {
-            "co" => left.IndexOf(right, StringComparison.InvariantCultureIgnoreCase) >= 0,
-            "eq" => left.EqualsInvariant(right),
-            "ew" => left.EndsWith(right, StringComparison.InvariantCultureIgnoreCase),
+            "co" => left.IndexOf(right, ScimText.Comparison) >= 0,
+            "eq" => left.Is(right),
+            "ew" => left.EndsWith(right, ScimText.Comparison),
             "ge" => Rank(left, right) >= 0,
             "gt" => Rank(left, right) > 0,
             "le" => Rank(left, right) <= 0,
             "lt" => Rank(left, right) < 0,
-            "ne" => !left.EqualsInvariant(right),
-            "sw" => left.StartsWith(right, StringComparison.InvariantCultureIgnoreCase),
+            "ne" => !left.Is(right),
+            "sw" => left.StartsWith(right, ScimText.Comparison),
             _ => throw ScimException.InvalidFilter($"{Operator.Quote()} is not a comparison this endpoint applies")
         };
     }
@@ -60,6 +60,6 @@ public class ComparisonScimExpression : ScimExpression {
     }
 
     private static int Rank(string left, string right) {
-        return string.Compare(left, right, StringComparison.InvariantCultureIgnoreCase);
+        return string.Compare(left, right, ScimText.Comparison);
     }
 }

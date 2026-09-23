@@ -179,7 +179,7 @@ public class UserStore : IScimStore<ScimUser> {
     private async Task<IUser> FindByEmailAsync(string email) {
         var all = await GetAllUsersAsync();
 
-        return all.SingleOrDefault(x => x.Email.EqualsInvariant(email));
+        return all.SingleOrDefault(x => x.Email.Is(email));
     }
 
     private async Task<IReadOnlyList<IUser>> GetAllUsersAsync() {
@@ -302,7 +302,7 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     private static bool RequiresUpdate(BackOfficeUser current, BackOfficeUser updated) {
-        return !updated.Email.EqualsInvariant(current.Email) || !updated.Name.EqualsInvariant(current.Name);
+        return !updated.Email.Is(current.Email) || !updated.Name.Is(current.Name);
     }
 
     private static string[] SplitName(string name) {

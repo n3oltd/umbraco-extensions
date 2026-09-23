@@ -10,7 +10,7 @@ public class ScimAttributes {
     private readonly Dictionary<string, List<object>> _values;
 
     public ScimAttributes() {
-        _values = new Dictionary<string, List<object>>(StringComparer.InvariantCultureIgnoreCase);
+        _values = new Dictionary<string, List<object>>(ScimText.Comparer);
     }
 
     // An attribute is registered even when the resource carries no value for it, so a filter naming one

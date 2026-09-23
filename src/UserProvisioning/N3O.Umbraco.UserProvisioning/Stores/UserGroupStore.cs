@@ -90,7 +90,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     private async Task<BackOfficeUserGroup> FindByDisplayNameAsync(string displayName) {
         var all = await GetAllAsync();
 
-        return all.SingleOrDefault(x => x.DisplayName.EqualsInvariant(displayName));
+        return all.SingleOrDefault(x => x.DisplayName.Is(displayName));
     }
 
     private async Task<IReadOnlyList<BackOfficeUserGroup>> GetAllAsync() {
@@ -116,7 +116,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
     private async Task<BackOfficeUserGroup> GetRequiredAsync(string id) {
         var all = await GetAllAsync();
-        var group = all.SingleOrDefault(x => x.Id.EqualsInvariant(id));
+        var group = all.SingleOrDefault(x => x.Id.Is(id));
 
         if (group == null) {
             throw ScimException.NotFound($"No user group found with id {id.Quote()}");

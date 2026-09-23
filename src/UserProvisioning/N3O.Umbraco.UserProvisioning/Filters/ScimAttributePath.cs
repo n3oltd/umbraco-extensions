@@ -42,7 +42,7 @@ public class ScimAttributePath {
     }
 
     public bool Is(string attribute) {
-        return Elements.Length > 0 && Elements[0].EqualsInvariant(attribute);
+        return Elements.Length > 0 && Elements[0].Is(attribute);
     }
 
     public override string ToString() {

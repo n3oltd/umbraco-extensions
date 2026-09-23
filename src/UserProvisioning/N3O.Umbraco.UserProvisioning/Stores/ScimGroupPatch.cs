@@ -31,15 +31,15 @@ public static class ScimGroupPatch {
         foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
             var op = operation.Op ?? "";
 
-            if (!op.EqualsInvariant("add") && !op.EqualsInvariant("remove") && !op.EqualsInvariant("replace")) {
+            if (!op.Is("add") && !op.Is("remove") && !op.Is("replace")) {
                 throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
             }
 
             var keys = ReadKeys(held, operation);
 
-            if (op.EqualsInvariant("add")) {
+            if (op.Is("add")) {
                 members.UnionWith(keys);
-            } else if (op.EqualsInvariant("replace")) {
+            } else if (op.Is("replace")) {
                 members.Clear();
                 members.UnionWith(keys);
             } else if (NamesNobody(operation)) {

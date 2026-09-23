@@ -41,7 +41,7 @@ public class ScimMiddleware : IMiddleware {
         var route = _settings.BaseRoute.TrimEnd('/');
 
         if (!context.Request.Path.StartsWithSegments(route,
-                                                     StringComparison.InvariantCultureIgnoreCase,
+                                                     ScimText.Comparison,
                                                      out var rest)) {
             await next(context);
 
@@ -87,15 +87,15 @@ public class ScimMiddleware : IMiddleware {
         var resource = segments.FirstOrDefault() ?? "";
         var id = segments.Length > 1 ? segments[1] : null;
 
-        if (resource.EqualsInvariant("ServiceProviderConfig")) {
+        if (resource.Is("ServiceProviderConfig")) {
             await WriteAsync(context, HttpStatusCode.OK, ScimDiscovery.ServiceProviderConfig());
-        } else if (resource.EqualsInvariant("ResourceTypes")) {
+        } else if (resource.Is("ResourceTypes")) {
             await WriteAsync(context, HttpStatusCode.OK, ScimDiscovery.ResourceTypes(_settings.BaseRoute));
-        } else if (resource.EqualsInvariant("Schemas")) {
+        } else if (resource.Is("Schemas")) {
             await WriteAsync(context, HttpStatusCode.OK, ScimDiscovery.Schemas());
-        } else if (resource.EqualsInvariant("Users")) {
+        } else if (resource.Is("Users")) {
             await DispatchAsync(context, _userStore, id);
-        } else if (resource.EqualsInvariant("Groups")) {
+        } else if (resource.Is("Groups")) {
             await DispatchAsync(context, _groupStore, id);
         } else {
             throw ScimException.NotFound($"{context.Request.Path} is not a resource this endpoint serves");
@@ -105,22 +105,22 @@ public class ScimMiddleware : IMiddleware {
     private async Task DispatchAsync<T>(HttpContext context, IScimStore<T> store, string id) where T : ScimResource {
         var method = context.Request.Method;
 
-        if (method.EqualsInvariant("GET") && !id.HasValue()) {
+        if (method.Is("GET") && !id.HasValue()) {
             await WriteAsync(context, HttpStatusCode.OK, await store.ListAsync(ReadQuery(context)));
-        } else if (method.EqualsInvariant("GET")) {
+        } else if (method.Is("GET")) {
             await WriteAsync(context, HttpStatusCode.OK, await store.GetAsync(id));
-        } else if (method.EqualsInvariant("POST") && !id.HasValue()) {
+        } else if (method.Is("POST") && !id.HasValue()) {
             await WriteAsync(context, HttpStatusCode.Created, await store.CreateAsync(await ReadBodyAsync<T>(context)));
-        } else if (method.EqualsInvariant("PUT") && id.HasValue()) {
+        } else if (method.Is("PUT") && id.HasValue()) {
             var resource = await ReadBodyAsync<T>(context);
             resource.Id = id;
 
             await WriteAsync(context, HttpStatusCode.OK, await store.ReplaceAsync(resource));
-        } else if (method.EqualsInvariant("PATCH") && id.HasValue()) {
+        } else if (method.Is("PATCH") && id.HasValue()) {
             var request = await ReadBodyAsync<ScimPatchRequest>(context);
 
             await WriteAsync(context, HttpStatusCode.OK, await store.PatchAsync(id, request?.Operations));
-        } else if (method.EqualsInvariant("DELETE") && id.HasValue()) {
+        } else if (method.Is("DELETE") && id.HasValue()) {
             await store.DeleteAsync(id);
 
             context.Response.StatusCode = (int) HttpStatusCode.NoContent;
