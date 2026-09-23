@@ -15,6 +15,8 @@ public interface ILocator {
     IPublishedContent ById(Guid id);
     T ById<T>(Guid id);
 
+    bool ExistsInAnyCulture(string contentTypeAlias);
+
     IPublishedContent Single(string contentTypeAlias, Func<IPublishedContent, bool> predicate = null);
     T Single<T>(Func<T, bool> predicate = null);
 }

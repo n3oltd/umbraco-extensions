@@ -27,8 +27,9 @@ public class ContentCache : IContentCache {
 
         if (!_typedStore.TryGetValue(cacheKey, out var stored)) {
             var located = _contentLocator.All<T>();
+            var contentTypeAlias = AliasHelper<T>.ContentTypeAlias();
 
-            stored = CanCache(located) ? _typedStore.GetOrAdd(cacheKey, located) : located;
+            stored = CanCache(located, contentTypeAlias) ? _typedStore.GetOrAdd(cacheKey, located) : located;
         }
 
         var all = (IReadOnlyList<T>) stored;
@@ -53,7 +54,7 @@ public class ContentCache : IContentCache {
         if (!_untypedStore.TryGetValue(cacheKey, out var all)) {
             var located = _contentLocator.All(contentTypeAlias);
 
-            all = CanCache(located) ? _untypedStore.GetOrAdd(cacheKey, located) : located;
+            all = CanCache(located, contentTypeAlias) ? _untypedStore.GetOrAdd(cacheKey, located) : located;
         }
 
         if (contentTypeAlias.HasValue()) {
@@ -93,8 +94,9 @@ public class ContentCache : IContentCache {
 
     public event EventHandler Flushed;
 
-    private bool CanCache<T>(IReadOnlyList<T> located) {
-        return _scopeProvider.Context == null && located.Any();
+    private bool CanCache<T>(IEnumerable<T> located, string contentTypeAlias) {
+        return _scopeProvider.Context == null &&
+               (located.Any() || !_contentLocator.ExistsInAnyCulture(contentTypeAlias));
     }
 
     private string GetCacheKey<T>() {

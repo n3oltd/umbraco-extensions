@@ -10,6 +10,8 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Content;
 
 public abstract class Locator : ILocator {
+    private const string AnyCulture = "*";
+
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
 
     protected Locator(IUmbracoContextAccessor umbracoContextAccessor) {
@@ -50,6 +52,12 @@ public abstract class Locator : ILocator {
 
     public T ById<T>(Guid id) {
         return ById(id).As<T>();
+    }
+
+    public bool ExistsInAnyCulture(string contentTypeAlias) {
+        return Run(c => c.GetAtRoot(AnyCulture).Any(x => contentTypeAlias == null ||
+                                                         x.ContentType.Alias.EqualsInvariant(contentTypeAlias) ||
+                                                         x.DescendantsOfType(contentTypeAlias, AnyCulture).Any()));
     }
 
     public IPublishedContent Single(string contentTypeAlias, Func<IPublishedContent, bool> predicate = null) {
