@@ -171,7 +171,10 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     }
 
     private BackOfficeUserGroup Map(string displayName, IUserGroup userGroup) {
-        var members = _userService.GetAllInGroup(userGroup.Id).Select(UserStore.Map).ToList();
+        var members = _userService.GetAllInGroup(userGroup.Id)
+                                  .Where(x => x.Key != UmbracoConstants.Security.SuperUserKey)
+                                  .Select(UserStore.Map)
+                                  .ToList();
 
         var group = new BackOfficeUserGroup();
         group.Alias = userGroup.Alias;

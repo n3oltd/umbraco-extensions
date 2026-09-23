@@ -207,7 +207,7 @@ public class UserStore : IScimStore<ScimUser> {
 
             var items = attempt.Result.Items.ToList();
 
-            users.AddRange(items);
+            users.AddRange(items.Where(x => x.Key != UmbracoConstants.Security.SuperUserKey));
 
             skip += PageSize;
 
