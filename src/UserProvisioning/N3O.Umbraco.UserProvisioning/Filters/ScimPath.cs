@@ -18,8 +18,6 @@ public class ScimPath {
     public string SubAttribute { get; }
     public ScimExpression ValueFilter { get; }
 
-    // A patch path is an attribute, optionally a filter over a multi-valued attribute's members, then
-    // optionally a sub-attribute of whichever the filter selected
     public static ScimPath Parse(string text) {
         if (!text.HasValue()) {
             return null;
