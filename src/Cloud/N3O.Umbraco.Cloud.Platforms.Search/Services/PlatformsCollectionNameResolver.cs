@@ -1,4 +1,4 @@
-using N3O.Umbraco.Cloud.Extensions;
+using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Cloud.Platforms.Search.Lookups;
@@ -19,10 +19,16 @@ public class PlatformsCollectionNameResolver : IPlatformsCollectionNameResolver 
 
     public async Task<string> ResolveAsync(PlatformsSearchCollection collection,
                                            CancellationToken cancellationToken = default) {
-        var infrastructure = await _cdnClient.DownloadSubscriptionContentAsync<PublishedInfrastructure>(SubscriptionFiles.Infrastructure,
-                                                                                                         JsonSerializers.Simple,
-                                                                                                         cancellationToken);
-        var name = infrastructure?.Search?.Collections?.GetValueOrDefault(collection.Id);
+        var infrastructure = await _cdnClient.DownloadPublishedContentAsync<PublishedInfrastructure>(PublishedFileKinds.Subscription,
+                                                                                                    SubscriptionFiles.Infrastructure.Filename,
+                                                                                                    JsonSerializers.Simple,
+                                                                                                    cancellationToken);
+
+        if (infrastructure.Error || infrastructure.NotFound) {
+            throw new PublishedContentUnavailableException(infrastructure.Path);
+        }
+
+        var name = infrastructure.Content?.Search?.Collections?.GetValueOrDefault(collection.Id);
 
         if (!name.HasValue()) {
             throw new Exception($"The published infrastructure file has no search collection {collection.Id.Quote()}");

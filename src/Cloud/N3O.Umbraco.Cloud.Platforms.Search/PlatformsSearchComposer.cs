@@ -11,5 +11,6 @@ public class PlatformsSearchComposer : Composer {
                     t => builder.Services.AddScoped(typeof(ICampaignOfferingVisibilityFilter), t));
 
         builder.Services.AddTransient<ICampaignOfferingVisibility, CampaignOfferingVisibility>();
+        builder.Services.AddSingleton<IPlatformsCollectionNameResolver, PlatformsCollectionNameResolver>();
     }
 }
