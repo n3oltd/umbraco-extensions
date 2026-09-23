@@ -9,13 +9,16 @@ sortable and so on, and `[Index]` adds further indexed fields derived from one p
 is therefore a consequence of the type, and changing a field means changing the type rather than
 editing anything in Typesense.
 
-Collection names are not used as written. Configuration maps a declared collection name onto the
-name actually used on the server, which is what allows several sites to share one Typesense cluster,
-and what allows a collection to be rebuilt under a new name and switched over. A name with no entry
-in that map is used unchanged, so a missing entry quietly shares another site's collection.
+Collection names are not used as written. The name on the server is composed from the declared
+name, the site id and the environment (`<name>_<siteId>_<environment>`, read from `N3O_SiteId` and
+`N3O_Environment`), so several sites share one Typesense cluster and a site's staging and
+production instances never share a collection. Resolving a name throws when either variable is
+missing, rather than falling back to a name another site could also resolve.
 
-Content is indexed when it is published and removed when it is unpublished or deleted, and commands
-exist to index one item or everything of a type, which is how a site is first populated or repaired.
+Content is indexed when it is published and removed when it is unpublished or deleted, including
+when the change arrives by a uSync push, since each environment maintains its own collection.
+Commands exist to index one item or everything of a type, which is how a site is first populated or
+repaired.
 
 ```json
 {
@@ -23,10 +26,7 @@ exist to index one item or everything of a type, which is how a site is first po
     "ApiKey": "<from the secret store>",
     "SearchApiKey": "<a search-only key>",
     "Node": "<the cluster host>",
-    "Port": 443,
-    "Collections": {
-      "pages": "pages-thissite"
-    }
+    "Port": 443
   }
 }
 ```

@@ -36,12 +36,12 @@ public class TypesenseStartupTasks : INotificationAsyncHandler<UmbracoApplicatio
                                   CancellationToken cancellationToken) {
         if (_typesenseClient.HasValue()) {
             foreach (var collection in TypesenseHelper.GetAllCollections()) {
+                var collectionName = collection.Name.Resolve();
+
                 try {
                     await MigrateCollectionAsync(collection);
                 } catch (Exception ex) {
-                    _logger.LogError(ex,
-                                     "Failed to migrate Typesense collection {Collection}",
-                                     collection.Name.Resolve());
+                    _logger.LogError(ex, "Failed to migrate Typesense collection {Collection}", collectionName);
                 }
             }
         }
