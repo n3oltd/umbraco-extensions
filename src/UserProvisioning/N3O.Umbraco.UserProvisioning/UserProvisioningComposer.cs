@@ -58,23 +58,19 @@ public class UserProvisioningComposer : Composer {
         }
 
         if (!settings.UserGroups.Any()) {
-            throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but maps no user groups");
-        }
-
-        if (!settings.UserGroups.Values.Any(x => x.Is(settings.DefaultUserGroupAlias))) {
-            throw new Exception($"{UserProvisioningSettings.SectionName} default user group " +
-                                $"{settings.DefaultUserGroupAlias.Quote()} is not one of the mapped user groups");
+            throw new Exception($"{UserProvisioningSettings.SectionName} is enabled but names no groups in " +
+                                $"AdministratorGroups or EditorGroups");
         }
 
         var duplicated = settings.UserGroups
-                                 .GroupBy(x => x.Value, ScimText.Comparer)
+                                 .GroupBy(x => x.DisplayName, ScimText.Comparer)
                                  .Where(x => x.Count() > 1)
                                  .Select(x => x.Key)
                                  .ToList();
 
         if (duplicated.Any()) {
-            throw new Exception($"{UserProvisioningSettings.SectionName} maps more than one group to " +
-                                $"{string.Join(", ", duplicated.Select(x => x.Quote()))}");
+            throw new Exception($"{UserProvisioningSettings.SectionName} names " +
+                                $"{string.Join(", ", duplicated.Select(x => x.Quote()))} in more than one role");
         }
     }
 }

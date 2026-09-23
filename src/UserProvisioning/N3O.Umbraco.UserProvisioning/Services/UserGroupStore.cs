@@ -8,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models.Membership;
 using Umbraco.Cms.Core.Services;
@@ -102,19 +104,19 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     private async Task<IReadOnlyList<BackOfficeUserGroup>> GetAllAsync() {
         var groups = new List<BackOfficeUserGroup>();
 
-        foreach (var (displayName, alias) in _settings.UserGroups.OrderBy(x => x.Key)) {
-            var userGroup = await _userGroupService.GetAsync(alias);
+        foreach (var group in _settings.UserGroups.OrderBy(x => x.DisplayName)) {
+            var userGroup = await _userGroupService.GetAsync(group.Alias);
 
             if (userGroup == null) {
                 _logger.LogWarning("Directory group {DisplayName} maps to user group {Alias}, which this site does " +
                                    "not have, so nobody in it can be provisioned",
-                                   displayName,
-                                   alias);
+                                   group.DisplayName,
+                                   group.Alias);
 
                 continue;
             }
 
-            groups.Add(Map(displayName, userGroup));
+            groups.Add(Map(group.DisplayName, userGroup));
         }
 
         return groups;
@@ -125,14 +127,14 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         var group = groups.SingleOrDefault(x => x.Id.Is(id));
 
         if (group == null) {
-            throw ScimException.NotFound($"No user group found with id {id.Quote()}");
+            throw ScimException.NotFound($"No user group found with ID {id.Quote()}");
         }
 
         return group;
     }
 
     private bool IsGoverned(IUser user) {
-        return user.Groups.Any(x => _settings.UserGroups.Values.Any(alias => alias.Is(x.Alias)));
+        return user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
     }
 
     private BackOfficeUserGroup Map(string displayName, IUserGroup userGroup) {
@@ -144,7 +146,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         var group = new BackOfficeUserGroup();
         group.Alias = userGroup.Alias;
         group.DisplayName = displayName;
-        group.Id = userGroup.Key.ToString();
+        group.Id = Identify(displayName);
         group.Members = members;
 
         return group;
@@ -179,6 +181,14 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         }
 
         DisableUngoverned(UserStore.GetAll(_userService).Where(x => removed.Contains(x.Key)));
+    }
+
+    // Two directory groups may name the same Umbraco group, and SCIM requires an ID per resource, so
+    // the ID is derived from the directory group's name rather than taken from Umbraco
+    private static string Identify(string displayName) {
+        var hash = MD5.HashData(Encoding.UTF8.GetBytes(displayName.ToLowerInvariant()));
+
+        return new Guid(hash).ToString();
     }
 
     private static ScimAttributes Describe(BackOfficeUserGroup group) {
