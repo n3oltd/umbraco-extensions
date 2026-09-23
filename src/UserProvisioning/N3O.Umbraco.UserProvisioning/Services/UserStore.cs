@@ -38,11 +38,12 @@ public class UserStore : IScimStore<ScimUser> {
             throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
 
-        var userGroup = _userService.GetUserGroupByAlias(_settings.DefaultUserGroupAlias);
+        var alias = UmbracoConstants.Security.EditorGroupAlias;
+        var userGroup = _userService.GetUserGroupByAlias(alias);
 
         if (userGroup == null) {
             throw new ScimException(HttpStatusCode.InternalServerError,
-                                    $"No user group exists with alias {_settings.DefaultUserGroupAlias.Quote()}");
+                                    $"No user group exists with alias {alias.Quote()}");
         }
 
         var user = _userService.CreateUserWithIdentity(email, email);
@@ -166,17 +167,17 @@ public class UserStore : IScimStore<ScimUser> {
         return GetAll(_userService).Where(IsGoverned).ToList();
     }
 
-    // IUserService offers no lookup by key, so the governed set is the only route from a SCIM id to a
+    // IUserService offers no lookup by key, so the governed set is the only route from a SCIM ID to a
     // user
     private IUser GetRequired(string id) {
         if (!Guid.TryParse(id, out var key)) {
-            throw ScimException.NotFound($"No user found with id {id.Quote()}");
+            throw ScimException.NotFound($"No user found with ID {id.Quote()}");
         }
 
         var user = GetGoverned().SingleOrDefault(x => x.Key == key);
 
         if (user == null) {
-            throw ScimException.NotFound($"No user found with id {id.Quote()}");
+            throw ScimException.NotFound($"No user found with ID {id.Quote()}");
         }
 
         return user;
@@ -185,7 +186,7 @@ public class UserStore : IScimStore<ScimUser> {
     // Scoping every read and write to the mapped groups is what keeps users created by hand outside
     // the directory's reach
     private bool IsGoverned(IUser user) {
-        return user.Groups.Any(x => _settings.UserGroups.Values.Any(alias => alias.Is(x.Alias)));
+        return user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
     }
 
     private void SetActive(IUser user, bool active) {

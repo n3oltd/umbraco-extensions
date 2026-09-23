@@ -76,7 +76,7 @@ public static class ScimGroupPatch {
 
         foreach (var value in values.OrEmpty().Where(x => x.HasValue())) {
             if (!Guid.TryParse(value, out var key)) {
-                throw ScimException.InvalidValue($"Member {value.Quote()} is not a user id");
+                throw ScimException.InvalidValue($"Member {value.Quote()} is not a user ID");
             }
 
             keys.Add(key);
