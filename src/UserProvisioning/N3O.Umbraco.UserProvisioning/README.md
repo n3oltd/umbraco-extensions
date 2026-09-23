@@ -45,9 +45,7 @@ is the seam for enabling provisioning in one environment and not another.
       "BaseRoute": "/umbraco/scim",
       "BearerToken": "<from the secret store>",
       "DefaultUserGroupAlias": "editor",
-      "Licensee": "<licensee>",
       "LogRequests": false,
-      "LicenseKey": "<licence key>",
       "UserGroups": {
         "CMS Editors": "editor",
         "CMS Administrators": "admin"
@@ -67,9 +65,9 @@ them, before it sends their group membership, and it has to be one of the mapped
 `LogRequests` logs each SCIM request and response, which is how a rejected call is diagnosed. It is
 off by default because those bodies carry names and email addresses. `BearerToken` is the credential
 the identity provider presents; it is compared over a fixed-time hash and belongs in a secret store
-rather than in `appsettings.json`. An absent route, token, licence or group map fails startup, as
-does a default user group that is not one of the mapped ones, rather than serving an endpoint that
-would accept anything or provision nobody.
+rather than in `appsettings.json`. An absent route, token or group map fails startup, as does a
+default user group that is not one of the mapped ones, rather than serving an endpoint that would
+accept anything or provision nobody.
 
 ## Connecting Microsoft Entra
 
@@ -92,8 +90,17 @@ database from elsewhere leaves those cached identifiers pointing at nothing and 
 restarted. And a job whose calls keep failing is quarantined: its cycles slow to once a day and it
 is disabled after four weeks, so a broken endpoint stops provisioning quietly and needs alerting on.
 
-## Licence
 
-SCIM support is provided by
-[Rsk.AspNetCore.Scim](https://www.identityserver.com/products/scim-for-aspnet), which is licensed
-separately from this package. Set `Licensee` and `LicenseKey` from that licence.
+## What it serves
+
+`/Users` and `/Groups` carry GET, POST, PUT, PATCH and DELETE. `/ServiceProviderConfig`,
+`/ResourceTypes` and `/Schemas` answer the discovery a provisioning service reads before its first
+cycle. Everything is `application/scim+json`, and a refusal carries the SCIM error schema with a
+`scimType` where the specification defines one.
+
+Filtering supports `eq`, `ne`, `co`, `sw`, `ew`, `pr`, `lt`, `le`, `gt` and `ge`, combined with
+`and`, `or`, `not` and parentheses. A filter naming an attribute the endpoint does not hold is
+refused rather than answered with an empty page, and a filter over the members of a multi-valued
+attribute is refused because answering one wrongly is worse than declining it.
+
+Sorting and bulk operations are not supported, and the service provider configuration says so.

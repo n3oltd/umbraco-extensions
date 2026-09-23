@@ -1,0 +1,118 @@
+using N3O.Umbraco.Extensions;
+using N3O.Umbraco.UserProvisioning.Filters;
+using N3O.Umbraco.UserProvisioning.Models;
+using N3O.Umbraco.UserProvisioning.Scim;
+using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace N3O.Umbraco.UserProvisioning.Stores;
+
+public static class ScimGroupPatch {
+    public static ISet<Guid> Resolve(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
+        var members = held.Select(x => Guid.Parse(x.Id)).ToHashSet();
+
+        foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
+            var op = operation.Op ?? "";
+            var keys = ReadKeys(held, operation);
+
+            if (op.EqualsInvariant("add")) {
+                members.UnionWith(keys);
+            } else if (op.EqualsInvariant("replace")) {
+                members.Clear();
+                members.UnionWith(keys);
+            } else if (NamesNobody(operation)) {
+                members.Clear();
+            } else if (keys.Any()) {
+                members.ExceptWith(keys);
+            } else {
+                throw ScimException.InvalidValue("The members to remove could not be read from the patch");
+            }
+        }
+
+        return members;
+    }
+
+    public static bool IsMembership(ScimPatchOperation operation) {
+        var path = ScimPath.Parse(operation.Path);
+
+        if (path != null) {
+            return path.Is("members");
+        }
+
+        return operation.Value is JObject json && json.Property("members") != null;
+    }
+
+    public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
+        return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
+    }
+
+    // A filter on the path selects among the members the group already holds, which answers any shape of
+    // reference without having to read the literal out of the expression
+    private static ISet<Guid> ReadKeys(IReadOnlyList<BackOfficeUser> held, ScimPatchOperation operation) {
+        var path = ScimPath.Parse(operation.Path);
+
+        if (path?.ValueFilter != null) {
+            var selected = held.Where(x => path.ValueFilter.Matches(Describe(x))).Select(x => Guid.Parse(x.Id));
+
+            return new HashSet<Guid>(selected);
+        }
+
+        return ParseKeys(ReadValues(operation.Value));
+    }
+
+    private static ScimAttributes Describe(BackOfficeUser member) {
+        return new ScimAttributes().Add("display", member.Name)
+                                   .Add("type", "User")
+                                   .Add("value", member.Id);
+    }
+
+    private static string Identify(string value, string reference) {
+        return value.HasValue() ? value : reference?.Split('/').LastOrDefault();
+    }
+
+    private static bool NamesNobody(ScimPatchOperation operation) {
+        var path = ScimPath.Parse(operation.Path);
+
+        return operation.Value == null && path?.ValueFilter == null;
+    }
+
+    private static ISet<Guid> ParseKeys(IEnumerable<string> values) {
+        var keys = new HashSet<Guid>();
+
+        foreach (var value in values.OrEmpty().Where(x => x.HasValue())) {
+            if (!Guid.TryParse(value, out var key)) {
+                throw ScimException.InvalidValue($"Member {value.Quote()} is not a user id");
+            }
+
+            keys.Add(key);
+        }
+
+        return keys;
+    }
+
+    private static IEnumerable<string> ReadValues(JToken value) {
+        if (value == null) {
+            yield break;
+        }
+
+        if (value is JArray array) {
+            foreach (var item in array) {
+                foreach (var found in ReadValues(item)) {
+                    yield return found;
+                }
+            }
+        } else if (value is JObject json) {
+            if (json.Property("members") != null) {
+                foreach (var found in ReadValues(json["members"])) {
+                    yield return found;
+                }
+            } else {
+                yield return Identify(json.Value<string>("value"), json.Value<string>("$ref"));
+            }
+        } else {
+            yield return value.Value<string>();
+        }
+    }
+}

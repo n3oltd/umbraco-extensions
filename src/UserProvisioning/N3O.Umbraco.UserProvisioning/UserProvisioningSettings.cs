@@ -9,8 +9,6 @@ public class UserProvisioningSettings {
     public string BearerToken { get; set; }
     public string DefaultUserGroupAlias { get; set; } = "editor";
     public bool Enabled { get; set; }
-    public string Licensee { get; set; }
     public bool LogRequests { get; set; }
-    public string LicenseKey { get; set; }
     public Dictionary<string, string> UserGroups { get; set; } = new();
 }

@@ -40,7 +40,4 @@
             <Pack>True</Pack>
         </None>
     </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="Rsk.AspNetCore.Scim" Version="9.3.1" />
-    </ItemGroup>
 </Project>

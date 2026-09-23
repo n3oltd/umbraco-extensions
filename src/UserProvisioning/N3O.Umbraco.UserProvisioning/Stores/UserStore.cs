@@ -1,20 +1,19 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.UserProvisioning.Filters;
 using N3O.Umbraco.UserProvisioning.Models;
-using Rsk.AspNetCore.Scim.Exceptions;
-using Rsk.AspNetCore.Scim.Filters;
-using Rsk.AspNetCore.Scim.Models;
-using Rsk.AspNetCore.Scim.Stores;
+using N3O.Umbraco.UserProvisioning.Scim;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Membership;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.OperationStatus;
-using ScimUser = Rsk.AspNetCore.Scim.Models.User;
 using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace N3O.Umbraco.UserProvisioning.Stores;
@@ -24,45 +23,43 @@ public class UserStore : IScimStore<ScimUser> {
 
     private readonly IEntityService _entityService;
     private readonly GlobalSettings _globalSettings;
-    private readonly IPatchCommandExecutor _patchCommandExecutor;
-    private readonly IScimQueryBuilderFactory _queryBuilderFactory;
+    private readonly ILogger<UserStore> _logger;
     private readonly UserProvisioningSettings _settings;
     private readonly IUserGroupService _userGroupService;
     private readonly IUserService _userService;
 
     public UserStore(IEntityService entityService,
                      IOptions<GlobalSettings> globalSettings,
-                     IPatchCommandExecutor patchCommandExecutor,
-                     IScimQueryBuilderFactory queryBuilderFactory,
+                     ILogger<UserStore> logger,
                      UserProvisioningSettings settings,
                      IUserGroupService userGroupService,
                      IUserService userService) {
         _entityService = entityService;
         _globalSettings = globalSettings.Value;
-        _patchCommandExecutor = patchCommandExecutor;
-        _queryBuilderFactory = queryBuilderFactory;
+        _logger = logger;
         _settings = settings;
         _userGroupService = userGroupService;
         _userService = userService;
     }
 
-    public async Task<ScimUser> Add(ScimUser resource) {
+    public string ResourceType => "User";
+
+    public async Task<ScimUser> CreateAsync(ScimUser resource) {
         var email = GetEmail(resource);
 
         if (!email.HasValue()) {
-            throw new ScimStoreException("A user requires either userName or a primary email address");
+            throw ScimException.InvalidValue("A user requires either userName or a primary email address");
         }
 
-        var existing = await FindByEmailAsync(email);
-
-        if (existing != null) {
-            throw new ScimStoreItemAlreadyExistException($"A user with email {email.Quote()} already exists");
+        if (await FindByEmailAsync(email) != null) {
+            throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
 
         var userGroup = await _userGroupService.GetAsync(_settings.DefaultUserGroupAlias);
 
         if (userGroup == null) {
-            throw new ScimStoreException($"No user group exists with alias {_settings.DefaultUserGroupAlias.Quote()}");
+            throw new ScimException(HttpStatusCode.InternalServerError,
+                                    $"No user group exists with alias {_settings.DefaultUserGroupAlias.Quote()}");
         }
 
         var model = new UserCreateModel();
@@ -74,80 +71,107 @@ public class UserStore : IScimStore<ScimUser> {
         var attempt = await _userService.CreateAsync(UmbracoConstants.Security.SuperUserKey, model, true);
 
         if (!attempt.Success) {
-            throw new ScimStoreException($"Could not create user {email.Quote()}: {attempt.Status}");
+            throw new ScimException(HttpStatusCode.InternalServerError,
+                                    $"Could not create user {email.Quote()}: {attempt.Status}");
         }
 
-        var created = Map(attempt.Result.CreatedUser);
+        var created = attempt.Result.CreatedUser;
 
         if (resource.Active == false) {
-            await SetActiveAsync(attempt.Result.CreatedUser.Key, false);
-            created.Active = false;
+            await SetActiveAsync(created.Key, false);
         }
 
-        return ToScim(created);
+        return ToScim(Map(await GetRequiredAsync(created.Key.ToString())));
     }
 
-    public async Task Delete(string id) {
+    public async Task DeleteAsync(string id) {
         var user = await GetRequiredAsync(id);
 
         await SetActiveAsync(user.Key, false);
     }
 
-    public async Task<IEnumerable<string>> Exists(IEnumerable<string> ids) {
+    public async Task<ScimUser> GetAsync(string id) {
+        return ToScim(Map(await GetRequiredAsync(id)));
+    }
+
+    public async Task<ScimListResponse<ScimUser>> ListAsync(ScimQuery query) {
         var all = await GetAllUsersAsync();
-        var keys = all.Select(x => x.Key.ToString()).ToHashSet(StringComparer.InvariantCultureIgnoreCase);
 
-        return ids.Where(keys.Contains).ToList();
+        var matching = all.Select(Map)
+                          .Where(x => query.Filter == null || query.Filter.Matches(Describe(x)))
+                          .OrderBy(x => x.UserName, StringComparer.InvariantCultureIgnoreCase)
+                          .Select(ToScim)
+                          .ToList();
+
+        return ScimPaging.Page(matching, query);
     }
 
-    public Task<ScimCursorPageResults<ScimUser>> GetAll(ICursorResourceQuery query) {
-        throw new NotSupportedException("Cursor pagination is not supported; the service provider uses " +
-                                        "index pagination");
-    }
-
-    public async Task<ScimPageResults<ScimUser>> GetAll(IIndexResourceQuery query) {
-        var all = await GetAllAsync();
-
-        var matching = Build(_queryBuilderFactory.CreateQueryBuilder(all.AsQueryable()).Filter(query.Filter));
-
-        var builder = _queryBuilderFactory.CreateQueryBuilder(matching.AsQueryable())
-                                          .Page(query.StartIndex, query.Count);
-
-        if (query.Sort != null) {
-            builder = builder.Sort(query.Sort.By, query.Sort.Direction);
-        }
-
-        var page = Build(builder);
-
-        return new ScimPageResults<ScimUser>(page.Select(ToScim).ToList(), matching.Count);
-    }
-
-    public async Task<ScimUser> GetById(string id, ResourceAttributeSet attributes) {
+    public async Task<ScimUser> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
         var user = await GetRequiredAsync(id);
-
-        return ToScim(Map(user));
-    }
-
-    public async Task<ScimUser> PartialUpdate(string resourceId, IEnumerable<PatchCommand> updates) {
-        var user = await GetRequiredAsync(resourceId);
         var patched = ToScim(Map(user));
 
-        foreach (var update in updates) {
-            _patchCommandExecutor.Execute(patched, update);
+        foreach (var operation in operations.OrEmpty()) {
+            ScimUserPatch.Apply(patched, operation);
         }
 
-        return await ApplyResourceAsync(user, patched);
+        return await ApplyAsync(user, patched);
     }
 
-    public async Task<ScimUser> Update(ScimUser resource) {
+    public async Task<ScimUser> ReplaceAsync(ScimUser resource) {
         var user = await GetRequiredAsync(resource.Id);
 
-        return await ApplyResourceAsync(user, resource);
+        return await ApplyAsync(user, resource);
     }
 
-    private async Task ApplyAsync(IUser user, BackOfficeUser updated) {
-        if (RequiresUpdate(Map(user), updated)) {
-            // Umbraco marks ExistingUserKey required, so this one model cannot be built by assignment
+    internal static BackOfficeUser Map(IUser user) {
+        var backOfficeUser = new BackOfficeUser();
+        backOfficeUser.Active = user.IsApproved;
+        backOfficeUser.Email = user.Email;
+        backOfficeUser.Id = user.Key.ToString();
+        backOfficeUser.Name = user.Name;
+        backOfficeUser.UserName = user.Username;
+
+        return backOfficeUser;
+    }
+
+    internal static ScimUser ToScim(BackOfficeUser user) {
+        var email = new ScimEmail();
+        email.Primary = true;
+        email.Type = "work";
+        email.Value = user.Email;
+
+        var name = new ScimName();
+        name.FamilyName = FamilyName(user.Name);
+        name.Formatted = user.Name;
+        name.GivenName = GivenName(user.Name);
+
+        var meta = new ScimMeta();
+        meta.ResourceType = "User";
+
+        var scimUser = new ScimUser();
+        scimUser.Active = user.Active;
+        scimUser.DisplayName = user.Name;
+        scimUser.Emails = [email];
+        scimUser.Id = user.Id;
+        scimUser.Meta = meta;
+        scimUser.Name = name;
+        scimUser.Schemas = [ScimConstants.Schemas.User];
+        scimUser.UserName = user.UserName;
+
+        return scimUser;
+    }
+
+    private async Task<ScimUser> ApplyAsync(IUser user, ScimUser resource) {
+        var current = Map(user);
+
+        var updated = new BackOfficeUser();
+        updated.Active = resource.Active ?? current.Active;
+        updated.Email = GetEmail(resource).HasValue() ? GetEmail(resource) : current.Email;
+        updated.Id = current.Id;
+        updated.Name = GetName(resource, current.Name);
+        updated.UserName = updated.Email;
+
+        if (RequiresUpdate(current, updated)) {
             var model = new UserUpdateModel { ExistingUserKey = user.Key };
             model.ContentStartNodeKeys = GetKeys(user.StartContentIds, UmbracoObjectTypes.Document);
             model.Email = updated.Email;
@@ -162,36 +186,22 @@ public class UserStore : IScimStore<ScimUser> {
             var attempt = await _userService.UpdateAsync(UmbracoConstants.Security.SuperUserKey, model);
 
             if (!attempt.Success) {
-                throw new ScimStoreException($"Could not update user {user.Key}: {attempt.Status}");
+                throw new ScimException(HttpStatusCode.InternalServerError,
+                                        $"Could not update user {user.Key}: {attempt.Status}");
             }
         }
 
-        if (updated.Active != IsActive(user)) {
+        if (updated.Active != current.Active) {
             await SetActiveAsync(user.Key, updated.Active);
         }
-    }
 
-    private async Task<ScimUser> ApplyResourceAsync(IUser user, ScimUser resource) {
-        var updated = Map(user);
-        updated.Active = resource.Active ?? updated.Active;
-        updated.Email = GetEmail(resource).HasValue() ? GetEmail(resource) : updated.Email;
-        updated.Name = GetName(resource, updated.Name);
-
-        await ApplyAsync(user, updated);
-
-        return ToScim(updated);
+        return ToScim(Map(await GetRequiredAsync(user.Key.ToString())));
     }
 
     private async Task<IUser> FindByEmailAsync(string email) {
         var all = await GetAllUsersAsync();
 
         return all.SingleOrDefault(x => x.Email.EqualsInvariant(email));
-    }
-
-    private async Task<IReadOnlyList<BackOfficeUser>> GetAllAsync() {
-        var all = await GetAllUsersAsync();
-
-        return all.Select(Map).ToList();
     }
 
     private async Task<IReadOnlyList<IUser>> GetAllUsersAsync() {
@@ -202,7 +212,7 @@ public class UserStore : IScimStore<ScimUser> {
             var attempt = await _userService.GetAllAsync(UmbracoConstants.Security.SuperUserKey, skip, PageSize);
 
             if (!attempt.Success) {
-                throw new ScimStoreException($"Could not read users: {attempt.Status}");
+                throw new ScimException(HttpStatusCode.InternalServerError, $"Could not read users: {attempt.Status}");
             }
 
             var items = attempt.Result.Items.ToList();
@@ -211,7 +221,7 @@ public class UserStore : IScimStore<ScimUser> {
 
             skip += PageSize;
 
-            if (!items.Any() || users.Count >= attempt.Result.Total) {
+            if (!items.Any() || skip >= attempt.Result.Total) {
                 break;
             }
         }
@@ -219,15 +229,24 @@ public class UserStore : IScimStore<ScimUser> {
         return users;
     }
 
+    private ISet<Guid> GetKeys(IEnumerable<int> ids, UmbracoObjectTypes objectType) {
+        var keys = ids.OrEmpty()
+                      .Select(x => _entityService.GetKey(x, objectType))
+                      .Where(x => x.Success)
+                      .Select(x => x.Result);
+
+        return new HashSet<Guid>(keys);
+    }
+
     private async Task<IUser> GetRequiredAsync(string id) {
-        if (!Guid.TryParse(id, out var key)) {
-            throw new ScimStoreItemDoesNotExistException($"No user found with id {id.Quote()}");
+        if (!Guid.TryParse(id, out var key) || key == UmbracoConstants.Security.SuperUserKey) {
+            throw ScimException.NotFound($"No user found with id {id.Quote()}");
         }
 
         var user = await _userService.GetAsync(key);
 
         if (user == null) {
-            throw new ScimStoreItemDoesNotExistException($"No user found with id {id.Quote()}");
+            throw ScimException.NotFound($"No user found with id {id.Quote()}");
         }
 
         return user;
@@ -241,44 +260,32 @@ public class UserStore : IScimStore<ScimUser> {
                          : await _userService.DisableAsync(UmbracoConstants.Security.SuperUserKey, keys);
 
         if (status != UserOperationStatus.Success) {
-            throw new ScimStoreException($"Could not set user {key} active to {active}: {status}");
+            throw new ScimException(HttpStatusCode.InternalServerError,
+                                    $"Could not set user {key} active to {active}: {status}");
         }
     }
 
-    public static BackOfficeUser Map(IUser user) {
-        var backOfficeUser = new BackOfficeUser();
-        backOfficeUser.Active = IsActive(user);
-        backOfficeUser.Email = user.Email;
-        backOfficeUser.Id = user.Key.ToString();
-        backOfficeUser.Name = user.Name;
-        backOfficeUser.UserName = user.Username;
-
-        return backOfficeUser;
+    internal static ScimAttributes Describe(BackOfficeUser user) {
+        return new ScimAttributes().Add("active", user.Active)
+                                   .Add("displayName", user.Name)
+                                   .Add("emails.value", user.Email)
+                                   .Add("id", user.Id)
+                                   .Add("name.familyName", FamilyName(user.Name))
+                                   .Add("name.formatted", user.Name)
+                                   .Add("name.givenName", GivenName(user.Name))
+                                   .Add("userName", user.UserName);
     }
 
-    private static IReadOnlyList<T> Build<T>(IScimQueryBuilder<T> builder) {
-        var results = builder.Build().ToList();
+    private static string FamilyName(string name) {
+        var parts = SplitName(name);
 
-        if (builder.Errors.OrEmpty().Any()) {
-            throw new ScimStoreInvalidQueryException("The filter could not be applied", builder.Errors);
-        }
-
-        return results;
+        return parts.Length > 1 ? parts[1] : null;
     }
 
     private static string GetEmail(ScimUser resource) {
-        var primary = resource.Emails?.FirstOrDefault(x => x.Primary)?.Value;
+        var primary = resource.Emails.OrEmpty().FirstOrDefault(x => x.Primary)?.Value;
 
         return primary.HasValue() ? primary : resource.UserName;
-    }
-
-    private ISet<Guid> GetKeys(IEnumerable<int> ids, UmbracoObjectTypes objectType) {
-        var keys = ids.OrEmpty()
-                      .Select(x => _entityService.GetKey(x, objectType))
-                      .Where(x => x.Success)
-                      .Select(x => x.Result);
-
-        return new HashSet<Guid>(keys);
     }
 
     private static string GetName(ScimUser resource, string fallback) {
@@ -296,53 +303,21 @@ public class UserStore : IScimStore<ScimUser> {
         return resource.DisplayName.HasValue() ? resource.DisplayName : fallback;
     }
 
-    private static string FamilyName(string name) {
-        var parts = SplitName(name);
-
-        return parts.Length > 1 ? parts[1] : null;
-    }
-
     private static string GivenName(string name) {
         var parts = SplitName(name);
 
         return parts.Length > 0 ? parts[0] : null;
     }
 
-    private static string[] SplitName(string name) {
-        return name.HasValue() ? name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries) : [];
-    }
-
     private static bool HasRootAccess(IEnumerable<int> startNodeIds) {
         return startNodeIds.OrEmpty().Contains(UmbracoConstants.System.Root);
-    }
-
-    private static bool IsActive(IUser user) {
-        return user.IsApproved;
     }
 
     private static bool RequiresUpdate(BackOfficeUser current, BackOfficeUser updated) {
         return !updated.Email.EqualsInvariant(current.Email) || !updated.Name.EqualsInvariant(current.Name);
     }
 
-    private static ScimUser ToScim(BackOfficeUser user) {
-        var email = new Email();
-        email.Primary = true;
-        email.Type = "work";
-        email.Value = user.Email;
-
-        var name = new Name();
-        name.FamilyName = FamilyName(user.Name);
-        name.Formatted = user.Name;
-        name.GivenName = GivenName(user.Name);
-
-        var scimUser = new ScimUser();
-        scimUser.Active = user.Active;
-        scimUser.DisplayName = user.Name;
-        scimUser.Emails = new[] { email };
-        scimUser.Id = user.Id;
-        scimUser.Name = name;
-        scimUser.UserName = user.UserName;
-
-        return scimUser;
+    private static string[] SplitName(string name) {
+        return name.HasValue() ? name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries) : [];
     }
 }
