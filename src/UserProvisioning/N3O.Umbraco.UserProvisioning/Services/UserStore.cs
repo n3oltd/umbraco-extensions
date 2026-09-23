@@ -53,7 +53,15 @@ public class UserStore : IScimStore<ScimUser> {
 
         _userService.Save(user);
 
-        return Task.FromResult(ToScim(Map(user)));
+        // Saving assigns the persisted key, so the in-memory entity is not the one this user is read by
+        var created = _userService.GetByUsername(email);
+
+        if (created == null) {
+            throw new ScimException(HttpStatusCode.InternalServerError,
+                                    $"User {email.Quote()} was created but could not be read back");
+        }
+
+        return Task.FromResult(ToScim(Map(created)));
     }
 
     public Task DeleteAsync(string id) {
