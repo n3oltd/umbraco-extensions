@@ -17,7 +17,7 @@
         <ContentTargetFolders>.</ContentTargetFolders>
         <Authors>N3O Ltd</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>TODO</Description>
+        <Description>Brings in the uSync handlers for Umbraco Forms, and the Forms static assets they need, alongside N3O.Umbraco.Sync.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
         <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>
