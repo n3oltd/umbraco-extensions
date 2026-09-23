@@ -121,7 +121,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         var group = GetAll().SingleOrDefault(x => x.Id.Is(id));
 
         if (group == null) {
-            throw ScimException.NotFound($"No user group found with id {id.Quote()}");
+            throw ScimException.NotFound($"No user group found with ID {id.Quote()}");
         }
 
         return group;
@@ -177,8 +177,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         DisableUngoverned(UserStore.GetAll(_userService).Where(x => removed.Contains(x.Key)));
     }
 
-    // Two directory groups may name the same Umbraco group, and SCIM requires an id per resource, so
-    // the id is derived from the directory group's name rather than taken from Umbraco
+    // Two directory groups may name the same Umbraco group, and SCIM requires an ID per resource, so
+    // the ID is derived from the directory group's name rather than taken from Umbraco
     private static string Identify(string displayName) {
         var hash = MD5.HashData(Encoding.UTF8.GetBytes(displayName.ToLowerInvariant()));
 

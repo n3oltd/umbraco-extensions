@@ -17,8 +17,7 @@ public class UserProvisioningSettings {
     public bool LogRequests { get; set; }
     public string EditorGroups { get; set; }
 
-    // Which Umbraco group a role provisions into is fixed by the package, so a site configures only
-    // which directory groups fill each role
+    // Which Umbraco group a role provisions into is the package's decision, not a site's
     public IReadOnlyList<UserProvisioningGroup> UserGroups => Named(AdministratorGroups,
                                                                    UmbracoConstants.Security.AdminGroupAlias)
                                                             .Concat(Named(EditorGroups,

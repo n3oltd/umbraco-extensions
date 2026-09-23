@@ -167,17 +167,17 @@ public class UserStore : IScimStore<ScimUser> {
         return GetAll(_userService).Where(IsGoverned).ToList();
     }
 
-    // IUserService offers no lookup by key, so the governed set is the only route from a SCIM id to a
+    // IUserService offers no lookup by key, so the governed set is the only route from a SCIM ID to a
     // user
     private IUser GetRequired(string id) {
         if (!Guid.TryParse(id, out var key)) {
-            throw ScimException.NotFound($"No user found with id {id.Quote()}");
+            throw ScimException.NotFound($"No user found with ID {id.Quote()}");
         }
 
         var user = GetGoverned().SingleOrDefault(x => x.Key == key);
 
         if (user == null) {
-            throw ScimException.NotFound($"No user found with id {id.Quote()}");
+            throw ScimException.NotFound($"No user found with ID {id.Quote()}");
         }
 
         return user;
