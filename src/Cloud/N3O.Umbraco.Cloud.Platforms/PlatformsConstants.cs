@@ -124,32 +124,47 @@ public static class PlatformsConstants {
         public static class EventTypes {
             public static class Campaign {
                 public const string Created = "campaign.created";
+                public const string Deleted = "campaign.deleted";
                 public const string Updated = "campaign.updated";
             }
 
             public static class Crowdfunder {
                 public const string Created = "crowdfunder.created";
+                public const string Deleted = "crowdfunder.deleted";
                 public const string Updated = "crowdfunder.updated";
             }
 
             public static class CrowdfundingCampaign {
                 public const string Created = "crowdfundingCampaign.created";
+                public const string Deleted = "crowdfundingCampaign.deleted";
                 public const string Updated = "crowdfundingCampaign.updated";
             }
 
             public static class Offering {
                 public const string Created = "offering.created";
+                public const string Deleted = "offering.deleted";
                 public const string Updated = "offering.updated";
             }
 
+            public static readonly IReadOnlyList<string> DeletedPlatformsPages = [
+                Campaign.Deleted,
+                Crowdfunder.Deleted,
+                CrowdfundingCampaign.Deleted,
+                Offering.Deleted
+            ];
+
             public static readonly IReadOnlyList<string> PlatformsPages = [
                 Campaign.Created,
+                Campaign.Deleted,
                 Campaign.Updated,
                 Crowdfunder.Created,
+                Crowdfunder.Deleted,
                 Crowdfunder.Updated,
                 CrowdfundingCampaign.Created,
+                CrowdfundingCampaign.Deleted,
                 CrowdfundingCampaign.Updated,
                 Offering.Created,
+                Offering.Deleted,
                 Offering.Updated
             ];
         }

@@ -67,6 +67,10 @@ public class PlatformsPagesReceiver : WebhookReceiver {
 
         _cdnClient.Evict(page.PagePublishedPath);
 
+        if (EventTypes.DeletedPlatformsPages.Contains(eventType, true)) {
+            return;
+        }
+
         // The read that follows is served fresh because of the eviction above, and consumes it.
         await EvictMergeModelsAsync(page.PagePublishedPath, cancellationToken);
 
