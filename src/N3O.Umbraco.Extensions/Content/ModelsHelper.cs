@@ -14,7 +14,7 @@ public class ModelsHelper {
     private static readonly ConcurrentDictionary<string, Type> TypeCache = new(StringComparer.InvariantCultureIgnoreCase);
 
     public static Type GetOrCreateModelsBuilderType(string modelsNamespace, string contentType) {
-        var cacheKey = CacheKey.Generate<ModelsHelper>(contentType);
+        var cacheKey = CacheKey.Generate<ModelsHelper>(modelsNamespace, contentType);
         
         return TypeCache.GetOrAdd(cacheKey, () => {
             var typeName = contentType.Pascalize();

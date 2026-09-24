@@ -6,8 +6,11 @@ using Microsoft.Extensions.Options;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
+using NodaTime;
 using System;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Web;
@@ -25,15 +28,18 @@ public class StagingMiddleware : IMiddleware {
     private readonly Lazy<IRemoteIpAddressAccessor> _remoteIpAddressAccessor;
     private readonly Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> _cookieAuthenticationOptions;
     private readonly IApplicationReadiness _applicationReadiness;
+    private readonly IClock _clock;
 
     public StagingMiddleware(IUmbracoContextFactory umbracoContextFactory,
                              Lazy<IRemoteIpAddressAccessor> remoteIpAddressAccessor,
                              Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> cookieAuthenticationOptions,
-                             IApplicationReadiness applicationReadiness) {
+                             IApplicationReadiness applicationReadiness,
+                             IClock clock) {
         _umbracoContextFactory = umbracoContextFactory;
         _remoteIpAddressAccessor = remoteIpAddressAccessor;
         _cookieAuthenticationOptions = cookieAuthenticationOptions;
         _applicationReadiness = applicationReadiness;
+        _clock = clock;
     }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next) {
@@ -54,23 +60,25 @@ public class StagingMiddleware : IMiddleware {
                                             ?.As<StagingSettingsContent>();
 
             if (stagingSettings != null) {
-                var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress().ToString();
+                var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress();
 
-                if (IsBlocked(remoteIp)) {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    
-                    return;
-                }
+                if (!IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
+                    var lockOutKey = GetLockOutKey(remoteIp);
 
-                if (IsAuthorized(context, stagingSettings, remoteIp)) {
-                    FailedLogins.Remove(remoteIp);
-                } else {
-                    LogFailure(remoteIp);
-                    
-                    context.Response.Headers.Append("WWW-Authenticate", "Basic realm=\"Login to Staging Site\", charset=\"UTF-8\"");
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    
-                    return;
+                    if (IsBlocked(lockOutKey)) {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+
+                        return;
+                    } else if (HasValidCredentials(context, stagingSettings)) {
+                        FailedLogins.Remove(lockOutKey);
+                    } else {
+                        LogFailure(lockOutKey);
+
+                        context.Response.Headers.Append("WWW-Authenticate", "Basic realm=\"Login to Staging Site\", charset=\"UTF-8\"");
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+                        return;
+                    }
                 }
             }
         }
@@ -78,47 +86,97 @@ public class StagingMiddleware : IMiddleware {
         await next(context);
     }
 
-    private bool IsBlocked(string remoteIp) {
-        if (FailedLogins.Get<int>(remoteIp) > MaxFailedAttempts) {
+    // Keying per address lets a client reset the lock out by rotating through its /64.
+    private string GetLockOutKey(IPAddress remoteIp) {
+        if (remoteIp.AddressFamily == AddressFamily.InterNetworkV6) {
+            var bytes = remoteIp.GetAddressBytes();
+
+            Array.Clear(bytes, 8, 8);
+
+            return new IPAddress(bytes).ToString();
+        } else {
+            return remoteIp.ToString();
+        }
+    }
+
+    private bool IsBlocked(string lockOutKey) {
+        if (FailedLogins.Get<int>(lockOutKey) > MaxFailedAttempts) {
             return true;
         } else {
             return false;
         }
     }
 
-    private void LogFailure(string remoteIp) {
-        var failedCount = FailedLogins.GetOrCreate(remoteIp, c => {
-            c.SlidingExpiration = LockOutPeriod;
+    private void LogFailure(string lockOutKey) {
+        var failedCount = FailedLogins.Get<int>(lockOutKey);
+        var entryOptions = new MemoryCacheEntryOptions();
+        entryOptions.AbsoluteExpirationRelativeToNow = LockOutPeriod;
 
-            return 0;
-        });
-
-        FailedLogins.Set(remoteIp, failedCount + 1);
+        FailedLogins.Set(lockOutKey, failedCount + 1, entryOptions);
     }
 
-    private bool IsAuthorized(HttpContext context, StagingSettingsContent stagingSettings, string remoteIp) {
-        var isAuthorized = false;
-
-        if (stagingSettings.Rules.OrEmpty().Any(x => remoteIp.EqualsInvariant(x.RuleIpAddress))) {
-            isAuthorized = true;
-        } else if (IsSignedIntoBackOffice(context)) {
-            isAuthorized = true;
+    private bool IsAllowed(IPAddress remoteIp, string ruleIpAddress) {
+        if (IPAddress.TryParse(ruleIpAddress, out var ipAddress)) {
+            return ipAddress.UnmapIPv4().Equals(remoteIp);
+        } else if (IPNetwork.TryParse(ruleIpAddress, out var network)) {
+            return network.Contains(remoteIp);
         } else {
-            string header = context.Request.Headers["Authorization"];
-        
-            if (header.HasValue()) {
-                var auth = header.Split(' ')[1];
-                var usernameAndPassword = Encoding.UTF8.GetString(Convert.FromBase64String(auth)).Split(':');
-                var username = usernameAndPassword[0];
-                var password = usernameAndPassword[1];
-                
-                if (username.EqualsInvariant(stagingSettings.Username) && password == stagingSettings.Password) {
-                    isAuthorized = true;
-                }
-            }
+            return false;
+        }
+    }
+
+    private bool IsAllowedWithoutCredentials(HttpContext context,
+                                             StagingSettingsContent stagingSettings,
+                                             IPAddress remoteIp) {
+        if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress?.Trim()))) {
+            return true;
+        } else {
+            return IsSignedIntoBackOffice(context);
+        }
+    }
+
+    private bool HasValidCredentials(HttpContext context, StagingSettingsContent stagingSettings) {
+        string header = context.Request.Headers["Authorization"];
+
+        if (TryReadBasicCredentials(header, out var username, out var password) &&
+            username.EqualsInvariant(stagingSettings.Username) &&
+            password == stagingSettings.Password) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private bool TryReadBasicCredentials(string header, out string username, out string password) {
+        username = null;
+        password = null;
+
+        if (!header.HasValue()) {
+            return false;
         }
 
-        return isAuthorized;
+        var parts = header.Split(' ');
+
+        if (parts.Length != 2 || !parts[0].EqualsInvariant("Basic")) {
+            return false;
+        }
+
+        var decoded = new byte[parts[1].Length];
+
+        if (!Convert.TryFromBase64String(parts[1], decoded, out var decodedLength)) {
+            return false;
+        }
+
+        var usernameAndPassword = Encoding.UTF8.GetString(decoded, 0, decodedLength).Split(':', 2);
+
+        if (usernameAndPassword.Length < 2) {
+            return false;
+        }
+
+        username = usernameAndPassword[0];
+        password = usernameAndPassword[1];
+
+        return true;
     }
 
     private bool IsSignedIntoBackOffice(HttpContext context) {
@@ -126,16 +184,14 @@ public class StagingMiddleware : IMiddleware {
         var cookieOptions = _cookieAuthenticationOptions.Value.Get(authType);
 
         var backOfficeCookie = context.Request.Cookies[cookieOptions.Cookie.Name];
+        var ticket = backOfficeCookie.IfNotNull(x => cookieOptions.TicketDataFormat.Unprotect(x));
 
-        if (backOfficeCookie != null) {
-            var unprotected = cookieOptions.TicketDataFormat.Unprotect(backOfficeCookie);
-            var backOfficeIdentity = unprotected?.Principal.GetUmbracoIdentity();
-
-            if (backOfficeIdentity != null) {
-                return true;
-            }
+        if (ticket != null &&
+            ticket.Properties.ExpiresUtc > _clock.GetCurrentInstant().ToDateTimeOffset() &&
+            ticket.Principal.GetUmbracoIdentity() != null) {
+            return true;
+        } else {
+            return false;
         }
-        
-        return false;
     }
 }

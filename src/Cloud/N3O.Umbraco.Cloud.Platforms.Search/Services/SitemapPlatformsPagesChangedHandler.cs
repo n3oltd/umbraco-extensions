@@ -17,8 +17,10 @@ public class SitemapPlatformsPagesChangedHandler : IPlatformsPagesChangedHandler
     // The campaigns file is built from campaign documents alone
     private static readonly IReadOnlyList<string> CampaignEventTypes = [
         EventTypes.Campaign.Created,
+        EventTypes.Campaign.Deleted,
         EventTypes.Campaign.Updated,
         EventTypes.Offering.Created,
+        EventTypes.Offering.Deleted,
         EventTypes.Offering.Updated
     ];
 

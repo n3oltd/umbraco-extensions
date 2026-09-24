@@ -50,6 +50,8 @@ public abstract class CmsStartup {
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+        app.UseMiddleware<NotFoundCacheControlMiddleware>();
+
         if (env.IsProduction()) {
             app.UseHsts();
         } else {
@@ -58,11 +60,14 @@ public abstract class CmsStartup {
 
         app.UseRewriter(GetRewriteOptions());
         
+        var staticFileCachePolicy = app.ApplicationServices.GetRequiredService<StaticFileCachePolicy>();
+
         var staticFileOptions = new StaticFileOptions();
+        staticFileOptions.OnPrepareResponse = staticFileCachePolicy.Apply;
         ConfigureStaticFiles(staticFileOptions);
         
         app.UseWhen(context => !context.Request.Path.StartsWithSegments("/media"),
-                    appBuilder => appBuilder.UseStaticFiles());
+                    appBuilder => appBuilder.UseStaticFiles(staticFileOptions));
         
         app.UseOpenApiWithUI();
 
