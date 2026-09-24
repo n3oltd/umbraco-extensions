@@ -59,7 +59,7 @@ public static class ScimGroupPatch {
     }
 
     public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
-        return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
+        return members == null ? null : ParseKeys(members.Select(x => Identify(x?.Value, x?.Reference)));
     }
 
     public static ISet<Guid> Resolve(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
@@ -145,7 +145,12 @@ public static class ScimGroupPatch {
     private static ISet<Guid> ParseKeys(IEnumerable<string> values) {
         var keys = new HashSet<Guid>();
 
-        foreach (var value in values.OrEmpty().Where(x => x.HasValue())) {
+        foreach (var value in values.OrEmpty()) {
+            // Dropped rather than refused, a member naming nobody turns a replace into the removal of everyone
+            if (!value.HasValue()) {
+                throw ScimException.InvalidValue("Each member must name a user by its value or $ref");
+            }
+
             if (!Guid.TryParse(value, out var key)) {
                 throw ScimException.InvalidValue($"Member {value.Quote()} is not a user ID");
             }
@@ -173,6 +178,10 @@ public static class ScimGroupPatch {
     private static IEnumerable<string> ReadValues(JToken value) {
         if (value == null) {
             yield break;
+        }
+
+        if (value.Type == JTokenType.Null) {
+            throw ScimException.InvalidValue("An explicit null names no member");
         }
 
         if (value is JArray array) {
