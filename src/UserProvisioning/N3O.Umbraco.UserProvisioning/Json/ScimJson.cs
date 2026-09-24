@@ -18,6 +18,8 @@ public static class ScimJson {
         var settings = new JsonSerializerSettings();
         settings.ContractResolver = resolver;
         settings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+        // Otherwise a string that looks like a date is read into a patch value as a date, and loses its text
+        settings.DateParseHandling = DateParseHandling.None;
         settings.NullValueHandling = NullValueHandling.Ignore;
 
         return settings;
