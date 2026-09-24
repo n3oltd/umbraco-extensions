@@ -30,6 +30,7 @@ public class UserProvisioningComposer : Composer {
         builder.Services.AddSingleton(settings);
         builder.Services.AddScoped<IBearerTokenAuthorizer, BearerTokenAuthorizer>();
         builder.Services.AddScoped<ScimMiddleware>();
+        builder.Services.AddScoped<IScimState, ScimState>();
         builder.Services.AddScoped<IScimStore<ScimGroup>, UserGroupStore>();
         builder.Services.AddScoped<IScimStore<ScimUser>, UserStore>();
 
