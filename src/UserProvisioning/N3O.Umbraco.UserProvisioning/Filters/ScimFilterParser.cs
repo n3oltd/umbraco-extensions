@@ -28,7 +28,11 @@ public class ScimFilterParser {
             throw ScimException.InvalidFilter($"A filter may not exceed {MaxLength} characters");
         }
 
-        var parser = new ScimFilterParser(ScimLexer.Tokenise(filter));
+        return Parse(ScimLexer.Tokenise(filter));
+    }
+
+    public static ScimExpression Parse(IReadOnlyList<ScimToken> tokens) {
+        var parser = new ScimFilterParser(tokens);
         var expression = parser.ParseOr();
 
         parser.Expect(ScimTokenType.End);

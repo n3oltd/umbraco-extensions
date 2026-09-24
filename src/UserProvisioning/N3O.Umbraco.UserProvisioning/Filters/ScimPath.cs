@@ -1,6 +1,5 @@
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Exceptions;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace N3O.Umbraco.UserProvisioning.Filters;
@@ -58,7 +57,9 @@ public class ScimPath {
                 throw ScimException.InvalidPath($"{text.Quote()} has no closing bracket");
             }
 
-            valueFilter = ScimFilterParser.Parse(Rebuild(tokens.Skip(start).Take(index - start)));
+            var filter = tokens.Skip(start).Take(index - start).Append(new ScimToken(ScimTokenType.End, null)).ToList();
+
+            valueFilter = ScimFilterParser.Parse(filter);
 
             index++;
         }
@@ -87,9 +88,5 @@ public class ScimPath {
         var sub = SubAttribute.HasValue() ? $".{SubAttribute}" : "";
 
         return $"{Attribute}{filter}{sub}";
-    }
-
-    private static string Rebuild(IEnumerable<ScimToken> tokens) {
-        return string.Join(" ", tokens.Select(x => x.Type == ScimTokenType.String ? $"\"{x.Text}\"" : x.Text));
     }
 }
