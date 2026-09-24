@@ -153,7 +153,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
                                   .Where(x => _settings.Governs(x.Username))
                                   .ToList();
 
-        var asserted = state == null ? holders.Select(x => x.Key).ToHashSet() : state.Members.ToHashSet();
+        var asserted = state?.Members.ToHashSet() ?? Inherited(userGroup.Alias, holders);
 
         var members = holders.Where(x => asserted.Contains(x.Key)).Select(UserStore.Map).ToList();
 
@@ -168,14 +168,27 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     }
 
     // The membership to write is decided from a read of the membership held, so the lock has to span
-    // both. The identity provider sends several operations against one group within the same second,
-    // and a lock taken only around the write would serialise the writes and still lose the decision
+    // both. It is taken on the Umbraco group rather than the directory group, because two directory
+    // groups may share one and each decides whether to keep the membership by reading the other
     private async Task<ScimGroup> MutateAsync(string id, Func<BackOfficeUserGroup, Task> mutate) {
-        using (await _locker.LockAsync(LockKey.Generate<UserGroupStore>(id))) {
+        var alias = _settings.UserGroups.FirstOrDefault(x => Identify(x.DisplayName).Is(id))?.Alias ?? id;
+
+        using (await _locker.LockAsync(LockKey.Generate<UserGroupStore>(alias))) {
             await mutate(await GetRequiredAsync(id));
 
             return ToScim(await GetRequiredAsync(id));
         }
+    }
+
+    // Members already in the Umbraco group predate any record of who put them there. Where one
+    // directory group feeds it they can only have come from that one, so they are taken as its
+    // members and a leaver can still be found and removed. Where several feed it there is nothing to
+    // tell them apart, and guessing would let one group hold a member the directory never gave it and
+    // block their removal from the group that did
+    private ISet<Guid> Inherited(string alias, IEnumerable<IUser> holders) {
+        var feeders = _settings.UserGroups.Count(x => x.Alias.Is(alias));
+
+        return feeders == 1 ? holders.Select(x => x.Key).ToHashSet() : new HashSet<Guid>();
     }
 
     private async Task<ISet<Guid>> OtherAssertionsAsync(BackOfficeUserGroup group) {
