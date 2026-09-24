@@ -287,6 +287,10 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     private static string GetEmail(ScimUser resource) {
+        if (resource.Emails.OrEmpty().Any(x => x == null)) {
+            throw ScimException.InvalidValue("An email cannot be null");
+        }
+
         var primary = resource.Emails.OrEmpty().FirstOrDefault(x => x.Primary)?.Value;
 
         return primary.HasValue() ? primary : resource.UserName;
