@@ -82,16 +82,14 @@ public class StagingMiddleware : IMiddleware {
         await next(context);
     }
 
-    // An IPv6 host can rotate through its whole /64, so failures are counted per /64 rather than per address.
+    // Keying per address lets a client reset the lock out by rotating through its /64.
     private string GetLockOutKey(IPAddress remoteIp) {
         if (remoteIp.AddressFamily == AddressFamily.InterNetworkV6) {
             var bytes = remoteIp.GetAddressBytes();
 
             Array.Clear(bytes, 8, 8);
 
-            var prefix = new IPAddress(bytes);
-
-            return new IPNetwork(prefix, 64).ToString();
+            return new IPAddress(bytes).ToString();
         } else {
             return remoteIp.ToString();
         }
