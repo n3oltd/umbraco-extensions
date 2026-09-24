@@ -277,6 +277,8 @@ public static class StringExtensions {
             return trimmedUrl;
         } else if (trimmedUrl.StartsWith("//") && $"https:{trimmedUrl}".IsValidUrl()) {
             return $"https:{trimmedUrl}";
+        } else if (Uri.TryCreate(trimmedUrl, UriKind.Absolute, out _)) {
+            return null;
         } else if ($"https://{trimmedUrl}".IsValidUrl()) {
             return $"https://{trimmedUrl}";
         } else {

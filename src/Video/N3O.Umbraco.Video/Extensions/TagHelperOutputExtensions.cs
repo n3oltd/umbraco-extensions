@@ -33,6 +33,7 @@ public static class TagHelperOutputExtensions {
         var ratioStyle = $"position: relative; width: 100%; height: 0; padding-bottom: {paddingBottom}%;";
 
         output.TagName = "div";
+        output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.Clear();
 
         if (videoEmbed.MaxWidth.HasValue) {
