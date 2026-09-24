@@ -59,16 +59,12 @@ public class PlatformsPagesReceiver : WebhookReceiver {
             _cdnClient.Evict(affectedPublishedPath);
         }
 
-        if (page == null || !page.HasValue(x => x.PagePublishedPath)) {
-            _logger.LogWarning("{EventType} webhook carried no page published path, so the page was not " +
-                               "evicted",
-                               eventType);
-
-            return;
-        }
-
         foreach (var pagePublishedPath in page.OrEmpty(x => x.PagePublishedPathsHistory)) {
             _cdnClient.Evict(pagePublishedPath);
+        }
+
+        if (page == null || !page.HasValue(x => x.PagePublishedPath)) {
+            return;
         }
 
         _cdnClient.Evict(page.PagePublishedPath);
