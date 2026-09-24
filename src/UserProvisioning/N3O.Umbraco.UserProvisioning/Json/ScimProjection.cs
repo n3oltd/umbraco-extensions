@@ -90,7 +90,9 @@ public static class ScimProjection {
     }
 
     private static IEnumerable<JToken> Resources(JToken json) {
-        var listed = json is JObject envelope ? envelope.Properties().FirstOrDefault(x => x.Name.Is("Resources")) : null;
+        var listed = json is JObject envelope
+                         ? envelope.Properties().FirstOrDefault(x => x.Name.Is("Resources"))
+                         : null;
 
         return listed?.Value as JArray ?? (IEnumerable<JToken>) new[] { json };
     }
