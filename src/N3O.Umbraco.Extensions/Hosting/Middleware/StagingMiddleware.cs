@@ -57,23 +57,24 @@ public class StagingMiddleware : IMiddleware {
 
             if (stagingSettings != null) {
                 var remoteIp = Normalise(_remoteIpAddressAccessor.Value.GetRemoteIpAddress());
-                var lockOutKey = GetLockOutKey(remoteIp);
 
-                if (IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
-                    FailedLogins.Remove(lockOutKey);
-                } else if (IsBlocked(lockOutKey)) {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                if (!IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
+                    var lockOutKey = GetLockOutKey(remoteIp);
 
-                    return;
-                } else if (HasValidCredentials(context, stagingSettings)) {
-                    FailedLogins.Remove(lockOutKey);
-                } else {
-                    LogFailure(lockOutKey);
-                    
-                    context.Response.Headers.Append("WWW-Authenticate", "Basic realm=\"Login to Staging Site\", charset=\"UTF-8\"");
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    
-                    return;
+                    if (IsBlocked(lockOutKey)) {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+
+                        return;
+                    } else if (HasValidCredentials(context, stagingSettings)) {
+                        FailedLogins.Remove(lockOutKey);
+                    } else {
+                        LogFailure(lockOutKey);
+
+                        context.Response.Headers.Append("WWW-Authenticate", "Basic realm=\"Login to Staging Site\", charset=\"UTF-8\"");
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+                        return;
+                    }
                 }
             }
         }
