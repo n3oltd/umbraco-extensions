@@ -28,6 +28,7 @@ public class HostingComposer : Composer {
         builder.Services.AddScoped<IActionLinkGenerator, ActionLinkGenerator>();
         
         builder.Services.AddScoped<CookiesMiddleware>();
+        builder.Services.AddScoped<NotFoundCacheControlMiddleware>();
         builder.Services.AddScoped<StagingMiddleware>();
         builder.Services.AddScoped<WellKnownFolderMiddleware>();
 
@@ -46,6 +47,7 @@ public class HostingComposer : Composer {
             }
 
             AddMiddleware<CookiesMiddleware>(opt);
+            AddMiddleware<NotFoundCacheControlMiddleware>(opt);
             AddMiddleware<WellKnownFolderMiddleware>(opt);
             
             ConfigureCors(opt);

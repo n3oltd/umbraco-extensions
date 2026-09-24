@@ -47,6 +47,8 @@ public abstract class CmsStartup {
                 .AddComposers()
                 .AddContentment(opt => opt.DisableTelemetry = true)
                 .Build();
+
+        services.Configure<StaticFileOptions>(ConfigureStaticFileOptions);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
@@ -97,6 +99,14 @@ public abstract class CmsStartup {
     protected virtual void ConfigureEndpoints(IUmbracoEndpointBuilderContext umbraco) { }
     protected virtual void ConfigureMiddleware(IUmbracoApplicationBuilderContext umbraco) { }
     protected virtual void ConfigureStaticFiles(StaticFileOptions staticFileOptions) { }
+
+    private void ConfigureStaticFileOptions(StaticFileOptions staticFileOptions) {
+        staticFileOptions.OnPrepareResponse = context => {
+            if (!context.Context.Request.Path.StartsWithSegments("/media")) {
+                context.Context.Response.Headers.CacheControl = "no-cache";
+            }
+        };
+    }
 
     private RewriteOptions GetRewriteOptions() {
         var options = new RewriteOptions();
