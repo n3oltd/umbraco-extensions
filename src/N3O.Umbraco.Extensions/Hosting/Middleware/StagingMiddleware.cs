@@ -134,7 +134,7 @@ public class StagingMiddleware : IMiddleware {
     private bool IsAllowedWithoutCredentials(HttpContext context,
                                              StagingSettingsContent stagingSettings,
                                              IPAddress remoteIp) {
-        if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress))) {
+        if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress?.Trim()))) {
             return true;
         } else {
             return IsSignedIntoBackOffice(context);
