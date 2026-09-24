@@ -55,20 +55,22 @@ public class PlatformsPagesReceiver : WebhookReceiver {
     private async Task EvictAsync(string eventType,
                                   WebhookPlatformsPage page,
                                   CancellationToken cancellationToken) {
-        foreach (var affectedPublishedPath in page.OrEmpty(x => x.AffectedPublishedPaths)) {
-            _cdnClient.Evict(affectedPublishedPath);
-        }
-
-        if (page == null || !page.HasValue(x => x.PagePublishedPath)) {
-            _logger.LogWarning("{EventType} webhook carried no page published path, so the page was not " +
-                               "evicted",
-                               eventType);
+        if (page == null) {
+            _logger.LogWarning("{EventType} webhook carried no body, so nothing was evicted", eventType);
 
             return;
         }
 
+        foreach (var affectedPublishedPath in page.OrEmpty(x => x.AffectedPublishedPaths)) {
+            _cdnClient.Evict(affectedPublishedPath);
+        }
+
         foreach (var pagePublishedPath in page.OrEmpty(x => x.PagePublishedPathsHistory)) {
             _cdnClient.Evict(pagePublishedPath);
+        }
+
+        if (!page.HasValue(x => x.PagePublishedPath)) {
+            return;
         }
 
         _cdnClient.Evict(page.PagePublishedPath);
