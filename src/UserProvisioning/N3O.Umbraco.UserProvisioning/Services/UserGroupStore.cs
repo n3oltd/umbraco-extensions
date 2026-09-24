@@ -95,7 +95,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     // disabled here rather than left enabled and out of reach
     private void DisableUngoverned(IEnumerable<IUser> removed) {
         foreach (var user in removed) {
-            if (user.IsApproved && !IsGoverned(user)) {
+            if (user.IsApproved && !HoldsMappedGroup(user)) {
                 user.IsApproved = false;
 
                 _userService.Save(user);
@@ -134,9 +134,10 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return group;
     }
 
-    private bool IsGoverned(IUser user) {
-        return _settings.Governs(user.Username) &&
-               user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
+    // Visibility now survives leaving every group, so the test for disabling is the groups
+    // themselves rather than whether the endpoint can still read the user
+    private bool HoldsMappedGroup(IUser user) {
+        return user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
     }
 
     // Membership is what the directory asserted for this group, not everyone holding the Umbraco

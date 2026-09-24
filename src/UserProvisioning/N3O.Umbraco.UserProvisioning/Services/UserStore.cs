@@ -45,16 +45,9 @@ public class UserStore : IScimStore<ScimUser> {
             throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
 
-        var alias = UmbracoConstants.Security.EditorGroupAlias;
-        var userGroup = _userService.GetUserGroupByAlias(alias);
-
-        if (userGroup == null) {
-            throw new ScimException(HttpStatusCode.InternalServerError,
-                                    $"No user group exists with alias {alias.Quote()}");
-        }
-
+        // No group is assigned here. Which groups a user belongs to is the directory's to say, and
+        // granting one so the user can be read back would grant access the directory never asked for
         var user = _userService.CreateUserWithIdentity(email, email);
-        user.AddGroup(userGroup.ToReadOnlyGroup());
         user.IsApproved = resource.Active ?? true;
         user.Name = GetName(resource, email);
 
@@ -68,27 +61,25 @@ public class UserStore : IScimStore<ScimUser> {
                                     $"User {email.Quote()} was created but could not be read back");
         }
 
-        await RecordAsync(created.Key, resource);
+        await RecordAsync(created.Key, resource, true);
 
         return await ReadAsync(created);
     }
 
-    public Task DeleteAsync(string id) {
-        var user = GetRequired(id);
+    public async Task DeleteAsync(string id) {
+        var user = await GetRequiredAsync(id);
 
         SetActive(user, false);
-
-        return Task.CompletedTask;
     }
 
     public async Task<ScimUser> GetAsync(string id) {
-        return await ReadAsync(GetRequired(id));
+        return await ReadAsync(await GetRequiredAsync(id));
     }
 
     public async Task<ScimListResponse<ScimUser>> ListAsync(ScimQuery query) {
         var states = (await _state.GetUsersAsync()).ToDictionary(x => x.Id.Value);
 
-        var matching = GetGoverned().Select(x => Map(x, states.GetValueOrDefault(x.Key)))
+        var matching = (await GetGovernedAsync()).Select(x => Map(x, states.GetValueOrDefault(x.Key)))
                                     .Where(x => query.Filter == null || query.Filter.Matches(Describe(x)))
                                     .OrderBy(x => x.UserName, StringComparer.InvariantCultureIgnoreCase)
                                     .Select(ToScim)
@@ -121,12 +112,12 @@ public class UserStore : IScimStore<ScimUser> {
         return ToScim(Map(user, await _state.GetUserAsync(user.Key)));
     }
 
-    private async Task RecordAsync(Guid userKey, ScimUser resource) {
+    private async Task RecordAsync(Guid userKey, ScimUser resource, bool always = false) {
         var externalId = resource.ExternalId;
         var familyName = resource.Name?.FamilyName;
         var givenName = resource.Name?.GivenName;
 
-        if (!externalId.HasValue() && !familyName.HasValue() && !givenName.HasValue()) {
+        if (!always && !externalId.HasValue() && !familyName.HasValue() && !givenName.HasValue()) {
             return;
         }
 
@@ -142,7 +133,7 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
-        var user = GetRequired(id);
+        var user = await GetRequiredAsync(id);
 
         var externalId = ScimGroupPatch.ReadExternalId(operations);
         var original = ToScim(Map(user));
@@ -168,7 +159,7 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> ReplaceAsync(ScimUser resource) {
-        var user = GetRequired(resource.Id);
+        var user = await GetRequiredAsync(resource.Id);
 
         await RecordAsync(user.Key, resource);
 
@@ -227,18 +218,20 @@ public class UserStore : IScimStore<ScimUser> {
         return users;
     }
 
-    private IReadOnlyList<IUser> GetGoverned() {
-        return GetAll(_userService).Where(IsGoverned).ToList();
+    private async Task<IReadOnlyList<IUser>> GetGovernedAsync() {
+        var provisioned = (await _state.GetUsersAsync()).Select(x => x.Id.Value).ToHashSet();
+
+        return GetAll(_userService).Where(x => IsGoverned(x, provisioned.Contains(x.Key))).ToList();
     }
 
     // IUserService offers no lookup by key, so the governed set is the only route from a SCIM ID to a
     // user
-    private IUser GetRequired(string id) {
+    private async Task<IUser> GetRequiredAsync(string id) {
         if (!Guid.TryParse(id, out var key)) {
             throw ScimException.NotFound($"No user found with ID {id.Quote()}");
         }
 
-        var user = GetGoverned().SingleOrDefault(x => x.Key == key);
+        var user = (await GetGovernedAsync()).SingleOrDefault(x => x.Key == key);
 
         if (user == null) {
             throw ScimException.NotFound($"No user found with ID {id.Quote()}");
@@ -247,11 +240,11 @@ public class UserStore : IScimStore<ScimUser> {
         return user;
     }
 
-    // Scoping every read and write to the mapped groups is what keeps users created by hand outside
-    // the directory's reach
-    private bool IsGoverned(IUser user) {
+    // Scoping to a governed domain is what keeps users created by hand outside the directory's
+    // reach; a user the directory created is its own whether or not it has put them in a group yet
+    private bool IsGoverned(IUser user, bool provisioned) {
         return _settings.Governs(user.Username) &&
-               user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
+               (provisioned || user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias))));
     }
 
     private void SetActive(IUser user, bool active) {
