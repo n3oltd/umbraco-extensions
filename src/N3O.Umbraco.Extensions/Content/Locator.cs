@@ -10,8 +10,6 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Content;
 
 public abstract class Locator : ILocator {
-    private const string AnyCulture = "*";
-
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
 
     protected Locator(IUmbracoContextAccessor umbracoContextAccessor) {
@@ -24,7 +22,7 @@ public abstract class Locator : ILocator {
 
     public IReadOnlyList<IPublishedContent> All(string contentTypeAlias,
                                                 Func<IPublishedContent, bool> predicate = null) {
-        var allContent = GetAllContent(contentTypeAlias);
+        var allContent = GetAllContent(contentTypeAlias, null);
         var filteredContent = allContent.Where(x => predicate?.Invoke(x) ?? true).ToList();
 
         return filteredContent;
@@ -36,6 +34,10 @@ public abstract class Locator : ILocator {
         } else {
             return All(AliasHelper<T>.ContentTypeAlias(), x => predicate(x.As<T>())).Select(x => x.As<T>()).ToList();
         }
+    }
+
+    public IReadOnlyList<IPublishedContent> AllInCulture(string contentTypeAlias, string culture) {
+        return GetAllContent(contentTypeAlias, culture);
     }
 
     public IPublishedContent ById(int id) {
@@ -54,12 +56,6 @@ public abstract class Locator : ILocator {
         return ById(id).As<T>();
     }
 
-    public bool ExistsInAnyCulture(string contentTypeAlias) {
-        return Run(c => c.GetAtRoot(AnyCulture).Any(x => contentTypeAlias == null ||
-                                                         x.ContentType.Alias.EqualsInvariant(contentTypeAlias) ||
-                                                         x.DescendantsOfType(contentTypeAlias, AnyCulture).Any()));
-    }
-
     public IPublishedContent Single(string contentTypeAlias, Func<IPublishedContent, bool> predicate = null) {
         return All(contentTypeAlias, predicate).SingleOrDefault();
     }
@@ -72,19 +68,19 @@ public abstract class Locator : ILocator {
         }
     }
 
-    private IReadOnlyList<IPublishedContent> GetAllContent(string contentTypeAlias) {
+    private IReadOnlyList<IPublishedContent> GetAllContent(string contentTypeAlias, string culture) {
         return Run(c => {
             var allContent = new List<IPublishedContent>();
 
-            foreach (var rootContent in c.GetAtRoot()) {
+            foreach (var rootContent in c.GetAtRoot(culture)) {
                 if (contentTypeAlias == null) {
-                    allContent.AddRange(rootContent.DescendantsOrSelf());
+                    allContent.AddRange(rootContent.DescendantsOrSelf(culture));
                 } else {
                     if (rootContent.ContentType.Alias.EqualsInvariant(contentTypeAlias)) {
                         allContent.Add(rootContent);
                     }
                 
-                    allContent.AddRange(rootContent.DescendantsOfType(contentTypeAlias));
+                    allContent.AddRange(rootContent.DescendantsOfType(contentTypeAlias, culture));
                 }
             }
 
