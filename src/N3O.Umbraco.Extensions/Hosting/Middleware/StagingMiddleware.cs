@@ -56,7 +56,7 @@ public class StagingMiddleware : IMiddleware {
                                             ?.As<StagingSettingsContent>();
 
             if (stagingSettings != null) {
-                var remoteIp = Normalise(_remoteIpAddressAccessor.Value.GetRemoteIpAddress());
+                var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress();
 
                 if (!IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
                     var lockOutKey = GetLockOutKey(remoteIp);
@@ -80,14 +80,6 @@ public class StagingMiddleware : IMiddleware {
         }
         
         await next(context);
-    }
-
-    private IPAddress Normalise(IPAddress ipAddress) {
-        if (ipAddress.IsIPv4MappedToIPv6) {
-            return ipAddress.MapToIPv4();
-        } else {
-            return ipAddress;
-        }
     }
 
     // An IPv6 host can rotate through its whole /64, so failures are counted per /64 rather than per address.
@@ -124,7 +116,7 @@ public class StagingMiddleware : IMiddleware {
 
     private bool IsAllowed(IPAddress remoteIp, string ruleIpAddress) {
         if (IPAddress.TryParse(ruleIpAddress, out var ipAddress)) {
-            return Normalise(ipAddress).Equals(remoteIp);
+            return ipAddress.UnmapIPv4().Equals(remoteIp);
         } else if (IPNetwork.TryParse(ruleIpAddress, out var network)) {
             return network.Contains(remoteIp);
         } else {
