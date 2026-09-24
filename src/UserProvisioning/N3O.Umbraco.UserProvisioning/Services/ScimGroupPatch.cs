@@ -19,7 +19,7 @@ public static class ScimGroupPatch {
             return path.Is("members");
         }
 
-        return operation.Value is JObject json && json.Property("members") != null;
+        return operation.Value is JObject json && json.Property("members", ScimText.Comparison) != null;
     }
 
     // An identity provider re-sends its own key every cycle until a read gives it back
@@ -38,7 +38,7 @@ public static class ScimGroupPatch {
             if (path != null && path.Is("externalId")) {
                 externalId = operation.Value.ReadString("externalId");
             } else if (path == null && operation.Value is JObject json) {
-                externalId = json["externalId"].ReadString("externalId") ?? externalId;
+                externalId = json.GetValue("externalId", ScimText.Comparison).ReadString("externalId") ?? externalId;
             }
         }
 
@@ -182,13 +182,15 @@ public static class ScimGroupPatch {
                 }
             }
         } else if (value is JObject json) {
-            if (json.Property("members") != null) {
-                foreach (var found in ReadValues(json["members"])) {
+            var members = json.Property("members", ScimText.Comparison);
+
+            if (members != null) {
+                foreach (var found in ReadValues(members.Value)) {
                     yield return found;
                 }
             } else {
-                yield return Identify(json["value"].ReadString("members.value"),
-                                      json["$ref"].ReadString("members.$ref"));
+                yield return Identify(json.GetValue("value", ScimText.Comparison).ReadString("members.value"),
+                                      json.GetValue("$ref", ScimText.Comparison).ReadString("members.$ref"));
             }
         } else {
             yield return value.ReadString("members");

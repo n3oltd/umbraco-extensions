@@ -75,7 +75,8 @@ public static class ScimUserPatch {
 
         var address = path.SubAttribute.HasValue() || path.ValueFilter != null
                           ? value.ReadString(path.ToString())
-                          : AsObjects(value).Select(x => x["value"].ReadString($"{path}.value"))
+                          : AsObjects(value).Select(x => x.GetValue("value", ScimText.Comparison)
+                                                          .ReadString($"{path}.value"))
                                             .ToList()
                                             .FirstOrDefault(x => x.HasValue());
 
