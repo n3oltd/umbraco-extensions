@@ -116,7 +116,7 @@ public class StagingMiddleware : IMiddleware {
     private void LogFailure(string lockOutKey) {
         var failedCount = FailedLogins.Get<int>(lockOutKey);
         var entryOptions = new MemoryCacheEntryOptions();
-        entryOptions.SlidingExpiration = LockOutPeriod;
+        entryOptions.AbsoluteExpirationRelativeToNow = LockOutPeriod;
 
         // Set replaces the whole entry, so an entry written without these options never expires.
         FailedLogins.Set(lockOutKey, failedCount + 1, entryOptions);
