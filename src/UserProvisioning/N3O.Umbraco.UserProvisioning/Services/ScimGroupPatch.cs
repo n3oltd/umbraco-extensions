@@ -22,6 +22,29 @@ public static class ScimGroupPatch {
         return operation.Value is JObject json && json.Property("members") != null;
     }
 
+    // An identity provider re-sends its own key every cycle until a read gives it back
+    public static string ReadExternalId(IEnumerable<ScimPatchOperation> operations) {
+        string externalId = null;
+
+        foreach (var operation in operations.OrEmpty()) {
+            var op = operation.Op ?? "";
+
+            if (!op.Is("add") && !op.Is("replace")) {
+                continue;
+            }
+
+            var path = ScimPath.Parse(operation.Path);
+
+            if (path != null && path.Is("externalId")) {
+                externalId = operation.Value?.Value<string>();
+            } else if (path == null && operation.Value is JObject json) {
+                externalId = json.Value<string>("externalId") ?? externalId;
+            }
+        }
+
+        return externalId;
+    }
+
     public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
         return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
     }
@@ -36,16 +59,35 @@ public static class ScimGroupPatch {
                 throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
             }
 
+            if (NamesSubAttribute(operation)) {
+                throw ScimException.InvalidPath("A member cannot be patched one sub-attribute at a time");
+            }
+
+            // Without this a replace deletes the members its path selects and puts nothing back
+            if (!op.Is("remove") && Absent(operation.Value)) {
+                throw ScimException.InvalidValue($"A {op.ToLowerInvariant()} of members requires a value");
+            }
+
             var keys = ReadKeys(held, operation);
 
             if (op.Is("add")) {
                 members.UnionWith(keys);
+            } else if (op.Is("replace") && Selects(operation)) {
+                // A filter selects the records to replace, so the rest of the membership survives
+                if (!keys.Any()) {
+                    throw ScimException.NoTarget("No member of this group matches the path");
+                }
+
+                members.ExceptWith(keys);
+                members.UnionWith(ParseKeys(ReadValues(operation.Value)));
             } else if (op.Is("replace")) {
                 members.Clear();
                 members.UnionWith(keys);
             } else if (NamesNobody(operation)) {
                 members.Clear();
-            } else if (keys.Any()) {
+            } else if (keys.Any() || Selects(operation)) {
+                // The same removal arrives more than once, so refusing one that matches nobody fails
+                // every cycle that removes anyone
                 members.ExceptWith(keys);
             } else {
                 throw ScimException.InvalidValue("The members to remove could not be read from the patch");
@@ -53,6 +95,11 @@ public static class ScimGroupPatch {
         }
 
         return members;
+    }
+
+    // Newtonsoft binds an explicit JSON null to a token rather than to a C# null
+    private static bool Absent(JToken value) {
+        return value == null || value.Type == JTokenType.Null;
     }
 
     private static ScimAttributes Describe(BackOfficeUser member) {
@@ -65,10 +112,21 @@ public static class ScimGroupPatch {
         return value.HasValue() ? value : reference?.Split('/').LastOrDefault();
     }
 
+    private static bool Selects(ScimPatchOperation operation) {
+        return ScimPath.Parse(operation.Path)?.ValueFilter != null;
+    }
+
+    private static bool NamesSubAttribute(ScimPatchOperation operation) {
+        var path = ScimPath.Parse(operation.Path);
+
+        return path != null && (path.Attribute.Elements.Length > 1 || path.SubAttribute.HasValue());
+    }
+
     private static bool NamesNobody(ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 
-        return operation.Value == null && path?.ValueFilter == null;
+        // An absent value names the whole attribute; an explicit null does not, and is refused
+        return operation.Value == null && path != null && path.ValueFilter == null;
     }
 
     private static ISet<Guid> ParseKeys(IEnumerable<string> values) {

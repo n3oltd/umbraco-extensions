@@ -28,6 +28,10 @@ public class ScimException : Exception {
         return new ScimException(HttpStatusCode.BadRequest, detail, ScimConstants.ScimTypes.InvalidValue);
     }
 
+    public static ScimException NoTarget(string detail) {
+        return new ScimException(HttpStatusCode.BadRequest, detail, ScimConstants.ScimTypes.NoTarget);
+    }
+
     public static ScimException NotFound(string detail) {
         return new ScimException(HttpStatusCode.NotFound, detail);
     }
