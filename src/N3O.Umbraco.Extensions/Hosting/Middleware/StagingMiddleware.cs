@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
+using NodaTime;
 using System;
 using System.Linq;
 using System.Net;
@@ -27,15 +28,18 @@ public class StagingMiddleware : IMiddleware {
     private readonly Lazy<IRemoteIpAddressAccessor> _remoteIpAddressAccessor;
     private readonly Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> _cookieAuthenticationOptions;
     private readonly IApplicationReadiness _applicationReadiness;
+    private readonly IClock _clock;
 
     public StagingMiddleware(IUmbracoContextFactory umbracoContextFactory,
                              Lazy<IRemoteIpAddressAccessor> remoteIpAddressAccessor,
                              Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> cookieAuthenticationOptions,
-                             IApplicationReadiness applicationReadiness) {
+                             IApplicationReadiness applicationReadiness,
+                             IClock clock) {
         _umbracoContextFactory = umbracoContextFactory;
         _remoteIpAddressAccessor = remoteIpAddressAccessor;
         _cookieAuthenticationOptions = cookieAuthenticationOptions;
         _applicationReadiness = applicationReadiness;
+        _clock = clock;
     }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next) {
@@ -181,16 +185,14 @@ public class StagingMiddleware : IMiddleware {
         var cookieOptions = _cookieAuthenticationOptions.Value.Get(authType);
 
         var backOfficeCookie = context.Request.Cookies[cookieOptions.Cookie.Name];
+        var ticket = backOfficeCookie.IfNotNull(x => cookieOptions.TicketDataFormat.Unprotect(x));
 
-        if (backOfficeCookie != null) {
-            var unprotected = cookieOptions.TicketDataFormat.Unprotect(backOfficeCookie);
-            var backOfficeIdentity = unprotected?.Principal.GetUmbracoIdentity();
-
-            if (backOfficeIdentity != null) {
-                return true;
-            }
+        if (ticket != null &&
+            ticket.Properties.ExpiresUtc > _clock.GetCurrentInstant().ToDateTimeOffset() &&
+            ticket.Principal.GetUmbracoIdentity() != null) {
+            return true;
+        } else {
+            return false;
         }
-        
-        return false;
     }
 }
