@@ -36,9 +36,9 @@ public static class ScimGroupPatch {
             var path = ScimPath.Parse(operation.Path);
 
             if (path != null && path.Is("externalId")) {
-                externalId = operation.Value?.Value<string>();
+                externalId = operation.Value.ReadString("externalId");
             } else if (path == null && operation.Value is JObject json) {
-                externalId = json.Value<string>("externalId") ?? externalId;
+                externalId = json["externalId"].ReadString("externalId") ?? externalId;
             }
         }
 
@@ -187,10 +187,11 @@ public static class ScimGroupPatch {
                     yield return found;
                 }
             } else {
-                yield return Identify(json.Value<string>("value"), json.Value<string>("$ref"));
+                yield return Identify(json["value"].ReadString("members.value"),
+                                      json["$ref"].ReadString("members.$ref"));
             }
         } else {
-            yield return value.Value<string>();
+            yield return value.ReadString("members");
         }
     }
 

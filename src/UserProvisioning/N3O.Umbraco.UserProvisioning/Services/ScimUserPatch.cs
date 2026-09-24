@@ -48,13 +48,13 @@ public static class ScimUserPatch {
         var removing = op.Is("remove");
 
         if (path.Is("active")) {
-            user.Active = removing ? null : value?.Value<bool?>();
+            user.Active = removing ? null : value.ReadBoolean(path.ToString());
         } else if (path.Is("userName")) {
-            user.UserName = removing ? null : value?.Value<string>();
+            user.UserName = removing ? null : value.ReadString(path.ToString());
         } else if (path.Is("displayName")) {
-            user.DisplayName = removing ? null : value?.Value<string>();
+            user.DisplayName = removing ? null : value.ReadString(path.ToString());
         } else if (path.Is("externalId")) {
-            user.ExternalId = removing ? null : value?.Value<string>();
+            user.ExternalId = removing ? null : value.ReadString(path.ToString());
         } else if (path.Is("name")) {
             SetName(user, path, value, removing);
         } else if (path.Is("emails")) {
@@ -74,8 +74,10 @@ public static class ScimUserPatch {
         }
 
         var address = path.SubAttribute.HasValue() || path.ValueFilter != null
-                          ? value?.Value<string>()
-                          : AsObjects(value).Select(x => x.Value<string>("value")).FirstOrDefault(x => x.HasValue());
+                          ? value.ReadString(path.ToString())
+                          : AsObjects(value).Select(x => x["value"].ReadString($"{path}.value"))
+                                            .ToList()
+                                            .FirstOrDefault(x => x.HasValue());
 
         if (!address.HasValue()) {
             throw ScimException.InvalidValue($"{path} carries no email address");
@@ -95,14 +97,14 @@ public static class ScimUserPatch {
         var element = path.Attribute.Elements.Length > 1 ? path.Attribute.Elements[1] : path.SubAttribute;
 
         if (!element.HasValue()) {
-            var replacement = removing ? null : value?.ToObject<ScimName>();
+            var replacement = removing ? null : ReadName(path, value);
 
             user.Name = replacement ?? new ScimName();
 
             return;
         }
 
-        var text = removing ? null : value?.Value<string>();
+        var text = removing ? null : value.ReadString(path.ToString());
 
         if (element.Is("familyName")) {
             user.Name.FamilyName = text;
@@ -113,6 +115,23 @@ public static class ScimUserPatch {
         } else {
             throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
         }
+    }
+
+    private static ScimName ReadName(ScimPath path, JToken value) {
+        if (value == null || value.Type == JTokenType.Null) {
+            return null;
+        }
+
+        if (value is not JObject json) {
+            throw ScimException.InvalidValue($"{path} must be an object");
+        }
+
+        var name = new ScimName();
+        name.FamilyName = json.GetValue("familyName", ScimText.Comparison).ReadString($"{path}.familyName");
+        name.Formatted = json.GetValue("formatted", ScimText.Comparison).ReadString($"{path}.formatted");
+        name.GivenName = json.GetValue("givenName", ScimText.Comparison).ReadString($"{path}.givenName");
+
+        return name;
     }
 
 }
