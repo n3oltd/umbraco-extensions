@@ -45,6 +45,19 @@ public static class ScimGroupPatch {
         return externalId;
     }
 
+    // Not the members that change: naming one the group already holds is a claim to record all the same
+    public static ISet<Guid> Named(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
+        var named = new HashSet<Guid>();
+
+        foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
+            if ((operation.Op ?? "").Is("add") || (operation.Op ?? "").Is("replace")) {
+                named.UnionWith(ReadKeys(held, operation));
+            }
+        }
+
+        return named;
+    }
+
     public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
         return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
     }
