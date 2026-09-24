@@ -51,7 +51,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
         return await MutateAsync(named.Id, async group => {
             await SetExternalIdAsync(group, resource.ExternalId);
-            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members));
+            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members), null);
         });
     }
 
@@ -81,14 +81,16 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             }
 
             await SetExternalIdAsync(group, ScimGroupPatch.ReadExternalId(operations));
-            await SetMembersAsync(group, ScimGroupPatch.Resolve(group.Members, operations));
+            await SetMembersAsync(group,
+                                  ScimGroupPatch.Resolve(group.Members, operations),
+                                  ScimGroupPatch.Named(group.Members, operations));
         });
     }
 
     public async Task<ScimGroup> ReplaceAsync(ScimGroup resource) {
         return await MutateAsync(resource.Id, async group => {
             await SetExternalIdAsync(group, resource.ExternalId);
-            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members));
+            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members), null);
         });
     }
 
@@ -223,7 +225,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         await _state.UpdateGroupAsync(group.Id, x => x.SetExternalId(externalId));
     }
 
-    private async Task SetMembersAsync(BackOfficeUserGroup group, ISet<Guid> wanted) {
+    private async Task SetMembersAsync(BackOfficeUserGroup group, ISet<Guid> wanted, ISet<Guid> named) {
         if (wanted == null) {
             return;
         }
@@ -264,7 +266,9 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         // Recorded last: a save that fails leaves the member in the record, so the next attempt can
         // still see them. Recording first hides them from every read and the retry does nothing
         await _state.UpdateGroupAsync(group.Id,
-                                      x => x.SetMembers(group.Asserted.Concat(added).Except(removed)));
+                                      x => x.SetMembers(group.Asserted
+                                                             .Concat(named ?? wanted)
+                                                             .Where(wanted.Contains)));
 
         DisableUngoverned(UserStore.GetAll(_userService).Where(x => dropped.Contains(x.Key)));
     }
