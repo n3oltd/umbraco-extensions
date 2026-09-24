@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using N3O.Umbraco.Extensions;
 using System.Linq;
 using System.Net;
 using Umbraco.Extensions;
@@ -19,9 +20,9 @@ public class RemoteIpAddressAccessor : IRemoteIpAddressAccessor {
             return null;
         } else if (httpContext.Request.IsLocal()) {
             return IPAddress.Loopback;
+        } else {
+            return ResolveRemoteIpAddress(httpContext).UnmapIPv4();
         }
-
-        return ResolveRemoteIpAddress(httpContext);
     }
 
     protected virtual IPAddress ResolveRemoteIpAddress(HttpContext httpContext) {
