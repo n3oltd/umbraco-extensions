@@ -8,6 +8,8 @@ using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Web;
@@ -54,18 +56,19 @@ public class StagingMiddleware : IMiddleware {
                                             ?.As<StagingSettingsContent>();
 
             if (stagingSettings != null) {
-                var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress().ToString();
+                var remoteIp = Normalise(_remoteIpAddressAccessor.Value.GetRemoteIpAddress());
+                var lockOutKey = GetLockOutKey(remoteIp);
 
-                if (IsBlocked(remoteIp)) {
+                if (IsBlocked(lockOutKey)) {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     
                     return;
                 }
 
                 if (IsAuthorized(context, stagingSettings, remoteIp)) {
-                    FailedLogins.Remove(remoteIp);
+                    FailedLogins.Remove(lockOutKey);
                 } else {
-                    LogFailure(remoteIp);
+                    LogFailure(lockOutKey);
                     
                     context.Response.Headers.Append("WWW-Authenticate", "Basic realm=\"Login to Staging Site\", charset=\"UTF-8\"");
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
@@ -78,28 +81,61 @@ public class StagingMiddleware : IMiddleware {
         await next(context);
     }
 
-    private bool IsBlocked(string remoteIp) {
-        if (FailedLogins.Get<int>(remoteIp) > MaxFailedAttempts) {
+    private IPAddress Normalise(IPAddress ipAddress) {
+        if (ipAddress.IsIPv4MappedToIPv6) {
+            return ipAddress.MapToIPv4();
+        } else {
+            return ipAddress;
+        }
+    }
+
+    // An IPv6 host can rotate through its whole /64, so failures are counted per /64 rather than per address.
+    private string GetLockOutKey(IPAddress remoteIp) {
+        if (remoteIp.AddressFamily == AddressFamily.InterNetworkV6) {
+            var bytes = remoteIp.GetAddressBytes();
+
+            Array.Clear(bytes, 8, 8);
+
+            var prefix = new IPAddress(bytes);
+
+            return new IPNetwork(prefix, 64).ToString();
+        } else {
+            return remoteIp.ToString();
+        }
+    }
+
+    private bool IsBlocked(string lockOutKey) {
+        if (FailedLogins.Get<int>(lockOutKey) > MaxFailedAttempts) {
             return true;
         } else {
             return false;
         }
     }
 
-    private void LogFailure(string remoteIp) {
-        var failedCount = FailedLogins.GetOrCreate(remoteIp, c => {
+    private void LogFailure(string lockOutKey) {
+        var failedCount = FailedLogins.GetOrCreate(lockOutKey, c => {
             c.SlidingExpiration = LockOutPeriod;
 
             return 0;
         });
 
-        FailedLogins.Set(remoteIp, failedCount + 1);
+        FailedLogins.Set(lockOutKey, failedCount + 1);
     }
 
-    private bool IsAuthorized(HttpContext context, StagingSettingsContent stagingSettings, string remoteIp) {
+    private bool IsAllowed(IPAddress remoteIp, string ruleIpAddress) {
+        if (IPAddress.TryParse(ruleIpAddress, out var ipAddress)) {
+            return Normalise(ipAddress).Equals(remoteIp);
+        } else if (IPNetwork.TryParse(ruleIpAddress, out var network)) {
+            return network.Contains(remoteIp);
+        } else {
+            return false;
+        }
+    }
+
+    private bool IsAuthorized(HttpContext context, StagingSettingsContent stagingSettings, IPAddress remoteIp) {
         var isAuthorized = false;
 
-        if (stagingSettings.Rules.OrEmpty().Any(x => remoteIp.EqualsInvariant(x.RuleIpAddress))) {
+        if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress))) {
             isAuthorized = true;
         } else if (IsSignedIntoBackOffice(context)) {
             isAuthorized = true;
