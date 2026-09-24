@@ -20,6 +20,8 @@ public static class ScimJson {
         settings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
         // Otherwise a string that looks like a date is read into a patch value as a date, and loses its text
         settings.DateParseHandling = DateParseHandling.None;
+        // Otherwise a member that leads with $ref is read as a reference to another object, and binds as null
+        settings.MetadataPropertyHandling = MetadataPropertyHandling.Ignore;
         settings.NullValueHandling = NullValueHandling.Ignore;
 
         return settings;
