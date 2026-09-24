@@ -59,6 +59,10 @@ public abstract class ContentFundDimensionContent<T, TContent, TValue> : Lookups
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
     
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<T>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
         
@@ -69,7 +73,7 @@ public abstract class ContentFundDimensionContent<T, TContent, TValue> : Lookups
         List<TContent> content;
         
         if (_umbracoContextAccessor.TryGetUmbracoContext(out _)) {
-            content = _contentCache.All<TContent>().OrderBy(x => x.Content().Name).ToList();
+            content = _contentCache.AllInDefaultCulture<TContent>().OrderBy(x => x.Content().Name).ToList();
         } else {
             content = [];
         }
@@ -80,9 +84,7 @@ public abstract class ContentFundDimensionContent<T, TContent, TValue> : Lookups
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 
     protected abstract T ToFundDimension(TContent fundDimensionContent);

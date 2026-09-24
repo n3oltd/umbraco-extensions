@@ -9,14 +9,12 @@ namespace N3O.Umbraco.Lookups;
 
 public abstract class LookupsCollection<T> : ILookupsCollection<T> where T : ILookup {
     private DateTime _nextReloadAt = DateTime.MinValue;
-    private Dictionary<string, T> _idDictionary;
-    private Dictionary<string, IReadOnlyList<T>> _nameDictionary;
-    private IReadOnlyList<T> _all;
-    
+    private Snapshot _snapshot;
+
     public virtual async Task<T> FindByIdAsync(string id, CancellationToken cancellationToken = default) {
-        await EnsureLoadedAsync(cancellationToken);
-        
-        _idDictionary.TryGetValue(id, out var lookup);
+        var snapshot = await GetSnapshotAsync(cancellationToken);
+
+        snapshot.IdDictionary.TryGetValue(id, out var lookup);
 
         return lookup;
     }
@@ -26,20 +24,20 @@ public abstract class LookupsCollection<T> : ILookupsCollection<T> where T : ILo
         if (!typeof(T).ImplementsInterface<INamedLookup>()) {
             throw new Exception($"{typeof(T).GetFriendlyName()} does not implement {nameof(INamedLookup)} so cannot be searched by name");
         }
-        
-        await EnsureLoadedAsync(cancellationToken);
-        
-        _nameDictionary.TryGetValue(name, out var lookups);
+
+        var snapshot = await GetSnapshotAsync(cancellationToken);
+
+        snapshot.NameDictionary.TryGetValue(name, out var lookups);
 
         return lookups.OrEmpty();
     }
-    
+
     async Task<ILookup> ILookupsCollection.FindByIdAsync(string id, CancellationToken cancellationToken) {
         var lookup = await FindByIdAsync(id, cancellationToken);
 
         return lookup;
     }
-    
+
     async Task<IEnumerable<ILookup>> ILookupsCollection.FindByNameAsync(string name,
                                                                         CancellationToken cancellationToken) {
         var lookups = await FindByNameAsync(name, cancellationToken);
@@ -54,36 +52,62 @@ public abstract class LookupsCollection<T> : ILookupsCollection<T> where T : ILo
     }
 
     public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default) {
-        await EnsureLoadedAsync(cancellationToken);
+        var snapshot = await GetSnapshotAsync(cancellationToken);
 
-        return _all;
+        return snapshot.All;
     }
-    
-    private async Task EnsureLoadedAsync(CancellationToken cancellationToken) {
-        if (DateTime.UtcNow > _nextReloadAt) {
+
+    private async Task<Snapshot> GetSnapshotAsync(CancellationToken cancellationToken) {
+        if (DateTime.UtcNow <= _nextReloadAt) {
+            return _snapshot;
+        } else if (CanReload()) {
             var all = await LoadAllAsync(cancellationToken);
 
             Reload(all);
 
             _nextReloadAt = DateTime.UtcNow.Add(ReloadInterval);
+
+            return _snapshot;
+        } else if (_snapshot != null) {
+            return _snapshot;
+        } else {
+            var all = await LoadAllAsync(cancellationToken);
+
+            return new Snapshot(all);
         }
     }
-    
+
+    protected virtual bool CanReload() {
+        return true;
+    }
+
     protected abstract Task<IReadOnlyList<T>> LoadAllAsync(CancellationToken cancellationToken);
 
-    protected void Reload(IEnumerable<T> all) {
-        _all = all.OrEmpty().ToList();
-        _idDictionary = _all.ToDictionary(x => x.Id,
-                                          x => x,
-                                          StringComparer.InvariantCultureIgnoreCase);
-
-        if (typeof(T).ImplementsInterface<INamedLookup>()) {
-            _nameDictionary = _all.GroupBy(x => ((INamedLookup) x).Name.ToLowerInvariant())
-                                  .ToDictionary(x => x.Key,
-                                                x => (IReadOnlyList<T>) x.ToList(),
-                                                StringComparer.InvariantCultureIgnoreCase);
-        }
+    protected void MarkStale() {
+        _nextReloadAt = DateTime.MinValue;
     }
-    
+
+    protected void Reload(IEnumerable<T> all) {
+        _snapshot = new Snapshot(all);
+    }
+
     protected virtual TimeSpan ReloadInterval => TimeSpan.FromMinutes(5);
+
+    private class Snapshot {
+        public Snapshot(IEnumerable<T> all) {
+            All = all.OrEmpty().ToList();
+            IdDictionary = All.ToDictionary(x => x.Id, x => x, StringComparer.InvariantCultureIgnoreCase);
+
+            if (typeof(T).ImplementsInterface<INamedLookup>()) {
+                NameDictionary = All.GroupBy(x => ((INamedLookup) x).Name.ToLowerInvariant())
+                                    .ToDictionary(x => x.Key,
+                                                  x => (IReadOnlyList<T>) x.ToList(),
+                                                  StringComparer.InvariantCultureIgnoreCase);
+            }
+        }
+
+        public IReadOnlyList<T> All { get; }
+        public Dictionary<string, T> IdDictionary { get; }
+        public Dictionary<string, IReadOnlyList<T>> NameDictionary { get; }
+    }
 }
