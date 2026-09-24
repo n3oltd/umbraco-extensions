@@ -26,6 +26,7 @@ public class HostingComposer : Composer {
         builder.Services.AddTransient<IConfigureOptions<MvcOptions>, OurCacheProfileOptions>();
         builder.Services.AddTransient<IConfigureOptions<RequestLocalizationOptions>, OurRequestLocalizationOptions>();
         builder.Services.AddScoped<IActionLinkGenerator, ActionLinkGenerator>();
+        builder.Services.AddSingleton<StaticFileCachePolicy>();
         
         builder.Services.AddScoped<CookiesMiddleware>();
         builder.Services.AddScoped<NotFoundCacheControlMiddleware>();
