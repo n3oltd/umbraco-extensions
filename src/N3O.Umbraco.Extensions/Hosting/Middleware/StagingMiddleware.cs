@@ -59,13 +59,13 @@ public class StagingMiddleware : IMiddleware {
                 var remoteIp = Normalise(_remoteIpAddressAccessor.Value.GetRemoteIpAddress());
                 var lockOutKey = GetLockOutKey(remoteIp);
 
-                if (IsBlocked(lockOutKey)) {
+                if (IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
+                    FailedLogins.Remove(lockOutKey);
+                } else if (IsBlocked(lockOutKey)) {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    
-                    return;
-                }
 
-                if (IsAuthorized(context, stagingSettings, remoteIp)) {
+                    return;
+                } else if (HasValidCredentials(context, stagingSettings)) {
                     FailedLogins.Remove(lockOutKey);
                 } else {
                     LogFailure(lockOutKey);
@@ -113,13 +113,12 @@ public class StagingMiddleware : IMiddleware {
     }
 
     private void LogFailure(string lockOutKey) {
-        var failedCount = FailedLogins.GetOrCreate(lockOutKey, c => {
-            c.SlidingExpiration = LockOutPeriod;
+        var failedCount = FailedLogins.Get<int>(lockOutKey);
+        var entryOptions = new MemoryCacheEntryOptions();
+        entryOptions.SlidingExpiration = LockOutPeriod;
 
-            return 0;
-        });
-
-        FailedLogins.Set(lockOutKey, failedCount + 1);
+        // Set replaces the whole entry, so an entry written without these options never expires.
+        FailedLogins.Set(lockOutKey, failedCount + 1, entryOptions);
     }
 
     private bool IsAllowed(IPAddress remoteIp, string ruleIpAddress) {
@@ -132,24 +131,26 @@ public class StagingMiddleware : IMiddleware {
         }
     }
 
-    private bool IsAuthorized(HttpContext context, StagingSettingsContent stagingSettings, IPAddress remoteIp) {
-        var isAuthorized = false;
-
+    private bool IsAllowedWithoutCredentials(HttpContext context,
+                                             StagingSettingsContent stagingSettings,
+                                             IPAddress remoteIp) {
         if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress))) {
-            isAuthorized = true;
-        } else if (IsSignedIntoBackOffice(context)) {
-            isAuthorized = true;
+            return true;
         } else {
-            string header = context.Request.Headers["Authorization"];
-
-            if (TryReadBasicCredentials(header, out var username, out var password) &&
-                username.EqualsInvariant(stagingSettings.Username) &&
-                password == stagingSettings.Password) {
-                isAuthorized = true;
-            }
+            return IsSignedIntoBackOffice(context);
         }
+    }
 
-        return isAuthorized;
+    private bool HasValidCredentials(HttpContext context, StagingSettingsContent stagingSettings) {
+        string header = context.Request.Headers["Authorization"];
+
+        if (TryReadBasicCredentials(header, out var username, out var password) &&
+            username.EqualsInvariant(stagingSettings.Username) &&
+            password == stagingSettings.Password) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private bool TryReadBasicCredentials(string header, out string username, out string password) {
