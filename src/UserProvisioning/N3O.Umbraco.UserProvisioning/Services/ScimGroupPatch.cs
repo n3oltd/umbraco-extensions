@@ -45,8 +45,7 @@ public static class ScimGroupPatch {
         return externalId;
     }
 
-    // The members an operation names, which is not the same as the members that change: naming one the
-    // group already holds is still a claim, and a claim that is never recorded is never carried
+    // Not the members that change: naming one the group already holds is a claim to record all the same
     public static ISet<Guid> Named(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
         var named = new HashSet<Guid>();
 
