@@ -106,6 +106,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
     private async Task<IReadOnlyList<BackOfficeUserGroup>> GetAllAsync() {
         var groups = new List<BackOfficeUserGroup>();
+        var mapped = new List<(UserProvisioningGroup Group, IUserGroup UserGroup)>();
+        var states = new Dictionary<string, ScimGroupState>();
 
         foreach (var group in _settings.UserGroups.OrderBy(x => x.DisplayName)) {
             var userGroup = _userService.GetUserGroupByAlias(group.Alias);
@@ -119,7 +121,20 @@ public class UserGroupStore : IScimStore<ScimGroup> {
                 continue;
             }
 
-            groups.Add(Map(group.DisplayName, userGroup, await _state.GetGroupAsync(Identify(group.DisplayName))));
+            states[group.DisplayName] = await _state.GetGroupAsync(Identify(group.DisplayName));
+            mapped.Add((group, userGroup));
+        }
+
+        // A member nobody claims is inherited on every read rather than written into a record, so
+        // that changing which directory groups feed a user group re-decides it instead of stranding
+        // the people the old configuration had already accounted for
+        foreach (var (group, userGroup) in mapped) {
+            var claimed = _settings.UserGroups
+                                   .Where(x => x.Alias.Is(group.Alias))
+                                   .SelectMany(x => states.GetValueOrDefault(x.DisplayName)?.Members ?? [])
+                                   .ToHashSet();
+
+            groups.Add(Map(group.DisplayName, userGroup, states[group.DisplayName], claimed));
         }
 
         return groups;
@@ -147,18 +162,23 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     // does the members it was given are taken to be the ones already there. Reading it as "nobody"
     // would hide every existing member, and a removal for someone the endpoint cannot see is
     // answered successfully without disabling them
-    private BackOfficeUserGroup Map(string displayName, IUserGroup userGroup, ScimGroupState state) {
+    private BackOfficeUserGroup Map(string displayName,
+                                    IUserGroup userGroup,
+                                    ScimGroupState state,
+                                    ISet<Guid> claimed) {
         var holders = _userService.GetAllInGroup(userGroup.Id)
                                   .Where(x => x.Id != UmbracoConstants.Security.SuperUserId)
                                   .Where(x => _settings.Governs(x.Username))
                                   .ToList();
 
-        var asserted = state?.Members.ToHashSet() ?? Inherited(userGroup.Alias, holders);
+        var asserted = state?.Members.ToHashSet() ?? [];
+        var reported = asserted.Concat(Inherited(userGroup.Alias, holders, claimed)).ToHashSet();
 
-        var members = holders.Where(x => asserted.Contains(x.Key)).Select(UserStore.Map).ToList();
+        var members = holders.Where(x => reported.Contains(x.Key)).Select(UserStore.Map).ToList();
 
         var group = new BackOfficeUserGroup();
         group.Alias = userGroup.Alias;
+        group.Asserted = asserted.ToList();
         group.DisplayName = displayName;
         group.ExternalId = state?.ExternalId;
         group.Id = Identify(displayName);
@@ -181,14 +201,16 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     }
 
     // Members already in the Umbraco group predate any record of who put them there. Where one
-    // directory group feeds it they can only have come from that one, so they are taken as its
-    // members and a leaver can still be found and removed. Where several feed it there is nothing to
-    // tell them apart, and guessing would let one group hold a member the directory never gave it and
+    // directory group feeds it they can only have come from that one, so they are read as its members
+    // and a leaver can still be found and removed. Where several feed it there is nothing to tell
+    // them apart, and claiming them would let one group hold a member the directory never gave it and
     // block their removal from the group that did
-    private ISet<Guid> Inherited(string alias, IEnumerable<IUser> holders) {
-        var feeders = _settings.UserGroups.Count(x => x.Alias.Is(alias));
+    private ISet<Guid> Inherited(string alias, IEnumerable<IUser> holders, ISet<Guid> claimed) {
+        if (_settings.UserGroups.Count(x => x.Alias.Is(alias)) != 1) {
+            return new HashSet<Guid>();
+        }
 
-        return feeders == 1 ? holders.Select(x => x.Key).ToHashSet() : new HashSet<Guid>();
+        return holders.Select(x => x.Key).Where(x => !claimed.Contains(x)).ToHashSet();
     }
 
     private async Task<ISet<Guid>> OtherAssertionsAsync(BackOfficeUserGroup group) {
@@ -249,7 +271,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
         // Recorded last. A save that fails leaves the record saying the member is still there, so the
         // next attempt sees them and can try again; recording first would hide them from every read
-        await _state.UpdateGroupAsync(group.Id, x => x.SetMembers(wanted));
+        await _state.UpdateGroupAsync(group.Id,
+                                      x => x.SetMembers(group.Asserted.Concat(added).Except(removed)));
 
         DisableUngoverned(UserStore.GetAll(_userService).Where(x => dropped.Contains(x.Key)));
     }

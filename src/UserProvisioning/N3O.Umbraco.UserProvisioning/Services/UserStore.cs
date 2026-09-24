@@ -1,9 +1,11 @@
+using AsyncKeyedLock;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Entities;
 using N3O.Umbraco.UserProvisioning.Exceptions;
 using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Filters;
 using N3O.Umbraco.UserProvisioning.Models;
+using N3O.Umbraco.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,11 +22,16 @@ namespace N3O.Umbraco.UserProvisioning.Services;
 public class UserStore : IScimStore<ScimUser> {
     private const int PageSize = 500;
 
+    private readonly AsyncKeyedLocker<string> _locker;
     private readonly UserProvisioningSettings _settings;
     private readonly IScimState _state;
     private readonly IUserService _userService;
 
-    public UserStore(UserProvisioningSettings settings, IScimState state, IUserService userService) {
+    public UserStore(AsyncKeyedLocker<string> locker,
+                     UserProvisioningSettings settings,
+                     IScimState state,
+                     IUserService userService) {
+        _locker = locker;
         _settings = settings;
         _state = state;
         _userService = userService;
@@ -67,9 +74,11 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task DeleteAsync(string id) {
-        var user = await GetRequiredAsync(id);
+        await MutateAsync(id, user => {
+            SetActive(user, false);
 
-        SetActive(user, false);
+            return Task.FromResult<ScimUser>(null);
+        });
     }
 
     public async Task<ScimUser> GetAsync(string id) {
@@ -108,6 +117,15 @@ public class UserStore : IScimStore<ScimUser> {
         return backOfficeUser;
     }
 
+    // Read, decide and write are one step for a user as they are for a group: the identity provider
+    // patches the same user more than once in a cycle, and a change read before another's write is
+    // lost when it saves
+    private async Task<ScimUser> MutateAsync(string id, Func<IUser, Task<ScimUser>> mutate) {
+        using (await _locker.LockAsync(LockKey.Generate<UserStore>(id))) {
+            return await mutate(await GetRequiredAsync(id));
+        }
+    }
+
     private async Task<ScimUser> ReadAsync(IUser user) {
         return ToScim(Map(user, await _state.GetUserAsync(user.Key)));
     }
@@ -133,37 +151,37 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
-        var user = await GetRequiredAsync(id);
+        return await MutateAsync(id, async user => {
+            var externalId = ScimGroupPatch.ReadExternalId(operations);
+            var original = ToScim(Map(user));
+            var patched = ToScim(Map(user));
 
-        var externalId = ScimGroupPatch.ReadExternalId(operations);
-        var original = ToScim(Map(user));
-        var patched = ToScim(Map(user));
+            foreach (var operation in operations.OrEmpty()) {
+                ScimUserPatch.Apply(patched, operation);
+            }
 
-        foreach (var operation in operations.OrEmpty()) {
-            ScimUserPatch.Apply(patched, operation);
-        }
+            // Name parts are derived from the stored name on every read, so an unchanged name would
+            // otherwise outrank a displayName the patch did change
+            if (Unchanged(original.Name, patched.Name) && !Same(original.DisplayName, patched.DisplayName)) {
+                patched.Name = null;
+            }
 
-        // Name parts are derived from the stored name on every read, so an unchanged name would
-        // otherwise outrank a displayName the patch did change
-        if (Unchanged(original.Name, patched.Name) && !Same(original.DisplayName, patched.DisplayName)) {
-            patched.Name = null;
-        }
+            if (externalId.HasValue()) {
+                patched.ExternalId = externalId;
+            }
 
-        if (externalId.HasValue()) {
-            patched.ExternalId = externalId;
-        }
+            await RecordAsync(user.Key, patched);
 
-        await RecordAsync(user.Key, patched);
-
-        return await ApplyAsync(user, patched);
+            return await ApplyAsync(user, patched);
+        });
     }
 
     public async Task<ScimUser> ReplaceAsync(ScimUser resource) {
-        var user = await GetRequiredAsync(resource.Id);
+        return await MutateAsync(resource.Id, async user => {
+            await RecordAsync(user.Key, resource);
 
-        await RecordAsync(user.Key, resource);
-
-        return await ApplyAsync(user, resource);
+            return await ApplyAsync(user, resource);
+        });
     }
 
     private async Task<ScimUser> ApplyAsync(IUser user, ScimUser resource) {
