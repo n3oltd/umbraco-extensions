@@ -164,7 +164,7 @@ public class StagingMiddleware : IMiddleware {
             return false;
         }
 
-        var usernameAndPassword = Encoding.UTF8.GetString(decoded, 0, decodedLength).Split(':');
+        var usernameAndPassword = Encoding.UTF8.GetString(decoded, 0, decodedLength).Split(':', 2);
 
         if (usernameAndPassword.Length < 2) {
             return false;
