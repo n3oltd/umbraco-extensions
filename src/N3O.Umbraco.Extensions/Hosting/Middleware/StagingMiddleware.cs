@@ -112,7 +112,6 @@ public class StagingMiddleware : IMiddleware {
         var entryOptions = new MemoryCacheEntryOptions();
         entryOptions.AbsoluteExpirationRelativeToNow = LockOutPeriod;
 
-        // Set replaces the whole entry, so an entry written without these options never expires.
         FailedLogins.Set(lockOutKey, failedCount + 1, entryOptions);
     }
 
