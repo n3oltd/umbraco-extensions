@@ -12,3 +12,10 @@ found.
 `CmsStartup` exposes `ConfigureEndpoints`, `ConfigureMiddleware` and `ConfigureStaticFiles` for a
 site to override, and serves readiness on `/healthz` and liveness on `/livez`, each filtered by the
 health check tag of the same name.
+
+`ConfigureStaticFiles` receives the options that serve every static file outside `/media`, after the
+default cache policy is set on them, so an override can change or replace it. The policy caches a
+file as immutable for a year when its `v` query value matches the file's current version hash, as
+`asp-append-version` writes it. Otherwise it sends `Cache-Control: no-cache`, so browsers
+revalidate, except for requests that carry Umbraco's own `umb__rnd` cache buster, which it leaves
+alone.
