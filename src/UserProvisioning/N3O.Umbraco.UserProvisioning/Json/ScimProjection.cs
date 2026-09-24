@@ -43,8 +43,6 @@ public static class ScimProjection {
         return json.Properties().FirstOrDefault(x => x.Name.Is(name));
     }
 
-    // A path names an attribute and optionally one sub-attribute, and may carry the schema URN it
-    // belongs to, which is the part before the last colon
     private static IReadOnlyList<string> Parse(string path) {
         var qualified = path.LastIndexOf(':');
 

@@ -179,8 +179,6 @@ public class ScimMiddleware : IMiddleware {
         }
     }
 
-    // A client says what it does not want returned in the query string, so a log without it cannot
-    // explain the answer that was given
     private static string Target(HttpContext context) {
         return $"{context.Request.Path}{context.Request.QueryString}";
     }

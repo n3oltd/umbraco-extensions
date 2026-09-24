@@ -125,9 +125,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             mapped.Add((group, userGroup));
         }
 
-        // A member nobody claims is inherited on every read rather than written into a record, so
-        // that changing which directory groups feed a user group re-decides it instead of stranding
-        // the people the old configuration had already accounted for
+        // Decided on every read, so that changing which directory groups feed a user group re-decides
+        // who is inherited rather than leaving the previous answer written down
         foreach (var (group, userGroup) in mapped) {
             var claimed = _settings.UserGroups
                                    .Where(x => x.Alias.Is(group.Alias))
@@ -150,18 +149,14 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return group;
     }
 
-    // Visibility now survives leaving every group, so the test for disabling is the groups
-    // themselves rather than whether the endpoint can still read the user
+    // A user the endpoint can still read may hold no mapped group at all, so this is the test for
+    // disabling rather than whether they are visible
     private bool HoldsMappedGroup(IUser user) {
         return user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
     }
 
-    // Membership is what the directory asserted for this group, not everyone holding the Umbraco
-    // group, because two directory groups may map to one alias and each owns only its own members.
-    // No record at all is not an empty record: it means the directory has never said, and until it
-    // does the members it was given are taken to be the ones already there. Reading it as "nobody"
-    // would hide every existing member, and a removal for someone the endpoint cannot see is
-    // answered successfully without disabling them
+    // Members are the ones this directory group was given, not everyone holding the Umbraco group,
+    // because two directory groups may map to one alias and each owns only its own
     private BackOfficeUserGroup Map(string displayName,
                                     IUserGroup userGroup,
                                     ScimGroupState state,
@@ -187,9 +182,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return group;
     }
 
-    // The membership to write is decided from a read of the membership held, so the lock has to span
-    // both. It is taken on the Umbraco group rather than the directory group, because two directory
-    // groups may share one and each decides whether to keep the membership by reading the other
+    // The membership to write is decided from the membership read, so the lock spans both. It is
+    // taken on the Umbraco group because two directory groups sharing one decide by reading each other
     private async Task<ScimGroup> MutateAsync(string id, Func<BackOfficeUserGroup, Task> mutate) {
         var alias = _settings.UserGroups.FirstOrDefault(x => Identify(x.DisplayName).Is(id))?.Alias ?? id;
 
@@ -200,11 +194,9 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         }
     }
 
-    // Members already in the Umbraco group predate any record of who put them there. Where one
-    // directory group feeds it they can only have come from that one, so they are read as its members
-    // and a leaver can still be found and removed. Where several feed it there is nothing to tell
-    // them apart, and claiming them would let one group hold a member the directory never gave it and
-    // block their removal from the group that did
+    // Members nobody claims predate any record of who put them there. With one feeding directory group
+    // they can only have come from it, and a leaver has to be readable to be removed; with several,
+    // claiming a member one was never given blocks their removal from the group that was
     private ISet<Guid> Inherited(string alias, IEnumerable<IUser> holders, ISet<Guid> claimed) {
         if (_settings.UserGroups.Count(x => x.Alias.Is(alias)) != 1) {
             return new HashSet<Guid>();
@@ -269,8 +261,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             _userService.Save(user);
         }
 
-        // Recorded last. A save that fails leaves the record saying the member is still there, so the
-        // next attempt sees them and can try again; recording first would hide them from every read
+        // Recorded last: a save that fails leaves the member in the record, so the next attempt can
+        // still see them. Recording first hides them from every read and the retry does nothing
         await _state.UpdateGroupAsync(group.Id,
                                       x => x.SetMembers(group.Asserted.Concat(added).Except(removed)));
 

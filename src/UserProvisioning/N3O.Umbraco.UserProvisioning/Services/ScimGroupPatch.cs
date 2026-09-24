@@ -22,8 +22,7 @@ public static class ScimGroupPatch {
         return operation.Value is JObject json && json.Property("members") != null;
     }
 
-    // The identity provider writes its own key for the group and re-sends it on every cycle until a
-    // read gives it back, so the value has to be taken off the patch and kept
+    // An identity provider re-sends its own key every cycle until a read gives it back
     public static string ReadExternalId(IEnumerable<ScimPatchOperation> operations) {
         string externalId = null;
 
@@ -64,8 +63,7 @@ public static class ScimGroupPatch {
                 throw ScimException.InvalidPath("A member cannot be patched one sub-attribute at a time");
             }
 
-            // RFC 7644 3.5.2.1 requires a value on add and replace, and without this a replace deletes
-            // the members its path selects and puts nothing back
+            // Without this a replace deletes the members its path selects and puts nothing back
             if (!op.Is("remove") && Absent(operation.Value)) {
                 throw ScimException.InvalidValue($"A {op.ToLowerInvariant()} of members requires a value");
             }
@@ -75,8 +73,7 @@ public static class ScimGroupPatch {
             if (op.Is("add")) {
                 members.UnionWith(keys);
             } else if (op.Is("replace") && Selects(operation)) {
-                // A filter selects the records to replace, so the rest of the membership is not part
-                // of the operation and must survive it
+                // A filter selects the records to replace, so the rest of the membership survives
                 if (!keys.Any()) {
                     throw ScimException.NoTarget("No member of this group matches the path");
                 }
@@ -89,8 +86,8 @@ public static class ScimGroupPatch {
             } else if (NamesNobody(operation)) {
                 members.Clear();
             } else if (keys.Any() || Selects(operation)) {
-                // RFC 7644 3.5.2.2 requires success when a member named for removal is not held, and
-                // the same removal arrives more than once, so refusing would fail the cycle
+                // The same removal arrives more than once, so refusing one that matches nobody fails
+                // every cycle that removes anyone
                 members.ExceptWith(keys);
             } else {
                 throw ScimException.InvalidValue("The members to remove could not be read from the patch");
@@ -100,8 +97,7 @@ public static class ScimGroupPatch {
         return members;
     }
 
-    // Newtonsoft binds an explicit JSON null to a token rather than to a C# null, and the two mean
-    // the same thing to a client
+    // Newtonsoft binds an explicit JSON null to a token rather than to a C# null
     private static bool Absent(JToken value) {
         return value == null || value.Type == JTokenType.Null;
     }
@@ -129,8 +125,7 @@ public static class ScimGroupPatch {
     private static bool NamesNobody(ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 
-        // An absent value means the whole attribute; an explicit null is not the same thing and is
-        // refused rather than read as "remove everyone"
+        // An absent value names the whole attribute; an explicit null does not, and is refused
         return operation.Value == null && path != null && path.ValueFilter == null;
     }
 

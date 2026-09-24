@@ -52,8 +52,8 @@ public class UserStore : IScimStore<ScimUser> {
             throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
 
-        // No group is assigned here. Which groups a user belongs to is the directory's to say, and
-        // granting one so the user can be read back would grant access the directory never asked for
+        // No group is assigned: granting one so the user can be read back grants access the directory
+        // never asked for, and nothing later takes it away
         var user = _userService.CreateUserWithIdentity(email, email);
         user.IsApproved = resource.Active ?? true;
         user.Name = GetName(resource, email);
@@ -101,8 +101,7 @@ public class UserStore : IScimStore<ScimUser> {
         return Map(user, null);
     }
 
-    // Umbraco holds one name, so the parts the directory sent are kept alongside it rather than
-    // recovered by splitting, which cannot tell a double-barrelled surname from a middle name
+    // Umbraco holds one name, so the parts are kept as sent rather than recovered by splitting it
     public static BackOfficeUser Map(IUser user, ScimUserState state) {
         var backOfficeUser = new BackOfficeUser();
         backOfficeUser.Active = user.IsApproved;
@@ -117,9 +116,7 @@ public class UserStore : IScimStore<ScimUser> {
         return backOfficeUser;
     }
 
-    // Read, decide and write are one step for a user as they are for a group: the identity provider
-    // patches the same user more than once in a cycle, and a change read before another's write is
-    // lost when it saves
+    // One user is patched more than once in a cycle, and a change read before another's write is lost
     private async Task<ScimUser> MutateAsync(string id, Func<IUser, Task<ScimUser>> mutate) {
         using (await _locker.LockAsync(LockKey.Generate<UserStore>(id))) {
             return await mutate(await GetRequiredAsync(id));
@@ -258,8 +255,8 @@ public class UserStore : IScimStore<ScimUser> {
         return user;
     }
 
-    // Scoping to a governed domain is what keeps users created by hand outside the directory's
-    // reach; a user the directory created is its own whether or not it has put them in a group yet
+    // The governed domain is what keeps users created by hand outside the directory's reach; one the
+    // directory created is its own whether or not it has been put in a group yet
     private bool IsGoverned(IUser user, bool provisioned) {
         return _settings.Governs(user.Username) &&
                (provisioned || user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias))));

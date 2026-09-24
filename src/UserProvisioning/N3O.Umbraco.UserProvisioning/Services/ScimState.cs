@@ -55,8 +55,6 @@ public class ScimState : IScimState {
                                        CancellationToken cancellationToken = default) {
         var id = Identify(groupId);
 
-        // The identity provider sends several operations against one group within the same second, so
-        // the read, the change and the write have to be one atomic step or the last writer wins
         using (await _locker.LockAsync(LockKey.Generate<ScimState>(id.ToString()), cancellationToken)) {
             var state = await _groups.GetAsync(id, cancellationToken);
 
