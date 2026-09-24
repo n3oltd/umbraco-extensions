@@ -50,6 +50,8 @@ public abstract class CmsStartup {
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+        app.UseMiddleware<NotFoundCacheControlMiddleware>();
+
         if (env.IsProduction()) {
             app.UseHsts();
         } else {

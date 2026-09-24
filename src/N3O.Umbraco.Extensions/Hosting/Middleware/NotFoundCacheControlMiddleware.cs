@@ -6,12 +6,12 @@ namespace N3O.Umbraco.Hosting;
 
 public class NotFoundCacheControlMiddleware : IMiddleware {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next) {
-        context.Response.OnStarting(() => PreventCaching(context.Response));
+        context.Response.OnStarting(() => PreventCachingAsync(context.Response));
 
         await next(context);
     }
 
-    private Task PreventCaching(HttpResponse response) {
+    private Task PreventCachingAsync(HttpResponse response) {
         if (response.StatusCode == StatusCodes.Status404NotFound &&
             !response.Headers.ContainsKey(HeaderNames.CacheControl)) {
             response.Headers.CacheControl = "no-store";

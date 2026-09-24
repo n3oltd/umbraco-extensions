@@ -48,7 +48,6 @@ public class HostingComposer : Composer {
             }
 
             AddMiddleware<CookiesMiddleware>(opt);
-            AddMiddleware<NotFoundCacheControlMiddleware>(opt);
             AddMiddleware<WellKnownFolderMiddleware>(opt);
             
             ConfigureCors(opt);
