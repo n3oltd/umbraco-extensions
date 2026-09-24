@@ -22,6 +22,30 @@ public static class ScimGroupPatch {
         return operation.Value is JObject json && json.Property("members") != null;
     }
 
+    // The identity provider writes its own key for the group and re-sends it on every cycle until a
+    // read gives it back, so the value has to be taken off the patch and kept
+    public static string ReadExternalId(IEnumerable<ScimPatchOperation> operations) {
+        string externalId = null;
+
+        foreach (var operation in operations.OrEmpty()) {
+            var op = operation.Op ?? "";
+
+            if (!op.Is("add") && !op.Is("replace")) {
+                continue;
+            }
+
+            var path = ScimPath.Parse(operation.Path);
+
+            if (path != null && path.Is("externalId")) {
+                externalId = operation.Value?.Value<string>();
+            } else if (path == null && operation.Value is JObject json) {
+                externalId = json.Value<string>("externalId") ?? externalId;
+            }
+        }
+
+        return externalId;
+    }
+
     public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
         return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
     }
@@ -36,9 +60,13 @@ public static class ScimGroupPatch {
                 throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
             }
 
+            if (NamesSubAttribute(operation)) {
+                throw ScimException.InvalidPath("A member cannot be patched one sub-attribute at a time");
+            }
+
             // RFC 7644 3.5.2.1 requires a value on add and replace, and without this a replace deletes
             // the members its path selects and puts nothing back
-            if (!op.Is("remove") && operation.Value == null) {
+            if (!op.Is("remove") && Absent(operation.Value)) {
                 throw ScimException.InvalidValue($"A {op.ToLowerInvariant()} of members requires a value");
             }
 
@@ -72,6 +100,12 @@ public static class ScimGroupPatch {
         return members;
     }
 
+    // Newtonsoft binds an explicit JSON null to a token rather than to a C# null, and the two mean
+    // the same thing to a client
+    private static bool Absent(JToken value) {
+        return value == null || value.Type == JTokenType.Null;
+    }
+
     private static ScimAttributes Describe(BackOfficeUser member) {
         return new ScimAttributes().Add("display", member.Name)
                                    .Add("type", "User")
@@ -86,14 +120,18 @@ public static class ScimGroupPatch {
         return ScimPath.Parse(operation.Path)?.ValueFilter != null;
     }
 
+    private static bool NamesSubAttribute(ScimPatchOperation operation) {
+        var path = ScimPath.Parse(operation.Path);
+
+        return path != null && (path.Attribute.Elements.Length > 1 || path.SubAttribute.HasValue());
+    }
+
     private static bool NamesNobody(ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 
-        return operation.Value == null &&
-               path != null &&
-               path.ValueFilter == null &&
-               path.Attribute.Elements.Length == 1 &&
-               !path.SubAttribute.HasValue();
+        // An absent value means the whole attribute; an explicit null is not the same thing and is
+        // refused rather than read as "remove everyone"
+        return operation.Value == null && path != null && path.ValueFilter == null;
     }
 
     private static ISet<Guid> ParseKeys(IEnumerable<string> values) {

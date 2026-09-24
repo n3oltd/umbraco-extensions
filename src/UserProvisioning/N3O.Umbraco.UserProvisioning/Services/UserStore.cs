@@ -1,4 +1,5 @@
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.UserProvisioning.Entities;
 using N3O.Umbraco.UserProvisioning.Exceptions;
 using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Filters;
@@ -20,14 +21,16 @@ public class UserStore : IScimStore<ScimUser> {
     private const int PageSize = 500;
 
     private readonly UserProvisioningSettings _settings;
+    private readonly IScimState _state;
     private readonly IUserService _userService;
 
-    public UserStore(UserProvisioningSettings settings, IUserService userService) {
+    public UserStore(UserProvisioningSettings settings, IScimState state, IUserService userService) {
         _settings = settings;
+        _state = state;
         _userService = userService;
     }
 
-    public Task<ScimUser> CreateAsync(ScimUser resource) {
+    public async Task<ScimUser> CreateAsync(ScimUser resource) {
         var email = GetEmail(resource);
 
         if (!email.HasValue()) {
@@ -65,7 +68,9 @@ public class UserStore : IScimStore<ScimUser> {
                                     $"User {email.Quote()} was created but could not be read back");
         }
 
-        return Task.FromResult(ToScim(Map(created)));
+        await RecordAsync(created.Key, resource);
+
+        return await ReadAsync(created);
     }
 
     public Task DeleteAsync(string id) {
@@ -76,24 +81,35 @@ public class UserStore : IScimStore<ScimUser> {
         return Task.CompletedTask;
     }
 
-    public Task<ScimUser> GetAsync(string id) {
-        return Task.FromResult(ToScim(Map(GetRequired(id))));
+    public async Task<ScimUser> GetAsync(string id) {
+        return await ReadAsync(GetRequired(id));
     }
 
-    public Task<ScimListResponse<ScimUser>> ListAsync(ScimQuery query) {
-        var matching = GetGoverned().Select(Map)
+    public async Task<ScimListResponse<ScimUser>> ListAsync(ScimQuery query) {
+        var states = (await _state.GetUsersAsync()).ToDictionary(x => x.Id.Value);
+
+        var matching = GetGoverned().Select(x => Map(x, states.GetValueOrDefault(x.Key)))
                                     .Where(x => query.Filter == null || query.Filter.Matches(Describe(x)))
                                     .OrderBy(x => x.UserName, StringComparer.InvariantCultureIgnoreCase)
                                     .Select(ToScim)
                                     .ToList();
 
-        return Task.FromResult(ScimPaging.Page(matching, query));
+        return ScimPaging.Page(matching, query);
     }
 
     public static BackOfficeUser Map(IUser user) {
+        return Map(user, null);
+    }
+
+    // Umbraco holds one name, so the parts the directory sent are kept alongside it rather than
+    // recovered by splitting, which cannot tell a double-barrelled surname from a middle name
+    public static BackOfficeUser Map(IUser user, ScimUserState state) {
         var backOfficeUser = new BackOfficeUser();
         backOfficeUser.Active = user.IsApproved;
         backOfficeUser.Email = user.Email;
+        backOfficeUser.ExternalId = state?.ExternalId;
+        backOfficeUser.FamilyName = state?.FamilyName;
+        backOfficeUser.GivenName = state?.GivenName;
         backOfficeUser.Id = user.Key.ToString();
         backOfficeUser.Name = user.Name;
         backOfficeUser.UserName = user.Username;
@@ -101,8 +117,34 @@ public class UserStore : IScimStore<ScimUser> {
         return backOfficeUser;
     }
 
-    public Task<ScimUser> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
+    private async Task<ScimUser> ReadAsync(IUser user) {
+        return ToScim(Map(user, await _state.GetUserAsync(user.Key)));
+    }
+
+    private async Task RecordAsync(Guid userKey, ScimUser resource) {
+        var externalId = resource.ExternalId;
+        var familyName = resource.Name?.FamilyName;
+        var givenName = resource.Name?.GivenName;
+
+        if (!externalId.HasValue() && !familyName.HasValue() && !givenName.HasValue()) {
+            return;
+        }
+
+        await _state.UpdateUserAsync(userKey, x => {
+            if (externalId.HasValue()) {
+                x.SetExternalId(externalId);
+            }
+
+            if (familyName.HasValue() || givenName.HasValue()) {
+                x.SetName(givenName, familyName);
+            }
+        });
+    }
+
+    public async Task<ScimUser> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
         var user = GetRequired(id);
+
+        var externalId = ScimGroupPatch.ReadExternalId(operations);
         var original = ToScim(Map(user));
         var patched = ToScim(Map(user));
 
@@ -116,14 +158,24 @@ public class UserStore : IScimStore<ScimUser> {
             patched.Name = null;
         }
 
-        return Task.FromResult(Apply(user, patched));
+        if (externalId.HasValue()) {
+            patched.ExternalId = externalId;
+        }
+
+        await RecordAsync(user.Key, patched);
+
+        return await ApplyAsync(user, patched);
     }
 
-    public Task<ScimUser> ReplaceAsync(ScimUser resource) {
-        return Task.FromResult(Apply(GetRequired(resource.Id), resource));
+    public async Task<ScimUser> ReplaceAsync(ScimUser resource) {
+        var user = GetRequired(resource.Id);
+
+        await RecordAsync(user.Key, resource);
+
+        return await ApplyAsync(user, resource);
     }
 
-    private ScimUser Apply(IUser user, ScimUser resource) {
+    private async Task<ScimUser> ApplyAsync(IUser user, ScimUser resource) {
         var current = Map(user);
 
         var updated = new BackOfficeUser();
@@ -145,7 +197,7 @@ public class UserStore : IScimStore<ScimUser> {
             SetActive(user, updated.Active);
         }
 
-        return ToScim(Map(user));
+        return await ReadAsync(user);
     }
 
     public static IReadOnlyList<IUser> GetAll(IUserService userService) {
@@ -212,6 +264,7 @@ public class UserStore : IScimStore<ScimUser> {
         return new ScimAttributes().Add("active", user.Active)
                                    .Add("displayName", user.Name)
                                    .Add("emails.value", user.Email)
+                                   .Add("externalId", user.ExternalId)
                                    .Add("id", user.Id)
                                    .Add("name.familyName", FamilyName(user.Name))
                                    .Add("name.formatted", user.Name)
@@ -273,9 +326,9 @@ public class UserStore : IScimStore<ScimUser> {
         email.Value = user.Email;
 
         var name = new ScimName();
-        name.FamilyName = FamilyName(user.Name);
+        name.FamilyName = user.FamilyName.HasValue() ? user.FamilyName : FamilyName(user.Name);
         name.Formatted = user.Name;
-        name.GivenName = GivenName(user.Name);
+        name.GivenName = user.GivenName.HasValue() ? user.GivenName : GivenName(user.Name);
 
         var meta = new ScimMeta();
         meta.ResourceType = "User";
@@ -284,6 +337,7 @@ public class UserStore : IScimStore<ScimUser> {
         scimUser.Active = user.Active;
         scimUser.DisplayName = user.Name;
         scimUser.Emails = [email];
+        scimUser.ExternalId = user.ExternalId;
         scimUser.Id = user.Id;
         scimUser.Meta = meta;
         scimUser.Name = name;
