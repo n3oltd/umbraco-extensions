@@ -55,8 +55,14 @@ public class PlatformsPagesReceiver : WebhookReceiver {
     private async Task EvictAsync(string eventType,
                                   WebhookPlatformsPage page,
                                   CancellationToken cancellationToken) {
+        foreach (var affectedPublishedPath in page.OrEmpty(x => x.AffectedPublishedPaths)) {
+            _cdnClient.Evict(affectedPublishedPath);
+        }
+
         if (page == null || !page.HasValue(x => x.PagePublishedPath)) {
-            _logger.LogWarning("{EventType} webhook carried no page published path, so nothing was evicted", eventType);
+            _logger.LogWarning("{EventType} webhook carried no page published path, so the page was not " +
+                               "evicted",
+                               eventType);
 
             return;
         }
@@ -66,6 +72,10 @@ public class PlatformsPagesReceiver : WebhookReceiver {
         }
 
         _cdnClient.Evict(page.PagePublishedPath);
+
+        if (EventTypes.DeletedPlatformsPages.Contains(eventType, true)) {
+            return;
+        }
 
         // The read that follows is served fresh because of the eviction above, and consumes it.
         await EvictMergeModelsAsync(page.PagePublishedPath, cancellationToken);
