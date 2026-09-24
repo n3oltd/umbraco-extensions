@@ -38,15 +38,16 @@ public static class ScimGroupPatch {
 
             var keys = ReadKeys(held, operation);
 
-            // A replace names only the members of the change that produced it rather than the whole
-            // set, so resetting to it empties the group; a member leaving arrives as a remove
-            if (op.Is("add") || op.Is("replace")) {
+            if (op.Is("add")) {
+                members.UnionWith(keys);
+            } else if (op.Is("replace")) {
+                members.Clear();
                 members.UnionWith(keys);
             } else if (NamesNobody(operation)) {
                 members.Clear();
             } else if (keys.Any() || Selects(operation)) {
-                // A filter that matches nobody is a member already gone, and the same removal arrives
-                // more than once, so refusing it would fail every cycle that removes anyone
+                // RFC 7644 3.5.2.2 requires success when a member named for removal is not held, and
+                // the same removal arrives more than once, so refusing would fail the cycle
                 members.ExceptWith(keys);
             } else {
                 throw ScimException.InvalidValue("The members to remove could not be read from the patch");

@@ -70,14 +70,14 @@ public class ScimMiddleware : IMiddleware {
         try {
             await RouteAsync(context, rest.Value.Trim('/'));
         } catch (ScimException ex) {
-            _logger.LogWarning("SCIM {Method} {Path} refused: {Detail}",
+            _logger.LogWarning("SCIM {Method} {Target} refused: {Detail}",
                                context.Request.Method,
-                               context.Request.Path,
+                               Target(context),
                                ex.Message);
 
             await WriteErrorAsync(context, ex);
         } catch (Exception ex) {
-            _logger.LogError(ex, "SCIM {Method} {Path} failed", context.Request.Method, context.Request.Path);
+            _logger.LogError(ex, "SCIM {Method} {Target} failed", context.Request.Method, Target(context));
 
             await WriteErrorAsync(context,
                                   new ScimException(HttpStatusCode.InternalServerError,
@@ -109,20 +109,23 @@ public class ScimMiddleware : IMiddleware {
         var method = context.Request.Method;
 
         if (method.Is("GET") && !id.HasValue()) {
-            await WriteAsync(context, HttpStatusCode.OK, await store.ListAsync(ReadQuery(context)));
+            await WriteAsync(context, HttpStatusCode.OK, Project(context, await store.ListAsync(ReadQuery(context))));
         } else if (method.Is("GET")) {
-            await WriteAsync(context, HttpStatusCode.OK, await store.GetAsync(id));
+            await WriteAsync(context, HttpStatusCode.OK, Project(context, await store.GetAsync(id)));
         } else if (method.Is("POST") && !id.HasValue()) {
-            await WriteAsync(context, HttpStatusCode.Created, await store.CreateAsync(await ReadBodyAsync<T>(context)));
+            var created = await store.CreateAsync(await ReadBodyAsync<T>(context));
+
+            await WriteAsync(context, HttpStatusCode.Created, Project(context, created));
         } else if (method.Is("PUT") && id.HasValue()) {
             var resource = await ReadBodyAsync<T>(context);
             resource.Id = id;
 
-            await WriteAsync(context, HttpStatusCode.OK, await store.ReplaceAsync(resource));
+            await WriteAsync(context, HttpStatusCode.OK, Project(context, await store.ReplaceAsync(resource)));
         } else if (method.Is("PATCH") && id.HasValue()) {
             var request = await ReadBodyAsync<ScimPatchRequest>(context);
+            var patched = await store.PatchAsync(id, request?.Operations);
 
-            await WriteAsync(context, HttpStatusCode.OK, await store.PatchAsync(id, request?.Operations));
+            await WriteAsync(context, HttpStatusCode.OK, Project(context, patched));
         } else if (method.Is("DELETE") && id.HasValue()) {
             await store.DeleteAsync(id);
 
@@ -130,6 +133,12 @@ public class ScimMiddleware : IMiddleware {
         } else {
             throw new ScimException(HttpStatusCode.MethodNotAllowed, $"{method} is not allowed here");
         }
+    }
+
+    private static object Project(HttpContext context, object resource) {
+        return ScimProjection.Apply(resource,
+                                    ScimProjection.Read(context.Request.Query["attributes"]),
+                                    ScimProjection.Read(context.Request.Query["excludedAttributes"]));
     }
 
     private static ScimQuery ReadQuery(HttpContext context) {
@@ -156,9 +165,9 @@ public class ScimMiddleware : IMiddleware {
             }
 
             if (_settings.LogRequests) {
-                _logger.LogInformation("SCIM {Method} {Path} request {Body}",
+                _logger.LogInformation("SCIM {Method} {Target} request {Body}",
                                        context.Request.Method,
-                                       context.Request.Path,
+                                       Target(context),
                                        body);
             }
 
@@ -170,13 +179,19 @@ public class ScimMiddleware : IMiddleware {
         }
     }
 
+    // A client says what it does not want returned in the query string, so a log without it cannot
+    // explain the answer that was given
+    private static string Target(HttpContext context) {
+        return $"{context.Request.Path}{context.Request.QueryString}";
+    }
+
     private async Task WriteAsync(HttpContext context, HttpStatusCode status, object body) {
         var json = ScimJson.Write(body);
 
         if (_settings.LogRequests) {
-            _logger.LogInformation("SCIM {Method} {Path} answered {Status} {Body}",
+            _logger.LogInformation("SCIM {Method} {Target} answered {Status} {Body}",
                                    context.Request.Method,
-                                   context.Request.Path,
+                                   Target(context),
                                    (int) status,
                                    json);
         }
