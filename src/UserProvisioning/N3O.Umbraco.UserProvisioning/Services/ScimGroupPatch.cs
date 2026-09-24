@@ -40,6 +40,15 @@ public static class ScimGroupPatch {
 
             if (op.Is("add")) {
                 members.UnionWith(keys);
+            } else if (op.Is("replace") && Selects(operation)) {
+                // A filter selects the records to replace, so the rest of the membership is not part
+                // of the operation and must survive it
+                if (!keys.Any()) {
+                    throw ScimException.NoTarget("No member of this group matches the path");
+                }
+
+                members.ExceptWith(keys);
+                members.UnionWith(ParseKeys(ReadValues(operation.Value)));
             } else if (op.Is("replace")) {
                 members.Clear();
                 members.UnionWith(keys);
