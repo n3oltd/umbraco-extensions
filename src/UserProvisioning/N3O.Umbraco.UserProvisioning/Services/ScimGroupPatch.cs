@@ -36,6 +36,12 @@ public static class ScimGroupPatch {
                 throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
             }
 
+            // RFC 7644 3.5.2.1 requires a value on add and replace, and without this a replace deletes
+            // the members its path selects and puts nothing back
+            if (!op.Is("remove") && operation.Value == null) {
+                throw ScimException.InvalidValue($"A {op.ToLowerInvariant()} of members requires a value");
+            }
+
             var keys = ReadKeys(held, operation);
 
             if (op.Is("add")) {
@@ -83,7 +89,11 @@ public static class ScimGroupPatch {
     private static bool NamesNobody(ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 
-        return operation.Value == null && path?.ValueFilter == null;
+        return operation.Value == null &&
+               path != null &&
+               path.ValueFilter == null &&
+               path.Attribute.Elements.Length == 1 &&
+               !path.SubAttribute.HasValue();
     }
 
     private static ISet<Guid> ParseKeys(IEnumerable<string> values) {
