@@ -38,14 +38,15 @@ public static class ScimGroupPatch {
 
             var keys = ReadKeys(held, operation);
 
-            if (op.Is("add")) {
-                members.UnionWith(keys);
-            } else if (op.Is("replace")) {
-                members.Clear();
+            // A replace names only the members of the change that produced it rather than the whole
+            // set, so resetting to it empties the group; a member leaving arrives as a remove
+            if (op.Is("add") || op.Is("replace")) {
                 members.UnionWith(keys);
             } else if (NamesNobody(operation)) {
                 members.Clear();
-            } else if (keys.Any()) {
+            } else if (keys.Any() || Selects(operation)) {
+                // A filter that matches nobody is a member already gone, and the same removal arrives
+                // more than once, so refusing it would fail every cycle that removes anyone
                 members.ExceptWith(keys);
             } else {
                 throw ScimException.InvalidValue("The members to remove could not be read from the patch");
@@ -63,6 +64,10 @@ public static class ScimGroupPatch {
 
     private static string Identify(string value, string reference) {
         return value.HasValue() ? value : reference?.Split('/').LastOrDefault();
+    }
+
+    private static bool Selects(ScimPatchOperation operation) {
+        return ScimPath.Parse(operation.Path)?.ValueFilter != null;
     }
 
     private static bool NamesNobody(ScimPatchOperation operation) {
