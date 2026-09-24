@@ -1,4 +1,5 @@
 using N3O.Umbraco.Cloud.Exceptions;
+using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
@@ -30,6 +31,8 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
 
     public async Task<IEnumerable<SitemapEntry>> GetEntriesAsync(CancellationToken cancellationToken = default) {
         var entries = new List<SitemapEntry>();
+
+        _cdnClient.EvictSubscriptionContent(SubscriptionFiles.Campaigns);
 
         var campaigns = await _cdnClient.DownloadPublishedContentAsync<PublishedCampaigns>(PublishedFileKinds.Subscription,
                                                                                           SubscriptionFiles.Campaigns.Filename,
