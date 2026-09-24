@@ -1,3 +1,4 @@
+using AsyncKeyedLock;
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Entities;
@@ -11,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using N3O.Umbraco.Utilities;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models.Membership;
 using Umbraco.Cms.Core.Services;
@@ -20,15 +22,18 @@ using UmbracoConstants = Umbraco.Cms.Core.Constants;
 namespace N3O.Umbraco.UserProvisioning.Services;
 
 public class UserGroupStore : IScimStore<ScimGroup> {
+    private readonly AsyncKeyedLocker<string> _locker;
     private readonly ILogger<UserGroupStore> _logger;
     private readonly UserProvisioningSettings _settings;
     private readonly IScimState _state;
     private readonly IUserService _userService;
 
-    public UserGroupStore(ILogger<UserGroupStore> logger,
+    public UserGroupStore(AsyncKeyedLocker<string> locker,
+                          ILogger<UserGroupStore> logger,
                           UserProvisioningSettings settings,
                           IScimState state,
                           IUserService userService) {
+        _locker = locker;
         _logger = logger;
         _settings = settings;
         _state = state;
@@ -38,16 +43,16 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     // User groups belong to the site, so a create is only ever the provisioning service reconciling
     // one the configuration already names
     public async Task<ScimGroup> CreateAsync(ScimGroup resource) {
-        var group = (await GetAllAsync()).SingleOrDefault(x => x.DisplayName.Is(resource.DisplayName));
+        var named = (await GetAllAsync()).SingleOrDefault(x => x.DisplayName.Is(resource.DisplayName));
 
-        if (group == null) {
+        if (named == null) {
             throw ScimException.InvalidValue($"No user group is mapped to {resource.DisplayName.Quote()}");
         }
 
-        await SetExternalIdAsync(group, resource.ExternalId);
-        await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members));
-
-        return ToScim(await GetRequiredAsync(group.Id));
+        return await MutateAsync(named.Id, async group => {
+            await SetExternalIdAsync(group, resource.ExternalId);
+            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members));
+        });
     }
 
     public Task DeleteAsync(string id) {
@@ -68,27 +73,23 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     }
 
     public async Task<ScimGroup> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
-        var group = await GetRequiredAsync(id);
+        return await MutateAsync(id, async group => {
+            if (operations.OrEmpty().Any() && !operations.Any(ScimGroupPatch.IsMembership)) {
+                _logger.LogWarning("Patch of group {DisplayName} changed no membership; paths were {Paths}",
+                                   group.DisplayName,
+                                   string.Join(", ", operations.Select(x => x.Path ?? "(none)")));
+            }
 
-        if (operations.OrEmpty().Any() && !operations.Any(ScimGroupPatch.IsMembership)) {
-            _logger.LogWarning("Patch of group {DisplayName} changed no membership; paths were {Paths}",
-                               group.DisplayName,
-                               string.Join(", ", operations.Select(x => x.Path ?? "(none)")));
-        }
-
-        await SetExternalIdAsync(group, ScimGroupPatch.ReadExternalId(operations));
-        await SetMembersAsync(group, ScimGroupPatch.Resolve(group.Members, operations));
-
-        return ToScim(await GetRequiredAsync(id));
+            await SetExternalIdAsync(group, ScimGroupPatch.ReadExternalId(operations));
+            await SetMembersAsync(group, ScimGroupPatch.Resolve(group.Members, operations));
+        });
     }
 
     public async Task<ScimGroup> ReplaceAsync(ScimGroup resource) {
-        var group = await GetRequiredAsync(resource.Id);
-
-        await SetExternalIdAsync(group, resource.ExternalId);
-        await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members));
-
-        return ToScim(await GetRequiredAsync(resource.Id));
+        return await MutateAsync(resource.Id, async group => {
+            await SetExternalIdAsync(group, resource.ExternalId);
+            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members));
+        });
     }
 
     // A user leaving every mapped group is a user this endpoint can no longer read, so they are
@@ -141,16 +142,20 @@ public class UserGroupStore : IScimStore<ScimGroup> {
     }
 
     // Membership is what the directory asserted for this group, not everyone holding the Umbraco
-    // group, because two directory groups may map to one alias and each owns only its own members
+    // group, because two directory groups may map to one alias and each owns only its own members.
+    // No record at all is not an empty record: it means the directory has never said, and until it
+    // does the members it was given are taken to be the ones already there. Reading it as "nobody"
+    // would hide every existing member, and a removal for someone the endpoint cannot see is
+    // answered successfully without disabling them
     private BackOfficeUserGroup Map(string displayName, IUserGroup userGroup, ScimGroupState state) {
-        var asserted = state?.Members.ToHashSet() ?? [];
-
-        var members = _userService.GetAllInGroup(userGroup.Id)
+        var holders = _userService.GetAllInGroup(userGroup.Id)
                                   .Where(x => x.Id != UmbracoConstants.Security.SuperUserId)
                                   .Where(x => _settings.Governs(x.Username))
-                                  .Where(x => asserted.Contains(x.Key))
-                                  .Select(UserStore.Map)
                                   .ToList();
+
+        var asserted = state == null ? holders.Select(x => x.Key).ToHashSet() : state.Members.ToHashSet();
+
+        var members = holders.Where(x => asserted.Contains(x.Key)).Select(UserStore.Map).ToList();
 
         var group = new BackOfficeUserGroup();
         group.Alias = userGroup.Alias;
@@ -160,6 +165,17 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         group.Members = members;
 
         return group;
+    }
+
+    // The membership to write is decided from a read of the membership held, so the lock has to span
+    // both. The identity provider sends several operations against one group within the same second,
+    // and a lock taken only around the write would serialise the writes and still lose the decision
+    private async Task<ScimGroup> MutateAsync(string id, Func<BackOfficeUserGroup, Task> mutate) {
+        using (await _locker.LockAsync(LockKey.Generate<UserGroupStore>(id))) {
+            await mutate(await GetRequiredAsync(id));
+
+            return ToScim(await GetRequiredAsync(id));
+        }
     }
 
     private async Task<ISet<Guid>> OtherAssertionsAsync(BackOfficeUserGroup group) {
@@ -189,8 +205,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         var added = wanted.Except(held).ToHashSet();
         var removed = held.Except(wanted).ToHashSet();
 
-        await _state.UpdateGroupAsync(group.Id, x => x.SetMembers(wanted));
-
         if (!added.Any() && !removed.Any()) {
             return;
         }
@@ -219,6 +233,10 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
             _userService.Save(user);
         }
+
+        // Recorded last. A save that fails leaves the record saying the member is still there, so the
+        // next attempt sees them and can try again; recording first would hide them from every read
+        await _state.UpdateGroupAsync(group.Id, x => x.SetMembers(wanted));
 
         DisableUngoverned(UserStore.GetAll(_userService).Where(x => dropped.Contains(x.Key)));
     }
