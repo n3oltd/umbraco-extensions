@@ -38,16 +38,12 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> CreateAsync(ScimUser resource) {
-        Validate(resource);
+        Validate(resource, null);
 
         var email = GetEmail(resource);
 
         if (!email.HasValue()) {
             throw ScimException.InvalidValue("A user requires either userName or a primary email address");
-        }
-
-        if (_userService.GetByEmail(email) != null || _userService.GetByUsername(email) != null) {
-            throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
 
         // No group is assigned: granting one so the user can be read back grants access the directory
@@ -165,7 +161,7 @@ public class UserStore : IScimStore<ScimUser> {
                 patched.ExternalId = externalId;
             }
 
-            Validate(patched);
+            Validate(patched, user);
 
             await RecordAsync(user.Key, patched);
 
@@ -174,9 +170,9 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> ReplaceAsync(ScimUser resource) {
-        Validate(resource);
-
         return await MutateAsync(resource.Id, async user => {
+            Validate(resource, user);
+
             await RecordAsync(user.Key, resource);
 
             return await ApplyAsync(user, resource);
@@ -270,7 +266,7 @@ public class UserStore : IScimStore<ScimUser> {
         _userService.Save(user);
     }
 
-    private void Validate(ScimUser resource) {
+    private void Validate(ScimUser resource, IUser user) {
         if (resource.Emails.OrEmpty().Any(x => x == null)) {
             throw ScimException.InvalidValue("An email cannot be null");
         }
@@ -279,6 +275,16 @@ public class UserStore : IScimStore<ScimUser> {
 
         if (email.HasValue() && !_settings.Governs(email)) {
             throw ScimException.InvalidValue($"Email {email.Quote()} is not in a governed domain");
+        }
+
+        if (!email.HasValue() || email.Is(user?.Email)) {
+            return;
+        }
+
+        var holders = new[] { _userService.GetByEmail(email), _userService.GetByUsername(email) };
+
+        if (holders.Any(x => x != null && x.Key != user?.Key)) {
+            throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
     }
 
