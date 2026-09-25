@@ -124,9 +124,9 @@ public class ScimMiddleware : IMiddleware {
         } else if (method.Is("PATCH") && id.HasValue()) {
             var request = await ReadBodyAsync<ScimPatchRequest>(context);
 
-            ScimPatch.Validate(request?.Operations);
+            ScimPatch.Validate(request.Operations);
 
-            var patched = await store.PatchAsync(id, request?.Operations);
+            var patched = await store.PatchAsync(id, request.Operations);
 
             await WriteAsync(context, HttpStatusCode.OK, Project(context, patched));
         } else if (method.Is("DELETE") && id.HasValue()) {
@@ -175,7 +175,7 @@ public class ScimMiddleware : IMiddleware {
             }
 
             try {
-                return ScimJson.Read<T>(body);
+                return ScimJson.Read<T>(body) ?? throw ScimException.InvalidValue("The request body is null");
             } catch (ScimException) {
                 throw;
             } catch (Exception) {
