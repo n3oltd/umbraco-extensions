@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace N3O.Umbraco.Lookups;
 
 public abstract class LookupsCollection<T> : ILookupsCollection<T> where T : ILookup {
-    private DateTime _nextReloadAt = DateTime.MinValue;
+    private long _generation;
     private Snapshot _snapshot;
 
     public virtual async Task<T> FindByIdAsync(string id, CancellationToken cancellationToken = default) {
@@ -58,22 +58,24 @@ public abstract class LookupsCollection<T> : ILookupsCollection<T> where T : ILo
     }
 
     private async Task<Snapshot> GetSnapshotAsync(CancellationToken cancellationToken) {
-        if (DateTime.UtcNow <= _nextReloadAt) {
-            return _snapshot;
+        var generation = Volatile.Read(ref _generation);
+        var snapshot = _snapshot;
+
+        if (snapshot?.IsCurrent(generation) == true) {
+            return snapshot;
         } else if (CanReload()) {
             var all = await LoadAllAsync(cancellationToken);
 
-            Reload(all);
+            snapshot = new Snapshot(all, generation, DateTime.UtcNow.Add(ReloadInterval));
+            _snapshot = snapshot;
 
-            _nextReloadAt = DateTime.UtcNow.Add(ReloadInterval);
-
-            return _snapshot;
-        } else if (_snapshot != null) {
-            return _snapshot;
+            return snapshot;
+        } else if (snapshot != null) {
+            return snapshot;
         } else {
             var all = await LoadAllAsync(cancellationToken);
 
-            return new Snapshot(all);
+            return new Snapshot(all, generation, DateTime.MinValue);
         }
     }
 
@@ -84,18 +86,16 @@ public abstract class LookupsCollection<T> : ILookupsCollection<T> where T : ILo
     protected abstract Task<IReadOnlyList<T>> LoadAllAsync(CancellationToken cancellationToken);
 
     protected void MarkStale() {
-        _nextReloadAt = DateTime.MinValue;
-    }
-
-    protected void Reload(IEnumerable<T> all) {
-        _snapshot = new Snapshot(all);
+        Interlocked.Increment(ref _generation);
     }
 
     protected virtual TimeSpan ReloadInterval => TimeSpan.FromMinutes(5);
 
     private class Snapshot {
-        public Snapshot(IEnumerable<T> all) {
+        public Snapshot(IEnumerable<T> all, long generation, DateTime reloadAt) {
             All = all.OrEmpty().ToList();
+            Generation = generation;
+            ReloadAt = reloadAt;
             IdDictionary = All.ToDictionary(x => x.Id, x => x, StringComparer.InvariantCultureIgnoreCase);
 
             if (typeof(T).ImplementsInterface<INamedLookup>()) {
@@ -107,7 +107,13 @@ public abstract class LookupsCollection<T> : ILookupsCollection<T> where T : ILo
         }
 
         public IReadOnlyList<T> All { get; }
+        public long Generation { get; }
+        public DateTime ReloadAt { get; }
         public Dictionary<string, T> IdDictionary { get; }
         public Dictionary<string, IReadOnlyList<T>> NameDictionary { get; }
+
+        public bool IsCurrent(long generation) {
+            return Generation == generation && DateTime.UtcNow <= ReloadAt;
+        }
     }
 }
