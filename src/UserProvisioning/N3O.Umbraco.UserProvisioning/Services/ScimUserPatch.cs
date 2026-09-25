@@ -21,7 +21,13 @@ public static class ScimUserPatch {
 
         if (path == null) {
             foreach (var property in AsObject(operation.Value).Properties()) {
-                Set(user, ScimPath.Parse(property.Name), property.Value, op);
+                var attribute = ScimPath.Parse(property.Name);
+
+                if (attribute == null) {
+                    throw ScimException.InvalidPath("An attribute in a patch value has no name");
+                }
+
+                Set(user, attribute, property.Value, op);
             }
         } else {
             Set(user, path, operation.Value, op);
