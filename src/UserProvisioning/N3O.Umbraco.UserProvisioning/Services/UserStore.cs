@@ -38,6 +38,8 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> CreateAsync(ScimUser resource) {
+        Validate(resource);
+
         var email = GetEmail(resource);
 
         if (!email.HasValue()) {
@@ -174,6 +176,8 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> ReplaceAsync(ScimUser resource) {
+        Validate(resource);
+
         return await MutateAsync(resource.Id, async user => {
             await RecordAsync(user.Key, resource);
 
@@ -287,10 +291,6 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     private static string GetEmail(ScimUser resource) {
-        if (resource.Emails.OrEmpty().Any(x => x == null)) {
-            throw ScimException.InvalidValue("An email cannot be null");
-        }
-
         var primary = resource.Emails.OrEmpty().FirstOrDefault(x => x.Primary)?.Value;
 
         return primary.HasValue() ? primary : resource.UserName;
@@ -357,5 +357,11 @@ public class UserStore : IScimStore<ScimUser> {
         scimUser.UserName = user.UserName;
 
         return scimUser;
+    }
+
+    private static void Validate(ScimUser resource) {
+        if (resource.Emails.OrEmpty().Any(x => x == null)) {
+            throw ScimException.InvalidValue("An email cannot be null");
+        }
     }
 }
