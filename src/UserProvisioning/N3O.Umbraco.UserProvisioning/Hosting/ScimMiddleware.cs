@@ -123,6 +123,9 @@ public class ScimMiddleware : IMiddleware {
             await WriteAsync(context, HttpStatusCode.OK, Project(context, await store.ReplaceAsync(resource)));
         } else if (method.Is("PATCH") && id.HasValue()) {
             var request = await ReadBodyAsync<ScimPatchRequest>(context);
+
+            ScimPatch.Validate(request?.Operations);
+
             var patched = await store.PatchAsync(id, request?.Operations);
 
             await WriteAsync(context, HttpStatusCode.OK, Project(context, patched));
