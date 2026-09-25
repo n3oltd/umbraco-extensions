@@ -18,6 +18,18 @@ public class ScimPath {
     public string SubAttribute { get; }
     public ScimExpression ValueFilter { get; }
 
+    public IReadOnlyList<string> SubAttributes {
+        get {
+            var elements = Attribute.Elements.Skip(1).ToList();
+
+            if (SubAttribute.HasValue()) {
+                elements.Add(SubAttribute);
+            }
+
+            return elements;
+        }
+    }
+
     public static ScimPath Parse(string text) {
         if (!text.HasValue()) {
             return null;
@@ -80,6 +92,10 @@ public class ScimPath {
 
     public bool Is(string attribute) {
         return Attribute.Is(attribute);
+    }
+
+    public bool IsExactly(string attribute) {
+        return Is(attribute) && !SubAttributes.Any() && ValueFilter == null;
     }
 
     public override string ToString() {

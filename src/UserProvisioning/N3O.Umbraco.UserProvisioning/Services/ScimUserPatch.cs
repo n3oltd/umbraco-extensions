@@ -78,13 +78,13 @@ public static class ScimUserPatch {
     private static void Set(ScimUser user, ScimPath path, JToken value, string op) {
         var removing = op.Is("remove");
 
-        if (path.Is("active")) {
+        if (path.IsExactly("active")) {
             user.Active = removing ? null : value.ReadBoolean(path.ToString());
-        } else if (path.Is("userName")) {
+        } else if (path.IsExactly("userName")) {
             user.UserName = removing ? null : value.ReadString(path.ToString());
-        } else if (path.Is("displayName")) {
+        } else if (path.IsExactly("displayName")) {
             user.DisplayName = removing ? null : value.ReadString(path.ToString());
-        } else if (path.Is("externalId")) {
+        } else if (path.IsExactly("externalId")) {
             user.ExternalId = removing ? null : value.ReadString(path.ToString());
         } else if (path.Is("name")) {
             SetName(user, path, value, removing);
@@ -98,7 +98,7 @@ public static class ScimUserPatch {
     // Umbraco holds one address, so a patch of any email is a patch of that one, whichever member of
     // the collection the path selects
     private static void SetEmails(ScimUser user, ScimPath path, JToken value, bool removing) {
-        var elements = SubAttributes(path);
+        var elements = path.SubAttributes;
 
         if (elements.Count > 1 || elements.Any(x => !x.Is("value"))) {
             throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
@@ -122,7 +122,7 @@ public static class ScimUserPatch {
     }
 
     private static void SetName(ScimUser user, ScimPath path, JToken value, bool removing) {
-        var elements = SubAttributes(path);
+        var elements = path.SubAttributes;
 
         if (elements.Count > 1) {
             throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
@@ -151,16 +151,6 @@ public static class ScimUserPatch {
         } else {
             throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
         }
-    }
-
-    private static IReadOnlyList<string> SubAttributes(ScimPath path) {
-        var elements = path.Attribute.Elements.Skip(1).ToList();
-
-        if (path.SubAttribute.HasValue()) {
-            elements.Add(path.SubAttribute);
-        }
-
-        return elements;
     }
 
 }

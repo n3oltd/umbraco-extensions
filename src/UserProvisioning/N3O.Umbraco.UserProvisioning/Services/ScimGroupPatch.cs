@@ -35,7 +35,7 @@ public static class ScimGroupPatch {
 
             var path = ScimPath.Parse(operation.Path);
 
-            if (path != null && path.Is("externalId")) {
+            if (path != null && path.IsExactly("externalId")) {
                 externalId = operation.Value.ReadString("externalId");
             } else if (path == null && operation.Value is JObject json) {
                 externalId = json.ReadString("externalId", "externalId") ?? externalId;
@@ -117,7 +117,7 @@ public static class ScimGroupPatch {
 
             if (path == null) {
                 _ = ScimPatch.AsObject(operation.Value).ReadString("displayName", "displayName");
-            } else if (!path.Is("displayName") && !path.Is("externalId") && !path.Is("members")) {
+            } else if (!path.IsExactly("displayName") && !path.IsExactly("externalId") && !path.Is("members")) {
                 throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
             } else if (path.Is("displayName") && !operation.Op.Is("remove")) {
                 _ = operation.Value.ReadString("displayName");
@@ -161,7 +161,7 @@ public static class ScimGroupPatch {
     private static bool NamesSubAttribute(ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 
-        return path != null && (path.Attribute.Elements.Length > 1 || path.SubAttribute.HasValue());
+        return path != null && path.SubAttributes.Any();
     }
 
     private static bool NamesNobody(ScimPatchOperation operation) {
