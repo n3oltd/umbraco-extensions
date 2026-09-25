@@ -15,7 +15,7 @@ public class ScimMembersConverter : JsonConverter<IReadOnlyList<ScimMember>> {
                                                        bool hasExistingValue,
                                                        JsonSerializer serializer) {
         if (reader.TokenType == JsonToken.Null) {
-            throw ScimException.InvalidValue("An explicit null names no member");
+            throw ScimException.NullMembers();
         }
 
         return serializer.Deserialize<List<ScimMember>>(reader);

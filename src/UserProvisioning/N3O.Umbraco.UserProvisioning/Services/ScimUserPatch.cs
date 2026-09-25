@@ -15,7 +15,7 @@ public static class ScimUserPatch {
         var path = ScimPath.Parse(operation.Path);
 
         if (path == null) {
-            foreach (var property in AsObject(operation.Value).Properties()) {
+            foreach (var property in ScimPatch.AsObject(operation.Value).Properties()) {
                 var attribute = ScimPath.Parse(property.Name);
 
                 if (attribute == null) {
@@ -27,14 +27,6 @@ public static class ScimUserPatch {
         } else {
             Set(user, path, operation.Value, op);
         }
-    }
-
-    private static JObject AsObject(JToken value) {
-        if (value is JObject json) {
-            return json;
-        }
-
-        throw ScimException.InvalidValue("A patch without a path carries a resource");
     }
 
     private static IEnumerable<JObject> AsObjects(ScimPath path, JToken value) {
@@ -49,9 +41,9 @@ public static class ScimUserPatch {
         return value is JObject json ? [json] : [];
     }
 
-    private static ScimEmail Email(string address, bool primary) {
+    private static ScimEmail Email(string address) {
         var email = new ScimEmail();
-        email.Primary = primary;
+        email.Primary = true;
         email.Value = address;
 
         return email;
@@ -119,7 +111,7 @@ public static class ScimUserPatch {
         }
 
         var emails = elements.Any()
-                         ? [Email(value.ReadString(path.ToString()), true)]
+                         ? [Email(value.ReadString(path.ToString()))]
                          : AsObjects(path, value).Select(x => ReadEmail(path, x)).ToList();
 
         if (!emails.Any(x => x.Value.HasValue())) {
@@ -132,7 +124,7 @@ public static class ScimUserPatch {
     private static void SetName(ScimUser user, ScimPath path, JToken value, bool removing) {
         user.Name ??= new ScimName();
 
-        var element = path.Attribute.Elements.Length > 1 ? path.Attribute.Elements[1] : path.SubAttribute;
+        var element = SubAttributes(path).FirstOrDefault();
 
         if (!element.HasValue()) {
             var replacement = removing ? null : ReadName(path, value);

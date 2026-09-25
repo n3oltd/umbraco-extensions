@@ -116,21 +116,13 @@ public static class ScimGroupPatch {
             var path = ScimPath.Parse(operation.Path);
 
             if (path == null) {
-                _ = AsObject(operation.Value).ReadString("displayName", "displayName");
+                _ = ScimPatch.AsObject(operation.Value).ReadString("displayName", "displayName");
             } else if (!path.Is("displayName") && !path.Is("externalId") && !path.Is("members")) {
                 throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
             } else if (path.Is("displayName") && !operation.Op.Is("remove")) {
                 _ = operation.Value.ReadString("displayName");
             }
         }
-    }
-
-    private static JObject AsObject(JToken value) {
-        if (value is JObject json) {
-            return json;
-        }
-
-        throw ScimException.InvalidValue("A patch without a path carries a resource");
     }
 
     private static ScimAttributes Describe(BackOfficeUser member) {
@@ -231,7 +223,7 @@ public static class ScimGroupPatch {
         }
 
         if (value.IsNull()) {
-            throw ScimException.InvalidValue("An explicit null names no member");
+            throw ScimException.NullMembers();
         }
 
         if (value is not JArray array) {

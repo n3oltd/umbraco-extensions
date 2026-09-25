@@ -3,11 +3,20 @@ using N3O.Umbraco.UserProvisioning.Exceptions;
 using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Filters;
 using N3O.Umbraco.UserProvisioning.Models;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
 namespace N3O.Umbraco.UserProvisioning.Services;
 
 public static class ScimPatch {
+    public static JObject AsObject(JToken value) {
+        if (value is JObject json) {
+            return json;
+        }
+
+        throw ScimException.InvalidValue("A patch without a path carries a resource");
+    }
+
     public static void Validate(IEnumerable<ScimPatchOperation> operations) {
         foreach (var operation in operations.OrEmpty()) {
             if (operation == null) {

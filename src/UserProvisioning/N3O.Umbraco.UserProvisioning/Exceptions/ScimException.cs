@@ -39,4 +39,8 @@ public class ScimException : Exception {
     public static ScimException NotFound(string detail) {
         return new ScimException(HttpStatusCode.NotFound, detail);
     }
+
+    public static ScimException NullMembers() {
+        return InvalidValue("An explicit null names no member");
+    }
 }
