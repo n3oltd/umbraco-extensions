@@ -38,18 +38,12 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     public async Task<ScimUser> CreateAsync(ScimUser resource) {
+        Validate(resource, null);
+
         var email = GetEmail(resource);
 
         if (!email.HasValue()) {
             throw ScimException.InvalidValue("A user requires either userName or a primary email address");
-        }
-
-        if (!_settings.Governs(email)) {
-            throw ScimException.InvalidValue($"Email {email.Quote()} is not in a governed domain");
-        }
-
-        if (_userService.GetByEmail(email) != null || _userService.GetByUsername(email) != null) {
-            throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
 
         // No group is assigned: granting one so the user can be read back grants access the directory
@@ -167,6 +161,8 @@ public class UserStore : IScimStore<ScimUser> {
                 patched.ExternalId = externalId;
             }
 
+            Validate(patched, user);
+
             await RecordAsync(user.Key, patched);
 
             return await ApplyAsync(user, patched);
@@ -175,6 +171,8 @@ public class UserStore : IScimStore<ScimUser> {
 
     public async Task<ScimUser> ReplaceAsync(ScimUser resource) {
         return await MutateAsync(resource.Id, async user => {
+            Validate(resource, user);
+
             await RecordAsync(user.Key, resource);
 
             return await ApplyAsync(user, resource);
@@ -189,12 +187,12 @@ public class UserStore : IScimStore<ScimUser> {
         updated.Email = GetEmail(resource).HasValue() ? GetEmail(resource) : current.Email;
         updated.Id = current.Id;
         updated.Name = GetName(resource, current.Name);
-        updated.UserName = updated.Email;
+        updated.UserName = GetLogin(resource, user);
 
         if (!updated.Email.Is(current.Email) || !updated.Name.Is(current.Name)) {
             user.Email = updated.Email;
             user.Name = updated.Name;
-            user.Username = updated.Email;
+            user.Username = updated.UserName;
 
             _userService.Save(user);
         }
@@ -262,10 +260,46 @@ public class UserStore : IScimStore<ScimUser> {
                (provisioned || user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias))));
     }
 
+    private ScimException RefuseAddress(ScimUser resource, IUser user) {
+        var login = GetLogin(resource, user);
+
+        if (!login.HasValue() || login.Is(user?.Username)) {
+            return null;
+        }
+
+        if (!_settings.Governs(login)) {
+            return ScimException.InvalidValue($"Email {login.Quote()} is not in a governed domain");
+        }
+
+        var holders = new[] { _userService.GetByEmail(login), _userService.GetByUsername(login) };
+
+        return holders.Any(x => x != null && x.Key != user?.Key)
+                   ? ScimException.Conflict($"A user with email {login.Quote()} already exists")
+                   : null;
+    }
+
     private void SetActive(IUser user, bool active) {
         user.IsApproved = active;
 
         _userService.Save(user);
+    }
+
+    private void Validate(ScimUser resource, IUser user) {
+        if (resource.Emails.OrEmpty().Any(x => x == null)) {
+            throw ScimException.InvalidValue("An email cannot be null");
+        }
+
+        var refusal = RefuseAddress(resource, user);
+
+        if (refusal == null) {
+            return;
+        }
+
+        if (user != null && resource.Active == false && user.IsApproved) {
+            SetActive(user, false);
+        }
+
+        throw refusal;
     }
 
     private static ScimAttributes Describe(BackOfficeUser user) {
@@ -287,9 +321,16 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     private static string GetEmail(ScimUser resource) {
-        var primary = resource.Emails.OrEmpty().FirstOrDefault(x => x.Primary)?.Value;
+        var addresses = resource.Emails.OrEmpty().Where(x => x.Value.HasValue()).ToList();
+        var email = addresses.FirstOrDefault(x => x.Primary) ?? addresses.FirstOrDefault();
 
-        return primary.HasValue() ? primary : resource.UserName;
+        return email?.Value ?? resource.UserName;
+    }
+
+    private static string GetLogin(ScimUser resource, IUser user) {
+        var email = GetEmail(resource);
+
+        return email.HasValue() && !email.Is(user?.Email) ? email : user?.Username;
     }
 
     private static string GetName(ScimUser resource, string fallback) {

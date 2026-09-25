@@ -20,7 +20,7 @@ public static class ScimProjection {
             throw ScimException.InvalidValue("A request cannot both name attributes and exclude them");
         }
 
-        var json = JToken.Parse(ScimJson.Write(resource));
+        var json = ScimJson.Read<JToken>(ScimJson.Write(resource));
 
         foreach (var member in Resources(json)) {
             Project(member, attributes, excluded);

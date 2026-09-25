@@ -26,7 +26,9 @@ is off until `Enabled` is true, and only users in one of the named groups are vi
 
 `GovernedDomains` lists the email domains the identity provider owns. A user whose address is outside
 them is invisible to the endpoint whatever user group holds them, so accounts created by hand for
-people the directory does not know are never read, changed or disabled.
+people the directory does not know are never read, changed or disabled. A create, or a change of a
+user's address, that would take them outside these domains is refused, and so is one that names an
+address another user already holds. A disable that such a request carries still takes effect.
 
 A directory group named in neither setting is refused, and a group named in both fails startup.
 `BearerToken` belongs in a secret store. `LogRequests` is off by default because request bodies
