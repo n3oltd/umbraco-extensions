@@ -50,8 +50,12 @@ public static class ScimGroupPatch {
         var named = new HashSet<Guid>();
 
         foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
-            if ((operation.Op ?? "").Is("add") || (operation.Op ?? "").Is("replace")) {
+            var op = operation.Op ?? "";
+
+            if (op.Is("add")) {
                 named.UnionWith(ReadKeys(held, operation));
+            } else if (op.Is("replace")) {
+                named.UnionWith(ReadMembers(operation));
             }
         }
 
