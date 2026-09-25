@@ -16,6 +16,10 @@ public static class ScimPatch {
 
             var op = operation.Op ?? "";
 
+            if (!op.HasValue()) {
+                throw ScimException.InvalidValue("A patch operation must name its op");
+            }
+
             if (!op.Is("add") && !op.Is("remove") && !op.Is("replace")) {
                 throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
             }
