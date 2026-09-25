@@ -117,6 +117,8 @@ public static class ScimGroupPatch {
 
             if (path == null) {
                 _ = AsObject(operation.Value).ReadString("displayName", "displayName");
+            } else if (!path.Is("displayName") && !path.Is("externalId") && !path.Is("members")) {
+                throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
             } else if (path.Is("displayName") && !operation.Op.Is("remove")) {
                 _ = operation.Value.ReadString("displayName");
             }
