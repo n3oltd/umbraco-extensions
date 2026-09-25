@@ -13,6 +13,10 @@ using Umbraco.Cms.Core.Web;
 namespace N3O.Umbraco.Content;
 
 public class ContentCache : IContentCache {
+    private const int DefaultEnlistPriority = 100;
+    private const string FlushEnlistKey = $"{nameof(ContentCache)}.{nameof(Flush)}";
+    private const int FlushEnlistPriority = DefaultEnlistPriority + 1;
+
     private readonly IContentLocator _contentLocator;
     private readonly ILocalizationService _localizationService;
     private readonly ICoreScopeProvider _scopeProvider;
@@ -79,12 +83,13 @@ public class ContentCache : IContentCache {
     }
 
     public void Flush() {
-        _flushedAt = DateTime.UtcNow;
-        _languages = null;
-        _typedStore.Clear();
-        _untypedStore.Clear();
+        var scopeContext = _scopeProvider.Context;
 
-        Flushed?.Invoke(this, EventArgs.Empty);
+        if (scopeContext == null) {
+            FlushNow();
+        } else {
+            scopeContext.Enlist(FlushEnlistKey, () => this, (_, _) => FlushNow(), FlushEnlistPriority);
+        }
     }
 
     public T Single<T>(Func<T, bool> predicate = null) {
@@ -96,6 +101,15 @@ public class ContentCache : IContentCache {
     }
 
     public event EventHandler Flushed;
+
+    private void FlushNow() {
+        _flushedAt = DateTime.UtcNow;
+        _languages = null;
+        _typedStore.Clear();
+        _untypedStore.Clear();
+
+        Flushed?.Invoke(this, EventArgs.Empty);
+    }
 
     private IReadOnlyList<T> Get<T>(ConcurrentDictionary<string, object> store,
                                     string value,
@@ -153,7 +167,9 @@ public class ContentCache : IContentCache {
     private IReadOnlyList<ILanguage> GetLanguages() {
         var languages = _languages;
 
-        if (languages == null) {
+        if (HasPendingFlush()) {
+            languages = _localizationService.GetAllLanguages().ToList();
+        } else if (languages == null) {
             languages = _localizationService.GetAllLanguages().ToList();
 
             if (languages.Any()) {
@@ -170,7 +186,7 @@ public class ContentCache : IContentCache {
                                             Func<string, IReadOnlyList<T>> locate) {
         var cacheKey = CacheKey.Generate<ContentCache>(value, culture);
 
-        if (!InPreviewMode() && store.TryGetValue(cacheKey, out var stored)) {
+        if (!InPreviewMode() && !HasPendingFlush() && store.TryGetValue(cacheKey, out var stored)) {
             return (IReadOnlyList<T>) stored;
         } else {
             var located = locate(culture);
@@ -191,6 +207,10 @@ public class ContentCache : IContentCache {
                                              .Select(x => x.As<T>())
                                              .ToList(),
                    cultures);
+    }
+
+    private bool HasPendingFlush() {
+        return _scopeProvider.Context?.GetEnlisted<ContentCache>(FlushEnlistKey) != null;
     }
 
     private bool InPreviewMode() {
