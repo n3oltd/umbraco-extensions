@@ -46,10 +46,6 @@ public class UserStore : IScimStore<ScimUser> {
             throw ScimException.InvalidValue("A user requires either userName or a primary email address");
         }
 
-        if (!_settings.Governs(email)) {
-            throw ScimException.InvalidValue($"Email {email.Quote()} is not in a governed domain");
-        }
-
         if (_userService.GetByEmail(email) != null || _userService.GetByUsername(email) != null) {
             throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
         }
@@ -169,6 +165,8 @@ public class UserStore : IScimStore<ScimUser> {
                 patched.ExternalId = externalId;
             }
 
+            Validate(patched);
+
             await RecordAsync(user.Key, patched);
 
             return await ApplyAsync(user, patched);
@@ -272,6 +270,18 @@ public class UserStore : IScimStore<ScimUser> {
         _userService.Save(user);
     }
 
+    private void Validate(ScimUser resource) {
+        if (resource.Emails.OrEmpty().Any(x => x == null)) {
+            throw ScimException.InvalidValue("An email cannot be null");
+        }
+
+        var email = GetEmail(resource);
+
+        if (email.HasValue() && !_settings.Governs(email)) {
+            throw ScimException.InvalidValue($"Email {email.Quote()} is not in a governed domain");
+        }
+    }
+
     private static ScimAttributes Describe(BackOfficeUser user) {
         return new ScimAttributes().Add("active", user.Active)
                                    .Add("displayName", user.Name)
@@ -357,11 +367,5 @@ public class UserStore : IScimStore<ScimUser> {
         scimUser.UserName = user.UserName;
 
         return scimUser;
-    }
-
-    private static void Validate(ScimUser resource) {
-        if (resource.Emails.OrEmpty().Any(x => x == null)) {
-            throw ScimException.InvalidValue("An email cannot be null");
-        }
     }
 }
