@@ -38,7 +38,7 @@ public static class ScimGroupPatch {
             if (path != null && path.Is("externalId")) {
                 externalId = operation.Value.ReadString("externalId");
             } else if (path == null && operation.Value is JObject json) {
-                externalId = json.GetValue("externalId", ScimText.Comparison).ReadString("externalId") ?? externalId;
+                externalId = json.ReadString("externalId", "externalId") ?? externalId;
             }
         }
 
@@ -77,7 +77,7 @@ public static class ScimGroupPatch {
             }
 
             // Without this a replace deletes the members its path selects and puts nothing back
-            if (!op.Is("remove") && Absent(operation.Value)) {
+            if (!op.Is("remove") && operation.Value.IsNull()) {
                 throw ScimException.InvalidValue($"A {op.ToLowerInvariant()} of members requires a value");
             }
 
@@ -108,11 +108,6 @@ public static class ScimGroupPatch {
         }
 
         return members;
-    }
-
-    // Newtonsoft binds an explicit JSON null to a token rather than to a C# null
-    private static bool Absent(JToken value) {
-        return value == null || value.Type == JTokenType.Null;
     }
 
     private static ScimAttributes Describe(BackOfficeUser member) {
@@ -146,7 +141,7 @@ public static class ScimGroupPatch {
         var keys = new HashSet<Guid>();
 
         foreach (var value in values.OrEmpty()) {
-            // Dropped rather than refused, a member naming nobody turns a replace into the removal of everyone
+            // Without this a replace naming only unreadable members removes everyone
             if (!value.HasValue()) {
                 throw ScimException.InvalidValue("Each member must name a user by its value or $ref");
             }
@@ -198,8 +193,8 @@ public static class ScimGroupPatch {
                     yield return found;
                 }
             } else {
-                yield return Identify(json.GetValue("value", ScimText.Comparison).ReadString("members.value"),
-                                      json.GetValue("$ref", ScimText.Comparison).ReadString("members.$ref"));
+                yield return Identify(json.ReadString("value", "members.value"),
+                                      json.ReadString("$ref", "members.$ref"));
             }
         } else {
             yield return value.ReadString("members");

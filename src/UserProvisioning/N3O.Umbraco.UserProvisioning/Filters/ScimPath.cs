@@ -1,5 +1,6 @@
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Exceptions;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace N3O.Umbraco.UserProvisioning.Filters;
@@ -29,7 +30,7 @@ public class ScimPath {
         var tokens = ScimLexer.Tokenise(text);
         var index = 0;
 
-        if (tokens[index].Type != ScimTokenType.Identifier) {
+        if (TypeAt(tokens, index) != ScimTokenType.Identifier) {
             throw ScimException.InvalidPath($"{text.Quote()} does not begin with an attribute");
         }
 
@@ -39,7 +40,7 @@ public class ScimPath {
 
         ScimExpression valueFilter = null;
 
-        if (tokens[index].Type == ScimTokenType.OpenBracket) {
+        if (TypeAt(tokens, index) == ScimTokenType.OpenBracket) {
             var depth = 0;
             var start = ++index;
 
@@ -53,26 +54,24 @@ public class ScimPath {
                 index++;
             }
 
-            if (index >= tokens.Count || tokens[index].Type != ScimTokenType.CloseBracket) {
+            if (TypeAt(tokens, index) != ScimTokenType.CloseBracket) {
                 throw ScimException.InvalidPath($"{text.Quote()} has no closing bracket");
             }
 
-            var filter = tokens.Skip(start).Take(index - start).Append(new ScimToken(ScimTokenType.End, null)).ToList();
-
-            valueFilter = ScimFilterParser.Parse(filter);
+            valueFilter = ScimFilterParser.Parse(tokens.Skip(start).Take(index - start).ToList());
 
             index++;
         }
 
         string subAttribute = null;
 
-        if (tokens[index].Type == ScimTokenType.Identifier) {
+        if (TypeAt(tokens, index) == ScimTokenType.Identifier) {
             subAttribute = tokens[index].Text.TrimStart('.');
 
             index++;
         }
 
-        if (tokens[index].Type != ScimTokenType.End) {
+        if (TypeAt(tokens, index) != ScimTokenType.End) {
             throw ScimException.InvalidPath($"{text.Quote()} carries more than one attribute path");
         }
 
@@ -88,5 +87,9 @@ public class ScimPath {
         var sub = SubAttribute.HasValue() ? $".{SubAttribute}" : "";
 
         return $"{Attribute}{filter}{sub}";
+    }
+
+    private static ScimTokenType TypeAt(IReadOnlyList<ScimToken> tokens, int index) {
+        return index < tokens.Count ? tokens[index].Type : ScimTokenType.End;
     }
 }

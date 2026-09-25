@@ -3,6 +3,7 @@ using N3O.Umbraco.UserProvisioning.Exceptions;
 using N3O.Umbraco.UserProvisioning.Extensions;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace N3O.Umbraco.UserProvisioning.Filters;
 
@@ -32,7 +33,7 @@ public class ScimFilterParser {
     }
 
     public static ScimExpression Parse(IReadOnlyList<ScimToken> tokens) {
-        var parser = new ScimFilterParser(tokens);
+        var parser = new ScimFilterParser(tokens.Append(new ScimToken(ScimTokenType.End, null)).ToList());
         var expression = parser.ParseOr();
 
         parser.Expect(ScimTokenType.End);

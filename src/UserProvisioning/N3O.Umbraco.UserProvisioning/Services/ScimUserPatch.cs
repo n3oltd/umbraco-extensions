@@ -44,6 +44,23 @@ public static class ScimUserPatch {
         return value is JObject json ? [json] : [];
     }
 
+    private static ScimName ReadName(ScimPath path, JToken value) {
+        if (value.IsNull()) {
+            return null;
+        }
+
+        if (value is not JObject json) {
+            throw ScimException.InvalidValue($"{path} must be an object");
+        }
+
+        var name = new ScimName();
+        name.FamilyName = json.ReadString("familyName", $"{path}.familyName");
+        name.Formatted = json.ReadString("formatted", $"{path}.formatted");
+        name.GivenName = json.ReadString("givenName", $"{path}.givenName");
+
+        return name;
+    }
+
     private static void Set(ScimUser user, ScimPath path, JToken value, string op) {
         var removing = op.Is("remove");
 
@@ -73,12 +90,12 @@ public static class ScimUserPatch {
             return;
         }
 
-        var address = path.SubAttribute.HasValue() || path.ValueFilter != null
-                          ? value.ReadString(path.ToString())
-                          : AsObjects(value).Select(x => x.GetValue("value", ScimText.Comparison)
-                                                          .ReadString($"{path}.value"))
-                                            .ToList()
-                                            .FirstOrDefault(x => x.HasValue());
+        IReadOnlyList<string> everyAddress = path.SubAttribute.HasValue() || path.ValueFilter != null
+                                                 ? [value.ReadString(path.ToString())]
+                                                 : AsObjects(value).Select(x => x.ReadString("value", $"{path}.value"))
+                                                                   .ToList();
+
+        var address = everyAddress.FirstOrDefault(x => x.HasValue());
 
         if (!address.HasValue()) {
             throw ScimException.InvalidValue($"{path} carries no email address");
@@ -116,23 +133,6 @@ public static class ScimUserPatch {
         } else {
             throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
         }
-    }
-
-    private static ScimName ReadName(ScimPath path, JToken value) {
-        if (value == null || value.Type == JTokenType.Null) {
-            return null;
-        }
-
-        if (value is not JObject json) {
-            throw ScimException.InvalidValue($"{path} must be an object");
-        }
-
-        var name = new ScimName();
-        name.FamilyName = json.GetValue("familyName", ScimText.Comparison).ReadString($"{path}.familyName");
-        name.Formatted = json.GetValue("formatted", ScimText.Comparison).ReadString($"{path}.formatted");
-        name.GivenName = json.GetValue("givenName", ScimText.Comparison).ReadString($"{path}.givenName");
-
-        return name;
     }
 
 }

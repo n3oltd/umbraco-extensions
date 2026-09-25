@@ -4,8 +4,12 @@ using Newtonsoft.Json.Linq;
 namespace N3O.Umbraco.UserProvisioning.Extensions;
 
 public static class ScimValues {
+    public static bool IsNull(this JToken value) {
+        return value == null || value.Type == JTokenType.Null;
+    }
+
     public static bool? ReadBoolean(this JToken value, string attribute) {
-        if (IsNull(value)) {
+        if (value.IsNull()) {
             return null;
         }
 
@@ -13,7 +17,7 @@ public static class ScimValues {
             return value.Value<bool>();
         }
 
-        // Unless it is told otherwise, the provisioning service sends a boolean as the string "False"
+        // Without this a boolean sent as a string is refused, and the provisioning service sends one by default
         if (value.Type == JTokenType.String && bool.TryParse(value.Value<string>(), out var flag)) {
             return flag;
         }
@@ -21,8 +25,12 @@ public static class ScimValues {
         throw ScimException.InvalidValue($"{attribute} must be true or false");
     }
 
+    public static string ReadString(this JObject json, string name, string attribute) {
+        return json.GetValue(name, ScimText.Comparison).ReadString(attribute);
+    }
+
     public static string ReadString(this JToken value, string attribute) {
-        if (IsNull(value)) {
+        if (value.IsNull()) {
             return null;
         }
 
@@ -31,9 +39,5 @@ public static class ScimValues {
         }
 
         throw ScimException.InvalidValue($"{attribute} must be a string");
-    }
-
-    private static bool IsNull(JToken value) {
-        return value == null || value.Type == JTokenType.Null;
     }
 }

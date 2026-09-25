@@ -54,8 +54,6 @@ public class ScimLexer {
             }
         }
 
-        tokens.Add(new ScimToken(ScimTokenType.End, null));
-
         return tokens;
     }
 
