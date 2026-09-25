@@ -1175,6 +1175,201 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// One of 'platforms'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsApiRoute
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"platforms")]
+        Platforms = 0,
+
+    }
+
+    /// <summary>
+    /// One of 'created_at', 'id', 'name', 'order', 'published', 'slug', 'type'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsCampaignDocumentField
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"created_at")]
+        CreatedAt = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"id")]
+        Id = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"name")]
+        Name = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"order")]
+        Order = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"published")]
+        Published = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"slug")]
+        Slug = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"type")]
+        Type = 6,
+
+    }
+
+    /// <summary>
+    /// One of 'amount', 'base_amount', 'base_currency', 'campaign_id', 'contributor_comment', 'contributor_name', 'crowdfunder_id', 'crowdfunder_name', 'crowdfunding_team_id', 'currency', 'goal_id', 'id', 'other_amount', 'other_currency', 'page_id', 'timestamp'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsContributionDocumentField
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"amount")]
+        Amount = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"base_amount")]
+        BaseAmount = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"base_currency")]
+        BaseCurrency = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"campaign_id")]
+        CampaignId = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"contributor_comment")]
+        ContributorComment = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"contributor_name")]
+        ContributorName = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfunder_id")]
+        CrowdfunderId = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfunder_name")]
+        CrowdfunderName = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfunding_team_id")]
+        CrowdfundingTeamId = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"currency")]
+        Currency = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"goal_id")]
+        GoalId = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"id")]
+        Id = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"other_amount")]
+        OtherAmount = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"other_currency")]
+        OtherCurrency = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"page_id")]
+        PageId = 14,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"timestamp")]
+        Timestamp = 15,
+
+    }
+
+    /// <summary>
+    /// One of 'n3o-campaign-id', 'n3o-offering-id', 'n3o-page-id'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsMetaTagName
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-campaign-id")]
+        CampaignId = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-offering-id")]
+        OfferingId = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-id")]
+        PageId = 2,
+
+    }
+
+    /// <summary>
+    /// One of 'allow_crowdfunding', 'campaign_id', 'fund_dimensions_1', 'fund_dimensions_2', 'fund_dimensions_3', 'fund_dimensions_4', 'id', 'name', 'order', 'published', 'slug'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsOfferingDocumentField
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"allow_crowdfunding")]
+        AllowCrowdfunding = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"campaign_id")]
+        CampaignId = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fund_dimensions_1")]
+        FundDimensions1 = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fund_dimensions_2")]
+        FundDimensions2 = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fund_dimensions_3")]
+        FundDimensions3 = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"fund_dimensions_4")]
+        FundDimensions4 = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"id")]
+        Id = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"name")]
+        Name = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"order")]
+        Order = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"published")]
+        Published = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"slug")]
+        Slug = 10,
+
+    }
+
+    /// <summary>
+    /// One of 'elements/{elementId}/index.json', '{kind}/{id}', '{kind}/{path}/index.json', '{kind}/{filename}.json', 'themes/{themeAlias}/style.css'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsPublishedFilePath
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"elements/{elementId}/index.json")]
+        Element = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"{kind}/{id}")]
+        ElementId = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"{kind}/{path}/index.json")]
+        Index = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"{kind}/{filename}.json")]
+        Root = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"themes/{themeAlias}/style.css")]
+        ThemeStylesheet = 4,
+
+    }
+
+    /// <summary>
+    /// One of 'default'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsThemeAlias
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"default")]
+        Default = 0,
+
+    }
+
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PlatformsUserRes
     {
