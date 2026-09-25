@@ -185,7 +185,6 @@ public static class ScimGroupPatch {
         var keys = new HashSet<Guid>();
 
         foreach (var value in values.OrEmpty()) {
-            // Without this a replace naming only unreadable members removes everyone
             if (!value.HasValue()) {
                 throw ScimException.InvalidValue("Each member must name a user by its value or $ref");
             }
