@@ -58,7 +58,12 @@ public static class ScimUserPatch {
     }
 
     private static ScimEmail ReadEmail(ScimPath path, JObject json) {
-        return Email(json.ReadString("value", $"{path}.value"), json.ReadBoolean("primary", $"{path}.primary") == true);
+        var email = new ScimEmail();
+        email.Primary = json.ReadBoolean("primary", $"{path}.primary") == true;
+        email.Type = json.ReadString("type", $"{path}.type");
+        email.Value = json.ReadString("value", $"{path}.value");
+
+        return email;
     }
 
     private static ScimName ReadName(ScimPath path, JToken value) {
