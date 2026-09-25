@@ -24,6 +24,10 @@ public class ScimException : Exception {
         return new ScimException(HttpStatusCode.BadRequest, detail, ScimConstants.ScimTypes.InvalidPath);
     }
 
+    public static ScimException InvalidSyntax(string detail) {
+        return new ScimException(HttpStatusCode.BadRequest, detail, ScimConstants.ScimTypes.InvalidSyntax);
+    }
+
     public static ScimException InvalidValue(string detail) {
         return new ScimException(HttpStatusCode.BadRequest, detail, ScimConstants.ScimTypes.InvalidValue);
     }
@@ -34,5 +38,9 @@ public class ScimException : Exception {
 
     public static ScimException NotFound(string detail) {
         return new ScimException(HttpStatusCode.NotFound, detail);
+    }
+
+    public static ScimException NullMembers() {
+        return InvalidValue("An explicit null names no member");
     }
 }

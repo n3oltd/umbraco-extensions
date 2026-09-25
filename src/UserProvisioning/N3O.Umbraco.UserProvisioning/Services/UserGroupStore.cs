@@ -49,9 +49,11 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             throw ScimException.InvalidValue($"No user group is mapped to {resource.DisplayName.Quote()}");
         }
 
+        var members = ScimGroupPatch.ParseKeys(resource.Members);
+
         return await MutateAsync(named.Id, async group => {
             await SetExternalIdAsync(group, resource.ExternalId);
-            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members), null);
+            await SetMembersAsync(group, members, null);
         });
     }
 
@@ -74,23 +76,30 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
     public async Task<ScimGroup> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
         return await MutateAsync(id, async group => {
+            ScimGroupPatch.Validate(operations);
+
             if (operations.OrEmpty().Any() && !operations.Any(ScimGroupPatch.IsMembership)) {
                 _logger.LogWarning("Patch of group {DisplayName} changed no membership; paths were {Paths}",
                                    group.DisplayName,
                                    string.Join(", ", operations.Select(x => x.Path ?? "(none)")));
             }
 
-            await SetExternalIdAsync(group, ScimGroupPatch.ReadExternalId(operations));
-            await SetMembersAsync(group,
-                                  ScimGroupPatch.Resolve(group.Members, operations),
-                                  ScimGroupPatch.Named(group.Members, operations));
+            // Read in full before anything is written, so a patch that is refused changes nothing
+            var externalId = ScimGroupPatch.ReadExternalId(operations);
+            var members = ScimGroupPatch.Resolve(group.Members, operations);
+            var named = ScimGroupPatch.Named(operations);
+
+            await SetExternalIdAsync(group, externalId);
+            await SetMembersAsync(group, members, named);
         });
     }
 
     public async Task<ScimGroup> ReplaceAsync(ScimGroup resource) {
+        var members = ScimGroupPatch.ParseKeys(resource.Members);
+
         return await MutateAsync(resource.Id, async group => {
             await SetExternalIdAsync(group, resource.ExternalId);
-            await SetMembersAsync(group, ScimGroupPatch.ParseKeys(resource.Members), null);
+            await SetMembersAsync(group, members, null);
         });
     }
 

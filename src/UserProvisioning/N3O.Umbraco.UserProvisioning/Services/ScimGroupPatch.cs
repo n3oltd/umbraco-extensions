@@ -19,7 +19,7 @@ public static class ScimGroupPatch {
             return path.Is("members");
         }
 
-        return operation.Value is JObject json && json.Property("members") != null;
+        return operation.Value is JObject json && json.Property("members", ScimText.Comparison) != null;
     }
 
     // An identity provider re-sends its own key every cycle until a read gives it back
@@ -35,10 +35,10 @@ public static class ScimGroupPatch {
 
             var path = ScimPath.Parse(operation.Path);
 
-            if (path != null && path.Is("externalId")) {
-                externalId = operation.Value?.Value<string>();
+            if (path != null && path.IsExactly("externalId")) {
+                externalId = operation.Value.ReadString("externalId");
             } else if (path == null && operation.Value is JObject json) {
-                externalId = json.Value<string>("externalId") ?? externalId;
+                externalId = json.ReadString("externalId", "externalId") ?? externalId;
             }
         }
 
@@ -46,12 +46,12 @@ public static class ScimGroupPatch {
     }
 
     // Not the members that change: naming one the group already holds is a claim to record all the same
-    public static ISet<Guid> Named(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
+    public static ISet<Guid> Named(IEnumerable<ScimPatchOperation> operations) {
         var named = new HashSet<Guid>();
 
         foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
             if ((operation.Op ?? "").Is("add") || (operation.Op ?? "").Is("replace")) {
-                named.UnionWith(ReadKeys(held, operation));
+                named.UnionWith(ReadMembers(operation));
             }
         }
 
@@ -59,7 +59,7 @@ public static class ScimGroupPatch {
     }
 
     public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
-        return members == null ? null : ParseKeys(members.Select(x => Identify(x.Value, x.Reference)));
+        return members == null ? null : ParseKeys(members.Select(x => Identify(x?.Value, x?.Reference, x?.Type)));
     }
 
     public static ISet<Guid> Resolve(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
@@ -68,16 +68,17 @@ public static class ScimGroupPatch {
         foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
             var op = operation.Op ?? "";
 
-            if (!op.Is("add") && !op.Is("remove") && !op.Is("replace")) {
-                throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
-            }
-
             if (NamesSubAttribute(operation)) {
                 throw ScimException.InvalidPath("A member cannot be patched one sub-attribute at a time");
             }
 
+            if (op.Is("add") && Selects(operation)) {
+                throw ScimException.InvalidPath("A filter selects members the group holds, so it cannot name " +
+                                                "ones to add");
+            }
+
             // Without this a replace deletes the members its path selects and puts nothing back
-            if (!op.Is("remove") && Absent(operation.Value)) {
+            if (!op.Is("remove") && operation.Value.IsNull()) {
                 throw ScimException.InvalidValue($"A {op.ToLowerInvariant()} of members requires a value");
             }
 
@@ -92,7 +93,7 @@ public static class ScimGroupPatch {
                 }
 
                 members.ExceptWith(keys);
-                members.UnionWith(ParseKeys(ReadValues(operation.Value)));
+                members.UnionWith(ReadMembers(operation));
             } else if (op.Is("replace")) {
                 members.Clear();
                 members.UnionWith(keys);
@@ -110,9 +111,18 @@ public static class ScimGroupPatch {
         return members;
     }
 
-    // Newtonsoft binds an explicit JSON null to a token rather than to a C# null
-    private static bool Absent(JToken value) {
-        return value == null || value.Type == JTokenType.Null;
+    public static void Validate(IEnumerable<ScimPatchOperation> operations) {
+        foreach (var operation in operations.OrEmpty()) {
+            var path = ScimPath.Parse(operation.Path);
+
+            if (path == null) {
+                _ = ScimPatch.AsObject(operation.Value).ReadString("displayName", "displayName");
+            } else if (!path.IsExactly("displayName") && !path.IsExactly("externalId") && !path.Is("members")) {
+                throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
+            } else if (path.Is("displayName") && !operation.Op.Is("remove")) {
+                _ = operation.Value.ReadString("displayName");
+            }
+        }
     }
 
     private static ScimAttributes Describe(BackOfficeUser member) {
@@ -121,8 +131,27 @@ public static class ScimGroupPatch {
                                    .Add("value", member.Id);
     }
 
-    private static string Identify(string value, string reference) {
-        return value.HasValue() ? value : reference?.Split('/').LastOrDefault();
+    private static string Identify(string value, string reference, string type) {
+        if (type.HasValue() && !type.Is("User")) {
+            throw ScimException.InvalidValue($"A member of type {type.Quote()} is not a user");
+        }
+
+        if (!reference.HasValue()) {
+            return value;
+        }
+
+        var segments = reference.Split('/');
+
+        if (segments.Length < 2 || !segments[^2].Is("Users") || !segments[^1].HasValue()) {
+            throw ScimException.InvalidValue($"{reference.Quote()} does not name a user");
+        }
+
+        if (value.HasValue() && !value.Is(segments[^1])) {
+            throw ScimException.InvalidValue($"Member {value.Quote()} and its $ref {reference.Quote()} name " +
+                                             "different users");
+        }
+
+        return segments[^1];
     }
 
     private static bool Selects(ScimPatchOperation operation) {
@@ -132,7 +161,7 @@ public static class ScimGroupPatch {
     private static bool NamesSubAttribute(ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 
-        return path != null && (path.Attribute.Elements.Length > 1 || path.SubAttribute.HasValue());
+        return path != null && path.SubAttributes.Any();
     }
 
     private static bool NamesNobody(ScimPatchOperation operation) {
@@ -145,7 +174,11 @@ public static class ScimGroupPatch {
     private static ISet<Guid> ParseKeys(IEnumerable<string> values) {
         var keys = new HashSet<Guid>();
 
-        foreach (var value in values.OrEmpty().Where(x => x.HasValue())) {
+        foreach (var value in values.OrEmpty()) {
+            if (!value.HasValue()) {
+                throw ScimException.InvalidValue("Each member must name a user by its value or $ref");
+            }
+
             if (!Guid.TryParse(value, out var key)) {
                 throw ScimException.InvalidValue($"Member {value.Quote()} is not a user ID");
             }
@@ -167,31 +200,37 @@ public static class ScimGroupPatch {
             return new HashSet<Guid>(selected);
         }
 
-        return ParseKeys(ReadValues(operation.Value));
+        return operation.Value == null ? new HashSet<Guid>() : ReadMembers(operation);
     }
 
-    private static IEnumerable<string> ReadValues(JToken value) {
-        if (value == null) {
-            yield break;
+    private static string ReadMember(JToken member) {
+        if (member is not JObject json) {
+            throw ScimException.InvalidValue("Each member must be an object naming a user");
         }
 
-        if (value is JArray array) {
-            foreach (var item in array) {
-                foreach (var found in ReadValues(item)) {
-                    yield return found;
-                }
-            }
-        } else if (value is JObject json) {
-            if (json.Property("members") != null) {
-                foreach (var found in ReadValues(json["members"])) {
-                    yield return found;
-                }
-            } else {
-                yield return Identify(json.Value<string>("value"), json.Value<string>("$ref"));
-            }
-        } else {
-            yield return value.Value<string>();
+        _ = json.ReadString("display", "members.display");
+
+        return Identify(json.ReadString("value", "members.value"),
+                        json.ReadString("$ref", "members.$ref"),
+                        json.ReadString("type", "members.type"));
+    }
+
+    private static ISet<Guid> ReadMembers(ScimPatchOperation operation) {
+        var value = operation.Value;
+
+        if (ScimPath.Parse(operation.Path) == null && value is JObject json) {
+            value = json.GetValue("members", ScimText.Comparison);
         }
+
+        if (value.IsNull()) {
+            throw ScimException.NullMembers();
+        }
+
+        if (value is not JArray array) {
+            throw ScimException.InvalidValue("Members must be sent as an array");
+        }
+
+        return ParseKeys(array.Select(ReadMember));
     }
 
 }

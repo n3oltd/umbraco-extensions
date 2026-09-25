@@ -10,6 +10,7 @@ public class ScimPatchOperation {
     [JsonProperty("path")]
     public string Path { get; set; }
 
-    [JsonProperty("value")]
+    // ScimJson ignores nulls on read as well as on write, which would bind an explicit null as an absent value
+    [JsonProperty("value", NullValueHandling = NullValueHandling.Include)]
     public JToken Value { get; set; }
 }
