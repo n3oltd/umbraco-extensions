@@ -59,7 +59,7 @@ public static class ScimGroupPatch {
     }
 
     public static ISet<Guid> ParseKeys(IEnumerable<ScimMember> members) {
-        return members == null ? null : ParseKeys(members.Select(x => Identify(x?.Value, x?.Reference)));
+        return members == null ? null : ParseKeys(members.Select(x => Identify(x?.Value, x?.Reference, x?.Type)));
     }
 
     public static ISet<Guid> Resolve(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
@@ -116,8 +116,27 @@ public static class ScimGroupPatch {
                                    .Add("value", member.Id);
     }
 
-    private static string Identify(string value, string reference) {
-        return value.HasValue() ? value : reference?.Split('/').LastOrDefault();
+    private static string Identify(string value, string reference, string type) {
+        if (type.HasValue() && !type.Is("User")) {
+            throw ScimException.InvalidValue($"A member of type {type.Quote()} is not a user");
+        }
+
+        if (!reference.HasValue()) {
+            return value;
+        }
+
+        var segments = reference.Split('/');
+
+        if (segments.Length < 2 || !segments[^2].Is("Users") || !segments[^1].HasValue()) {
+            throw ScimException.InvalidValue($"{reference.Quote()} does not name a user");
+        }
+
+        if (value.HasValue() && !value.Is(segments[^1])) {
+            throw ScimException.InvalidValue($"Member {value.Quote()} and its $ref {reference.Quote()} name " +
+                                             "different users");
+        }
+
+        return segments[^1];
     }
 
     private static bool Selects(ScimPatchOperation operation) {
@@ -175,7 +194,9 @@ public static class ScimGroupPatch {
             throw ScimException.InvalidValue("Each member must be an object naming a user");
         }
 
-        return Identify(json.ReadString("value", "members.value"), json.ReadString("$ref", "members.$ref"));
+        return Identify(json.ReadString("value", "members.value"),
+                        json.ReadString("$ref", "members.$ref"),
+                        json.ReadString("type", "members.type"));
     }
 
     // A value names members as an array of member objects, or, without a path, as an object whose members is one
