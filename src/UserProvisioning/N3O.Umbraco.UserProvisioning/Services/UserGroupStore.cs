@@ -76,6 +76,8 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
     public async Task<ScimGroup> PatchAsync(string id, IEnumerable<ScimPatchOperation> operations) {
         return await MutateAsync(id, async group => {
+            ScimGroupPatch.Validate(operations);
+
             if (operations.OrEmpty().Any() && !operations.Any(ScimGroupPatch.IsMembership)) {
                 _logger.LogWarning("Patch of group {DisplayName} changed no membership; paths were {Paths}",
                                    group.DisplayName,

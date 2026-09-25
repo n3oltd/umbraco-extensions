@@ -115,6 +115,22 @@ public static class ScimGroupPatch {
         return members;
     }
 
+    public static void Validate(IEnumerable<ScimPatchOperation> operations) {
+        foreach (var operation in operations.OrEmpty()) {
+            if (ScimPath.Parse(operation.Path) == null) {
+                AsObject(operation.Value);
+            }
+        }
+    }
+
+    private static JObject AsObject(JToken value) {
+        if (value is JObject json) {
+            return json;
+        }
+
+        throw ScimException.InvalidValue("A patch without a path carries a resource");
+    }
+
     private static ScimAttributes Describe(BackOfficeUser member) {
         return new ScimAttributes().Add("display", member.Name)
                                    .Add("type", "User")
