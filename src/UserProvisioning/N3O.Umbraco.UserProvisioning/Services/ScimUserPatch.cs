@@ -42,9 +42,13 @@ public static class ScimUserPatch {
         throw ScimException.InvalidValue("A patch without a path carries a resource");
     }
 
-    private static IEnumerable<JObject> AsObjects(JToken value) {
+    private static IEnumerable<JObject> AsObjects(ScimPath path, JToken value) {
         if (value is JArray array) {
-            return array.OfType<JObject>();
+            if (array.Any(x => x is not JObject)) {
+                throw ScimException.InvalidValue($"Each value of {path} must be an object");
+            }
+
+            return array.Cast<JObject>();
         }
 
         return value is JObject json ? [json] : [];
@@ -96,10 +100,13 @@ public static class ScimUserPatch {
             return;
         }
 
-        IReadOnlyList<string> everyAddress = path.SubAttribute.HasValue() || path.ValueFilter != null
-                                                 ? [value.ReadString(path.ToString())]
-                                                 : AsObjects(value).Select(x => x.ReadString("value", $"{path}.value"))
-                                                                   .ToList();
+        IReadOnlyList<string> everyAddress;
+
+        if (path.SubAttribute.HasValue() || path.ValueFilter != null) {
+            everyAddress = [value.ReadString(path.ToString())];
+        } else {
+            everyAddress = AsObjects(path, value).Select(x => x.ReadString("value", $"{path}.value")).ToList();
+        }
 
         var address = everyAddress.FirstOrDefault(x => x.HasValue());
 
