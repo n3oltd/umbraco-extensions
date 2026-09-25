@@ -176,6 +176,8 @@ public class ScimMiddleware : IMiddleware {
 
             try {
                 return ScimJson.Read<T>(body);
+            } catch (ScimException) {
+                throw;
             } catch (Exception) {
                 throw ScimException.InvalidValue("The request body is not the resource this endpoint expected");
             }

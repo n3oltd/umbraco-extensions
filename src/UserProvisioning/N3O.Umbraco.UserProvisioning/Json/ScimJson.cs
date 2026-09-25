@@ -17,6 +17,9 @@ public static class ScimJson {
 
         var settings = new JsonSerializerSettings();
         settings.ContractResolver = resolver;
+        // A resource body is held to the types a patch value is, rather than coerced into them
+        settings.Converters.Add(new ScimBooleanConverter());
+        settings.Converters.Add(new ScimStringConverter());
         settings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
         // Otherwise a string that looks like a date is read into a patch value as a date, and loses its text
         settings.DateParseHandling = DateParseHandling.None;
