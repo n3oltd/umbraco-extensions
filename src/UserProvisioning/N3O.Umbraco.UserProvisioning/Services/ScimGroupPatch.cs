@@ -92,7 +92,7 @@ public static class ScimGroupPatch {
                 }
 
                 members.ExceptWith(keys);
-                members.UnionWith(ParseKeys(ReadValues(operation.Value)));
+                members.UnionWith(ReadMembers(operation));
             } else if (op.Is("replace")) {
                 members.Clear();
                 members.UnionWith(keys);
@@ -167,38 +167,34 @@ public static class ScimGroupPatch {
             return new HashSet<Guid>(selected);
         }
 
-        return ParseKeys(ReadValues(operation.Value));
+        return operation.Value == null ? new HashSet<Guid>() : ReadMembers(operation);
     }
 
-    private static IEnumerable<string> ReadValues(JToken value) {
-        if (value == null) {
-            yield break;
+    private static string ReadMember(JToken member) {
+        if (member is not JObject json) {
+            throw ScimException.InvalidValue("Each member must be an object naming a user");
         }
 
-        if (value.Type == JTokenType.Null) {
+        return Identify(json.ReadString("value", "members.value"), json.ReadString("$ref", "members.$ref"));
+    }
+
+    // A value names members as an array of member objects, or, without a path, as an object whose members is one
+    private static ISet<Guid> ReadMembers(ScimPatchOperation operation) {
+        var value = operation.Value;
+
+        if (ScimPath.Parse(operation.Path) == null && value is JObject json) {
+            value = json.GetValue("members", ScimText.Comparison);
+        }
+
+        if (value.IsNull()) {
             throw ScimException.InvalidValue("An explicit null names no member");
         }
 
-        if (value is JArray array) {
-            foreach (var item in array) {
-                foreach (var found in ReadValues(item)) {
-                    yield return found;
-                }
-            }
-        } else if (value is JObject json) {
-            var members = json.Property("members", ScimText.Comparison);
-
-            if (members != null) {
-                foreach (var found in ReadValues(members.Value)) {
-                    yield return found;
-                }
-            } else {
-                yield return Identify(json.ReadString("value", "members.value"),
-                                      json.ReadString("$ref", "members.$ref"));
-            }
-        } else {
-            yield return value.ReadString("members");
+        if (value is not JArray array) {
+            throw ScimException.InvalidValue("Members must be sent as an array");
         }
+
+        return ParseKeys(array.Select(ReadMember));
     }
 
 }
