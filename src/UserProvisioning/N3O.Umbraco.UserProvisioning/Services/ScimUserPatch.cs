@@ -122,9 +122,15 @@ public static class ScimUserPatch {
     }
 
     private static void SetName(ScimUser user, ScimPath path, JToken value, bool removing) {
+        var elements = SubAttributes(path);
+
+        if (elements.Count > 1) {
+            throw ScimException.InvalidPath($"{path} is not an attribute this endpoint stores");
+        }
+
         user.Name ??= new ScimName();
 
-        var element = SubAttributes(path).FirstOrDefault();
+        var element = elements.FirstOrDefault();
 
         if (!element.HasValue()) {
             var replacement = removing ? null : ReadName(path, value);
