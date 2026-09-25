@@ -117,8 +117,12 @@ public static class ScimGroupPatch {
 
     public static void Validate(IEnumerable<ScimPatchOperation> operations) {
         foreach (var operation in operations.OrEmpty()) {
-            if (ScimPath.Parse(operation.Path) == null) {
-                AsObject(operation.Value);
+            var path = ScimPath.Parse(operation.Path);
+
+            if (path == null) {
+                _ = AsObject(operation.Value).ReadString("displayName", "displayName");
+            } else if (path.Is("displayName") && !operation.Op.Is("remove")) {
+                _ = operation.Value.ReadString("displayName");
             }
         }
     }
@@ -214,6 +218,8 @@ public static class ScimGroupPatch {
         if (member is not JObject json) {
             throw ScimException.InvalidValue("Each member must be an object naming a user");
         }
+
+        _ = json.ReadString("display", "members.display");
 
         return Identify(json.ReadString("value", "members.value"),
                         json.ReadString("$ref", "members.$ref"),
