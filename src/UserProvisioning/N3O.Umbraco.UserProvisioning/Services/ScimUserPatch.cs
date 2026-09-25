@@ -100,13 +100,9 @@ public static class ScimUserPatch {
             return;
         }
 
-        IReadOnlyList<string> everyAddress;
-
-        if (path.SubAttribute.HasValue()) {
-            everyAddress = [value.ReadString(path.ToString())];
-        } else {
-            everyAddress = AsObjects(path, value).Select(x => x.ReadString("value", $"{path}.value")).ToList();
-        }
+        var everyAddress = path.SubAttribute.HasValue()
+                               ? [value.ReadString(path.ToString())]
+                               : AsObjects(path, value).Select(x => x.ReadString("value", $"{path}.value")).ToList();
 
         var address = everyAddress.FirstOrDefault(x => x.HasValue());
 

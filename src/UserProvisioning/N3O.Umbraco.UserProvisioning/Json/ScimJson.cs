@@ -21,7 +21,7 @@ public static class ScimJson {
 
         var settings = new JsonSerializerSettings();
         settings.ContractResolver = resolver;
-        // A resource body is held to the types a patch value is, rather than coerced into them
+        // Otherwise a number is coerced into a string or a boolean rather than refused
         settings.Converters.Add(new ScimBooleanConverter());
         settings.Converters.Add(new ScimStringConverter());
         settings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
@@ -44,8 +44,6 @@ public static class ScimJson {
         return JsonConvert.SerializeObject(value, Settings);
     }
 
-    // Attribute names ignore case, so names that differ only in case are one attribute sent twice, and
-    // which of them is read would otherwise depend on the reader
     private static void RefuseRepeatedNames(string body) {
         using (var reader = new JsonTextReader(new StringReader(body))) {
             var names = new Stack<HashSet<string>>();

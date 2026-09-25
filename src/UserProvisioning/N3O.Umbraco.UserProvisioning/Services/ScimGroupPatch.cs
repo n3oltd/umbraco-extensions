@@ -204,7 +204,6 @@ public static class ScimGroupPatch {
                         json.ReadString("type", "members.type"));
     }
 
-    // A value names members as an array of member objects, or, without a path, as an object whose members is one
     private static ISet<Guid> ReadMembers(ScimPatchOperation operation) {
         var value = operation.Value;
 
