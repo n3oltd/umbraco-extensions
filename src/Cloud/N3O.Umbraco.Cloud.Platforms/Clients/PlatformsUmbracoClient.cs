@@ -1329,6 +1329,108 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     /// <summary>
+    /// One of '1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '2', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '3', '30', '31', '4', '5', '6', '7', '8', '9'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum DayOfMonth
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"1")]
+        _1 = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"10")]
+        _10 = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"11")]
+        _11 = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"12")]
+        _12 = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"13")]
+        _13 = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"14")]
+        _14 = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"15")]
+        _15 = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"16")]
+        _16 = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"17")]
+        _17 = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"18")]
+        _18 = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"19")]
+        _19 = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"2")]
+        _2 = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"20")]
+        _20 = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"21")]
+        _21 = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"22")]
+        _22 = 14,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"23")]
+        _23 = 15,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"24")]
+        _24 = 16,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"25")]
+        _25 = 17,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"26")]
+        _26 = 18,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"27")]
+        _27 = 19,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"28")]
+        _28 = 20,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"29")]
+        _29 = 21,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"3")]
+        _3 = 22,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"30")]
+        _30 = 23,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"31")]
+        _31 = 24,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"4")]
+        _4 = 25,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"5")]
+        _5 = 26,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"6")]
+        _6 = 27,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"7")]
+        _7 = 28,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"8")]
+        _8 = 29,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"9")]
+        _9 = 30,
+
+    }
+
+    /// <summary>
     /// One of '_1', '_2', '_3', '_4', '_5', '_6', '_7'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -2547,7 +2649,8 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     {
 
         [Newtonsoft.Json.JsonProperty("collectionDay", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string CollectionDay { get; set; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public DayOfMonth? CollectionDay { get; set; }
 
     }
 
@@ -2559,7 +2662,8 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     {
 
         [Newtonsoft.Json.JsonProperty("collectionDay", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string CollectionDay { get; set; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public DayOfMonth? CollectionDay { get; set; }
 
     }
 
@@ -4103,8 +4207,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("search", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PublishedTypesenseSearch Search { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("allowsCrowdfunding", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool? AllowsCrowdfunding { get; set; }
+        [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public PlatformsPage? Page { get; set; }
 
         [Newtonsoft.Json.JsonProperty("elementKind", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
