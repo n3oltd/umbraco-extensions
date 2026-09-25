@@ -1,4 +1,3 @@
-using N3O.Umbraco.UserProvisioning.Exceptions;
 using N3O.Umbraco.UserProvisioning.Extensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -18,13 +17,8 @@ public class ScimBooleanConverter : JsonConverter {
                                     object existingValue,
                                     JsonSerializer serializer) {
         var path = reader.Path;
-        var value = JToken.Load(reader).ReadBoolean(path);
 
-        if (value == null && objectType == typeof(bool)) {
-            throw ScimException.InvalidValue($"{path} must be true or false");
-        }
-
-        return value;
+        return JToken.Load(reader).ReadBoolean(path);
     }
 
     public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {

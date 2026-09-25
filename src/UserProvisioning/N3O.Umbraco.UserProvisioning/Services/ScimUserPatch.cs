@@ -12,11 +12,6 @@ namespace N3O.Umbraco.UserProvisioning.Services;
 public static class ScimUserPatch {
     public static void Apply(ScimUser user, ScimPatchOperation operation) {
         var op = operation.Op ?? "";
-
-        if (!op.Is("add") && !op.Is("replace") && !op.Is("remove")) {
-            throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
-        }
-
         var path = ScimPath.Parse(operation.Path);
 
         if (path == null) {

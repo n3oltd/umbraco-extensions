@@ -68,10 +68,6 @@ public static class ScimGroupPatch {
         foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
             var op = operation.Op ?? "";
 
-            if (!op.Is("add") && !op.Is("remove") && !op.Is("replace")) {
-                throw ScimException.InvalidValue($"{operation.Op.Quote()} is not a patch operation");
-            }
-
             if (NamesSubAttribute(operation)) {
                 throw ScimException.InvalidPath("A member cannot be patched one sub-attribute at a time");
             }
