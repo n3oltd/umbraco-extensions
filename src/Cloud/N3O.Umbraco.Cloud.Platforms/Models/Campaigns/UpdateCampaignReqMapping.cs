@@ -96,7 +96,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
                 if (src.Giving.RegularGiving.RegularGivingFrequency == RegularGivingFrequencies.Monthly && 
                     src.Giving.RegularGiving.DayOfMonth.HasValue()) {
                     dest.Giving.Regular.Monthly = new MonthlyGivingOptionsReq();
-                    dest.Giving.Regular.Monthly.CollectionDay = src.Giving.RegularGiving.DayOfMonth.Id;
+                    dest.Giving.Regular.Monthly.CollectionDay = src.Giving.RegularGiving.DayOfMonth.Id.FromEnumString<DayOfMonth>();
                 } else if (src.Giving.RegularGiving.RegularGivingFrequency == RegularGivingFrequencies.Weekly && 
                            src.Giving.RegularGiving.DayOfWeek.HasValue()) {
                     dest.Giving.Regular.Weekly = new WeeklyGivingOptionsReq();
