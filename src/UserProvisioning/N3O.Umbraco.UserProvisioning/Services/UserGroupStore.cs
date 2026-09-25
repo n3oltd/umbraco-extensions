@@ -83,7 +83,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             await SetExternalIdAsync(group, ScimGroupPatch.ReadExternalId(operations));
             await SetMembersAsync(group,
                                   ScimGroupPatch.Resolve(group.Members, operations),
-                                  ScimGroupPatch.Named(group.Members, operations));
+                                  ScimGroupPatch.Named(operations));
         });
     }
 

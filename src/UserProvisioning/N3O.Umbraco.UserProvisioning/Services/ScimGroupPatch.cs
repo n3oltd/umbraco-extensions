@@ -46,15 +46,11 @@ public static class ScimGroupPatch {
     }
 
     // Not the members that change: naming one the group already holds is a claim to record all the same
-    public static ISet<Guid> Named(IReadOnlyList<BackOfficeUser> held, IEnumerable<ScimPatchOperation> operations) {
+    public static ISet<Guid> Named(IEnumerable<ScimPatchOperation> operations) {
         var named = new HashSet<Guid>();
 
         foreach (var operation in operations.OrEmpty().Where(IsMembership)) {
-            var op = operation.Op ?? "";
-
-            if (op.Is("add")) {
-                named.UnionWith(ReadKeys(held, operation));
-            } else if (op.Is("replace")) {
+            if ((operation.Op ?? "").Is("add") || (operation.Op ?? "").Is("replace")) {
                 named.UnionWith(ReadMembers(operation));
             }
         }
@@ -78,6 +74,11 @@ public static class ScimGroupPatch {
 
             if (NamesSubAttribute(operation)) {
                 throw ScimException.InvalidPath("A member cannot be patched one sub-attribute at a time");
+            }
+
+            if (op.Is("add") && Selects(operation)) {
+                throw ScimException.InvalidPath("A filter selects members the group holds, so it cannot name " +
+                                                "ones to add");
             }
 
             // Without this a replace deletes the members its path selects and puts nothing back
