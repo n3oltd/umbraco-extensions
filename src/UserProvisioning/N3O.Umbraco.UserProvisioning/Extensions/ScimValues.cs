@@ -8,6 +8,10 @@ public static class ScimValues {
         return value == null || value.Type == JTokenType.Null;
     }
 
+    public static bool? ReadBoolean(this JObject json, string name, string attribute) {
+        return json.GetValue(name, ScimText.Comparison).ReadBoolean(attribute);
+    }
+
     public static bool? ReadBoolean(this JToken value, string attribute) {
         if (value.IsNull()) {
             return null;

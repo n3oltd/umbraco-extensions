@@ -49,6 +49,18 @@ public static class ScimUserPatch {
         return value is JObject json ? [json] : [];
     }
 
+    private static ScimEmail Email(string address, bool primary) {
+        var email = new ScimEmail();
+        email.Primary = primary;
+        email.Value = address;
+
+        return email;
+    }
+
+    private static ScimEmail ReadEmail(ScimPath path, JObject json) {
+        return Email(json.ReadString("value", $"{path}.value"), json.ReadBoolean("primary", $"{path}.primary") == true);
+    }
+
     private static ScimName ReadName(ScimPath path, JToken value) {
         if (value.IsNull()) {
             return null;
@@ -95,22 +107,15 @@ public static class ScimUserPatch {
             return;
         }
 
-        var everyAddress = path.SubAttribute.HasValue()
-                               ? [value.ReadString(path.ToString())]
-                               : AsObjects(path, value).Select(x => x.ReadString("value", $"{path}.value")).ToList();
+        var emails = path.SubAttribute.HasValue()
+                         ? [Email(value.ReadString(path.ToString()), true)]
+                         : AsObjects(path, value).Select(x => ReadEmail(path, x)).ToList();
 
-        var address = everyAddress.FirstOrDefault(x => x.HasValue());
-
-        if (!address.HasValue()) {
+        if (!emails.Any(x => x.Value.HasValue())) {
             throw ScimException.InvalidValue($"{path} carries no email address");
         }
 
-        var email = new ScimEmail();
-        email.Primary = true;
-        email.Type = "work";
-        email.Value = address;
-
-        user.Emails = [email];
+        user.Emails = emails;
     }
 
     private static void SetName(ScimUser user, ScimPath path, JToken value, bool removing) {

@@ -307,9 +307,10 @@ public class UserStore : IScimStore<ScimUser> {
     }
 
     private static string GetEmail(ScimUser resource) {
-        var primary = resource.Emails.OrEmpty().FirstOrDefault(x => x.Primary)?.Value;
+        var addresses = resource.Emails.OrEmpty().Where(x => x.Value.HasValue()).ToList();
+        var email = addresses.FirstOrDefault(x => x.Primary) ?? addresses.FirstOrDefault();
 
-        return primary.HasValue() ? primary : resource.UserName;
+        return email?.Value ?? resource.UserName;
     }
 
     private static string GetName(ScimUser resource, string fallback) {
