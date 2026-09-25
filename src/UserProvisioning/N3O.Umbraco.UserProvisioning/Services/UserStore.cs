@@ -260,6 +260,28 @@ public class UserStore : IScimStore<ScimUser> {
                (provisioned || user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias))));
     }
 
+    private ScimException RefuseAddress(ScimUser resource, IUser user) {
+        var email = GetEmail(resource);
+
+        if (!email.HasValue()) {
+            return null;
+        }
+
+        if (!_settings.Governs(email)) {
+            return ScimException.InvalidValue($"Email {email.Quote()} is not in a governed domain");
+        }
+
+        if (email.Is(user?.Email)) {
+            return null;
+        }
+
+        var holders = new[] { _userService.GetByEmail(email), _userService.GetByUsername(email) };
+
+        return holders.Any(x => x != null && x.Key != user?.Key)
+                   ? ScimException.Conflict($"A user with email {email.Quote()} already exists")
+                   : null;
+    }
+
     private void SetActive(IUser user, bool active) {
         user.IsApproved = active;
 
@@ -271,21 +293,17 @@ public class UserStore : IScimStore<ScimUser> {
             throw ScimException.InvalidValue("An email cannot be null");
         }
 
-        var email = GetEmail(resource);
+        var refusal = RefuseAddress(resource, user);
 
-        if (email.HasValue() && !_settings.Governs(email)) {
-            throw ScimException.InvalidValue($"Email {email.Quote()} is not in a governed domain");
-        }
-
-        if (!email.HasValue() || email.Is(user?.Email)) {
+        if (refusal == null) {
             return;
         }
 
-        var holders = new[] { _userService.GetByEmail(email), _userService.GetByUsername(email) };
-
-        if (holders.Any(x => x != null && x.Key != user?.Key)) {
-            throw ScimException.Conflict($"A user with email {email.Quote()} already exists");
+        if (user != null && resource.Active == false && user.IsApproved) {
+            SetActive(user, false);
         }
+
+        throw refusal;
     }
 
     private static ScimAttributes Describe(BackOfficeUser user) {
