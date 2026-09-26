@@ -45,14 +45,14 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
         }
 
         foreach (var publishedCampaign in campaigns.Content.OrEmpty(x => x.Campaigns)) {
-            if (!_visibility.IsVisible(publishedCampaign)) {
+            if (!publishedCampaign.HasValue() || !_visibility.IsVisible(publishedCampaign)) {
                 continue;
             }
 
             AddSitemapEntry(entries, publishedCampaign.Url);
 
             foreach (var publishedOffering in publishedCampaign.Offerings.OrEmpty()) {
-                if (_visibility.IsVisible(publishedOffering)) {
+                if (publishedOffering.HasValue() && _visibility.IsVisible(publishedOffering)) {
                     AddSitemapEntry(entries, publishedOffering.Url);
                 }
             }
