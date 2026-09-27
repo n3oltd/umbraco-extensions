@@ -19,6 +19,7 @@ public class ContentComposer : Composer {
         builder.Services.AddSingleton<IContentHelper, ContentHelper>();
         builder.Services.AddSingleton<IContentLocator, ContentLocator>();
         builder.Services.AddTransient<IContentVisibility, ContentVisibility>();
+        builder.Services.AddTransient<ICultureSeeder, CultureSeeder>();
         builder.Services.AddSingleton<IMediaLocator, MediaLocator>();
         builder.Services.AddScoped<IPageModeAccessor, PageModeAccessor>();
         
@@ -33,5 +34,7 @@ public class ContentComposer : Composer {
         
         RegisterAll(t => t.ImplementsInterface<IPropertyBuilder>(),
                     t => builder.Services.AddTransient(t));
+
+        builder.Components().Append<CultureSeedingMigrationsComponent>();
     }
 }
