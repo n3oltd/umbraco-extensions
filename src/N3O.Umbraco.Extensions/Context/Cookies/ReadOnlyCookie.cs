@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Hosting;
 using System.Linq;
 
 namespace N3O.Umbraco.Context;
@@ -18,6 +19,9 @@ public abstract class ReadOnlyCookie : IReadOnlyCookie {
 
             if (key != null) {
                 Value = cookies[key];
+
+                // What is rendered from a visitor's own cookie is theirs alone.
+                EdgeCaching.Prevent(_httpContextAccessor.HttpContext);
             } else {
                 Value = GetDefaultValue();
             }

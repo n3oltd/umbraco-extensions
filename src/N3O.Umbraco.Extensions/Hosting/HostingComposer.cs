@@ -29,6 +29,7 @@ public class HostingComposer : Composer {
         builder.Services.AddSingleton<StaticFileCachePolicy>();
         
         builder.Services.AddScoped<CookiesMiddleware>();
+        builder.Services.AddScoped<EdgeCacheMiddleware>();
         builder.Services.AddScoped<NotFoundCacheControlMiddleware>();
         builder.Services.AddScoped<StagingMiddleware>();
         builder.Services.AddScoped<WellKnownFolderMiddleware>();

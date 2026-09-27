@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Hosting;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,6 +16,7 @@ namespace N3O.Umbraco.Templates.Extensions;
 public static class MergeModelProviderExtensions {
     public static async Task<IReadOnlyDictionary<string, object>> GetMergeModelsAsync(this IEnumerable<IMergeModelsProvider> mergeModelsProviders,
                                                                                       ILogger logger,
+                                                                                      HttpContext httpContext,
                                                                                       IPublishedContent content,
                                                                                       ConcurrentDictionary<IPublishedContent, IReadOnlyDictionary<string, object>> cache,
                                                                                       CancellationToken cancellationToken = default) {
@@ -35,6 +38,8 @@ public static class MergeModelProviderExtensions {
                     logger.LogError(ex, "Failed to get model for {Provider}. Content ID: {ID}",
                                     provider.GetType().Name,
                                     content.Key);
+
+                    EdgeCaching.Prevent(httpContext);
                 }
             }
 

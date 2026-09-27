@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Lookups;
@@ -7,6 +8,7 @@ using N3O.Umbraco.Cloud.Options;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Exceptions;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Hosting;
 using N3O.Umbraco.Json;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -30,6 +32,7 @@ public class CdnClient : ICdnClient {
 
     private readonly ICloudUrl _cloudUrl;
     private readonly IClock _clock;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IJsonProvider _jsonProvider;
     private readonly ILogger<CdnClient> _logger;
     private readonly HttpClient _httpClient;
@@ -39,11 +42,13 @@ public class CdnClient : ICdnClient {
 
     public CdnClient(ICloudUrl cloudUrl,
                      IClock clock,
+                     IHttpContextAccessor httpContextAccessor,
                      IJsonProvider jsonProvider,
                      ILogger<CdnClient> logger,
                      IOptions<CdnCacheOptions> options) {
         _cloudUrl = cloudUrl;
         _clock = clock;
+        _httpContextAccessor = httpContextAccessor;
         _jsonProvider = jsonProvider;
         _logger = logger;
 
@@ -127,6 +132,19 @@ public class CdnClient : ICdnClient {
     }
 
     private async Task<CdnDownloadResult> FetchAsync(string publishedUrl, CancellationToken cancellationToken) {
+        var download = await FetchCachedAsync(publishedUrl, cancellationToken);
+        var httpContext = _httpContextAccessor.HttpContext;
+
+        // An errored entry is served from Downloads until it can retry, so every request rendered around one is
+        // degraded, not only the one that failed. Lookups and hosted services also read the CDN outside a request.
+        if (download.Error && httpContext != null) {
+            EdgeCaching.Prevent(httpContext);
+        }
+
+        return download;
+    }
+
+    private async Task<CdnDownloadResult> FetchCachedAsync(string publishedUrl, CancellationToken cancellationToken) {
         // A refresh already in flight when an eviction lands cannot satisfy that eviction, so a caller joining
         // it takes one further turn rather than accepting the entry that refresh produces.
         for (var attempt = 0; attempt < 2; attempt++) {

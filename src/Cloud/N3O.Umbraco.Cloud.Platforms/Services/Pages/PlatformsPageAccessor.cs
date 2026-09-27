@@ -5,6 +5,7 @@ using N3O.Umbraco.Content;
 using N3O.Umbraco.ContentFinders;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Hosting;
 using N3O.Umbraco.Json;
 using System;
 using System.Collections.Generic;
@@ -43,7 +44,14 @@ public class PlatformsPageAccessor : IPlatformsPageAccessor {
         if (!_httpContextAccessor.HttpContext.Items.ContainsKey(key)) {
             var requestUri = _httpContextAccessor.HttpContext.Request.Uri();
 
-            _httpContextAccessor.HttpContext.Items[key] = await GetAsync(requestUri, cancellationToken);
+            var getPageResult = await GetAsync(requestUri, cancellationToken);
+
+            // Platforms pages change without an Umbraco publish, so no purge would reach an edge-cached copy.
+            if (getPageResult.HasValue()) {
+                EdgeCaching.Prevent(_httpContextAccessor.HttpContext);
+            }
+
+            _httpContextAccessor.HttpContext.Items[key] = getPageResult;
         }
         
         return (GetPageResult) _httpContextAccessor.HttpContext.Items[key];

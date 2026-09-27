@@ -37,7 +37,8 @@ public class Merger : IMerger {
     public async Task<string> MergeForAsync(IPublishedContent content,
                                             string markup,
                                             CancellationToken cancellationToken = default) {
-        var mergeModels = await _mergeModelsProviders.GetMergeModelsAsync(_logger, 
+        var mergeModels = await _mergeModelsProviders.GetMergeModelsAsync(_logger,
+                                                                          _httpContextAccessor.HttpContext,
                                                                           content,
                                                                           _mergeModelsCache,
                                                                           cancellationToken);
@@ -55,6 +56,7 @@ public class Merger : IMerger {
 
         if (content.HasValue()) {
             mergeModels = await _mergeModelsProviders.GetMergeModelsAsync(_logger,
+                                                                          _httpContextAccessor.HttpContext,
                                                                           content,
                                                                           _mergeModelsCache,
                                                                           cancellationToken);

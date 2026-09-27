@@ -50,6 +50,9 @@ public abstract class CmsStartup {
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+        // Response.OnStarting callbacks run in reverse registration order, so registering this first lets it see
+        // every header and cookie the rest of the pipeline sets.
+        app.UseMiddleware<EdgeCacheMiddleware>();
         app.UseMiddleware<NotFoundCacheControlMiddleware>();
 
         if (env.IsProduction()) {

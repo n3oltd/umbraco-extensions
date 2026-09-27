@@ -43,5 +43,6 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Umbraco.Engage.Core" Version="13.8.0" />
+        <PackageReference Include="Umbraco.Engage.Headless" Version="13.8.0" />
     </ItemGroup>
 </Project>
