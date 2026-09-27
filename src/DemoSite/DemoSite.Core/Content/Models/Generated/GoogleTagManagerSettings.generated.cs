@@ -56,5 +56,13 @@ namespace DemoSite.Content
 		[global::System.Diagnostics.CodeAnalysis.MaybeNull]
 		[ImplementPropertyType("containerId")]
 		public virtual string ContainerId => this.Value<string>(_publishedValueFallback, "containerId");
+
+		///<summary>
+		/// Tag Gateway Path: The measurement path of a Google tag gateway on this domain, e.g. metrics. Leave empty to load Google Tag Manager from Google.
+		///</summary>
+		[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Umbraco.ModelsBuilder.Embedded", "13.9.2+b414456")]
+		[global::System.Diagnostics.CodeAnalysis.MaybeNull]
+		[ImplementPropertyType("tagGatewayPath")]
+		public virtual string TagGatewayPath => this.Value<string>(_publishedValueFallback, "tagGatewayPath");
 	}
 }
