@@ -15,8 +15,9 @@ import type { PreviewEntry, PreviewState } from './types';
 
 const elementName = 'n3o-block-preview';
 
-// Only blocks near the viewport are previewed, so opening a document does not render all of it.
-const visibilityMargin = '400px';
+// The editor scrolls inside a nested container, which rootMargin does not extend into, so the prefetch distance
+// has to be a scrollMargin. TypeScript's DOM typings do not declare it yet.
+const observerOptions: IntersectionObserverInit & { scrollMargin: string } = { scrollMargin: '400px' };
 
 const hostStyles = `
     :host { display: block; }
@@ -49,8 +50,7 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         this.#onDataChanged();
     }
 
-    // The preview is rendered from the whole grid value, so a block's column and row spans change it as much
-    // as its content does.
+    // The preview is rendered from the whole grid value, so the block's spans change it as much as its content.
     get layout(): UmbBlockEditorCustomViewElement['layout'] {
         return this.#layout;
     }
@@ -83,9 +83,8 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         this.#mount = document.createElement('div');
         shadow.appendChild(this.#mount);
 
-        // A custom view replaces the whole block card, and for a block with areas the card is what carries the
-        // container its children are added and edited through. Without this a section renders but cannot be
-        // filled. It renders nothing for a block that has no areas, which is why it is not conditional.
+        // A custom view replaces the block card, which is what carries the container a block's areas are edited
+        // through. The container renders nothing for a block without areas.
         this.#areas = document.createElement('umb-block-grid-areas-container');
         this.#areas.setAttribute('draggable', 'false');
         shadow.appendChild(this.#areas);
@@ -104,9 +103,7 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
                 this.#pushContext();
             }, '_observeUnique');
 
-            // A document that has never been published cannot be routed against itself, so the server falls
-            // back to another document of the same type. That needs the document type, not the block's
-            // element type.
+            // A never-published document is previewed against another document of the same type.
             this.observe(context.contentTypeUnique, (unique) => {
                 this.#documentTypeKey = unique ?? null;
                 this.#pushContext();
@@ -179,9 +176,8 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         this.#render();
         this.#revealActions();
 
-        // Sorting a block relocates its element, which disconnects and reconnects the same instance and so
-        // takes it out of the coordinator. Rejoining here is what stops a dragged block being left with no
-        // route back: the contexts have already resolved, so nothing else would register it again.
+        // Sorting a block disconnects and reconnects the same instance after its contexts have resolved, so
+        // nothing else would register it with the coordinator again.
         this.#join();
 
         this.#observer ??= new IntersectionObserver((entries) => {
@@ -190,7 +186,7 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
             if (this.#visible) {
                 this.#requestIfVisible(0);
             }
-        }, { rootMargin: visibilityMargin });
+        }, observerOptions);
 
         this.#observer.observe(this);
     }
@@ -237,9 +233,8 @@ export class N3oBlockPreviewElement extends UmbAuthFetchMixin(UmbElementMixin(HT
         }
     }
 
-    // The action bar only appears on hover, which is easy to miss once our view fills the block. The opacity
-    // belongs to the entry, and the view is mounted through an extension slot, so the entry is several shadow
-    // roots up rather than this element's immediate host.
+    // The action bar's opacity variable belongs to umb-block-grid-entry, which is several shadow roots up because
+    // the view is mounted through an extension slot.
     #revealActions(): void {
         let node: Node = this;
 

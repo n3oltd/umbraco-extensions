@@ -7,14 +7,20 @@ const editDebounceMs = 500;
 
 export const previewFailedMessage = 'Failed getting block preview markup';
 
-// Every block in one grid previews from that grid's whole value, so a per-block request sends the same payload
-// as many times as there are blocks and makes the server convert it again each time. One coordinator per block
-// manager collects the blocks that actually need markup and asks for all of them together.
+interface Answer {
+    entry: PreviewEntry;
+    fingerprint: string;
+}
+
+// Each preview is rendered from the whole grid value, so one coordinator per block manager sends every block that
+// needs markup in a single request.
 export class PreviewCoordinator {
     readonly #blockManager: UmbBlockManagerContext;
     readonly #entries = new Map<string, PreviewEntry>();
     readonly #pending = new Set<string>();
-    readonly #rendered = new Map<string, string>();
+    // Keyed by content key, but only valid for the element that received it: moving a block between areas builds
+    // a new element for the same key, which starts out empty.
+    readonly #answers = new Map<string, Answer>();
 
     #context: PreviewRequestContext = { nodeKey: null, documentTypeKey: null, propertyAlias: null, culture: '' };
     #authFetch: AuthFetch | null = null;
@@ -27,15 +33,6 @@ export class PreviewCoordinator {
     }
 
     register(entry: PreviewEntry): void {
-        const existing = this.#entries.get(entry.contentKey);
-
-        // Moving a block between areas tears its element down and builds a new one, and the old element
-        // unregisters after the new one has registered. What was remembered about the key describes markup
-        // the element that has gone was showing, so the new one must not be treated as already rendered.
-        if (existing && existing !== entry) {
-            this.#rendered.delete(entry.contentKey);
-        }
-
         this.#entries.set(entry.contentKey, entry);
     }
 
@@ -43,14 +40,12 @@ export class PreviewCoordinator {
         if (this.#entries.get(entry.contentKey) === entry) {
             this.#entries.delete(entry.contentKey);
             this.#pending.delete(entry.contentKey);
-            this.#rendered.delete(entry.contentKey);
         }
     }
 
     setAuthFetch(authFetch: AuthFetch | null): void {
         // Every block pushes its own auth context into this one shared field, and the mixin reports null both
-        // before the context resolves and when an element disconnects. A block being dragged or deleted must
-        // not take the token away from the blocks that remain.
+        // before the context resolves and when an element disconnects.
         if (authFetch) {
             this.#authFetch = authFetch;
         }
@@ -64,11 +59,9 @@ export class PreviewCoordinator {
 
         this.#context = context;
 
-        // The markup is rendered against the whole context, so any change invalidates every block. Whatever is
-        // in flight was rendered against the old context, so its reply must not be applied.
         if (changed) {
             this.#inFlight?.abort();
-            this.#rendered.clear();
+            this.#answers.clear();
 
             for (const key of this.#entries.keys()) {
                 this.#pending.add(key);
@@ -78,8 +71,6 @@ export class PreviewCoordinator {
         }
     }
 
-    // delay is 0 for the reasons a block appears (mounted, scrolled into view) and debounced for editing, where
-    // every keystroke would otherwise be a render.
     request(entry: PreviewEntry, delay = editDebounceMs): void {
         this.#pending.add(entry.contentKey);
         this.#schedule(delay);
@@ -92,9 +83,8 @@ export class PreviewCoordinator {
     }
 
     async #flush(): Promise<void> {
-        // Batches are sent one at a time and a flush arriving during one is folded into the next, rather than
-        // superseding it: the blocks already sent have been taken out of the queue, so cancelling their request
-        // would leave them waiting for a reply that never comes.
+        // The blocks in a request are no longer pending, so aborting it for a newer flush would leave them without
+        // a reply. The newer flush runs once the request completes.
         if (this.#inFlight) {
             this.#flushAgain = true;
 
@@ -104,32 +94,16 @@ export class PreviewCoordinator {
         const due = [...this.#pending]
             .map((key) => this.#entries.get(key))
             .filter((entry): entry is PreviewEntry => !!entry)
-            .filter((entry) => this.#rendered.get(entry.contentKey) !== entry.fingerprint());
+            .filter((entry) => !this.#isAnswered(entry));
 
-        if (!due.length || !this.#authFetch) {
+        // The auth and property contexts resolve after a block joins, so until then its request stays pending.
+        if (!due.length || !this.#authFetch || !this.#context.propertyAlias) {
             return;
         }
 
-        const blockValue = this.#buildBlockValue();
-
-        if (!blockValue) {
-            return;
-        }
-
-        // Cleared only once the request is going out, so a flush arriving before the auth token resolves or
-        // before the block manager has layouts leaves the blocks queued instead of dropping them.
         this.#pending.clear();
 
-        // Captured before the request so a block edited while it is in flight is not recorded as rendered at
-        // its new fingerprint.
         const fingerprints = new Map(due.map((entry) => [entry.contentKey, entry.fingerprint()]));
-
-        for (const entry of due) {
-            if (!this.#rendered.has(entry.contentKey)) {
-                entry.receive({ status: 'loading' });
-            }
-        }
-
         const abort = new AbortController();
         this.#inFlight = abort;
 
@@ -137,7 +111,7 @@ export class PreviewCoordinator {
             const response = await this.#authFetch(this.#buildUrl(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-                body: JSON.stringify({ blockKeys: due.map((x) => x.contentKey), blockValue }),
+                body: JSON.stringify({ blockKeys: due.map((x) => x.contentKey), blockValue: this.#buildBlockValue() }),
                 signal: abort.signal,
             });
 
@@ -146,32 +120,26 @@ export class PreviewCoordinator {
             }
 
             const preview: PreviewResponse = await response.json();
-            const failed = new Set(preview.failed ?? []);
 
             for (const entry of due) {
-                const blockMarkup = preview.markup?.[entry.contentKey];
+                const blockMarkup = preview.markup[entry.contentKey];
 
+                // The server answers every key it read, so a key is missing only when the request itself could
+                // not be read.
                 if (typeof blockMarkup !== 'string') {
-                    this.#retry(entry);
+                    this.#fail(entry);
 
                     continue;
                 }
 
-                // A block the server could not render is answered with banner markup, which is why it has to
-                // say which those were. Recording one as rendered would pin the banner until the block is
-                // edited or the document reloaded.
-                if (failed.has(entry.contentKey)) {
-                    this.#rendered.delete(entry.contentKey);
-                    this.#pending.add(entry.contentKey);
-                } else {
-                    this.#rendered.set(entry.contentKey, fingerprints.get(entry.contentKey)!);
-                }
+                // A block the server could not render is answered with a banner, and is recorded like any other
+                // answer so that it is not sent again until its data or the context changes.
+                this.#answers.set(entry.contentKey, { entry, fingerprint: fingerprints.get(entry.contentKey)! });
 
                 entry.receive({ status: 'ready', markup: blockMarkup });
             }
         } catch (error) {
             if (abort.signal.aborted) {
-                // Cancelled rather than failed, so the blocks are queued again for the flush that cancelled it.
                 for (const entry of due) {
                     this.#pending.add(entry.contentKey);
                 }
@@ -179,7 +147,7 @@ export class PreviewCoordinator {
                 console.error('Block preview failed', error);
 
                 for (const entry of due) {
-                    this.#retry(entry);
+                    this.#fail(entry);
                 }
             }
         } finally {
@@ -195,24 +163,22 @@ export class PreviewCoordinator {
         }
     }
 
-    // Queued again but deliberately not rescheduled, so the next edit, scroll or context change tries again
-    // rather than this spinning against a server that is failing.
-    #retry(entry: PreviewEntry): void {
-        this.#rendered.delete(entry.contentKey);
+    // Queued again but not rescheduled, so the next edit, scroll or context change retries it.
+    #fail(entry: PreviewEntry): void {
         this.#pending.add(entry.contentKey);
 
         entry.receive({ status: 'error', message: previewFailedMessage });
     }
 
+    #isAnswered(entry: PreviewEntry): boolean {
+        const answer = this.#answers.get(entry.contentKey);
+
+        return answer?.entry === entry && answer.fingerprint === entry.fingerprint();
+    }
+
     #buildBlockValue() {
-        const layouts = this.#blockManager.getLayouts();
-
-        if (!layouts) {
-            return null;
-        }
-
         return {
-            layout: { 'Umbraco.BlockGrid': layouts },
+            layout: { 'Umbraco.BlockGrid': this.#blockManager.getLayouts() },
             contentData: this.#blockManager.getContents(),
             settingsData: this.#blockManager.getSettings(),
             expose: this.#blockManager.getExposes(),

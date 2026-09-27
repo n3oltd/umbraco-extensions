@@ -12,13 +12,11 @@ export interface PreviewEntry {
 
 export interface PreviewResponse {
     markup: Record<string, string>;
-    failed: string[];
 }
 
 export interface PreviewRequestContext {
     nodeKey: string | null;
     documentTypeKey: string | null;
-    // A document type can hold more than one block grid, so the server cannot infer this.
     propertyAlias: string | null;
     culture: string;
 }
