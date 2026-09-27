@@ -119,9 +119,6 @@ public class ContentHelper : IContentHelper {
                                             owner);
     }
 
-    // The owner is the element the property belongs to. Block editors need it from v15: once a block value
-    // carries an expose entry, BlockEditorVarianceHandler reads owner.ContentType.Variations to align block
-    // variance, so converting a block value without one throws.
     public TProperty GetConvertedValue<TProperty>(Type converterType,
                                                   string contentTypeAlias,
                                                   string propertyTypeAlias,
@@ -136,6 +133,14 @@ public class ContentHelper : IContentHelper {
         if (source == null || source.ToString() == "null" || publishedPropertyType == null) {
             return default;
         }
+
+        // Block editor converters dereference owner.ContentType for every block, and the content type is all they
+        // read from it.
+        owner ??= new PublishedElement(publishedContentType,
+                                       Guid.NewGuid(),
+                                       new Dictionary<string, object>(),
+                                       false,
+                                       new VariationContext());
 
         var intermediate = converter.ConvertSourceToIntermediate(owner, publishedPropertyType, source, false);
         var result = (TProperty) converter.ConvertIntermediateToObject(owner,

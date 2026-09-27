@@ -1,6 +1,7 @@
 using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Serialization;
@@ -64,6 +65,10 @@ public class BlockListPropertyBuilder : PropertyBuilder {
         
         blockValue.ContentData = blockItemDatas;
         blockValue.SettingsData = [];
+
+        // Umbraco renders only the blocks listed in Expose. A null culture is aligned to the default culture when
+        // the owner and element vary by culture.
+        blockValue.Expose = blockItemDatas.Select(x => new BlockItemVariation(x.Key, null, null)).ToList();
 
         return (_jsonSerializer.Serialize(blockValue), GetPropertyType(propertyAlias, parentContentTypeAlias));
     }
