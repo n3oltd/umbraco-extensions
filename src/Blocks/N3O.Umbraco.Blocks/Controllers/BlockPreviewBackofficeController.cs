@@ -1,16 +1,19 @@
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Blocks.Exceptions;
 using N3O.Umbraco.Blocks.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
@@ -30,6 +33,7 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IContentTypeService _contentTypeService;
+    private readonly ILogger<BlockPreviewBackofficeController> _logger;
 
     public BlockPreviewBackofficeController(IPublishedRouter publishedRouter,
                                             IBlockPreviewer blockPreviewer,
@@ -38,7 +42,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
                                             IContentLocator contentLocator,
                                             IUmbracoContextAccessor umbracoContextAccessor,
                                             IJsonSerializer jsonSerializer,
-                                            IContentTypeService contentTypeService) {
+                                            IContentTypeService contentTypeService,
+                                            ILogger<BlockPreviewBackofficeController> logger) {
         _publishedRouter = publishedRouter;
         _blockPreviewer = blockPreviewer;
         _languageService = languageService;
@@ -47,51 +52,101 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         _umbracoContextAccessor = umbracoContextAccessor;
         _jsonSerializer = jsonSerializer;
         _contentTypeService = contentTypeService;
+        _logger = logger;
     }
 
-    [HttpPost("previewGridBlock")]
-    public async Task<IActionResult> PreviewGridBlock([FromQuery(Name = "nodeKey")] Guid? contentId,
-                                                      [FromQuery(Name = "documentTypeKey")] Guid contentTypeId,
-                                                      [FromQuery(Name = "contentUdi")] string blockUdi,
-                                                      [FromQuery] string culture,
-                                                      [FromBody] BlockGridValue blockData) {
-        string markup;
+    [HttpPost("previewGridBlocks")]
+    public async Task<ActionResult<PreviewBlocksRes>> PreviewGridBlocks(
+        [FromQuery(Name = "nodeKey")] Guid? contentId,
+        [FromQuery(Name = "documentTypeKey")] Guid? contentTypeId,
+        [FromQuery] string propertyAlias,
+        [FromQuery] string culture) {
+        var blockKeys = new List<Guid>();
 
         try {
+            var req = await ReadRequestAsync();
+
+            if (!req.HasAny(x => x.BlockKeys)) {
+                return GetRes(new Dictionary<string, string>(), []);
+            }
+
+            blockKeys = req.BlockKeys.Distinct().ToList();
+
             var publishedContent = GetPublishedContent(contentId, contentTypeId);
 
             if (publishedContent == null) {
                 throw new BlockPreviewWarningException("No published content found");
-            } else {
-                await SetCultureAsync(publishedContent, culture);
+            }
 
-                await SetupPublishedRequest(publishedContent);
+            await SetCultureAsync(publishedContent, culture);
+            await SetupPublishedRequest(publishedContent);
 
-                var blockId = UdiParser.Parse(blockUdi)
-                                       .ToId()
-                                       .GetValueOrThrow();
+            var blockEditorData = req.BlockValue.ToEditorData(_jsonSerializer, _contentTypeService);
 
-                var blockEditorData = blockData.DeserializeAndClean(_jsonSerializer, _contentTypeService);
+            if (blockEditorData == null) {
+                throw new BlockPreviewErrorException("The block data is invalid");
+            }
 
-                if (blockEditorData == null) {
-                    throw new BlockPreviewErrorException("The block data is invalid");
-                } else {
-                    markup = await _blockPreviewer.PreviewBlockAsync(blockId,
-                                                                     publishedContent.ContentType.Alias,
-                                                                     blockEditorData);
+            var markup = new Dictionary<string, string>();
+            var failed = new List<string>();
+
+            foreach (var blockKey in blockKeys) {
+                var preview = await PreviewBlockAsync(blockKey, publishedContent, propertyAlias, blockEditorData);
+
+                markup[blockKey.ToString()] = preview.Markup;
+
+                if (preview.Failed) {
+                    failed.Add(blockKey.ToString());
                 }
             }
 
-            markup = markup.CleanUpMarkupForPreview();
-        } catch (BlockPreviewException ex) {
-            markup = ex.Markup;
+            return GetRes(markup, failed);
         } catch (Exception ex) {
-            var blockPreviewException = new BlockPreviewErrorException(ex.Message);
+            var banner = ex is BlockPreviewException previewException
+                             ? previewException.Markup
+                             : new BlockPreviewErrorException(ex.Message).Markup;
 
-            markup = blockPreviewException.Markup;
+            if (ex is not BlockPreviewException) {
+                _logger.LogError(ex, "Failed to preview blocks for {NodeKey}", contentId);
+            }
+
+            return GetRes(blockKeys.ToDictionary(x => x.ToString(), _ => banner),
+                          blockKeys.Select(x => x.ToString()).ToList());
         }
+    }
 
-        return Ok(markup);
+    private static PreviewBlocksRes GetRes(Dictionary<string, string> markup, IEnumerable<string> failed) {
+        var res = new PreviewBlocksRes();
+        res.Markup = markup;
+        res.Failed = failed;
+
+        return res;
+    }
+
+    private async Task<(string Markup, bool Failed)> PreviewBlockAsync(
+        Guid blockKey,
+        IPublishedContent content,
+        string propertyAlias,
+        BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
+        try {
+            var markup = await _blockPreviewer.PreviewBlockAsync(blockKey, content, propertyAlias, blockEditorData);
+
+            return (markup.CleanUpMarkupForPreview(), false);
+        } catch (BlockPreviewException ex) {
+            return (ex.Markup, true);
+        } catch (Exception ex) {
+            _logger.LogError(ex, "Failed to preview block {BlockKey}", blockKey);
+
+            return (new BlockPreviewErrorException(ex.Message).Markup, true);
+        }
+    }
+
+    private async Task<PreviewBlocksReq> ReadRequestAsync() {
+        using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true)) {
+            var json = await reader.ReadToEndAsync();
+
+            return json.HasValue() ? _jsonSerializer.Deserialize<PreviewBlocksReq>(json) : null;
+        }
     }
 
     private async Task SetupPublishedRequest(IPublishedContent content = null) {
@@ -107,14 +162,14 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         context.PublishedRequest = requestBuilder.Build();
     }
 
-    private IPublishedContent GetPublishedContent(Guid? contentId, Guid contentTypeId) {
+    private IPublishedContent GetPublishedContent(Guid? contentId, Guid? contentTypeId) {
         var content = contentId.IfNotNull(x => _contentLocator.ById(x));
 
         if (content != null) {
             return content;
         }
 
-        var contentType = _contentTypeService.Get(contentTypeId);
+        var contentType = contentTypeId.IfNotNull(x => _contentTypeService.Get(x));
 
         return contentType != null ? _contentLocator.All(contentType.Alias).FirstOrDefault() : null;
     }

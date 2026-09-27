@@ -1,9 +1,9 @@
 using N3O.Umbraco.Extensions;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Blocks;
+using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
 
 namespace N3O.Umbraco.Content;
@@ -12,11 +12,15 @@ public class BlockListPropertyBuilder : PropertyBuilder {
     private readonly List<(string, (IContentBuilder ContentBuilder, Guid Key))> _contentBuilders = [];
     private readonly IServiceProvider _serviceProvider;
     private readonly IContentTypeService _contentTypeService;
+    private readonly IJsonSerializer _jsonSerializer;
 
-    public BlockListPropertyBuilder(IContentTypeService contentTypeService, IServiceProvider serviceProvider)
+    public BlockListPropertyBuilder(IContentTypeService contentTypeService,
+                                    IServiceProvider serviceProvider,
+                                    IJsonSerializer jsonSerializer)
         : base(contentTypeService) {
         _serviceProvider = serviceProvider;
         _contentTypeService = contentTypeService;
+        _jsonSerializer = jsonSerializer;
     }
 
     public IContentBuilder Add(string contentTypeAlias, Guid? customKey = null, int? order = null) {
@@ -61,6 +65,6 @@ public class BlockListPropertyBuilder : PropertyBuilder {
         blockValue.ContentData = blockItemDatas;
         blockValue.SettingsData = [];
 
-        return (JsonConvert.SerializeObject(blockValue), GetPropertyType(propertyAlias, parentContentTypeAlias));
+        return (_jsonSerializer.Serialize(blockValue), GetPropertyType(propertyAlias, parentContentTypeAlias));
     }
 }
