@@ -63,7 +63,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             if (publishedContent == null) {
                 throw new BlockPreviewWarningException("No published content found");
             } else {
-                await SetCultureAsync(publishedContent, culture);
+                var previewCulture = await GetCultureAsync(publishedContent, culture);
+                SetCulture(previewCulture);
 
                 await SetupPublishedRequest(publishedContent);
 
@@ -119,7 +120,7 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         return contentType != null ? _contentLocator.All(contentType.Alias).FirstOrDefault() : null;
     }
 
-    private async Task SetCultureAsync(IPublishedContent content, string culture) {
+    private async Task<string> GetCultureAsync(IPublishedContent content, string culture) {
         var currentCulture = culture.HasValue() ? culture : content?.GetCultureFromDomains();
 
         if (!currentCulture.HasValue() || currentCulture == "undefined") {
@@ -127,9 +128,14 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             currentCulture = defaultLanguage?.IsoCode;
         }
 
-        _variationContextAccessor.VariationContext = new VariationContext(currentCulture);
+        return currentCulture;
+    }
 
-        var cultureInfo = new CultureInfo(currentCulture);
+    // Synchronous because a culture set inside an async method is restored when that method returns.
+    private void SetCulture(string culture) {
+        _variationContextAccessor.VariationContext = new VariationContext(culture);
+
+        var cultureInfo = new CultureInfo(culture);
         Thread.CurrentThread.CurrentCulture = cultureInfo;
         Thread.CurrentThread.CurrentUICulture = cultureInfo;
     }
