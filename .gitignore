@@ -369,9 +369,6 @@ src/Forms/N3O.Umbraco.Forms.StaticAssets/Views
 src/Sync/N3O.Umbraco.Sync/App_Plugins
 src/Sync/N3O.Umbraco.Sync.Forms/App_Plugins
 Our.Umbraco.GMaps
-**/uSync/v9/Media
-**/uSync/v9/UserGroups
-**/uSync/v9/Users
 **/wwwroot/media
 
 appsettings.Authentication.json
