@@ -14,8 +14,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Umbraco.Cms.Core.Cache.PropertyEditors;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
@@ -33,6 +35,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IContentTypeService _contentTypeService;
+    private readonly IContentHelper _contentHelper;
+    private readonly IBlockEditorElementTypeCache _blockEditorElementTypeCache;
     private readonly ILogger<BlockPreviewBackofficeController> _logger;
 
     public BlockPreviewBackofficeController(IPublishedRouter publishedRouter,
@@ -43,6 +47,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
                                             IUmbracoContextAccessor umbracoContextAccessor,
                                             IJsonSerializer jsonSerializer,
                                             IContentTypeService contentTypeService,
+                                            IContentHelper contentHelper,
+                                            IBlockEditorElementTypeCache blockEditorElementTypeCache,
                                             ILogger<BlockPreviewBackofficeController> logger) {
         _publishedRouter = publishedRouter;
         _blockPreviewer = blockPreviewer;
@@ -52,6 +58,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         _umbracoContextAccessor = umbracoContextAccessor;
         _jsonSerializer = jsonSerializer;
         _contentTypeService = contentTypeService;
+        _contentHelper = contentHelper;
+        _blockEditorElementTypeCache = blockEditorElementTypeCache;
         _logger = logger;
     }
 
@@ -60,14 +68,15 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         [FromQuery(Name = "nodeKey")] Guid? contentId,
         [FromQuery(Name = "documentTypeKey")] Guid? contentTypeId,
         [FromQuery] string propertyAlias,
-        [FromQuery] string culture) {
+        [FromQuery] string culture,
+        CancellationToken cancellationToken) {
         var blockKeys = new List<Guid>();
 
         try {
             var req = await ReadRequestAsync();
 
             if (!req.HasAny(x => x.BlockKeys)) {
-                return GetRes(new Dictionary<string, string>(), []);
+                return GetRes(new Dictionary<string, string>());
             }
 
             blockKeys = req.BlockKeys.Distinct().ToList();
@@ -81,63 +90,91 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             await SetCultureAsync(publishedContent, culture);
             await SetupPublishedRequest(publishedContent);
 
-            var blockEditorData = req.BlockValue.ToEditorData(_jsonSerializer, _contentTypeService);
+            var blockEditorData = req.BlockValue.ToEditorData(_jsonSerializer, _blockEditorElementTypeCache, _logger);
 
             if (blockEditorData == null) {
                 throw new BlockPreviewErrorException("The block data is invalid");
             }
 
+            var blockGridModel = GetBlockGridModel(publishedContent, propertyAlias, blockEditorData);
             var markup = new Dictionary<string, string>();
-            var failed = new List<string>();
 
             foreach (var blockKey in blockKeys) {
-                var preview = await PreviewBlockAsync(blockKey, publishedContent, propertyAlias, blockEditorData);
-
-                markup[blockKey.ToString()] = preview.Markup;
-
-                if (preview.Failed) {
-                    failed.Add(blockKey.ToString());
+                // The editor aborts a request whose context has changed and will not read its reply.
+                if (cancellationToken.IsCancellationRequested) {
+                    break;
                 }
+
+                markup[blockKey.ToString()] = await PreviewBlockAsync(blockKey,
+                                                                      publishedContent,
+                                                                      propertyAlias,
+                                                                      blockGridModel,
+                                                                      blockEditorData);
             }
 
-            return GetRes(markup, failed);
+            return GetRes(markup);
         } catch (Exception ex) {
             var banner = ex is BlockPreviewException previewException
                              ? previewException.Markup
                              : new BlockPreviewErrorException(ex.Message).Markup;
 
             if (ex is not BlockPreviewException) {
-                _logger.LogError(ex, "Failed to preview blocks for {NodeKey}", contentId);
+                _logger.LogError(ex,
+                                 "Failed to preview blocks of {PropertyAlias} for {NodeKey}",
+                                 propertyAlias,
+                                 contentId);
             }
 
-            return GetRes(blockKeys.ToDictionary(x => x.ToString(), _ => banner),
-                          blockKeys.Select(x => x.ToString()).ToList());
+            return GetRes(blockKeys.ToDictionary(x => x.ToString(), _ => banner));
         }
     }
 
-    private static PreviewBlocksRes GetRes(Dictionary<string, string> markup, IEnumerable<string> failed) {
+    private BlockGridModel GetBlockGridModel(IPublishedContent content,
+                                             string propertyAlias,
+                                             BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
+        var json = _jsonSerializer.Serialize(blockEditorData.BlockValue);
+
+        var blockGridModel = _contentHelper.GetConvertedValue<BlockGridPropertyValueConverter, BlockGridModel>(
+            content.ContentType.Alias,
+            propertyAlias,
+            json,
+            content);
+
+        // A block grid nested inside another block is a property of that block's element type, not the document's.
+        if (blockGridModel == null) {
+            throw new BlockPreviewWarningException($"Property {propertyAlias.Quote()} is not a block grid on " +
+                                                   $"{content.ContentType.Alias.Quote()}");
+        }
+
+        return blockGridModel;
+    }
+
+    private static PreviewBlocksRes GetRes(Dictionary<string, string> markup) {
         var res = new PreviewBlocksRes();
         res.Markup = markup;
-        res.Failed = failed;
 
         return res;
     }
 
-    private async Task<(string Markup, bool Failed)> PreviewBlockAsync(
-        Guid blockKey,
-        IPublishedContent content,
-        string propertyAlias,
-        BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
+    private async Task<string> PreviewBlockAsync(Guid blockKey,
+                                                 IPublishedContent content,
+                                                 string propertyAlias,
+                                                 BlockGridModel blockGridModel,
+                                                 BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
         try {
-            var markup = await _blockPreviewer.PreviewBlockAsync(blockKey, content, propertyAlias, blockEditorData);
+            var markup = await _blockPreviewer.PreviewBlockAsync(blockKey, content, blockGridModel, blockEditorData);
 
-            return (markup.CleanUpMarkupForPreview(), false);
+            return markup.CleanUpMarkupForPreview();
         } catch (BlockPreviewException ex) {
-            return (ex.Markup, true);
+            return ex.Markup;
         } catch (Exception ex) {
-            _logger.LogError(ex, "Failed to preview block {BlockKey}", blockKey);
+            _logger.LogError(ex,
+                             "Failed to preview block {BlockKey} of {PropertyAlias} on {NodeKey}",
+                             blockKey,
+                             propertyAlias,
+                             content.Key);
 
-            return (new BlockPreviewErrorException(ex.Message).Markup, true);
+            return new BlockPreviewErrorException(ex.Message).Markup;
         }
     }
 

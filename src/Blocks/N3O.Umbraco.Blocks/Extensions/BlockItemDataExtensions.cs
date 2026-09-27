@@ -28,6 +28,16 @@ public static class BlockItemDataExtensions {
                        : value;
         }
 
+        if (editorAlias == Aliases.MemberPicker) {
+            return Guid.TryParse(value?.ToString(), out var memberKey) && memberKey != Guid.Empty
+                       ? Udi.Create(UdiEntityType.Member, memberKey).UriValue.ToString()
+                       : value;
+        }
+
+        if (editorAlias == Aliases.UploadField) {
+            return value is JsonObject upload ? upload["src"]?.ToString() : value;
+        }
+
         if (editorAlias == Aliases.MultipleTextstring) {
             if (value is IEnumerable<string> lines) {
                 return string.Join("\r\n", lines);
@@ -79,9 +89,7 @@ public static class BlockItemDataExtensions {
             entity.TryGetPropertyValue("unique", out var unique) &&
             Guid.TryParse(unique?.ToString(), out var key) &&
             key != Guid.Empty) {
-            // Parsed rather than created because Udi.Create throws on an entity type Umbraco does not know, and
-            // this pass runs once for the whole grid, so one unconvertible reference would otherwise replace
-            // every block on the page with an error banner.
+            // Udi.Create throws on an entity type Umbraco does not know.
             return UdiParser.TryParse($"umb://{entityType}/{key:N}", out var udi) ? udi.ToString() : null;
         }
 

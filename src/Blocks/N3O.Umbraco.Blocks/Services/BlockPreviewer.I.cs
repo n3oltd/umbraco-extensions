@@ -8,6 +8,6 @@ namespace N3O.Umbraco.Blocks;
 public interface IBlockPreviewer {
     Task<string> PreviewBlockAsync(Guid blockId,
                                    IPublishedContent content,
-                                   string propertyAlias,
+                                   BlockGridModel blockGridModel,
                                    BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData);
 }
