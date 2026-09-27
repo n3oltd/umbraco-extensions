@@ -6,11 +6,11 @@ namespace N3O.Umbraco.Payments.Models;
 public class CardPayment : Value {
     [JsonConstructor]
     public CardPayment(bool threeDSecureRequired,
-                       bool threeDSecureComplete,
+                       bool threeDSecureCompleted,
                        ThreeDSecureV1 threeDSecureV1,
                        ThreeDSecureV2 threeDSecureV2) {
         ThreeDSecureRequired = threeDSecureRequired;
-        ThreeDSecureCompleted = threeDSecureComplete;
+        ThreeDSecureCompleted = threeDSecureCompleted;
         ThreeDSecureV1 = threeDSecureV1;
         ThreeDSecureV2 = threeDSecureV2;
     }
