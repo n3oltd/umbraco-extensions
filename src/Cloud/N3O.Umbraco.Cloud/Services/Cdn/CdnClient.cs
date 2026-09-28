@@ -28,12 +28,12 @@ public class CdnClient : ICdnClient {
     private static readonly ConcurrentDictionary<string, CdnDownloadResult> Downloads = new(StringComparer.InvariantCultureIgnoreCase);
     private static readonly ConcurrentDictionary<string, Lazy<Task<CdnDownloadResult>>> Refreshes = new(StringComparer.InvariantCultureIgnoreCase);
     private static readonly ConcurrentDictionary<string, Instant> InvalidatedAt = new(StringComparer.InvariantCultureIgnoreCase);
-    private static readonly PublishedContentJsonContractResolver PublishedContentJsonContractResolver = new();
 
     private readonly ICloudUrl _cloudUrl;
     private readonly IClock _clock;
     private readonly IJsonProvider _jsonProvider;
     private readonly ILogger<CdnClient> _logger;
+    private readonly PublishedContentJsonContractResolver _contractResolver;
     private readonly HttpClient _httpClient;
     private readonly Duration _maxAge;
     private readonly Duration _maxRetention;
@@ -48,6 +48,8 @@ public class CdnClient : ICdnClient {
         _clock = clock;
         _jsonProvider = jsonProvider;
         _logger = logger;
+
+        _contractResolver = new PublishedContentJsonContractResolver(logger);
 
         _httpClient = new HttpClient();
         _httpClient.Timeout = TimeSpan.FromSeconds(15);
@@ -229,7 +231,7 @@ public class CdnClient : ICdnClient {
     private T Deserialize<T>(string json, JsonSerializer jsonSerializer) {
         if (jsonSerializer == JsonSerializers.JsonProvider) {
             var settings = _jsonProvider.GetSettings();
-            settings.ContractResolver = PublishedContentJsonContractResolver;
+            settings.ContractResolver = _contractResolver;
 
             return JsonConvert.DeserializeObject<T>(json, settings);
         } else if (jsonSerializer == JsonSerializers.Simple) {

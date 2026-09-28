@@ -36,7 +36,7 @@ public class ApiElements : ApiLookupsCollection<Element> {
         foreach (var publishedElement in publishedElements.OrEmpty(x => x.Elements)) {
             if (publishedElement.ElementKind == null) {
                 if (UnknownKindElementIds.TryAdd(publishedElement.Id, true)) {
-                    _logger.LogError("Skipping published element {ElementId} as its kind is not known to this site",
+                    _logger.LogError("Skipping published element {ElementId} as it has no kind this site recognises",
                                      publishedElement.Id);
                 }
 
