@@ -71,6 +71,10 @@ public class ContentDonationItems : LookupsCollection<DonationItem> {
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
     
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<DonationItem>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
         
@@ -81,7 +85,7 @@ public class ContentDonationItems : LookupsCollection<DonationItem> {
         List<DonationItemContent> content;
         
         if (_umbracoContextAccessor.TryGetUmbracoContext(out _)) {
-            content = _contentCache.All<DonationItemContent>().OrderBy(x => x.Content().Name).ToList();
+            content = _contentCache.AllInDefaultCulture<DonationItemContent>().OrderBy(x => x.Content().Name).ToList();
         } else {
             content = [];
         }
@@ -101,8 +105,6 @@ public class ContentDonationItems : LookupsCollection<DonationItem> {
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }

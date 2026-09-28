@@ -71,6 +71,10 @@ public class ContentFeedbackSchemes : LookupsCollection<FeedbackScheme> {
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
     
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<FeedbackScheme>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
         
@@ -81,7 +85,7 @@ public class ContentFeedbackSchemes : LookupsCollection<FeedbackScheme> {
         List<FeedbackSchemeContent> content;
         
         if (_umbracoContextAccessor.TryGetUmbracoContext(out _)) {
-            content = _contentCache.All<FeedbackSchemeContent>().OrderBy(x => x.Content().Name).ToList();
+            content = _contentCache.AllInDefaultCulture<FeedbackSchemeContent>().OrderBy(x => x.Content().Name).ToList();
         } else {
             content = [];
         }
@@ -104,8 +108,6 @@ public class ContentFeedbackSchemes : LookupsCollection<FeedbackScheme> {
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }
