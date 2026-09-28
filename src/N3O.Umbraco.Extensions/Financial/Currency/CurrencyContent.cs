@@ -25,6 +25,10 @@ public class ContentCurrencies : LookupsCollection<Currency> {
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
 
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<Currency>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
 
@@ -32,7 +36,7 @@ public class ContentCurrencies : LookupsCollection<Currency> {
     }
 
     private IReadOnlyList<Currency> GetFromCache() {
-        var content = _contentCache.All<CurrencyContent>().OrderBy(x => x.Content().SortOrder).ToList();
+        var content = _contentCache.AllInDefaultCulture<CurrencyContent>().OrderBy(x => x.Content().SortOrder).ToList();
 
         var lookups = content.Select(ToCurrency).ToList();
 
@@ -50,8 +54,6 @@ public class ContentCurrencies : LookupsCollection<Currency> {
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }
