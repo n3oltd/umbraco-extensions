@@ -22,6 +22,10 @@ public class ContentGivingSchedules : LookupsCollection<GivingSchedule> {
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
 
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<GivingSchedule>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
 
@@ -29,7 +33,7 @@ public class ContentGivingSchedules : LookupsCollection<GivingSchedule> {
     }
 
     private IReadOnlyList<GivingSchedule> GetFromCache() {
-        var content = _contentCache.All<GivingScheduleContent>().OrderBy(x => x.Content().Name).ToList();
+        var content = _contentCache.AllInDefaultCulture<GivingScheduleContent>().OrderBy(x => x.Content().Name).ToList();
 
         var lookups = content.Select(ToGivingSchedule).ToList();
 
@@ -43,8 +47,6 @@ public class ContentGivingSchedules : LookupsCollection<GivingSchedule> {
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }
