@@ -76,8 +76,15 @@ public abstract class UmbracoContent<T> : Value, IUmbracoContent {
 
     protected IEnumerable<TProperty> GetNestedAs<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> memberExpression) {
         var alias = AliasHelper<T>.PropertyAlias(memberExpression);
-        var values = (IEnumerable) Content().Value(alias, VariationContext?.Culture, VariationContext?.Segment)
-                     ?? Enumerable.Empty<IPublishedElement>();
+        var value = Content().Value(alias, VariationContext?.Culture, VariationContext?.Segment);
+
+        // The editor migration rewrites Nested Content properties to a Block List, whose items wrap the element
+        // rather than being one, so casting them to IPublishedElement throws
+        if (value is IEnumerable<BlockListItem>) {
+            return GetBlockListValueAs(memberExpression);
+        }
+
+        var values = (IEnumerable) value ?? Enumerable.Empty<IPublishedElement>();
 
         return values.Cast<IPublishedElement>().Select(x => x.As<TProperty>(_content));
     }
