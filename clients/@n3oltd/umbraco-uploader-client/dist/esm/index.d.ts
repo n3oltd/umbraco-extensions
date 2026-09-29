@@ -1,21 +1,23 @@
-export declare class CropperClient {
+export declare class UploaderClient {
     private http;
     private baseUrl;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined;
     constructor(baseUrl?: string, http?: {
         fetch(url: RequestInfo, init?: RequestInit): Promise<Response>;
     });
-    getMediaById(mediaId: string | null): Promise<ImageMedia>;
-    protected processGetMediaById(response: Response): Promise<ImageMedia>;
-    upload(minHeight: number | null | undefined, minWidth: number | null | undefined, file: FileParameter | null | undefined): Promise<ImageMedia>;
-    protected processUpload(response: Response): Promise<ImageMedia>;
+    getMediaById(mediaId: string): Promise<FileMedia>;
+    protected processGetMediaById(response: Response): Promise<FileMedia>;
+    upload(allowedExtensions: string | null | undefined, imagesOnly: boolean | null | undefined, maxFileSizeMb: number | null | undefined, maxHeight: number | null | undefined, maxWidth: number | null | undefined, minHeight: number | null | undefined, minWidth: number | null | undefined, file: FileParameter | null | undefined): Promise<FileMedia>;
+    protected processUpload(response: Response): Promise<FileMedia>;
+    getResponse(storagePath: string | null | undefined, filesizeBytes: number | undefined): Promise<FileMedia>;
+    protected processGetResponse(response: Response): Promise<FileMedia>;
 }
-export interface ImageMedia {
+export interface FileMedia {
     urlPath?: string | undefined;
     mediaId?: string | undefined;
     filename?: string | undefined;
-    height?: number;
-    width?: number;
+    extension?: string | undefined;
+    sizeMb?: number;
 }
 export interface ProblemDetails {
     type?: string | undefined;
@@ -23,6 +25,7 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface FileParameter {
     data: any;

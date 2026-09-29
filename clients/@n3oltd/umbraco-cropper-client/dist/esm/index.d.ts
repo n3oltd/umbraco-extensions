@@ -5,7 +5,7 @@ export declare class CropperClient {
     constructor(baseUrl?: string, http?: {
         fetch(url: RequestInfo, init?: RequestInit): Promise<Response>;
     });
-    getMediaById(mediaId: string | null): Promise<ImageMedia>;
+    getMediaById(mediaId: string): Promise<ImageMedia>;
     protected processGetMediaById(response: Response): Promise<ImageMedia>;
     upload(minHeight: number | null | undefined, minWidth: number | null | undefined, file: FileParameter | null | undefined): Promise<ImageMedia>;
     protected processUpload(response: Response): Promise<ImageMedia>;
@@ -23,6 +23,7 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface FileParameter {
     data: any;
