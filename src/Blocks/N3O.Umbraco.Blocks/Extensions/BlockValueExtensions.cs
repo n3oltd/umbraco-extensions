@@ -1,105 +1,37 @@
-using N3O.Umbraco.Extensions;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Umbraco.Cms.Core.Collections;
-using Umbraco.Cms.Core.Models;
+using Microsoft.Extensions.Logging;
+using Umbraco.Cms.Core.Cache.PropertyEditors;
 using Umbraco.Cms.Core.Models.Blocks;
+using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Serialization;
-using Umbraco.Cms.Core.Services;
-using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class BlockValueExtensions {
-    private static readonly ConcurrentHashSet<IContentType> ContentTypes = [];
+    // Mutates blockValue: the converter backfills keys, clears the legacy raw values and rewrites Expose.
+    public static BlockEditorData<BlockGridValue, BlockGridLayoutItem> ToEditorData(
+        this BlockGridValue blockValue,
+        IJsonSerializer jsonSerializer,
+        IBlockEditorElementTypeCache elementTypeCache,
+        ILogger logger) {
+        if (blockValue == null) {
+            return null;
+        }
 
-    public static BlockEditorData<BlockGridValue, BlockGridLayoutItem> DeserializeAndClean(this BlockGridValue blockValue,
-                                                      IJsonSerializer jsonSerializer,
-                                                      IContentTypeService contentTypeService) {
         var dataConverter = new BlockGridEditorDataConverter(jsonSerializer);
+        var blockEditorValues = new BlockEditorValues<BlockGridValue, BlockGridLayoutItem>(dataConverter,
+                                                                                           elementTypeCache,
+                                                                                           logger);
 
-        var blockValueAsString = blockValue.ToString();
+        var blockEditorData = blockEditorValues.ConvertAndClean(blockValue);
 
-        if (!blockValueAsString.HasValue()) {
+        if (blockEditorData == null) {
             return null;
         }
 
-        if (!blockValueAsString.DetectIsJson()) {
-            blockValueAsString = JsonConvert.SerializeObject(blockValue);
-        }
-
-        var blockEditorData = dataConverter.Deserialize(blockValueAsString);
-
-        return Clean(contentTypeService, blockEditorData);
-    }
-
-    private static BlockEditorData<BlockGridValue, BlockGridLayoutItem> Clean(IContentTypeService contentTypeService, BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
-        if (blockEditorData.BlockValue.ContentData.Count == 0) {
-            blockEditorData.BlockValue.SettingsData.Clear();
-
-            return null;
-        }
-
-        var contentTypePropertyTypes = new Dictionary<string, Dictionary<string, IPropertyType>>();
-
-        var contentTypeKeys = blockEditorData.BlockValue.ContentData
-                                             .Select(x => x.ContentTypeKey)
-                                             .Union(blockEditorData.BlockValue.SettingsData.Select(x => x.ContentTypeKey))
-                                             .Distinct();
-
-        var contentTypesDictionary = GetAllContentTypes(contentTypeService, contentTypeKeys).ToDictionary(x => x.Key);
-
-        foreach (var block in blockEditorData.BlockValue.ContentData.Where(x => blockEditorData.References.Any(r => x.Key != Guid.Empty &&
-                                                                                                                    r.ContentKey == x.Key))) {
-            ResolveBlockItemData(block, contentTypePropertyTypes, contentTypesDictionary);
-        }
-
-        foreach (var block in blockEditorData.BlockValue.SettingsData.Where(x => blockEditorData.References.Any(r => r.SettingsKey.HasValue &&
-                                                                                                                     x.Key != Guid.Empty &&
-                                                                                                                     r.SettingsKey == x.Key))) {
-            ResolveBlockItemData(block, contentTypePropertyTypes, contentTypesDictionary);
-        }
-
-        blockEditorData.BlockValue.ContentData.RemoveAll(x => !x.ContentTypeAlias.HasValue());
-        blockEditorData.BlockValue.SettingsData.RemoveAll(x => !x.ContentTypeAlias.HasValue());
+        // Must follow the clean, which is what supplies the property types formatting reads.
+        blockEditorData.BlockValue.ContentData.FormatBlockData();
+        blockEditorData.BlockValue.SettingsData.FormatBlockData();
 
         return blockEditorData;
-    }
-
-    private static void ResolveBlockItemData(BlockItemData block,
-                                             Dictionary<string, Dictionary<string, IPropertyType>> contentTypePropertyTypes,
-                                             IDictionary<Guid, IContentType> contentTypesDictionary) {
-        if (!contentTypesDictionary.TryGetValue(block.ContentTypeKey, out var contentType)) {
-            return;
-        }
-
-        if (!contentTypePropertyTypes.TryGetValue(contentType.Alias, out var propertyTypes)) {
-            propertyTypes = contentTypePropertyTypes[contentType.Alias] = contentType.CompositionPropertyTypes.ToDictionary(x => x.Alias, x => x);
-        }
-
-        var sourceValues = block.Values.ToList();
-
-        block.Values.Clear();
-
-        foreach (var prop in sourceValues) {
-            if (propertyTypes.TryGetValue(prop.Alias, out var propType)) {
-                block.Values.Add(new BlockPropertyValue { Alias = prop.Alias, Value = prop.Value, PropertyType = propType });
-            }
-        }
-
-        block.ContentTypeAlias = contentType.Alias;
-    }
-
-    private static IEnumerable<IContentType> GetAllContentTypes(IContentTypeService contentTypeService,
-                                                                IEnumerable<Guid> keys) {
-        if (!ContentTypes.HasAny()) {
-            var contentTypes = contentTypeService.GetAllElementTypes().ToList();
-
-            ContentTypes.AddRangeIfNotExists(contentTypes);
-        }
-
-        return ContentTypes.Where(x => keys.Contains(x.Key));
     }
 }

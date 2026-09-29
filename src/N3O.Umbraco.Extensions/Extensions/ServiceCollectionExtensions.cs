@@ -1,7 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Attributes;
+using N3O.Umbraco.Hosting;
+using N3O.Umbraco.Json;
 using N3O.Umbraco.Utilities;
+using NJsonSchema;
 using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 using NSwag.Generation.AspNetCore;
 using NSwag.Generation.Processors;
 using System;
@@ -13,9 +17,14 @@ namespace N3O.Umbraco.Extensions;
 public static class ServiceCollectionExtensions {
     public static IServiceCollection AddOpenApiDocument(this IServiceCollection services, string name) {
         if (OpenApi.IsEnabled()) {
-            services.AddOpenApiDocument(opt => {
+            services.AddOpenApiDocument((opt, serviceProvider) => {
                 opt.Title = name;
                 opt.DocumentName = name;
+
+                if (IsWrittenByOurJson(name)) {
+                    UseOurJsonSchema(opt, serviceProvider);
+                }
+
                 opt.SchemaSettings.FlattenInheritanceHierarchy  = true;
 
                 AddSchemaProcessors(opt);
@@ -25,6 +34,31 @@ public static class ServiceCollectionExtensions {
         }
 
         return services;
+    }
+
+    private static bool IsWrittenByOurJson(string name) {
+        var controllerTypes = OurAssemblies.GetTypes(t => t.IsConcreteClass() &&
+                                                          name.EqualsInvariant(GetApiName(t)))
+                                           .ToList();
+
+        return controllerTypes.Any() && controllerTypes.All(t => t.GetCustomAttribute<OurJsonFilter>() != null);
+    }
+
+    private static string GetApiName(Type type) {
+        return type.GetCustomAttribute<ApiDocumentAttribute>()?.ApiName;
+    }
+
+    // NSwag describes a document with the host's System.Text.Json options unless told otherwise, and replacing
+    // the schema settings discards the OpenAPI 3 schema type NSwag set on the ones it chose.
+    private static void UseOurJsonSchema(AspNetCoreOpenApiDocumentGeneratorSettings opt,
+                                         IServiceProvider serviceProvider) {
+        var jsonProvider = serviceProvider.GetRequiredService<IJsonProvider>();
+
+        var schemaSettings = new NewtonsoftJsonSchemaGeneratorSettings();
+        schemaSettings.SerializerSettings = jsonProvider.GetSettings();
+        schemaSettings.SchemaType = SchemaType.OpenApi3;
+
+        opt.SchemaSettings = schemaSettings;
     }
     
     private static void AddSchemaProcessors(AspNetCoreOpenApiDocumentGeneratorSettings opt) {

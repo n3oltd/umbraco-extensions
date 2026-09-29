@@ -16,6 +16,6 @@ namespace N3O.Umbraco.Hosting;
 [ResponseCache(CacheProfileName = CacheProfiles.NoCache)]
 public class ApiController : ControllerBase {
     protected NotFoundObjectResult NotFound(ResourceNotFoundException ex) {
-        return NotFound($"{ex.ParameterName}:{ex.ParameterValue}");
+        return NotFound(ex.Resource);
     }
 }

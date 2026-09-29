@@ -23,11 +23,13 @@ public interface IContentHelper {
     TProperty GetConvertedValue<TProperty>(Type converterType,
                                            string contentTypeAlias,
                                            string propertyTypeAlias,
-                                           object propertyValue);
+                                           object propertyValue,
+                                           IPublishedElement owner = null);
     
     TProperty GetConvertedValue<TConverter, TProperty>(string contentTypeAlias,
                                                        string propertyTypeAlias,
-                                                       object propertyValue)
+                                                       object propertyValue,
+                                                       IPublishedElement owner = null)
         where TConverter : class, IPropertyValueConverter;
     
     IReadOnlyList<IContent> GetDescendants(IContent content, IQuery<IContent> query = null);
