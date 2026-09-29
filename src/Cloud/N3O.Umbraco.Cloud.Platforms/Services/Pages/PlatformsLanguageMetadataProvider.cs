@@ -20,14 +20,14 @@ public class PlatformsLanguageMetadataProvider : IMetadataProvider {
         return Task.FromResult(true);
     }
 
-    public Task<IEnumerable<MetadataEntry>> GetEntriesAsync(IPublishedContent _) {
+    public async Task<IEnumerable<MetadataEntry>> GetEntriesAsync(IPublishedContent _) {
         var entries = new List<MetadataEntry>();
-        var language = _platformsLanguageResolver.Resolve(_cultureAccessor.GetCulture());
+        var language = await _platformsLanguageResolver.ResolveAsync(_cultureAccessor.GetCulture());
 
         if (language != null) {
             entries.Add(new MetadataEntry("n3o-language", language.Id));
         }
 
-        return Task.FromResult<IEnumerable<MetadataEntry>>(entries);
+        return entries;
     }
 }

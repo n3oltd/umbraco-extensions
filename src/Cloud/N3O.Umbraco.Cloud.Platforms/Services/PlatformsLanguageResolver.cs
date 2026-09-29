@@ -3,6 +3,8 @@ using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Lookups;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -13,8 +15,8 @@ public class PlatformsLanguageResolver : IPlatformsLanguageResolver {
         _lookups = lookups;
     }
 
-    public PlatformsLanguage Resolve(string cultureCode) {
-        var languages = _lookups.GetAll<PlatformsLanguage>();
+    public async Task<PlatformsLanguage> ResolveAsync(string cultureCode, CancellationToken cancellationToken = default) {
+        var languages = await _lookups.GetAllAsync<PlatformsLanguage>(cancellationToken);
 
         for (var culture = CultureInfo.GetCultureInfo(cultureCode);
              !culture.Equals(CultureInfo.InvariantCulture);
