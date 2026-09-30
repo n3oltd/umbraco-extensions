@@ -62,7 +62,7 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         var value = base.ConvertIntermediateToObject(owner, propertyType, cacheLevel, inter, preview);
 
         if (value?.GetType().IsEnumerable() ?? false) {
-            var elementType = GetElementType(propertyType);
+            var elementType = propertyType.ModelClrType.GetGenericArguments().Single();
 
             var valueListType = typeof(List<>).MakeGenericType(elementType);
             var valueList = (IList) Activator.CreateInstance(valueListType);
@@ -99,20 +99,24 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
     private string GetContentTypeAlias(string objectType, string filterEntry) {
         var key = Guid.Parse(filterEntry);
 
-        var alias = objectType switch {
+        return objectType switch {
             UmbracoUdiEntityType.Media => _mediaTypeService.Get(key)?.Alias,
             UmbracoUdiEntityType.Member => _memberTypeService.Get(key)?.Alias,
             _ => _contentTypeService.Get(key)?.Alias
         };
-
-        return alias ?? filterEntry;
     }
 
+    // Umbraco leaves a deleted type's key in the filter, and a deleted type has no content to pick.
     private string GetPickerContentTypeName(string objectType, string filter) {
         var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                  .Select(x => GetContentTypeAlias(objectType, x))
+                                 .Where(x => x != null)
                                  .Select(x => x.Pascalize())
                                  .ToList();
+
+        if (!contentTypes.Any()) {
+            return null;
+        }
 
         if (contentTypes.IsSingle()) {
             return contentTypes.First();
