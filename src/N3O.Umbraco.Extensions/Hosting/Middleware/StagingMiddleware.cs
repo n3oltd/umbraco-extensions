@@ -109,8 +109,6 @@ public class StagingMiddleware : IMiddleware {
         return isAuthorized;
     }
 
-    // Anything reaching a staging site can send an arbitrary Authorization header, so every stage of the parse
-    // has to be able to fail rather than throw out of the middleware.
     private bool TryGetBasicCredentials(string header, out string username, out string password) {
         username = null;
         password = null;

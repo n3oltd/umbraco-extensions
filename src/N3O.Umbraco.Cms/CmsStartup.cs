@@ -116,9 +116,6 @@ public abstract class CmsStartup {
         return options;
     }
 
-    // Registered first so the headers also reach responses written by the static file middleware, and applied
-    // from OnStarting so a site or endpoint that sets one of them itself keeps its own value. X-Frame-Options is
-    // SAMEORIGIN rather than DENY because backoffice preview frames the front end.
     private void UseSecurityHeaders(IApplicationBuilder app) {
         app.Use((context, next) => {
             context.Response.OnStarting(() => {
@@ -129,6 +126,7 @@ public abstract class CmsStartup {
                 }
 
                 if (!headers.ContainsKey("X-Frame-Options")) {
+                    // Not DENY: backoffice preview frames the front end.
                     headers["X-Frame-Options"] = "SAMEORIGIN";
                 }
 

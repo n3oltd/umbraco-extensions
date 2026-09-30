@@ -55,8 +55,6 @@ public static class StringExtensions {
         return CompareInvariant(a, b) == 0;
     }
 
-    // FixedTimeEquals requires equal-length spans, so the values are hashed to a fixed size rather than
-    // short-circuiting on length, which would leak it.
     public static bool EqualsSecret(this string a, string b) {
         if (a == null || b == null) {
             return a == null && b == null;
