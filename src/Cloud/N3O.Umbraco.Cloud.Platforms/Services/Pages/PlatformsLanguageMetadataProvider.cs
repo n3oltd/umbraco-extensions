@@ -1,3 +1,5 @@
+using N3O.Umbraco.Cloud.Extensions;
+using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Metadata;
 using System.Collections.Generic;
@@ -25,7 +27,7 @@ public class PlatformsLanguageMetadataProvider : IMetadataProvider {
         var language = await _platformsLanguageResolver.ResolveAsync(_cultureAccessor.GetCulture());
 
         if (language != null) {
-            entries.Add(new MetadataEntry("n3o-language", language.Id));
+            entries.Add(new MetadataEntry(PlatformsMetaTagName.Language.ToEnumString(), language.Id));
         }
 
         return entries;
