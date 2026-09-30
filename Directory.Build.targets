@@ -5,6 +5,11 @@
         <RazorCompileOnBuild>true</RazorCompileOnBuild>
     </PropertyGroup>
 
+    <PropertyGroup Condition="$(Version.Contains('-'))">
+        <AssemblyVersion>$([System.Text.RegularExpressions.Regex]::Replace('$(Version)', '-.*$', ''))</AssemblyVersion>
+        <FileVersion>$(AssemblyVersion)</FileVersion>
+    </PropertyGroup>
+
     <Import Project="$(MSBuildThisFileDirectory)src\build\N3O.Umbraco.ReactPlugin.props"
             Condition="'$(N3OReactPlugin)' == 'true'" />
 
