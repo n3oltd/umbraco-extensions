@@ -1,4 +1,3 @@
-using Humanizer;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
@@ -13,7 +12,9 @@ using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
+using Umbraco.Cms.Infrastructure.ModelsBuilder;
 
 using Umbraco.Extensions;
 using UmbracoUdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
@@ -21,9 +22,9 @@ using UmbracoUdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
 namespace N3O.Umbraco.ValueConverters;
 
 public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePickerValueConverter {
-    private readonly IContentTypeService _contentTypeService;
-    private readonly IMediaTypeService _mediaTypeService;
-    private readonly IMemberTypeService _memberTypeService;
+    // Lazy because the published content type cache builds its property types from this converter.
+    private readonly Lazy<IPublishedContentTypeCache> _publishedContentTypeCache;
+    private readonly IShortStringHelper _shortStringHelper;
     private readonly ModelsBuilderSettings _modelBuilderSettings;
 
     public StronglyTypedMultiNodeTreePickerValueConverter(IUmbracoContextAccessor umbracoContextAccessor,
@@ -33,14 +34,12 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
                                                           IPublishedContentCache contentCache,
                                                           IPublishedMediaCache mediaCache,
                                                           IPublishedMemberCache memberCache,
-                                                          IContentTypeService contentTypeService,
-                                                          IMediaTypeService mediaTypeService,
-                                                          IMemberTypeService memberTypeService,
+                                                          Lazy<IPublishedContentTypeCache> publishedContentTypeCache,
+                                                          IShortStringHelper shortStringHelper,
                                                           IOptions<ModelsBuilderSettings> modelBuilderSettings)
         : base(umbracoContextAccessor, memberService, apiContentBuilder, apiMediaBuilder, contentCache, mediaCache, memberCache) {
-        _contentTypeService = contentTypeService;
-        _mediaTypeService = mediaTypeService;
-        _memberTypeService = memberTypeService;
+        _publishedContentTypeCache = publishedContentTypeCache;
+        _shortStringHelper = shortStringHelper;
         _modelBuilderSettings = modelBuilderSettings.Value;
     }
 
@@ -97,21 +96,25 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
     }
 
     private string GetContentTypeAlias(string objectType, string filterEntry) {
-        var key = Guid.Parse(filterEntry);
+        // uSync keeps a legacy filter's aliases when none of them resolve to a type.
+        if (!Guid.TryParse(filterEntry, out var key)) {
+            return filterEntry;
+        }
 
-        return objectType switch {
-            UmbracoUdiEntityType.Media => _mediaTypeService.Get(key)?.Alias,
-            UmbracoUdiEntityType.Member => _memberTypeService.Get(key)?.Alias,
-            _ => _contentTypeService.Get(key)?.Alias
-        };
+        // The cache throws for the key of a deleted type, which Umbraco leaves in the filter.
+        try {
+            return _publishedContentTypeCache.Value.Get(GetPublishedItemType(objectType), key).Alias;
+        } catch (Exception) {
+            return null;
+        }
     }
 
-    // Umbraco leaves a deleted type's key in the filter, and a deleted type has no content to pick.
+    // A deleted type has no content to pick.
     private string GetPickerContentTypeName(string objectType, string filter) {
         var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                  .Select(x => GetContentTypeAlias(objectType, x))
                                  .Where(x => x != null)
-                                 .Select(x => x.Pascalize())
+                                 .Select(x => UmbracoServices.GetClrName(_shortStringHelper, null, x))
                                  .ToList();
 
         if (!contentTypes.Any()) {
@@ -145,5 +148,15 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         }
 
         return commonInterfaces.Single().FullName.Substring(_modelBuilderSettings.ModelsNamespace.Length + 1);
+    }
+
+    private static PublishedItemType GetPublishedItemType(string objectType) {
+        if (objectType.EqualsInvariant(UmbracoUdiEntityType.Media)) {
+            return PublishedItemType.Media;
+        } else if (objectType.EqualsInvariant(UmbracoUdiEntityType.Member)) {
+            return PublishedItemType.Member;
+        } else {
+            return PublishedItemType.Content;
+        }
     }
 }
