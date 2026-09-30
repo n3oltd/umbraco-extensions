@@ -154,6 +154,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3O.Umbraco.Video.Instagram
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3O.Umbraco.Video.TikTok", "Video\N3O.Umbraco.Video.TikTok\N3O.Umbraco.Video.TikTok.csproj", "{CE762FAC-A061-41D2-926C-360BF2641F8A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UserProvisioning", "UserProvisioning", "{9C3B1A47-5D2E-4E18-B6F1-7A0C4D93E2B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3O.Umbraco.UserProvisioning", "UserProvisioning\N3O.Umbraco.UserProvisioning\N3O.Umbraco.UserProvisioning.csproj", "{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3O.Umbraco.Sync.Forms", "Sync\N3O.Umbraco.Sync.Forms\N3O.Umbraco.Sync.Forms.csproj", "{77FFE53F-940A-4165-B285-E8F627E8E15A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Marketing", "Marketing", "{399658D1-572C-4753-A912-7202790A256B}"
@@ -303,10 +307,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3O.Umbraco.KeyVault", "KeyVault\N3O.Umbraco.KeyVault\N3O.Umbraco.KeyVault.csproj", "{AA7DDED9-3664-440B-B015-613AC9E68A7D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3O.Umbraco.ReactRuntime", "N3O.Umbraco.ReactRuntime\N3O.Umbraco.ReactRuntime.csproj", "{40DCEDA2-C582-4D0A-9740-2E70E39FE62B}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UserProvisioning", "UserProvisioning", "{9C3B1A47-5D2E-4E18-B6F1-7A0C4D93E2B5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "N3O.Umbraco.UserProvisioning", "UserProvisioning\N3O.Umbraco.UserProvisioning\N3O.Umbraco.UserProvisioning.csproj", "{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -514,6 +514,10 @@ Global
 		{CE762FAC-A061-41D2-926C-360BF2641F8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE762FAC-A061-41D2-926C-360BF2641F8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE762FAC-A061-41D2-926C-360BF2641F8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{77FFE53F-940A-4165-B285-E8F627E8E15A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{77FFE53F-940A-4165-B285-E8F627E8E15A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77FFE53F-940A-4165-B285-E8F627E8E15A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -738,10 +742,6 @@ Global
 		{40DCEDA2-C582-4D0A-9740-2E70E39FE62B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40DCEDA2-C582-4D0A-9740-2E70E39FE62B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{40DCEDA2-C582-4D0A-9740-2E70E39FE62B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D83BF7E5-C42A-47C0-87A9-BAAD732A54E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
