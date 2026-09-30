@@ -1,4 +1,3 @@
-using Humanizer;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
@@ -13,13 +12,18 @@ using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Web;
+using Umbraco.Cms.Infrastructure.ModelsBuilder;
 
 using Umbraco.Extensions;
+using UmbracoUdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
 
 namespace N3O.Umbraco.ValueConverters;
 
 public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePickerValueConverter {
+    private readonly Lazy<IPublishedContentTypeCache> _publishedContentTypeCache;
+    private readonly IShortStringHelper _shortStringHelper;
     private readonly ModelsBuilderSettings _modelBuilderSettings;
 
     public StronglyTypedMultiNodeTreePickerValueConverter(IUmbracoContextAccessor umbracoContextAccessor,
@@ -29,8 +33,12 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
                                                           IPublishedContentCache contentCache,
                                                           IPublishedMediaCache mediaCache,
                                                           IPublishedMemberCache memberCache,
-                                                          IOptions<ModelsBuilderSettings> modelBuilderSettings) 
+                                                          Lazy<IPublishedContentTypeCache> publishedContentTypeCache,
+                                                          IShortStringHelper shortStringHelper,
+                                                          IOptions<ModelsBuilderSettings> modelBuilderSettings)
         : base(umbracoContextAccessor, memberService, apiContentBuilder, apiMediaBuilder, contentCache, mediaCache, memberCache) {
+        _publishedContentTypeCache = publishedContentTypeCache;
+        _shortStringHelper = shortStringHelper;
         _modelBuilderSettings = modelBuilderSettings.Value;
     }
 
@@ -52,7 +60,7 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         var value = base.ConvertIntermediateToObject(owner, propertyType, cacheLevel, inter, preview);
 
         if (value?.GetType().IsEnumerable() ?? false) {
-            var elementType = GetElementType(propertyType);
+            var elementType = propertyType.ModelClrType.GetGenericArguments().Single();
 
             var valueListType = typeof(List<>).MakeGenericType(elementType);
             var valueList = (IList) Activator.CreateInstance(valueListType);
@@ -69,7 +77,9 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
 
     private Type GetElementType(IPublishedPropertyType propertyType) {
         var config = propertyType.DataType.ConfigurationAs<MultiNodePickerConfiguration>();
-        var contentType = config.Filter.HasValue() ? GetPickerContentTypeName(config.Filter) : null;
+        var contentType = config.Filter.HasValue()
+                              ? GetPickerContentTypeName(config.TreeSource?.ObjectType, config.Filter)
+                              : null;
 
         if (!contentType.HasValue() || contentType == nameof(IPublishedContent)) {
             return typeof(IPublishedContent);
@@ -84,8 +94,28 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         return typeof(IEnumerable<>).MakeGenericType(elementType);
     }
 
-    private string GetPickerContentTypeName(string filter) {
-        var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Pascalize()).ToList();
+    private string GetContentTypeAlias(string objectType, string filterEntry) {
+        if (!Guid.TryParse(filterEntry, out var key)) {
+            return filterEntry;
+        }
+
+        try {
+            return _publishedContentTypeCache.Value.Get(GetPublishedItemType(objectType), key).Alias;
+        } catch (Exception) {
+            return null;
+        }
+    }
+
+    private string GetPickerContentTypeName(string objectType, string filter) {
+        var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                 .Select(x => GetContentTypeAlias(objectType, x))
+                                 .Where(x => x != null)
+                                 .Select(x => UmbracoServices.GetClrName(_shortStringHelper, null, x))
+                                 .ToList();
+
+        if (!contentTypes.Any()) {
+            return null;
+        }
 
         if (contentTypes.IsSingle()) {
             return contentTypes.First();
@@ -114,5 +144,15 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         }
 
         return commonInterfaces.Single().FullName.Substring(_modelBuilderSettings.ModelsNamespace.Length + 1);
+    }
+
+    private static PublishedItemType GetPublishedItemType(string objectType) {
+        if (objectType.EqualsInvariant(UmbracoUdiEntityType.Media)) {
+            return PublishedItemType.Media;
+        } else if (objectType.EqualsInvariant(UmbracoUdiEntityType.Member)) {
+            return PublishedItemType.Member;
+        } else {
+            return PublishedItemType.Content;
+        }
     }
 }
