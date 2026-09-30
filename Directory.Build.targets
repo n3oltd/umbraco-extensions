@@ -2,10 +2,8 @@
     <Import Project="$(MSBuildThisFileDirectory)src\build\N3O.Umbraco.ReactPlugin.props"
             Condition="'$(N3OReactPlugin)' == 'true'" />
 
-    <!-- Restore the shared npm workspace only from the anchor project (N3OFrontendAnchor). Every other frontend
-         project references the anchor, so MSBuild finishes the anchor first and npm ci never runs concurrently.
-         The stamp alone cannot prevent that: under msbuild /m each project checks Inputs/Outputs at target
-         start, so parallel projects all see it missing. -->
+    <!-- Every other frontend project must reference the N3OFrontendAnchor project, or it can build before the
+         workspace has been restored and built. -->
     <Target Name="RestoreFrontendDependencies"
             Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             BeforeTargets="BeforeBuild"
@@ -31,8 +29,7 @@
 
     <!-- Build the whole npm workspace exactly once with a single Turbo invocation, instead of each project
          running its own filtered turbo run (which raced on the shared @n3oltd/backoffice-core dist/.turbo when
-         Cms and Data built in parallel under msbuild /m). On a non-anchor project this target is a no-op; the
-         anchor has already built the dist its BuildFrontend copies. -->
+         Cms and Data built in parallel under msbuild /m). -->
     <Target Name="BuildFrontendWorkspace"
             Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             DependsOnTargets="EnsureFrontendDependenciesRestored"

@@ -23,8 +23,6 @@
         <ProjectReference Include="..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
     </ItemGroup>
     <PropertyGroup>
-        <!-- Owns the shared npm workspace (see Directory.Build.targets). Every other frontend project must
-             reference this project, so MSBuild builds it first. -->
         <N3OFrontendAnchor>true</N3OFrontendAnchor>
         <!-- A directory, not a glob: a glob here expands at evaluation time, before Turbo has produced dist/
              (gitignored, absent on a clean checkout), so it ships nothing. BuildFrontend globs it at execution. -->
