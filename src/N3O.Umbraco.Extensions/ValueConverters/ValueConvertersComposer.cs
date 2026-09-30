@@ -7,6 +7,5 @@ namespace N3O.Umbraco.ValueConverters;
 public class ValueConvertersComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.PropertyValueConverters().InsertBefore<MultiNodeTreePickerValueConverter, StronglyTypedMultiNodeTreePickerValueConverter>();
-        builder.PropertyValueConverters().InsertBefore<UploadPropertyConverter, EmptyAsNullUploadValueConverter>();
     }
 }
