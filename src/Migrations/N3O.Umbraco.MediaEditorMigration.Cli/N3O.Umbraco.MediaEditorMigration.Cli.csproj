@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>N3O.Umbraco.MediaEditorMigration.Cli</RootNamespace>
+        <AssemblyName>media-migrate</AssemblyName>
+        <LangVersion>12</LangVersion>
+        <Nullable>disable</Nullable>
+        <ImplicitUsings>disable</ImplicitUsings>
+        <!-- Must be false: Microsoft.Data.SqlClient throws "Globalization Invariant Mode is not supported"
+             on SqlConnection.Open() under invariant mode, so the tool can't connect to any database. -->
+        <InvariantGlobalization>false</InvariantGlobalization>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+    <!-- dotnet publish -c Release -p:StandaloneExe=true
+         => bin\Release\net10.0\win-x64\publish\media-migrate.exe, one file, needing NOTHING installed on the
+         machine it runs on: no .NET runtime, no SDK, no restore. The migration runs offline against a
+         database server that is usually not a developer machine, so "copy one file across" is the point.
+         Opt-in rather than always-on because RuntimeIdentifier/SelfContained also make a plain `dotnet build`
+         RID-specific, moving the output to bin\<cfg>\net10.0\win-x64 and breaking every documented path.
+         (Publish settings would normally live in Properties\PublishProfiles\*.pubxml, but this repo's
+         .gitignore excludes *.pubxml, so a profile here would never be committed.)
+         NOT trimmed, and it must stay that way: Microsoft.Data.SqlClient resolves types by reflection, so a
+         trimmed build fails at Open() rather than at publish time. -->
+    <PropertyGroup Condition="'$(StandaloneExe)' == 'true'">
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <SelfContained>true</SelfContained>
+        <PublishSingleFile>true</PublishSingleFile>
+        <PublishTrimmed>false</PublishTrimmed>
+        <!-- Without this the SqlClient SNI native library is left beside the exe, so the "single file"
+             would silently not be single. -->
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    </ItemGroup>
+</Project>
