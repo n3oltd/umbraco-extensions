@@ -40,7 +40,6 @@ public static class NestedFieldExpander {
                                 "nested fields");
         }
 
-        // Typesense rejects a document that lacks a non-optional field
         var isRequired = attribute.Required && !isArray && IsAlwaysWritten(rootProperty);
 
         AddFieldsForType(objectType, attribute.Name, isArray, isRequired, ancestry, fields);
@@ -279,7 +278,6 @@ public static class NestedFieldExpander {
         return ContractResolver.ResolveContract(type) is JsonDictionaryContract;
     }
 
-    // Runs before the container exists
     private static IReadOnlyList<JsonConverter> LoadJsonConverters() {
         return OurAssemblies.GetTypes(x => x.IsConcreteClass() &&
                                            !x.IsGenericTypeDefinition &&

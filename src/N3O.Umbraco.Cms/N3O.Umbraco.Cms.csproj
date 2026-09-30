@@ -39,7 +39,7 @@
     <ItemGroup>
         <PackageReference Include="Diplo.GodMode" Version="17.1.5" />
         <PackageReference Include="Umbraco.Community.Contentment" Version="6.1.4" />
-        <PackageReference Include="Umbraco.Cms" Version="17.3.5" />
+        <PackageReference Include="Umbraco.Cms" Version="17.5.3" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.10" />
     </ItemGroup>
     <ItemGroup>

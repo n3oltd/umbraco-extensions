@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 namespace N3O.Umbraco.GeoIP.MaxMind;
 
 public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
-    // SizeLimit caps cache growth — without it, every unique visitor IP accumulates forever
     private static readonly MemoryCache ResultsCache = new(new MemoryCacheOptions { SizeLimit = 10_000 });
 
     private readonly ILookups _lookups;

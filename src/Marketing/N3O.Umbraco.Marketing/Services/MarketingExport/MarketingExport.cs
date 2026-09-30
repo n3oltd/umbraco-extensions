@@ -154,8 +154,7 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
             return null;
         }
 
-        // The padding absorbs the timezone shift: a session is bucketed by its local date, so the
-        // UTC filter must reach a day either side of the requested window
+        // Padded a day each side because sessions are bucketed by their local date, not their UTC one.
         var fromUtc = from.PlusDays(-1).AtMidnight().ToDateTimeUnspecified();
         var toUtc = to.PlusDays(2).AtMidnight().ToDateTimeUnspecified();
 
