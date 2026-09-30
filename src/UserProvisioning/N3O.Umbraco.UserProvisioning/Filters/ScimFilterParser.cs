@@ -24,7 +24,6 @@ public class ScimFilterParser {
             return null;
         }
 
-        // A stack overflow cannot be caught, so nesting is refused rather than allowed to reach the stack
         if (filter.Length > MaxLength) {
             throw ScimException.InvalidFilter($"A filter may not exceed {MaxLength} characters");
         }
@@ -114,8 +113,6 @@ public class ScimFilterParser {
 
         _index++;
 
-        // A value path is meaningful when patching and not when querying, and answering one wrongly is
-        // worse than refusing it
         if (Current.Type == ScimTokenType.OpenBracket) {
             throw ScimException.InvalidFilter($"A filter on the members of {path} is not applied by this endpoint");
         }

@@ -19,9 +19,15 @@ public class CartValidator : ICartValidator {
     }
     
     public bool IsValid(Currency currentCurrency, Entities.Cart cart) {
-        return currentCurrency == cart.Currency &&
-               ContentsAreValid(cart.Donation) &&
-               ContentsAreValid(cart.RegularGiving);
+        try {
+            var isValid = currentCurrency == cart.Currency &&
+                          ContentsAreValid(cart.Donation) &&
+                          ContentsAreValid(cart.RegularGiving);
+
+            return isValid;
+        } catch {
+            return false;
+        }
     }
 
     private bool ContentsAreValid(CartContents cartContents) {

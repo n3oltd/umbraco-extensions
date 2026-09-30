@@ -14,7 +14,6 @@ using static N3O.Umbraco.Scheduler.Extensions.BackgroundJobExtensions;
 namespace N3O.Umbraco.Cloud.Platforms.Search;
 
 public class SitemapPlatformsPagesChangedHandler : IPlatformsPagesChangedHandler {
-    // The campaigns file is built from campaign documents alone
     private static readonly IReadOnlyList<string> CampaignEventTypes = [
         EventTypes.Campaign.Created,
         EventTypes.Campaign.Deleted,

@@ -39,7 +39,6 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
                                                                                           JsonSerializers.JsonProvider,
                                                                                           cancellationToken);
 
-        // The backend publishes this file for every subscription, so its absence is a failed read
         if (campaigns.Error || campaigns.NotFound) {
             throw new PublishedContentUnavailableException(campaigns.Path);
         }

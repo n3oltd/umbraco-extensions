@@ -8,6 +8,6 @@ on:
       - main
 
 jobs:
-  dispatch:
+  work:
     uses: n3oltd/actions/.github/workflows/n3o-work-dispatch.yml@main
     secrets: inherit

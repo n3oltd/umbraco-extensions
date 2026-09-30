@@ -41,6 +41,6 @@
         </None>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Perplex.ContentBlocks" Version="4.0.5" />
+        <PackageReference Include="Perplex.ContentBlocks" Version="4.0.3" />
     </ItemGroup>
 </Project>

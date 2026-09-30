@@ -51,8 +51,6 @@ export class N3oSerpEditorElement extends UmbAuthFetchMixin(UmbElementMixin(HTML
             }, '_observeWorkspaceState');
         });
 
-        // The resolver reads the variant context provided by the property dataset, so it yields the urls for
-        // the culture this editor is rendering.
         this.observe(this.#urlsDataResolver.urls, (urls) => {
             this.#url = this.#toAbsoluteUrl(urls.at(0)?.url);
             this.#render();

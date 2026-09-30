@@ -21,7 +21,6 @@ public static class ScimValues {
             return value.Value<bool>();
         }
 
-        // Without this a boolean sent as a string is refused, and the provisioning service sends one by default
         if (value.Type == JTokenType.String && bool.TryParse(value.Value<string>(), out var flag)) {
             return flag;
         }

@@ -7,17 +7,6 @@ using System.Linq;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// Converts Cropper/Uploader values that are stored INSIDE another editor's value — a Block List or Block Grid
-// block, or a Perplex ContentBlocks block — rather than directly in umbracoPropertyData.
-//
-// The main pass rewrites only the umbracoPropertyData rows whose own data type is Cropper/Uploader, but it
-// flips the DATA TYPE for every property bound to it, including element-type properties used inside blocks.
-// A nested value left in the old N3O shape under a data type that now names a native editor kills the page,
-// because that editor's value converter is handed the old object.
-//
-// After the 13->17 upgrade every block editor stores its element properties in the same shape as Perplex —
-// {contentTypeKey, key, values:[{editorAlias, culture, segment, alias, value}]} — so one uniform rule covers
-// Block List, Block Grid and Perplex, keyed off the stale editorAlias, with no per-editor SQL.
 public sealed class NestedMediaMigrator {
     private const string CropperAlias = "N3O.Umbraco.Cropper";
     private const string UploaderAlias = "N3O.Umbraco.Uploader";
@@ -33,7 +22,6 @@ public sealed class NestedMediaMigrator {
     private readonly bool _includeUploader;
     private readonly IReadOnlyDictionary<(Guid ContentTypeKey, string Alias), NestedMediaTarget> _targets;
 
-    // factory is null under --target inline, which creates no media nodes.
     public NestedMediaMigrator(SqlConnection cn,
                                SqlTransaction tx,
                                MediaNodeFactory factory,
@@ -50,12 +38,7 @@ public sealed class NestedMediaMigrator {
         _targets = targets;
     }
 
-    // Failures go on totals.ValuesFailed rather than a return value: the caller decides whether to abort once
-    // every pass has run.
     public void Run(RunTotals totals) {
-        // Target exactly the rows that still mention a retired editor anywhere in their JSON. That is the
-        // stale nested editorAlias, so it finds Block List, Block Grid and Perplex values (and values nested
-        // inside those) without enumerating container editors.
         var rows = Db.Query(_cn,
                             _tx,
                             "SELECT pd.id, pd.textValue, pt.Alias, cv.nodeId, n.text " +
@@ -84,7 +67,6 @@ public sealed class NestedMediaMigrator {
 
         Log.Info($"Found {rows.Count} block value(s) to inspect for nested Cropper/Uploader data.");
 
-        // Every row is attempted even after one fails, so a dry run reports everything, not just the first.
         foreach (var row in rows) {
             ConvertRow(row, totals);
         }
@@ -134,17 +116,11 @@ public sealed class NestedMediaMigrator {
         }
     }
 
-    // Returns the token to use in place of the one passed in. contentTypeKey is the nearest enclosing element
-    // content-type key, needed to resolve a property's crop definitions.
     private JToken Walk(JToken token, Guid? contentTypeKey, WalkContext context) {
         if (token is JObject obj) {
             var elementKey = TryGetGuid(obj["contentTypeKey"]) ?? contentTypeKey;
             var editorAlias = obj["editorAlias"]?.Type == JTokenType.String ? (string) obj["editorAlias"] : null;
 
-            // A block property entry for a retired editor: convert it and stop — its value must not be walked
-            // as if it were a container.
-            // Only convert editors that are in --editor scope: an out-of-scope data type is left as
-            // Cropper/Uploader, so rewriting its nested values would break them.
             if (obj["alias"] != null
                 && ((editorAlias == CropperAlias && _includeCropper)
                     || (editorAlias == UploaderAlias && _includeUploader))) {
@@ -153,10 +129,6 @@ public sealed class NestedMediaMigrator {
                 return obj;
             }
 
-            // Legacy (Umbraco 13 udi) block entry: {contentTypeKey, udi, <alias>: <value>, ...} with no
-            // values[] array and no editorAlias, so the property's editor can only be resolved through the
-            // captured (element content-type key, alias) map. This shape survives inside a Perplex value
-            // because Umbraco's 13->17 upgrade does not traverse another editor's value.
             var isLegacyEntry = obj["contentTypeKey"] != null && obj["values"] is not JArray;
 
             foreach (var property in obj.Properties().ToList()) {
@@ -183,8 +155,6 @@ public sealed class NestedMediaMigrator {
             return array;
         }
 
-        // A complex editor's value nested inside another is stored as a serialized JSON string, so descend
-        // into strings too and re-serialize only if something below actually changed.
         if (token is JValue { Type: JTokenType.String } value && value.Value is string text) {
             var trimmed = text.TrimStart();
 
@@ -217,8 +187,6 @@ public sealed class NestedMediaMigrator {
         return isCropper ? _includeCropper : _includeUploader;
     }
 
-    // Converts a legacy alias-keyed block property in place. Same conversion as the values-array shape, but
-    // the property name is the alias and there is no editorAlias to correct.
     private void ConvertLegacyProperty(JObject entry,
                                        JProperty property,
                                        Guid contentTypeKey,
@@ -249,8 +217,6 @@ public sealed class NestedMediaMigrator {
                               ? MediaPickerAlias
                               : isCropper ? InlineCropperAlias : InlineUploaderAlias;
 
-        // No value stored: there is nothing to convert, but the editorAlias must still stop naming a retired
-        // editor or the native value editor is handed the wrong shape the moment a value is added.
         if (raw == null || raw.Type == JTokenType.Null) {
             if (setEditorAlias) {
                 entry["editorAlias"] = nativeAlias;
@@ -264,9 +230,6 @@ public sealed class NestedMediaMigrator {
 
         var file = isCropper ? SourceParsers.ParseCropper(json) : SourceParsers.ParseUploader(json);
 
-        // Not a shape this tool can rebuild, so the value is left for a human — but the editorAlias is still
-        // corrected for the same reason as the no-value branch above. Counted as unchanged, not failed: one
-        // unreadable value should not roll back the whole migration.
         if (file == null) {
             context.Totals.ValuesUnchanged++;
             context.Issues.Add($"'{alias}': unrecognised {(isCropper ? "Cropper" : "Uploader")} value, left " +
@@ -295,8 +258,6 @@ public sealed class NestedMediaMigrator {
             var mediaKey = _factory.GetOrCreate(file);
             var (nativeJson, outcome) = NativeValueBuilder.BuildPickerValue(mediaKey, file, cropDefinitions);
 
-            // A nested complex editor value is stored as a serialized JSON string, matching how Umbraco writes
-            // every other nested editor value inside a block.
             entry["value"] = nativeJson;
             crops = outcome;
         } else if (isCropper) {
@@ -305,7 +266,6 @@ public sealed class NestedMediaMigrator {
             entry["value"] = nativeJson;
             crops = outcome;
         } else {
-            // Umbraco.UploadField stores the file path as a plain string, not as JSON.
             entry["value"] = file.Src;
             crops = new CropOutcome();
         }
@@ -328,7 +288,6 @@ public sealed class NestedMediaMigrator {
                                "rectangles stored than the data type defines crops for");
         }
 
-        // Carried-over alt text is counted only — see the equivalent note in Migrator.ConvertValue.
         if (!string.IsNullOrWhiteSpace(file.AltText)) {
             if (_factory == null && !isCropper) {
                 context.Totals.AltTextDropped++;

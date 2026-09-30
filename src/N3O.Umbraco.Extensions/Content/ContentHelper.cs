@@ -68,8 +68,7 @@ public class ContentHelper : IContentHelper {
                                     content.ParentId,
                                     content.Level,
                                     content.ContentType.Alias,
-                                    properties,
-                                    culture);
+                                    properties);
     }
     
     public ContentProperties GetContentProperties(Guid contentId,
@@ -77,31 +76,17 @@ public class ContentHelper : IContentHelper {
                                                   int level,
                                                   string contentTypeAlias,
                                                   IEnumerable<(IPropertyType Type, object Value)> properties) {
-        return GetContentProperties(contentId, parentId, level, contentTypeAlias, properties, null);
-    }
-    
-    private ContentProperties GetContentProperties(Guid contentId,
-                                                   int? parentId,
-                                                   int level,
-                                                   string contentTypeAlias,
-                                                   IEnumerable<(IPropertyType Type, object Value)> properties,
-                                                   string culture) {
         var contentProperties = new List<ContentProperty>();
         var elementsProperties = new List<ElementsProperty>();
         var contentType = _contentTypeService.Value.Get(contentTypeAlias);
         var compositionAliases = contentType.OrEmpty(x => x.CompositionAliases());
-        var elementsCulture = contentType != null && contentType.VariesByCulture() ? culture : null;
 
         foreach (var property in properties) {
             if (property.Type.IsBlockList() || property.Type.IsBlockGrid()) {
                 var (blockListOrGrid, json) = GetJsonPropertyValue(property.Value);
                     
-                var contentElements = GetContentPropertiesForBlockListOrGrid((JObject) blockListOrGrid,
-                                                                             "contentData",
-                                                                             elementsCulture);
-                var settingsElements = GetContentPropertiesForBlockListOrGrid((JObject) blockListOrGrid,
-                                                                              "settingsData",
-                                                                              elementsCulture);
+                var contentElements = GetContentPropertiesForBlockListOrGrid((JObject) blockListOrGrid, "contentData");
+                var settingsElements = GetContentPropertiesForBlockListOrGrid((JObject) blockListOrGrid, "settingsData");
 
                 var elementsProperty = new ElementsProperty(contentType,
                                                             property.Type,
@@ -113,7 +98,7 @@ public class ContentHelper : IContentHelper {
             } else if (property.Type.IsPerplexBlocks()) {
                 var (blockContent, json) = GetJsonPropertyValue(property.Value);
 
-                var elements = GetContentPropertiesForBlockContent(blockContent, elementsCulture);
+                var elements = GetContentPropertiesForBlockContent(blockContent);
 
                 var elementsProperty = new ElementsProperty(contentType, property.Type, elements, [], json);
                 
@@ -144,9 +129,6 @@ public class ContentHelper : IContentHelper {
                                             owner);
     }
 
-    // The owner is the element the property belongs to. Block editors need it from v15: once a block value
-    // carries an expose entry, BlockEditorVarianceHandler reads owner.ContentType.Variations to align block
-    // variance, so converting a block value without one throws.
     public TProperty GetConvertedValue<TProperty>(Type converterType,
                                                   string contentTypeAlias,
                                                   string propertyTypeAlias,
@@ -162,8 +144,6 @@ public class ContentHelper : IContentHelper {
             return default;
         }
 
-        // Block editor converters dereference owner.ContentType for every block, and the content type is all they
-        // read from it.
         owner ??= new PublishedElement(publishedContentType,
                                        Guid.NewGuid(),
                                        new Dictionary<string, object>(),
@@ -217,8 +197,7 @@ public class ContentHelper : IContentHelper {
         return descendants;
     }
 
-    private IReadOnlyList<ContentProperties> GetContentPropertiesForBlockContent(JToken blockContent,
-                                                                                 string culture) {
+    private IReadOnlyList<ContentProperties> GetContentPropertiesForBlockContent(JToken blockContent) {
         var contentProperties = new List<ContentProperties>();
         
         if (blockContent == null) {
@@ -226,12 +205,12 @@ public class ContentHelper : IContentHelper {
         }
         
         if (blockContent["header"] is JObject header) {
-            contentProperties.AddRange(GetContentPropertiesForPerplexBlock(header, culture));
+            contentProperties.AddRange(GetContentPropertiesForPerplexBlock(header));
         }
 
         if (blockContent["blocks"] is JArray blocks) {
             foreach (var block in blocks) {
-                contentProperties.AddRange(GetContentPropertiesForPerplexBlock(block, culture));
+                contentProperties.AddRange(GetContentPropertiesForPerplexBlock(block));
             }
         }
 
@@ -240,23 +219,22 @@ public class ContentHelper : IContentHelper {
 
     // Block content is stored either as a Block Editor element carrying a contentTypeKey, or as a
     // NestedContent array.
-    private IReadOnlyList<ContentProperties> GetContentPropertiesForPerplexBlock(JToken block, string culture) {
+    private IReadOnlyList<ContentProperties> GetContentPropertiesForPerplexBlock(JToken block) {
         var content = block?["content"];
 
         if (content == null) {
             return [];
         } else if (content is JObject element && element["contentTypeKey"] != null) {
-            var elementProperties = GetContentPropertiesForBlockListOrGridElement(element, culture);
+            var elementProperties = GetContentPropertiesForBlockListOrGridElement(element);
 
             return elementProperties == null ? [] : [elementProperties];
         } else {
-            return GetContentPropertiesForNestedContent(content, culture);
+            return GetContentPropertiesForNestedContent(content);
         }
     }
     
     private IReadOnlyList<ContentProperties> GetContentPropertiesForBlockListOrGrid(JObject blockListOrGrid,
-                                                                                    string dataPropertyName,
-                                                                                    string culture) {
+                                                                                    string dataPropertyName) {
         var contentProperties = new List<ContentProperties>();
 
         if (blockListOrGrid == null) {
@@ -266,7 +244,7 @@ public class ContentHelper : IContentHelper {
         if (blockListOrGrid.TryGetValue(dataPropertyName, StringComparison.InvariantCultureIgnoreCase, out var data)) {
             foreach (var block in data.OrEmpty()) {
                 if (block is JObject jObject) {
-                    var elementProperties = GetContentPropertiesForBlockListOrGridElement(jObject, culture);
+                    var elementProperties = GetContentPropertiesForBlockListOrGridElement(jObject);
 
                     if (elementProperties != null) {
                         contentProperties.Add(elementProperties);
@@ -278,7 +256,7 @@ public class ContentHelper : IContentHelper {
         return contentProperties;
     }
     
-    private ContentProperties GetContentPropertiesForBlockListOrGridElement(JObject element, string culture) {
+    private ContentProperties GetContentPropertiesForBlockListOrGridElement(JObject element) {
         if (!TryGetBlockElementKey(element, out var id)) {
             return null;
         }
@@ -293,7 +271,7 @@ public class ContentHelper : IContentHelper {
             return null;
         }
 
-        var valuesByAlias = GetBlockElementValuesByAlias(element, contentType, culture);
+        var valuesByAlias = GetBlockElementValuesByAlias(element);
 
         var properties = new List<(IPropertyType, object)>();
 
@@ -303,7 +281,7 @@ public class ContentHelper : IContentHelper {
             properties.Add((propertyType, propertyValue?.ConvertToObject()));
         }
 
-        return GetContentProperties(id, null, -1, contentType.Alias, properties, culture);
+        return GetContentProperties(id, null, -1, contentType.Alias, properties);
     }
 
     private static bool TryGetBlockElementKey(JObject element, out Guid key) {
@@ -326,80 +304,55 @@ public class ContentHelper : IContentHelper {
         return false;
     }
 
-    private static IReadOnlyDictionary<string, JToken> GetBlockElementValuesByAlias(JObject element,
-                                                                                    IContentType elementType,
-                                                                                    string culture) {
+    private static IReadOnlyDictionary<string, JToken> GetBlockElementValuesByAlias(JObject element) {
         var valuesByAlias = new Dictionary<string, JToken>(StringComparer.InvariantCultureIgnoreCase);
 
-        if (element["values"] is not JArray values) {
-            return valuesByAlias;
-        }
+        if (element["values"] is JArray values) {
+            foreach (var value in values.OfType<JObject>()) {
+                var alias = (string) value["alias"];
 
-        var elementVariesByCulture = elementType.VariesByCulture();
-
-        foreach (var value in values.OfType<JObject>()) {
-            var alias = (string) value["alias"];
-
-            if (!alias.HasValue()) {
-                continue;
-            }
-
-            var propertyType = elementType.CompositionPropertyTypes
-                                          .FirstOrDefault(x => x.Alias.EqualsInvariant(alias));
-
-            var expectedCulture = elementVariesByCulture && propertyType != null && propertyType.VariesByCulture()
-                                      ? culture.NullOrWhiteSpaceAsNull()
-                                      : null;
-
-            var valueCulture = ((string) value["culture"]).NullOrWhiteSpaceAsNull();
-            var valueSegment = ((string) value["segment"]).NullOrWhiteSpaceAsNull();
-
-            // Culture and segment must match exactly with no fallback to another culture, as Umbraco's own
-            // BlockEditorConverter does, and no segment is ever requested here.
-            if (valueCulture.EqualsInvariant(expectedCulture) && valueSegment == null) {
-                valuesByAlias[alias] = value["value"];
+                if (alias.HasValue()) {
+                    valuesByAlias[alias] = value["value"];
+                }
             }
         }
 
         return valuesByAlias;
     }
 
-    private IReadOnlyList<ContentProperties> GetContentPropertiesForNestedContent(JToken nestedContent,
-                                                                                  string culture) {
+    private IReadOnlyList<ContentProperties> GetContentPropertiesForNestedContent(JToken nestedContent) {
         var contentProperties = new List<ContentProperties>();
 
         if (nestedContent == null) {
             return contentProperties;
         } else if (nestedContent is JValue jValue) {
             if (jValue.Value is string json && json.HasValue()) {
-                return GetContentPropertiesForNestedContent((JToken) JsonConvert.DeserializeObject(json), culture);
+                return GetContentPropertiesForNestedContent((JToken) JsonConvert.DeserializeObject(json));
             }
         } else if (nestedContent is JArray jArray) {
             foreach (var element in jArray.OrEmpty()) {
-                AddNestedContentElement(contentProperties, element, culture);
+                AddNestedContentElement(contentProperties, element);
             }
         } else {
-            AddNestedContentElement(contentProperties, nestedContent, culture);
+            AddNestedContentElement(contentProperties, nestedContent);
         }
 
         return contentProperties;
     }
 
-    private void AddNestedContentElement(List<ContentProperties> contentProperties,
-                                         JToken element,
-                                         string culture) {
+    private void AddNestedContentElement(List<ContentProperties> contentProperties, JToken element) {
         if (element is not JObject jObject) {
             return;
         }
 
-        var elementProperties = GetContentPropertiesForNestedContentElement(jObject, culture);
+        var elementProperties = GetContentPropertiesForNestedContentElement(jObject);
 
         if (elementProperties != null) {
             contentProperties.Add(elementProperties);
         }
     }
 
-    private ContentProperties GetContentPropertiesForNestedContentElement(JObject element, string culture) {
+    private ContentProperties GetContentPropertiesForNestedContentElement(JObject element) {
         if (!Guid.TryParse((string) element["key"], out var id)) {
             return null;
         }
@@ -424,7 +377,7 @@ public class ContentHelper : IContentHelper {
             properties.Add((propertyType, propertyValue?.ConvertToObject()));
         }
 
-        return GetContentProperties(id, null, -1, contentTypeAlias, properties, culture);
+        return GetContentProperties(id, null, -1, contentTypeAlias, properties);
     }
     
     private (JToken, string) GetJsonPropertyValue(object propertyValue) {

@@ -9,7 +9,6 @@ public static class Log {
 
     public static string FilePath { get; private set; }
 
-    // Opens (overwriting) the on-disk log file that mirrors all console output. Call once at startup.
     public static void OpenFile(string path) {
         FilePath = path;
         _file = new StreamWriter(path, append: false) { AutoFlush = true };
@@ -32,7 +31,6 @@ public static class Log {
         }
     }
 
-    // One multi-line entry for an item needing manual attention, to console and log file alike.
     public static void Item(string header, IReadOnlyList<string> reasons) {
         WriteLine(ConsoleColor.Yellow, "[REVIEW] " + header);
 

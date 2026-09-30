@@ -6,14 +6,9 @@ using Microsoft.Data.SqlClient;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// Thin SQL Server helpers shared by the Migrator and MediaNodeFactory. Mirrors the parameter-typing approach of
-// the NC migration CLI: explicit SqlDbType, nvarchar(max) for strings (plan reuse + no truncation of large JSON).
 public static class Db {
-    // No statement timeout: the whole migration runs in one transaction and may rewrite a large table; the
-    // default 30 s would abort a big migration mid-way. An interrupted run simply rolls back, so this is safe.
     public const int NoCommandTimeout = 0;
 
-    // SQL Server caps a single command at 2100 parameters; stay safely under it.
     public const int MaxInClauseParameters = 2000;
 
     public static List<T> Query<T>(SqlConnection cn, SqlTransaction tx, string sql, Func<SqlDataReader, T> map,
@@ -46,7 +41,6 @@ public static class Db {
         return cmd.ExecuteNonQuery();
     }
 
-    // Executes a statement that ends in SELECT CAST(SCOPE_IDENTITY() AS int) and returns the new identity.
     public static int ExecuteIdentity(SqlConnection cn, SqlTransaction tx, string sql,
                                       params (string Name, object Value)[] parameters) {
         using var cmd = new SqlCommand(sql, cn, tx) { CommandTimeout = NoCommandTimeout };
@@ -99,10 +93,6 @@ public static class Db {
         };
     }
 
-    // Runs one query per batch of at most MaxInClauseParameters ids and concatenates the results, so a set
-    // larger than SQL Server's 2100-parameter command limit is handled instead of aborting the migration.
-    // sqlFormat takes the IN-clause placeholder list as {0}; extraParameters are repeated on every batch, so
-    // their names must not collide with the generated "@<prefix><n>".
     public static List<T> QueryIn<T>(SqlConnection cn, SqlTransaction tx, string sqlFormat, string prefix,
                                      IEnumerable<object> values, Func<SqlDataReader, T> map,
                                      params (string Name, object Value)[] extraParameters) {
@@ -134,8 +124,6 @@ public static class Db {
             }
         }
 
-        // No trailing empty batch: an empty id set yields no batches at all, so QueryIn returns nothing rather
-        // than issuing an "IN ()" that SQL Server would reject.
         if (batch.Count > 0) {
             yield return batch;
         }

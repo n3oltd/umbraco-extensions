@@ -12,7 +12,6 @@ public class CloudApiHttpClientFactory : ICloudApiHttpClientFactory, IDisposable
 
         _primaryHandler = new SocketsHttpHandler {
             PooledConnectionLifetime = CloudConstants.Clients.PooledConnectionLifetime,
-            // Waiting for a connection happens inside the send, so the client timeout covers it.
             MaxConnectionsPerServer = CloudConstants.Clients.MaxConnectionsPerServer
         };
     }

@@ -6,15 +6,10 @@ using Newtonsoft.Json.Linq;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// N3O Cropper/Uploader -> native Umbraco editors, run against an Umbraco 17 database. One transaction; a dry
-// run rolls it back, so a partial migration is impossible and the dry run still validates the SQL for real.
-// See MigrationTarget for what --target inline and --target mediapicker each produce.
 public sealed class Migrator {
     private const string CropperAlias = "N3O.Umbraco.Cropper";
     private const string UploaderAlias = "N3O.Umbraco.Uploader";
 
-    // These are the editor/UI alias pairs Umbraco 17 uses for its own built-in "Image Cropper" and
-    // "Upload File" data types.
     private const string InlineCropperAlias = "Umbraco.ImageCropper";
     private const string InlineCropperUiAlias = "Umb.PropertyEditorUi.ImageCropper";
     private const string InlineUploaderAlias = "Umbraco.UploadField";
@@ -22,7 +17,6 @@ public sealed class Migrator {
     private const string MediaPickerAlias = "Umbraco.MediaPicker3";
     private const string MediaPickerUiAlias = "Umb.PropertyEditorUi.MediaPicker";
 
-    // Umbraco stores which serializer wrote the published cache under this umbracoKeyValue key.
     private const string CacheSerializerKey = "Umbraco.Web.PublishedCache.NuCache.Serializer";
 
     private readonly CliOptions _options;
@@ -47,7 +41,6 @@ public sealed class Migrator {
 
         using var transaction = connection.BeginTransaction();
 
-        // Refuse anything older than the v14+ schema, so v17 shapes never land on a legacy database.
         if (!Db.ColumnExists(connection, transaction, "umbracoDataType", "propertyEditorUiAlias")
             || (!Inline && !TableExists(connection, transaction, "umbracoMediaVersion"))) {
             Log.Error("This database is not on the Umbraco 14+/17 schema (umbracoDataType.propertyEditorUiAlias " +
@@ -57,7 +50,6 @@ public sealed class Migrator {
             return false;
         }
 
-        // Only the mediapicker target creates media nodes, so only it needs the media types resolved.
         MediaNodeFactory factory = null;
 
         if (!Inline) {
@@ -79,12 +71,8 @@ public sealed class Migrator {
 
         var totals = new RunTotals();
 
-        // Captured BEFORE any data type is flipped: once MigrateEditor rewrites propertyEditorAlias the
-        // Cropper/Uploader binding is gone and nested values can no longer be matched to their crop definitions.
         var nestedTargets = BuildNestedTargets(connection, transaction);
 
-        // Every pass and every value is attempted even after a failure, so one --dry-run lists everything
-        // needing attention. Nothing commits until the end, so totals.ValuesFailed decides below.
         if (_options.Editor is EditorScope.Both or EditorScope.Cropper) {
             MigrateEditor(connection, transaction, factory, totals, CropperAlias, isCropper: true);
         }
@@ -93,8 +81,6 @@ public sealed class Migrator {
             MigrateEditor(connection, transaction, factory, totals, UploaderAlias, isCropper: false);
         }
 
-        // Values nested inside Block List / Block Grid / Perplex blocks are not umbracoPropertyData rows of
-        // their own, so the passes above never see them even though their data types were flipped.
         var nested = new NestedMediaMigrator(connection,
                                              transaction,
                                              factory,
@@ -105,7 +91,6 @@ public sealed class Migrator {
 
         nested.Run(totals);
 
-        // Runs last so its editorAlias lookup picks up the native aliases the passes above just wrote.
         new NestedBlockShapeNormalizer(connection, transaction, _options.Verbose).Run(totals);
 
         totals.MediaNodesCreated = factory?.Created ?? 0;
@@ -114,8 +99,6 @@ public sealed class Migrator {
 
         Report(totals);
 
-        // A failed value means its data type has already been flipped to a native editor while the value is
-        // still in the retired editor's shape — abort so nothing is left half-migrated.
         if (totals.ValuesFailed > 0) {
             Log.Error($"{totals.ValuesFailed} value(s) failed to convert — see the [REVIEW] entries above.");
             transaction.Rollback();
@@ -137,8 +120,6 @@ public sealed class Migrator {
         return true;
     }
 
-    // (element content-type key, property alias) -> the retired editor and its crop definitions, for every
-    // property bound to a Cropper/Uploader data type. Used to resolve crops for values nested in blocks.
     private Dictionary<(Guid, string), NestedMediaTarget> BuildNestedTargets(SqlConnection cn, SqlTransaction tx) {
         var rows = Db.Query(cn,
                             tx,
@@ -181,10 +162,6 @@ public sealed class Migrator {
         return targets;
     }
 
-    // cmsContentNu is a snapshot this tool rewrites values underneath, so without invalidating it every
-    // affected page hands a retired editor's shape to a native value editor and throws. Clearing the
-    // cache-serializer marker lets Umbraco's own DatabaseCacheRebuilder redo it; deleting cmsContentNu does
-    // NOT work, as neither v13 nor v17 rebuilds an empty cache.
     private int InvalidatePublishedCache(SqlConnection cn, SqlTransaction tx) {
         var rows = Db.Execute(cn,
                               tx,
@@ -229,7 +206,6 @@ public sealed class Migrator {
                                  DataTypeRow dataType, bool isCropper) {
         var cropDefinitions = isCropper ? ParseCropDefinitions(dataType.Config, dataType.Id) : new List<CropDefinition>();
 
-        // Properties bound to this data type, and their stored values.
         var propertyTypeIds = Db.Query(cn, tx,
             "SELECT id FROM cmsPropertyType WHERE dataTypeId = @dataTypeId",
             r => r.GetInt32(0),
@@ -258,7 +234,6 @@ public sealed class Migrator {
             }
         }
 
-        // Flip the data type to the target native editor.
         string editor;
         string ui;
         string config;
@@ -321,7 +296,6 @@ public sealed class Migrator {
             } else if (isCropper) {
                 (native, crops) = NativeValueBuilder.BuildImageCropperValue(file, cropDefinitions);
             } else {
-                // Umbraco.UploadField stores the file path as a plain string.
                 native = file.Src;
                 crops = new CropOutcome();
             }
@@ -344,8 +318,6 @@ public sealed class Migrator {
                            $"the data type defines crops for ({cropDefinitions.Count})");
             }
 
-            // Carried-over alt text is counted, not reported: it is the expected outcome, and one [REVIEW] line
-            // each buried the real findings (9,523 of them on one site). Only the lost case is worth reporting.
             if (file.AltText != null) {
                 if (Inline && !isCropper) {
                     totals.AltTextDropped++;
@@ -400,7 +372,6 @@ public sealed class Migrator {
         return definitions;
     }
 
-    // The retired Uploader's config held its restriction as "allowedExtensions": ".png, .jpg".
     private static string ParseAllowedExtensions(string config, int dataTypeId) {
         if (string.IsNullOrWhiteSpace(config)) {
             return null;
@@ -422,8 +393,6 @@ public sealed class Migrator {
                               ("@t", table)) > 0;
     }
 
-    // One line per figure that matters, and lines that are only meaningful for one target or when non-zero are
-    // omitted rather than printed as a zero, so a clean run reads at a glance.
     private void Report(RunTotals totals) {
         Log.Info($"Data types  : {totals.DataTypesConverted} converted");
         Log.Info($"Values      : {totals.ValuesConverted} converted, {totals.ValuesUnchanged} unchanged, " +

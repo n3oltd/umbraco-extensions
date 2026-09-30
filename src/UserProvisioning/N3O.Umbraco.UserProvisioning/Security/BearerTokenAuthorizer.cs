@@ -25,7 +25,6 @@ public class BearerTokenAuthorizer : IBearerTokenAuthorizer {
         return FixedTimeEquals(header.Substring(Scheme.Length), _settings.BearerToken);
     }
 
-    // Hashed first because FixedTimeEquals short circuits on unequal lengths, which leaks the token's length
     private static bool FixedTimeEquals(string presented, string expected) {
         var presentedHash = SHA256.HashData(Encoding.UTF8.GetBytes(presented));
         var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(expected));

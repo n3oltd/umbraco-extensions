@@ -3,8 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {produceAsset} from './assets.js';
 
-// Written next to the emitted assets and read at runtime by N3O.Umbraco.Bundling's IAssetManifest.
-// The tag helpers cannot know a content hash at authoring time; this file is how they learn it.
 export async function buildAssets(config) {
     const root = config.root ?? process.cwd();
     const outDir = path.resolve(root, config.outDir);
@@ -23,15 +21,11 @@ export async function buildAssets(config) {
     fs.mkdirSync(path.dirname(manifestPath), {recursive: true});
     writeAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-    // Only after the manifest names the new files, so a request arriving mid-build is never pointed at
-    // something already deleted.
     pruneStale(outDir, emitted);
 
     return manifest;
 }
 
-// The running site watches this file and reparses it on change, so a partial write would be read as
-// truncated JSON. Rename is atomic within a volume, so a reader sees either the old file or the new one.
 function writeAtomic(target, contents) {
     const temp = `${target}.${process.pid}.tmp`;
 
@@ -39,9 +33,6 @@ function writeAtomic(target, contents) {
     fs.renameSync(temp, target);
 }
 
-// Every content change produces a new filename, so previous ones would otherwise accumulate forever
-// wherever wwwroot survives between builds. Only content-hashed artefacts are considered, so pointing
-// outDir at a directory that also holds hand-managed assets cannot delete them.
 const HASHED_ARTEFACT = /\.[0-9a-f]{8}\.[^.\\/]+(\.map)?$/;
 
 function pruneStale(outDir, emitted) {
@@ -78,13 +69,8 @@ async function emit(entry, kind, bundle, context) {
 
     const produced = await produceAsset(entry, kind, {root, sourceMaps, targets});
 
-    // The sourceMappingURL comment cannot be hashed with the content that names the file it points at,
-    // so the map itself goes into the hash instead. Without it, toggling sourcemaps would leave the
-    // filename unchanged while the served bytes changed, and a cached copy would fail its integrity check.
     const emitMap = sourceMaps && produced.map != null;
 
-    // An adopted artefact may already end with a sourceMappingURL naming its own map. Ours is appended
-    // below and would win, but the stale one would be left pointing at a file that is never emitted.
     const base = emitMap ? stripSourceMappingUrl(produced.content) : produced.content;
     const hashInput = emitMap ? Buffer.concat([base, produced.map]) : base;
 
@@ -118,8 +104,6 @@ async function emit(entry, kind, bundle, context) {
         reference.integrity = `sha384-${crypto.createHash('sha384').update(content).digest('base64')}`;
     }
 
-    // Rollup's iife output must load as a classic script; loading it as a module would defer it, scope
-    // it, and force strict mode. Only an entry that says so is emitted with type="module".
     if (kind === 'js') {
         reference.module = entry.module ?? false;
     }

@@ -35,7 +35,7 @@ public static class PlatformsSchemaConstants {
     }
 
     public static class DataTypeKeys {
-        // The key the sites' uSync exports hold for the type, save Muslim Hands, whose own key is matched by name
+        // The key most sites' uSync exports hold for this type; a site holding another is matched by name.
         public static readonly Guid CampaignsSingle = new("d51913ab-a36d-4d15-9c5c-7876319e967e");
     }
 

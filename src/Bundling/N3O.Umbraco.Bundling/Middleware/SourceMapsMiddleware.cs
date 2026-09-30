@@ -6,9 +6,6 @@ using System.Threading.Tasks;
 
 namespace N3O.Umbraco.Bundling.Middleware;
 
-// A build that emits sourcemaps for staging produces .map files in the deployed artifact, and static
-// files would serve them to anyone who asks. This withholds them when the host has not opted in. It
-// must run before UseStaticFiles, so it is registered through an IStartupFilter.
 public class SourceMapsMiddleware {
     private readonly RequestDelegate _next;
     private readonly PathString _assetsPath;
@@ -33,9 +30,7 @@ public class SourceMapsMiddleware {
     }
 
     private bool IsUnderAssetsPath(PathString path) {
-        // A manifest configured at the web root leaves no directory to scope by, so every sourcemap is
-        // in scope. PathString("/") cannot express that: StartsWithSegments requires the next character
-        // to be a separator, so it matches the root and nothing below it.
+        // The web root is held as an empty path because StartsWithSegments("/") matches nothing below it.
         if (!_assetsPath.HasValue) {
             return true;
         }

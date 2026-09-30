@@ -43,8 +43,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         _userService = userService;
     }
 
-    // User groups belong to the site, so a create is only ever the provisioning service reconciling
-    // one the configuration already names
     public async Task<ScimGroup> CreateAsync(ScimGroup resource) {
         var named = (await GetAllAsync()).SingleOrDefault(x => x.DisplayName.Is(resource.DisplayName));
 
@@ -87,7 +85,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
                                    string.Join(", ", operations.Select(x => x.Path ?? "(none)")));
             }
 
-            // Read in full before anything is written, so a patch that is refused changes nothing
             var externalId = ScimGroupPatch.ReadExternalId(operations);
             var members = ScimGroupPatch.Resolve(group.Members, operations);
             var named = ScimGroupPatch.Named(operations);
@@ -106,8 +103,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         });
     }
 
-    // A user leaving every mapped group is a user this endpoint can no longer read, so they are
-    // disabled here rather than left enabled and out of reach
     private void DisableUngoverned(IEnumerable<IUser> removed) {
         foreach (var user in removed) {
             if (user.IsApproved && !HoldsMappedGroup(user)) {
@@ -139,8 +134,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             mapped.Add((group, userGroup));
         }
 
-        // Decided on every read, so that changing which directory groups feed a user group re-decides
-        // who is inherited rather than leaving the previous answer written down
         foreach (var (group, userGroup) in mapped) {
             var claimed = _settings.UserGroups
                                    .Where(x => x.Alias.Is(group.Alias))
@@ -163,14 +156,10 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return group;
     }
 
-    // A user the endpoint can still read may hold no mapped group at all, so this is the test for
-    // disabling rather than whether they are visible
     private bool HoldsMappedGroup(IUser user) {
         return user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias)));
     }
 
-    // Members are the ones this directory group was given, not everyone holding the Umbraco group,
-    // because two directory groups may map to one alias and each owns only its own
     private BackOfficeUserGroup Map(string displayName,
                                     IUserGroup userGroup,
                                     ScimGroupState state,
@@ -196,8 +185,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         return group;
     }
 
-    // The membership to write is decided from the membership read, so the lock spans both. It is
-    // taken on the Umbraco group because two directory groups sharing one decide by reading each other
+    // Locked on the Umbraco group because directory groups that share one read each other's members.
     private async Task<ScimGroup> MutateAsync(string id, Func<BackOfficeUserGroup, Task> mutate) {
         var alias = _settings.UserGroups.FirstOrDefault(x => Identify(x.DisplayName).Is(id))?.Alias ?? id;
 
@@ -208,9 +196,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         }
     }
 
-    // Members nobody claims predate any record of who put them there. With one feeding directory group
-    // they can only have come from it, and a leaver has to be readable to be removed; with several,
-    // claiming a member one was never given blocks their removal from the group that was
     private ISet<Guid> Inherited(string alias, IEnumerable<IUser> holders, ISet<Guid> claimed) {
         if (_settings.UserGroups.Count(x => x.Alias.Is(alias)) != 1) {
             return new HashSet<Guid>();
@@ -259,8 +244,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
 
         var dropped = new List<Guid>();
 
-        // Membership is set on each user rather than on the group, because assigning a user set to a
-        // group replaces the whole set and would drop anyone the directory does not know about
+        // Set per user: assigning the group's user set replaces it, dropping members the directory does not know.
         foreach (var user in users) {
             if (added.Contains(user.Key)) {
                 user.AddGroup(userGroup.ToReadOnlyGroup());
@@ -275,8 +259,7 @@ public class UserGroupStore : IScimStore<ScimGroup> {
             _userService.Save(user);
         }
 
-        // Recorded last: a save that fails leaves the member in the record, so the next attempt can
-        // still see them. Recording first hides them from every read and the retry does nothing
+        // Recorded after the saves, so a member whose save fails stays visible to the retry.
         await _state.UpdateGroupAsync(group.Id,
                                       x => x.SetMembers(group.Asserted
                                                              .Concat(named ?? wanted)
@@ -285,8 +268,6 @@ public class UserGroupStore : IScimStore<ScimGroup> {
         DisableUngoverned(UserStore.GetAll(_userService).Where(x => dropped.Contains(x.Key)));
     }
 
-    // Two directory groups may name the same Umbraco group, and SCIM requires an ID per resource, so
-    // the ID is derived from the directory group's name rather than taken from Umbraco
     private static string Identify(string displayName) {
         var hash = MD5.HashData(Encoding.UTF8.GetBytes(displayName.ToLowerInvariant()));
 

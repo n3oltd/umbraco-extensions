@@ -26,7 +26,6 @@ public static class TypesenseParameterConverter {
         return value == null ? null : $"`{value.Replace("`", "\\`")}`";
     }
 
-    // Only the shapes Typesense accepts as a filter_by literal
     private static Func<object, string> GetScalarConverter(Type type) {
         var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
 

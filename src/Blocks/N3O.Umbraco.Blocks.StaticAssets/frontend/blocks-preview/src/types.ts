@@ -5,7 +5,7 @@ export type PreviewState =
 
 export interface PreviewEntry {
     contentKey: string;
-    // Same fingerprint means same markup, so a block whose fingerprint has not moved is left alone.
+    // Must change whenever the block's markup could, or the block keeps a stale preview.
     fingerprint(): string;
     receive(state: PreviewState): void;
 }

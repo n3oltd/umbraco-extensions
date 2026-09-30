@@ -51,8 +51,6 @@ public class ScimMiddleware : IMiddleware {
             return;
         }
 
-        // BootFailed can be reached after the server is up, so this is asked on every request rather than
-        // once while the pipeline is built
         if (_runtimeState.Level != RuntimeLevel.Run) {
             await WriteErrorAsync(context,
                                   new ScimException(HttpStatusCode.ServiceUnavailable,

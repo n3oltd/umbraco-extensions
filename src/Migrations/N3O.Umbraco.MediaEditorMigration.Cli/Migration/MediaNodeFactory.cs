@@ -4,13 +4,6 @@ using Microsoft.Data.SqlClient;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// Registers a file that already exists on disk as an Umbraco media node, reusing its existing /media/{...} path
-// so no file is moved or copied. Deduplicated by path, so the same file referenced from several properties
-// becomes one media node.
-//
-// Only used by the --target mediapicker route: Umbraco.MediaPicker3 references the media library by GUID, so a
-// node has to exist. The --target inline route needs none of this, because Umbraco.ImageCropper and
-// Umbraco.UploadField keep the path on the property exactly as the retired N3O editors did.
 public sealed class MediaNodeFactory {
     private static readonly Guid MediaObjectType = new("B796F64C-1F99-4FFB-B886-4BF4BC011A9C");
 
@@ -44,11 +37,8 @@ public sealed class MediaNodeFactory {
         var mediaType = file.IsImage ? _mediaTypes.Image : _mediaTypes.File;
         var key = Guid.NewGuid();
 
-        // The retired editors had no media node and therefore no name, so the alt text is the only human-readable
-        // label available; the filename is the fallback.
         var name = file.AltText ?? file.Filename ?? "media";
 
-        // path can only be set once the identity is known, so it is written with a placeholder then corrected.
         var nodeId = Db.ExecuteIdentity(_cn, _tx,
             "INSERT INTO umbracoNode (trashed, parentId, nodeUser, level, path, sortOrder, uniqueId, text, " +
             "nodeObjectType, createDate) " +
@@ -125,7 +115,6 @@ public sealed class MediaNodeFactory {
     }
 
     private void ResolveParent() {
-        // -1 is the Media section root, which has no umbracoNode row of its own.
         if (_parentId == -1) {
             _parentPath = "-1";
             _parentLevel = 0;

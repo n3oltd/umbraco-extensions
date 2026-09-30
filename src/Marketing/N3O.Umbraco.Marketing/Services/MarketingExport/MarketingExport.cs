@@ -18,9 +18,6 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Marketing.Services;
 
 public class MarketingExport : IMarketingExport {
-    // Umbraco Engage seeds this visitor and reassigns sessions to it, both when a visitor denies
-    // analytics consent and when a session passes the anonymization horizon. It carries
-    // visitorType 0 like a person, so the bot filter does not exclude it
     private const string AnonymousVisitorExternalId = "11111111-1111-1111-1111-111111111111";
 
     private const string AnyPageviewsSql = @"
@@ -60,8 +57,6 @@ WHERE v.visitorType = 0
   AND (p.domain = @2 OR p.domain = @3)
   AND s.id IN (SELECT sessionId FROM CandidateSessions)";
 
-    // Cut by pageview rather than by session, so the domain filter is the page's own: a session that
-    // lands on one host variant and browses the other still counts each page against its own host
     private const string PagesSql = @";WITH CandidateSessions AS (
     SELECT DISTINCT pv.sessionId
     FROM umbracoEngageAnalyticsPageview pv
@@ -159,8 +154,7 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
             return null;
         }
 
-        // The padding absorbs the timezone shift: a session is bucketed by its local date, so the
-        // UTC filter must reach a day either side of the requested window
+        // Padded a day each side because sessions are bucketed by their local date, not their UTC one.
         var fromUtc = from.PlusDays(-1).AtMidnight().ToDateTimeUnspecified();
         var toUtc = to.PlusDays(2).AtMidnight().ToDateTimeUnspecified();
 
@@ -332,8 +326,6 @@ WHERE v.visitorType = 0 AND (p.domain = @2 OR p.domain = @3)";
         }
     }
 
-    // A distinct count cannot be summed, so this carries no channel dimension: a consumer folding
-    // rows onto a coarser channel would count a visitor once for each channel they arrived by
     private static IEnumerable<UserRow> ToUserRows(IEnumerable<SessionRow> rows,
                                                    DateTimeZone zone,
                                                    LocalDate from,

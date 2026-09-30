@@ -48,8 +48,6 @@ public static class ServiceCollectionExtensions {
         return type.GetCustomAttribute<ApiDocumentAttribute>()?.ApiName;
     }
 
-    // NSwag describes a document with the host's System.Text.Json options unless told otherwise, and replacing
-    // the schema settings discards the OpenAPI 3 schema type NSwag set on the ones it chose.
     private static void UseOurJsonSchema(AspNetCoreOpenApiDocumentGeneratorSettings opt,
                                          IServiceProvider serviceProvider) {
         var jsonProvider = serviceProvider.GetRequiredService<IJsonProvider>();
