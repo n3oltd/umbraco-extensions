@@ -76,10 +76,11 @@ public abstract class UmbracoContent<T> : Value, IUmbracoContent {
 
     protected IEnumerable<TProperty> GetNestedAs<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> memberExpression) {
         var alias = AliasHelper<T>.PropertyAlias(memberExpression);
-        var values = (IEnumerable) Content().Value(alias, VariationContext?.Culture, VariationContext?.Segment)
-                     ?? Enumerable.Empty<IPublishedElement>();
+        var value = Content().Value(alias, VariationContext?.Culture, VariationContext?.Segment);
+        var elements = BlockListHelper.GetElements(value)
+                       ?? ((IEnumerable) value ?? Enumerable.Empty<IPublishedElement>()).Cast<IPublishedElement>();
 
-        return values.Cast<IPublishedElement>().Select(x => x.As<TProperty>(_content));
+        return elements.Select(x => x.As<TProperty>(_content));
     }
 
     protected TProperty GetPickedAs<TProperty>(string alias) {
@@ -152,6 +153,8 @@ public abstract class UmbracoContent<T> : Value, IUmbracoContent {
             return publishedContent.As<TProperty>();
         } else if (propertyValue is IPublishedElement publishedElement) {
             return publishedElement.As<TProperty>(_content);
+        } else if (BlockListHelper.TryGetSingleAs<TProperty>(property, propertyValue, _content, out var blockListElement)) {
+            return blockListElement;
         } else {
             return default;
         }
