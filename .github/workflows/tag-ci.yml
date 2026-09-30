@@ -98,17 +98,6 @@ jobs:
     secrets:
       npm-token: ${{ secrets.NPM_TOKEN }}
 
-  umbraco-cropper-client:
-    name: 'npm Publish @n3oltd/umbraco-cropper-client'
-    needs: prepare
-    if: needs.prepare.outputs.should_run == 'true'
-    uses: n3oltd/actions/.github/workflows/npm-publish.yml@main
-    with:
-      working-directory: 'clients/@n3oltd/umbraco-cropper-client'
-      version: ${{ needs.prepare.outputs.version }}
-    secrets:
-      npm-token: ${{ secrets.NPM_TOKEN }}
-
   umbraco-crowdfunding-client:
     name: 'npm Publish @n3oltd/umbraco-crowdfunding-client'
     needs: prepare
@@ -292,17 +281,6 @@ jobs:
     uses: n3oltd/actions/.github/workflows/npm-publish.yml@main
     with:
       working-directory: 'clients/@n3oltd/umbraco-payments-stripe-client'
-      version: ${{ needs.prepare.outputs.version }}
-    secrets:
-      npm-token: ${{ secrets.NPM_TOKEN }}
-
-  umbraco-uploader-client:
-    name: 'npm Publish @n3oltd/umbraco-uploader-client'
-    needs: prepare
-    if: needs.prepare.outputs.should_run == 'true'
-    uses: n3oltd/actions/.github/workflows/npm-publish.yml@main
-    with:
-      working-directory: 'clients/@n3oltd/umbraco-uploader-client'
       version: ${{ needs.prepare.outputs.version }}
     secrets:
       npm-token: ${{ secrets.NPM_TOKEN }}
