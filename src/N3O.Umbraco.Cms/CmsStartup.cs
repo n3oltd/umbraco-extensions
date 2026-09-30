@@ -52,6 +52,7 @@ public abstract class CmsStartup {
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+        UseSecurityHeaders(app);
         app.UseMiddleware<NotFoundCacheControlMiddleware>();
 
         if (env.IsProduction()) {
@@ -117,5 +118,30 @@ public abstract class CmsStartup {
         rules.Do(x => options.Rules.Add(x));
 
         return options;
+    }
+
+    private void UseSecurityHeaders(IApplicationBuilder app) {
+        app.Use((context, next) => {
+            context.Response.OnStarting(() => {
+                var headers = context.Response.Headers;
+
+                if (!headers.ContainsKey("X-Content-Type-Options")) {
+                    headers["X-Content-Type-Options"] = "nosniff";
+                }
+
+                if (!headers.ContainsKey("X-Frame-Options")) {
+                    // Not DENY: backoffice preview frames the front end.
+                    headers["X-Frame-Options"] = "SAMEORIGIN";
+                }
+
+                if (!headers.ContainsKey("Referrer-Policy")) {
+                    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+                }
+
+                return Task.CompletedTask;
+            });
+
+            return next(context);
+        });
     }
 }

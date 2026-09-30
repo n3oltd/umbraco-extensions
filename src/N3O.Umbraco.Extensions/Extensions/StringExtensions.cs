@@ -55,6 +55,17 @@ public static class StringExtensions {
         return CompareInvariant(a, b) == 0;
     }
 
+    public static bool EqualsSecret(this string a, string b) {
+        if (a == null || b == null) {
+            return a == null && b == null;
+        }
+
+        var hashA = SHA256.HashData(Encoding.UTF8.GetBytes(a));
+        var hashB = SHA256.HashData(Encoding.UTF8.GetBytes(b));
+
+        return CryptographicOperations.FixedTimeEquals(hashA, hashB);
+    }
+
     public static string FormatWith(this string s, params object[] args) {
         return string.Format(s, args);
     }

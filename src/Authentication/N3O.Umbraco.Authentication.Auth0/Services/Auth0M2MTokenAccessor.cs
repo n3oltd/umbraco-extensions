@@ -18,7 +18,8 @@ public class Auth0M2MTokenAccessor {
     }
 
     public async Task<string> GetTokenAsync(Auth0Application auth0Application, string apiIdentifier) {
-        var cacheKey = $"{nameof(Auth0M2MTokenAccessor)}{nameof(GetTokenAsync)}{auth0Application.Domain}{auth0Application.ClientId}{auth0Application.ClientSecret}{apiIdentifier}";
+        var cacheKey = $"{nameof(Auth0M2MTokenAccessor)}{nameof(GetTokenAsync)}{auth0Application.Domain}" +
+                       $"{auth0Application.ClientId}{apiIdentifier}";
 
         var token = await Tokens.GetOrCreateAsync(cacheKey, async cacheEntry => {
             var jsonSettings = _jsonProvider.GetSettings();
