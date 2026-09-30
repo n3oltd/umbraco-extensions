@@ -32,6 +32,10 @@ public abstract class ContentFundDimensionValues<T, TContent> : LookupsCollectio
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
 
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<T>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
 
@@ -39,7 +43,7 @@ public abstract class ContentFundDimensionValues<T, TContent> : LookupsCollectio
     }
 
     private IReadOnlyList<T> GetFromCache() {
-        var content = _contentCache.All<TContent>().OrderBy(x => x.Content().Name).ToList();
+        var content = _contentCache.AllInDefaultCulture<TContent>().OrderBy(x => x.Content().Name).ToList();
 
         var lookups = content.Select(GetFundDimensionValue).ToList();
 
@@ -47,9 +51,7 @@ public abstract class ContentFundDimensionValues<T, TContent> : LookupsCollectio
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
     
     protected abstract T GetFundDimensionValue(TContent content);

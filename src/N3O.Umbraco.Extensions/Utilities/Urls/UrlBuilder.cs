@@ -12,9 +12,13 @@ public class UrlBuilder : IUrlBuilder {
         _contentCache = contentCache;
         _webHostEnvironment = webHostEnvironment;
     }
-    
+
     public Url Root() {
         var urlSettings = _contentCache.Single<UrlSettingsContent>();
+
+        if (urlSettings == null) {
+            return null;
+        }
 
         return urlSettings.BaseUrl(_webHostEnvironment);
     }

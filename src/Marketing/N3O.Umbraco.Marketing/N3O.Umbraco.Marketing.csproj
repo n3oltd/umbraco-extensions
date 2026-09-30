@@ -17,7 +17,7 @@
         <ContentTargetFolders>.</ContentTargetFolders>
         <Authors>N3O Ltd</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>TODO</Description>
+        <Description>Exposes the analytics Umbraco Engage has collected over an API, so traffic, pageviews, sessions and goal completions can be pulled out of a site per day and per configured site.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
         <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>
@@ -33,6 +33,7 @@
         <DebugType>pdbonly</DebugType>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\GeoIP\N3O.Umbraco.GeoIP\N3O.Umbraco.GeoIP.csproj" />
         <ProjectReference Include="..\..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
     </ItemGroup>
     <ItemGroup>

@@ -17,7 +17,7 @@
         <ContentTargetFolders>.</ContentTargetFolders>
         <Authors>N3O Ltd</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>TODO</Description>
+        <Description>Lets a Google Maps property be declared in code rather than configured by hand in the back office.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
         <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>

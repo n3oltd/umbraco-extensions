@@ -5,11 +5,11 @@ export declare class DataTypesClient {
     constructor(baseUrl?: string, http?: {
         fetch(url: RequestInfo, init?: RequestInit): Promise<Response>;
     });
-    findDataTypes(req: DataTypeCriteria): Promise<DataTypeSummary[]>;
-    protected processFindDataTypes(response: Response): Promise<DataTypeSummary[]>;
+    findDataTypes(req: DataTypeCriteria): Promise<DataTypeRes[]>;
+    protected processFindDataTypes(response: Response): Promise<DataTypeRes[]>;
 }
-export interface DataTypeSummary {
-    alias?: string | undefined;
+export interface DataTypeRes {
+    editorAlias?: string | undefined;
     name?: string | undefined;
 }
 export interface ProblemDetails {
@@ -18,8 +18,10 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface DataTypeCriteria {
+    editorAlias?: string | undefined;
 }
 export declare class ApiException extends Error {
     message: string;

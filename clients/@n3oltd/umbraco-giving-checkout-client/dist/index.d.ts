@@ -13,15 +13,17 @@ export declare class CheckoutClient {
     protected processGetRegularGivingFrequencies(response: Response): Promise<NamedLookupRes[]>;
     updateAccount(checkoutRevisionId: string, req: AccountReq): Promise<CheckoutRes>;
     protected processUpdateAccount(response: Response): Promise<CheckoutRes>;
+    updateAccountConsent(checkoutRevisionId: string, req: ConsentReq): Promise<CheckoutRes>;
+    protected processUpdateAccountConsent(response: Response): Promise<CheckoutRes>;
+    updateAccountTaxStatus(checkoutRevisionId: string, req: TaxStatusReq): Promise<CheckoutRes>;
+    protected processUpdateAccountTaxStatus(response: Response): Promise<CheckoutRes>;
     updateRegularGivingOptions(checkoutRevisionId: string, req: RegularGivingOptionsReq): Promise<CheckoutRes>;
     protected processUpdateRegularGivingOptions(response: Response): Promise<CheckoutRes>;
     getAllLookups(criteria: LookupsCriteria): Promise<CheckoutLookupsRes>;
     protected processGetAllLookups(response: Response): Promise<CheckoutLookupsRes>;
 }
 export interface CheckoutRes {
-    /** A well formed guid */
     id?: string | undefined;
-    /** A well formed revision ID string */
     revisionId?: string | undefined;
     reference?: Reference | undefined;
     currency?: string | undefined;
@@ -37,28 +39,44 @@ export interface Reference {
     text?: string | undefined;
 }
 export interface CheckoutProgressRes {
-    currentStage?: CheckoutStage | undefined;
-    requiredStages?: CheckoutStage[] | undefined;
-    remainingStages?: CheckoutStage[] | undefined;
-}
-/** One of 'account', 'donation', 'regularGiving' */
-export declare enum CheckoutStage {
-    Account = "account",
-    Donation = "donation",
-    RegularGiving = "regularGiving"
+    currentStage?: string | undefined;
+    requiredStages?: string[] | undefined;
+    remainingStages?: string[] | undefined;
 }
 export interface AccountRes {
-    name?: NameRes | undefined;
+    id?: string | undefined;
+    reference?: string | undefined;
+    type?: AccountType | undefined;
+    individual?: IndividualRes | undefined;
+    organization?: OrganizationRes | undefined;
     address?: AddressRes | undefined;
     email?: EmailRes | undefined;
     telephone?: TelephoneRes | undefined;
     consent?: ConsentRes | undefined;
     taxStatus?: TaxStatus | undefined;
+    token?: string | undefined;
+}
+/** One of 'individual', 'organization' */
+export declare enum AccountType {
+    Individual = "individual",
+    Organization = "organization"
+}
+export interface IndividualRes {
+    name?: NameRes | undefined;
 }
 export interface NameRes {
     title?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
+}
+export interface OrganizationRes {
+    type?: OrganizationType | undefined;
+    name?: string | undefined;
+    contact?: NameRes | undefined;
+}
+/** One of 'business' */
+export declare enum OrganizationType {
+    Business = "business"
 }
 export interface AddressRes {
     line1?: string | undefined;
@@ -114,11 +132,15 @@ export interface AllocationRes {
     type?: AllocationType | undefined;
     value?: MoneyRes | undefined;
     fundDimensions?: FundDimensionValuesRes | undefined;
+    feedback?: FeedbackAllocationRes | undefined;
     fund?: FundAllocationRes | undefined;
     sponsorship?: SponsorshipAllocationRes | undefined;
+    upsellOfferId?: string | undefined;
+    upsell?: boolean;
 }
-/** One of 'fund', 'sponsorship' */
+/** One of 'feedback', 'fund', 'sponsorship' */
 export declare enum AllocationType {
+    Feedback = "feedback",
     Fund = "fund",
     Sponsorship = "sponsorship"
 }
@@ -133,20 +155,33 @@ export interface FundDimensionValuesRes {
     dimension3?: string | undefined;
     dimension4?: string | undefined;
 }
-export interface FundAllocationRes {
-    donationItem?: string | undefined;
+export interface FeedbackAllocationRes {
+    scheme?: string | undefined;
+    customFields?: FeedbackCustomFieldRes[] | undefined;
 }
 /** One of 'donation', 'regularGiving' */
 export declare enum GivingType {
     Donation = "donation",
     RegularGiving = "regularGiving"
 }
+export interface FeedbackCustomFieldDefinitionElement {
+    type?: FeedbackCustomFieldType | undefined;
+    name?: string | undefined;
+    required?: boolean;
+    textMaxLength?: number | undefined;
+    alias?: string | undefined;
+}
+/** One of 'bool', 'date', 'text' */
+export declare enum FeedbackCustomFieldType {
+    Bool = "bool",
+    Date = "date",
+    Text = "text"
+}
 export interface PriceContent {
     amount?: number;
     locked?: boolean;
 }
 export interface PricingRuleElement {
-    content?: IPublishedElement | undefined;
     amount?: number;
     locked?: boolean;
     dimension1?: string | undefined;
@@ -154,73 +189,32 @@ export interface PricingRuleElement {
     dimension3?: string | undefined;
     dimension4?: string | undefined;
 }
-export interface IPublishedElement {
-    contentType?: IPublishedContentType | undefined;
-    key?: string;
-    properties?: IPublishedProperty[] | undefined;
-}
-export interface IPublishedContentType {
-    key?: string;
-    id?: number;
+export interface FeedbackCustomFieldRes {
+    type?: FeedbackCustomFieldType | undefined;
     alias?: string | undefined;
-    itemType?: PublishedItemType;
-    compositionAliases?: string[] | undefined;
-    variations?: ContentVariation;
-    isElement?: boolean;
-    propertyTypes?: IPublishedPropertyType[] | undefined;
+    name?: string | undefined;
+    bool?: boolean | undefined;
+    date?: string | undefined;
+    text?: string | undefined;
 }
-export declare enum PublishedItemType {
-    Unknown = 0,
-    Element = 1,
-    Content = 2,
-    Media = 3,
-    Member = 4
-}
-export declare enum ContentVariation {
-    Nothing = 0,
-    Culture = 1,
-    Segment = 2,
-    CultureAndSegment = 3
-}
-export interface IPublishedPropertyType {
-    contentType?: IPublishedContentType | undefined;
-    dataType?: PublishedDataType | undefined;
-    alias?: string | undefined;
-    editorAlias?: string | undefined;
-    isUserProperty?: boolean;
-    variations?: ContentVariation;
-    cacheLevel?: PropertyCacheLevel;
-    modelClrType?: string | undefined;
-    clrType?: string | undefined;
-}
-export interface PublishedDataType {
-    id?: number;
-    editorAlias?: string | undefined;
-    configuration?: any | undefined;
-}
-export declare enum PropertyCacheLevel {
-    Unknown = 0,
-    Element = 1,
-    Elements = 2,
-    Snapshot = 3,
-    None = 4
-}
-export interface IPublishedProperty {
-    propertyType?: IPublishedPropertyType | undefined;
-    alias?: string | undefined;
+export interface FundAllocationRes {
+    donationItem?: string | undefined;
 }
 export interface SponsorshipAllocationRes {
-    beneficiary?: string | undefined;
+    beneficiaryReference?: string | undefined;
     scheme?: string | undefined;
     duration?: SponsorshipDuration | undefined;
     components?: SponsorshipComponentAllocationRes[] | undefined;
 }
-/** One of '_6', '_12', '_18', '_24' */
+/** One of '_6', '_12', '_18', '_24', '_36', '_48', '_60' */
 export declare enum SponsorshipDuration {
     _6 = "_6",
     _12 = "_12",
     _18 = "_18",
-    _24 = "_24"
+    _24 = "_24",
+    _36 = "_36",
+    _48 = "_48",
+    _60 = "_60"
 }
 export interface SponsorshipComponentAllocationRes {
     component?: string | undefined;
@@ -287,13 +281,13 @@ export interface CredentialRes {
     isComplete?: boolean;
     isInProgress?: boolean;
     advancePayment?: PaymentRes | undefined;
-    setupAt?: Date | undefined;
+    setupAt?: string | undefined;
     isSetUp?: boolean;
 }
 export interface RegularGivingOptionsRes {
     preferredCollectionDay?: string | undefined;
     frequency?: RegularGivingFrequency | undefined;
-    firstCollectionDate?: Date | undefined;
+    firstCollectionDate?: string | undefined;
 }
 /** One of 'annually', 'monthly', 'quarterly' */
 export declare enum RegularGivingFrequency {
@@ -307,23 +301,37 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface NamedLookupRes {
     id?: string | undefined;
     name?: string | undefined;
 }
 export interface AccountReq {
-    name?: NameReq | undefined;
+    id?: string | undefined;
+    reference?: string | undefined;
+    type?: AccountType | undefined;
+    individual?: IndividualReq | undefined;
+    organization?: OrganizationReq | undefined;
     address?: AddressReq | undefined;
     email?: EmailReq | undefined;
     telephone?: TelephoneReq | undefined;
     consent?: ConsentReq | undefined;
     taxStatus?: TaxStatus | undefined;
+    captcha?: CaptchaReq | undefined;
+}
+export interface IndividualReq {
+    name?: NameReq | undefined;
 }
 export interface NameReq {
     title?: string | undefined;
     firstName?: string | undefined;
     lastName?: string | undefined;
+}
+export interface OrganizationReq {
+    type?: OrganizationType | undefined;
+    name?: string | undefined;
+    contact?: NameReq | undefined;
 }
 export interface AddressReq {
     line1?: string | undefined;
@@ -348,11 +356,19 @@ export interface ConsentChoiceReq {
     channel?: ConsentChannel | undefined;
     category?: string | undefined;
     response?: ConsentResponse | undefined;
+    categoryName?: string | undefined;
+}
+export interface CaptchaReq {
+    token?: string | undefined;
+    action?: string | undefined;
+}
+export interface TaxStatusReq {
+    taxStatus?: TaxStatus | undefined;
 }
 export interface RegularGivingOptionsReq {
     preferredCollectionDay?: string | undefined;
     frequency?: RegularGivingFrequency | undefined;
-    firstCollectionDate?: Date | undefined;
+    firstCollectionDate?: string | undefined;
 }
 export interface CheckoutLookupsRes {
     checkoutStages?: NamedLookupRes[] | undefined;

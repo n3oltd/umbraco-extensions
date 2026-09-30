@@ -43,7 +43,7 @@ public class ImagePublisher : IImagePublisher {
         if (forcePublish) {
             return SaveAndPublish(cacheKey, imageBuilderAction, format);
         } else {
-            return Cache.GetOrAddAtomic(cacheKey, () => {
+            return Cache.GetOrAddAtomic(GetMediaPath(cacheKey, format), () => {
                 var url = TryFind(cacheKey, format) ?? SaveAndPublish(cacheKey, imageBuilderAction, format);
 
                 return url;

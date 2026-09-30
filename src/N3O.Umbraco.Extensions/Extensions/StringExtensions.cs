@@ -122,6 +122,19 @@ public static class StringExtensions {
         return string.IsNullOrWhiteSpace(s);
     }
     
+    public static bool IsOnDomain(this string url, params string[] domains) {
+        var absoluteUrl = url.ToAbsoluteUrl();
+
+        if (absoluteUrl == null) {
+            return false;
+        }
+
+        var host = new Uri(absoluteUrl).Host.TrimEnd('.');
+
+        return domains.Any(x => host.EqualsInvariant(x) ||
+                                host.EndsWith($".{x}", StringComparison.InvariantCultureIgnoreCase));
+    }
+
     public static bool IsValidEmailAddress(this string email) {
         if (!email.HasValue()) {
             return false;
@@ -264,6 +277,26 @@ public static class StringExtensions {
         return Regex.Replace(s, "/+$", string.Empty);
     }
     
+    public static string ToAbsoluteUrl(this string url) {
+        if (!url.HasValue()) {
+            return null;
+        }
+
+        var trimmedUrl = url.Trim();
+
+        if (trimmedUrl.IsValidUrl()) {
+            return trimmedUrl;
+        } else if (trimmedUrl.StartsWith("//") && $"https:{trimmedUrl}".IsValidUrl()) {
+            return $"https:{trimmedUrl}";
+        } else if (Uri.TryCreate(trimmedUrl, UriKind.Absolute, out _)) {
+            return null;
+        } else if ($"https://{trimmedUrl}".IsValidUrl()) {
+            return $"https://{trimmedUrl}";
+        } else {
+            return null;
+        }
+    }
+
     public static TEnum? ToEnum<TEnum>(this string str) where TEnum : struct {
         if (str.HasValue() && Enum.TryParse<TEnum>(str, true, out var parseResult)) {
             return parseResult;
