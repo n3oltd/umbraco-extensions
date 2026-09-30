@@ -87,10 +87,8 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         return typeof(IEnumerable<>).MakeGenericType(elementType);
     }
 
-    // Umbraco 14 changed the picker's "allow items of type" filter from a list of content type aliases to a
-    // list of content type keys, so pascalizing an entry now yields a name no model has. ModelsHelper answers
-    // a missing name by emitting a dynamic type, so nothing fails here; the property simply hands back a
-    // collection of the wrong element type and the real models are rejected when they are added to it.
+    // The picker's type filter holds content type keys, not aliases, and an unknown model name silently
+    // resolves to a dynamic type rather than failing.
     private string GetContentTypeAlias(string filterEntry) {
         if (!Guid.TryParse(filterEntry, out var key)) {
             return filterEntry;
