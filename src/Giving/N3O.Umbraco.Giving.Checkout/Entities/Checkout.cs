@@ -3,6 +3,7 @@ using N3O.Umbraco.Financial;
 using N3O.Umbraco.Giving.Checkout.Models;
 using N3O.Umbraco.Payments.Entities;
 using N3O.Umbraco.References;
+using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Net;
 
@@ -17,7 +18,7 @@ public partial class Checkout : Entity, IPaymentsFlow {
     public DonationCheckout Donation { get; private set; }
     public RegularGivingCheckout RegularGiving { get; private set; }
     public IPAddress RemoteIp { get; private set; }
-    public object Attribution { get; private set; }
+    public JObject Tags { get; private set; }
 
     public bool IsComplete => Progress.RequiredStages.All(x => x.IsComplete(this));
 }

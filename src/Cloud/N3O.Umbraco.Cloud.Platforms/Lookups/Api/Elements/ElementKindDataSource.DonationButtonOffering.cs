@@ -18,13 +18,13 @@ public class DonationButtonOfferingElementKindDataSource : ElementKindDataSource
         var offering = _lookups.FindById<Offering>(GetOfferingId(lookup));
 
         if (offering == null) {
-            return "[deleted]";
+            return "[unavailable]";
         }
         
         var campaign = _lookups.FindById<Campaign>(offering.CampaignId);
         
         if (campaign == null) {
-            return "[deleted]";
+            return "[unavailable]";
         }
         
         return $"Campaign: {campaign.Name}";

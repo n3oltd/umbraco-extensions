@@ -1,4 +1,6 @@
-﻿namespace N3O.Umbraco.Cloud.Platforms;
+﻿using System.Collections.Generic;
+
+namespace N3O.Umbraco.Cloud.Platforms;
 
 public static class PlatformsConstants {
     public const string BackOfficeApiName = "PlatformsBackOffice";
@@ -13,6 +15,16 @@ public static class PlatformsConstants {
         
         public const string ScheduledGiving = "platformsScheduledGivingCampaign";
         public const string RegularGiving = "platformsRegularGivingCampaign";
+
+        public static class Properties {
+            public const string HeroImage = "heroImage";
+            public const string PageContent = "campaignPageContent";
+            public const string PageContentAdditional = "campaignPageContentAdditional";
+        }
+    }
+
+    public static class Configuration {
+        public static readonly string Section = "Platforms";
     }
 
     public static class CrossSells {
@@ -23,8 +35,24 @@ public static class PlatformsConstants {
         public const string Sponsorship = "platformsSponsorshipCrossSell";
     }
 
-    public static class CrowdfundingCampaign {
-        public const string CompositionAlias = "platformsCrowdfundingCampaign";
+    public static class CrowdfundingCampaigns {
+        public const string Alias = "platformsCrowdfundingCampaigns";
+
+        public static class CrowdfundingCampaign {
+            public const string Alias = "platformsCrowdfundingCampaign";
+            public const string CampaignTakenError = "This campaign already has a crowdfunding campaign";
+            public const string NewContentName = "New Crowdfunding Campaign";
+
+            public static class Properties {
+                public const string Campaign = "campaign";
+                public const string PageContent = "page";
+                public const string PageContentAdditional = "pageAdditionalContent";
+                public const string PageHeroImage = "pageHeroImage";
+                public const string PageTemplateContent = "pageTemplate";
+                public const string PageTemplateContentAdditional = "pageTemplateAdditionalContent";
+                public const string PageTemplateHeroImage = "pageTemplateHeroImage";
+            }
+        }
     }
 
     public static class DonationFormContent {
@@ -80,24 +108,68 @@ public static class PlatformsConstants {
         }
     }
 
-    public static class WebhookEventTypes {
-        public static class Crowdfunder {
-            public const string Created = "crowdfunder.created";
-            public const string Updated = "crowdfunder.updated";
-        }
-    }
+    public static class Webhooks {
+        public static class EventTypes {
+            public static class Campaign {
+                public const string Created = "campaign.created";
+                public const string Deleted = "campaign.deleted";
+                public const string Updated = "campaign.updated";
+            }
 
-    public static class WebhookIds {
-        public const string Campaigns = "campaigns";
-        public const string CrossSells = "crossSells";
-        public const string ContentCollection = "contentCollection";
-        public const string ContentLibrary = "contentLibrary";
-        public const string Crowdfunder = nameof(Crowdfunder);
-        public const string CrowdfundingCampaigns = "crowdfundingCampaigns";
-        public const string ManagedContent = "managedContent";
-        public const string Offerings = "offerings";
-        public const string QurbaniSeason = "qurbaniSeason";
-        public const string ZakatSettings = "zakatSettings";
+            public static class Crowdfunder {
+                public const string Created = "crowdfunder.created";
+                public const string Deleted = "crowdfunder.deleted";
+                public const string Updated = "crowdfunder.updated";
+            }
+
+            public static class CrowdfundingCampaign {
+                public const string Created = "crowdfundingCampaign.created";
+                public const string Deleted = "crowdfundingCampaign.deleted";
+                public const string Updated = "crowdfundingCampaign.updated";
+            }
+
+            public static class Offering {
+                public const string Created = "offering.created";
+                public const string Deleted = "offering.deleted";
+                public const string Updated = "offering.updated";
+            }
+
+            public static readonly IReadOnlyList<string> DeletedPlatformsPages = [
+                Campaign.Deleted,
+                Crowdfunder.Deleted,
+                CrowdfundingCampaign.Deleted,
+                Offering.Deleted
+            ];
+
+            public static readonly IReadOnlyList<string> PlatformsPages = [
+                Campaign.Created,
+                Campaign.Deleted,
+                Campaign.Updated,
+                Crowdfunder.Created,
+                Crowdfunder.Deleted,
+                Crowdfunder.Updated,
+                CrowdfundingCampaign.Created,
+                CrowdfundingCampaign.Deleted,
+                CrowdfundingCampaign.Updated,
+                Offering.Created,
+                Offering.Deleted,
+                Offering.Updated
+            ];
+        }
+
+        public static class HookIds {
+            public const string Campaigns = "campaigns";
+            public const string ContentCollection = "contentCollection";
+            public const string ContentLibrary = "contentLibrary";
+            public const string CrossSells = "crossSells";
+            public const string Crowdfunder = nameof(Crowdfunder);
+            public const string CrowdfundingCampaigns = "crowdfundingCampaigns";
+            public const string ManagedContent = "managedContent";
+            public const string Offerings = "offerings";
+            public const string PlatformsPages = "platformsPages";
+            public const string QurbaniSeason = "qurbaniSeason";
+            public const string ZakatSettings = "zakatSettings";
+        }
     }
 
     public static class Zakat {

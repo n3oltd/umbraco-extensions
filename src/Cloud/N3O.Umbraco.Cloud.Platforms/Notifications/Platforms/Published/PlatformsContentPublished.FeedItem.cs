@@ -42,7 +42,7 @@ public class FeedItemPublished : CloudContentPublished {
         return Task.FromResult<object>(req);
     }
     
-    protected override string HookId => PlatformsConstants.WebhookIds.ManagedContent;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.ManagedContent;
 
     private bool IsApprovedOrRejectedOrArchivedFolder(IContent content) {
         var parent = _contentLocator.Value.ById<IPublishedContent>(content.ParentId);

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Composing;
@@ -14,14 +13,15 @@ namespace N3O.Umbraco.Search.Typesense;
 public class TypesenseSearchComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.Services.AddSingleton<IConfigureOptions<Config>, TypesenseOptions>();
+        builder.Services.AddTransient<IContentIndexer, ContentIndexer>();
         builder.Services.AddTransient(typeof(ISearchDocumentBuilder<>), typeof(SearchDocumentBuilder<>));
         builder.Services.AddTransient(typeof(ISearcher<>), typeof(Searcher<>));
         builder.Services.AddSingleton<ITypesenseJsonProvider, TypesenseJsonProvider>();
+        builder.Services.AddTransient(typeof(ITypesenseSearchBuilder<>), typeof(TypesenseSearchBuilder<>));
+        builder.Services.AddTransient<ITypesenseSearchFactory, TypesenseSearchFactory>();
 
         builder.Services.AddOpenApiDocument(TypesenseConstants.BackOfficeApiName);
-        
-        InitializeTypesenseCollections(builder);
-        
+
         builder.Services
                .AddHttpClient(nameof(TypesenseClient), client => {
                    client.DefaultRequestVersion = HttpVersion.Version30;
@@ -45,10 +45,4 @@ public class TypesenseSearchComposer : Composer {
         RegisterAll(t => t.ImplementsInterface<ISearchIndexer>(),
                     t => builder.Services.AddTransient(typeof(ISearchIndexer), t));
     }
-
-    private void InitializeTypesenseCollections(IUmbracoBuilder builder) {
-        var collections = builder.Config.GetSection("Typesense").Get<TypesenseCollectionsOptions>();
-        
-        TypesenseCollections.Initialize(collections?.Collections);
-    }
-} 
+}

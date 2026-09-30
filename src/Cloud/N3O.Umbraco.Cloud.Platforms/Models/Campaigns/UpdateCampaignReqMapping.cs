@@ -25,11 +25,16 @@ public class UpdateCampaignReqMapping : IMapDefinition {
     
     private readonly ICdnClient _cdnClient;
     private readonly IMediaUrl _mediaUrl;
+    private readonly IPlatformsMediaUrlBuilder _mediaUrlBuilder;
     private readonly ISlugHelper _slugHelper;
 
-    public UpdateCampaignReqMapping(ICdnClient cdnClient, IMediaUrl mediaUrl, ISlugHelper slugHelper) {
+    public UpdateCampaignReqMapping(ICdnClient cdnClient,
+                                    IMediaUrl mediaUrl,
+                                    IPlatformsMediaUrlBuilder mediaUrlBuilder,
+                                    ISlugHelper slugHelper) {
         _cdnClient = cdnClient;
         _mediaUrl = mediaUrl;
+        _mediaUrlBuilder = mediaUrlBuilder;
         _slugHelper = slugHelper;
     }
     
@@ -46,7 +51,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
         dest.Slug = _slugHelper.GenerateSlug(src.Name);
         dest.Target = target == 0 ? null : target;
 
-        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl);
+        dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);
 
         dest.Order = new CampaignOrderReq();
         dest.Order.Order = src.Content().Parent().Children().FindIndex(x => x.Id == src.Content().Id);
@@ -91,7 +96,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
                 if (src.Giving.RegularGiving.RegularGivingFrequency == RegularGivingFrequencies.Monthly && 
                     src.Giving.RegularGiving.DayOfMonth.HasValue()) {
                     dest.Giving.Regular.Monthly = new MonthlyGivingOptionsReq();
-                    dest.Giving.Regular.Monthly.CollectionDay = src.Giving.RegularGiving.DayOfMonth.Id;
+                    dest.Giving.Regular.Monthly.CollectionDay = src.Giving.RegularGiving.DayOfMonth.Id.FromEnumString<DayOfMonth>();
                 } else if (src.Giving.RegularGiving.RegularGivingFrequency == RegularGivingFrequencies.Weekly && 
                            src.Giving.RegularGiving.DayOfWeek.HasValue()) {
                     dest.Giving.Regular.Weekly = new WeeklyGivingOptionsReq();

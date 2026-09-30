@@ -114,6 +114,7 @@ public class CheckoutWebhookTransform : WebhookTransform {
         }
     }
     
+    // Adds to the tags already carried by the checkout, so a site tag wins a clash.
     private void TransformTags(JObject jObject) {
         var language = LocalizationSettings.GetLanguageName(_cultureAccessor.GetCulture()) ?? Site.Language;
 
@@ -130,9 +131,14 @@ public class CheckoutWebhookTransform : WebhookTransform {
         var settingsContentTypeAlias = paymentMethod.GetSettingsContentTypeAlias();
         var allowedCollectionDays = new List<DayOfMonth>();
         
-        var restrictedToDays = (IEnumerable<DayOfMonth>) _contentCache.Single(settingsContentTypeAlias)
-                                                                      .GetProperty(RestrictCollectionDaysToAlias)
-                                                                      .GetValue();
+        var settings = _contentCache.Single(settingsContentTypeAlias);
+
+        if (settings == null) {
+            throw new Exception($"Could not resolve {settingsContentTypeAlias} content");
+        }
+
+        var restrictedToDays = (IEnumerable<DayOfMonth>) settings.GetProperty(RestrictCollectionDaysToAlias)
+                                                                 .GetValue();
 
         if (restrictedToDays.HasAny()) {
             allowedCollectionDays.AddRange(restrictedToDays.OrEmpty());
