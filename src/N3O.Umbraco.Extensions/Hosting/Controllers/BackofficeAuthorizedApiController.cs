@@ -20,6 +20,6 @@ namespace N3O.Umbraco.Hosting;
 [Authorize(Policy = AuthorizationPolicies.BackOfficeAccess)]
 public class BackofficeAuthorizedApiController : ControllerBase {
     protected NotFoundObjectResult NotFound(ResourceNotFoundException ex) {
-        return NotFound($"{ex.ParameterName}:{ex.ParameterValue}");
+        return NotFound(ex.Resource);
     }
 }

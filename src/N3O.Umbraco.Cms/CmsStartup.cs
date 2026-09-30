@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Net.Http.Headers;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Dev;
@@ -68,7 +69,8 @@ public abstract class CmsStartup {
         var staticFileOptions = new StaticFileOptions();
         staticFileOptions.OnPrepareResponse = staticFileCachePolicy.Apply;
         ConfigureStaticFiles(staticFileOptions);
-        
+        RevalidateBackofficePlugins(staticFileOptions);
+
         app.UseWhen(context => !context.Request.Path.StartsWithSegments("/media"),
                     appBuilder => appBuilder.UseStaticFiles(staticFileOptions));
         
@@ -104,6 +106,19 @@ public abstract class CmsStartup {
     protected virtual void ConfigureEndpoints(IUmbracoEndpointBuilderContext umbraco) { }
     protected virtual void ConfigureMiddleware(IUmbracoApplicationBuilderContext umbraco) { }
     protected virtual void ConfigureStaticFiles(StaticFileOptions staticFileOptions) { }
+
+    private static void RevalidateBackofficePlugins(StaticFileOptions staticFileOptions) {
+        var configured = staticFileOptions.OnPrepareResponse;
+
+        staticFileOptions.OnPrepareResponse = ctx => {
+            configured?.Invoke(ctx);
+
+            if (ctx.Context.Request.Path.Value.StartsWith("/App_Plugins/N3O.", StringComparison.OrdinalIgnoreCase) &&
+                !ctx.Context.Response.Headers.ContainsKey(HeaderNames.CacheControl)) {
+                ctx.Context.Response.Headers.CacheControl = "no-cache";
+            }
+        };
+    }
 
     private RewriteOptions GetRewriteOptions() {
         var options = new RewriteOptions();

@@ -13,6 +13,7 @@ public class ResourceNotFoundException : ExceptionWithProblemDetails {
 
     public string ParameterName { get; }
     public string ParameterValue { get; }
+    public string Resource => $"{ParameterName}:{ParameterValue}";
 
     public override ProblemDetails GetProblemDetails(IFormatter formatter) {
         var problemDetails = new ProblemDetails(HttpStatusCode.NotFound, ParameterName, ParameterValue);

@@ -47,4 +47,9 @@
             <Pack>True</Pack>
         </None>
     </ItemGroup>
+    <ItemGroup>
+        <!-- A consuming site generates its own copies at the same paths, so shipping these fails its publish. -->
+        <Content Remove="appsettings-schema*.json" />
+        <Content Remove="umbraco-package-schema.json" />
+    </ItemGroup>
 </Project>

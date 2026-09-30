@@ -1,6 +1,5 @@
 using N3O.Umbraco.Extensions;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
@@ -17,13 +16,7 @@ public class CellsValueConverter : PropertyValueConverterBase {
                                                        object source,
                                                        bool preview) {
         object[][] cells = null;
-        string json = null;
-        
-        if (source is string str) {
-            json = str;
-        } else if (source is JObject jObject) {
-            json = jObject.ToString();
-        }
+        var json = source.ToSourceValueJson();
 
         if (json.HasValue()) {
             cells = JsonConvert.DeserializeObject<object[][]>(json);
