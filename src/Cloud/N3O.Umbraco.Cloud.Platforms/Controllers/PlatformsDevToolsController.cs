@@ -20,8 +20,8 @@ namespace N3O.Umbraco.Cloud.Platforms.Controllers;
 
 [ApiDocument(PlatformsConstants.DevToolsApiName)]
 public class PlatformsDevToolsController : BackofficeAuthorizedApiController {
-    private const string CampaignsWebhookId = PlatformsConstants.WebhookIds.Campaigns;
-    private const string OfferingsWebhookId = PlatformsConstants.WebhookIds.Offerings;
+    private const string CampaignsWebhookId = PlatformsConstants.Webhooks.HookIds.Campaigns;
+    private const string OfferingsWebhookId = PlatformsConstants.Webhooks.HookIds.Offerings;
 
     private readonly IContentLocator _contentLocator;
     private readonly IUmbracoMapper _mapper;

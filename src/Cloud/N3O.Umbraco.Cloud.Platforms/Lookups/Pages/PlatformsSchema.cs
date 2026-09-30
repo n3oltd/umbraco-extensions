@@ -11,5 +11,6 @@ public class PlatformsSchema : NamedLookup {
 public class PlatformsSchemas : StaticLookupsCollection<PlatformsSchema> {
     public static readonly PlatformsSchema CampaignPage = new(PlatformsSystemSchema.Sys__campaignPage.ToEnumString(), "Campaign Page");
     public static readonly PlatformsSchema CrowdfunderPage = new(CrowdfundingSystemSchema.Sys__crowdfunderPage.ToEnumString(), "Crowdfunder Page");
+    public static readonly PlatformsSchema CrowdfundingCampaignPage = new(CrowdfundingSystemSchema.Sys__crowdfundingCampaignPage.ToEnumString(), "Crowdfunding Campaign Page");
     public static readonly PlatformsSchema OfferingPage = new(PlatformsSystemSchema.Sys__offeringPage.ToEnumString(), "Offering Page");
 }

@@ -1,12 +1,26 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
+using System;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
 public static class ContentExtensions {
+    public static Guid? GetCrowdfunderCampaignKey(this IContent content) {
+        var alias = PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Properties.Campaign;
+        var value = content.GetValue<string>(alias);
+
+        if (UdiParser.TryParse(value, out GuidUdi udi)) {
+            return udi.Guid;
+        }
+
+        return null;
+    }
+
     public static bool IsCampaign(this IContent content, IContentTypeService contentTypeService) {
         return HasComposition(contentTypeService, content, AliasHelper<CampaignContent>.ContentTypeAlias());
     }
@@ -15,8 +29,8 @@ public static class ContentExtensions {
         return HasComposition(contentTypeService, content, AliasHelper<CrossSellContent>.ContentTypeAlias());
     }
 
-    public static bool IsCrowdfundingCampaign(this IContent content, IContentTypeService contentTypeService) {
-        return HasComposition(contentTypeService, content, AliasHelper<CrowdfundingCampaignContent>.ContentTypeAlias());
+    public static bool IsCrowdfunder(this IContent content) {
+        return content.ContentType.Alias == PlatformsConstants.CrowdfundingCampaigns.CrowdfundingCampaign.Alias;
     }
 
     public static bool IsFeed(this IContent content) {

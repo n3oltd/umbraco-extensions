@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>N3O.Umbraco.GeoIP.Cloudflare</RootNamespace>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>12</LangVersion>
+        <Copyright>Copyright © 2026 N3O Ltd</Copyright>
+        <NoWarn>NU1605;1591</NoWarn>
+        <CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    </PropertyGroup>
+    <PropertyGroup>
+        <PackageId>N3O.Umbraco.GeoIP.Cloudflare</PackageId>
+        <IsPackable>true</IsPackable>
+        <ContentTargetFolders>.</ContentTargetFolders>
+        <Authors>N3O Ltd</Authors>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Description>TODO</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>
+        <Version>17.0.0</Version>
+        <AssemblyVersion>$(Version)</AssemblyVersion>
+        <FileVersion>$(Version)</FileVersion>
+        <RepositoryType>git</RepositoryType>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+        <DebugType>full</DebugType>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+        <DebugType>pdbonly</DebugType>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\N3O.Umbraco.GeoIP\N3O.Umbraco.GeoIP.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="README.md">
+            <Pack>True</Pack>
+        </None>
+    </ItemGroup>
+</Project>

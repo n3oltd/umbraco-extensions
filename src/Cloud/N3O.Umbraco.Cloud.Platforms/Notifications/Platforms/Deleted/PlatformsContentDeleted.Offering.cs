@@ -26,5 +26,5 @@ public class OfferingDeleted : PlatformsContentDeleted {
         return offeringReq;
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.Offerings;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.Offerings;
 }

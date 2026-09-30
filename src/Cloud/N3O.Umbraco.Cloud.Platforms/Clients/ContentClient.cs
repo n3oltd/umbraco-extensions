@@ -26,19 +26,31 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     
 
+    /// <summary>
+    /// The boolean content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class BooleanContentReq
     {
 
+        /// <summary>
+        /// The boolean value
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Value { get; set; }
 
     }
 
+    /// <summary>
+    /// The content collection to add or update
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ContentCollectionReq
     {
 
+        /// <summary>
+        /// The name of the content collection
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
@@ -63,13 +75,22 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The content library to add or update
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ContentLibraryReq
     {
 
+        /// <summary>
+        /// The name of the content library
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// The keys of the tags to include when publishing content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("publishableTagKeys", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> PublishableTagKeys { get; set; }
 
@@ -103,13 +124,22 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ContentReq
     {
 
+        /// <summary>
+        /// The alias of the schema the content follows
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("schemaAlias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SchemaAlias { get; set; }
 
+        /// <summary>
+        /// The content of the properties
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("properties", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<PropertyContentReq> Properties { get; set; }
 
@@ -127,6 +157,9 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The managed content to add or update
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreateManagedContentReq
     {
@@ -134,6 +167,9 @@ namespace N3O.Umbraco.Cloud.Content.Clients
         [Newtonsoft.Json.JsonProperty("libraryId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string LibraryId { get; set; }
 
+        /// <summary>
+        /// The name of the managed content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
@@ -148,6 +184,9 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The date and time content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DateTimeContentReq
     {
@@ -157,16 +196,28 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The EditorJs content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class EditorJsContentReq
     {
 
+        /// <summary>
+        /// The version of the editor that produced the content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("version", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Version { get; set; }
 
+        /// <summary>
+        /// The time the content was last saved
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("time", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public long? Time { get; set; }
 
+        /// <summary>
+        /// The blocks that make up the content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("blocks", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<object> Blocks { get; set; }
 
@@ -337,19 +388,34 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The crop applied to the image
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ImageCropReq
     {
 
+        /// <summary>
+        /// The height of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("height", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Height { get; set; }
 
+        /// <summary>
+        /// The width of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("width", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Width { get; set; }
 
+        /// <summary>
+        /// The X coordinate of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("x", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? X { get; set; }
 
+        /// <summary>
+        /// The Y coordinate of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("y", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Y { get; set; }
 
@@ -373,24 +439,39 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The simple image content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ImageSimpleContentReq
     {
 
+        /// <summary>
+        /// The URL of the source image file
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("sourceFile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SourceFile { get; set; }
 
+        /// <summary>
+        /// The alternative text for the image
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("altText", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string AltText { get; set; }
 
         [Newtonsoft.Json.JsonProperty("main", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public ImageSimpleProcessingReq Main { get; set; }
 
+        /// <summary>
+        /// The processing applied to each additional image
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("additional", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.IDictionary<string, ImageSimpleProcessingReq> Additional { get; set; }
 
     }
 
+    /// <summary>
+    /// The processing applied to the main image
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ImageSimpleProcessingReq
     {
@@ -400,10 +481,16 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The collections the content belongs to
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ManagedContentCollectionsReq
     {
 
+        /// <summary>
+        /// The IDs of the content collections
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("ids", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> Ids { get; set; }
 
@@ -423,6 +510,9 @@ namespace N3O.Umbraco.Cloud.Content.Clients
         [Newtonsoft.Json.JsonProperty("addOrUpdate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public CreateManagedContentReq AddOrUpdate { get; set; }
 
+        /// <summary>
+        /// Whether to approve the managed content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("approve", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Approve { get; set; }
 
@@ -431,15 +521,24 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The multiple nested content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NestedContentMultipleContentReq
     {
 
+        /// <summary>
+        /// The nested content elements
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("elements", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<ContentReq> Elements { get; set; }
 
     }
 
+    /// <summary>
+    /// The single nested content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NestedContentSingleContentReq
     {
@@ -457,9 +556,15 @@ namespace N3O.Umbraco.Cloud.Content.Clients
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public PropertyEditor? Editor { get; set; }
 
+        /// <summary>
+        /// The alias of the property
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("alias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Alias { get; set; }
 
+        /// <summary>
+        /// The editor-specific data for the property
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public object Data { get; set; }
 
@@ -956,6 +1061,9 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The range of seconds of the video to play
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Rangelong
     {
@@ -968,6 +1076,9 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The rejection to apply to the managed content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class RejectManagedContentReq
     {
@@ -975,15 +1086,24 @@ namespace N3O.Umbraco.Cloud.Content.Clients
         [Newtonsoft.Json.JsonProperty("reason", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Reason { get; set; }
 
+        /// <summary>
+        /// The notes accompanying the rejection
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
     }
 
+    /// <summary>
+    /// The rich text content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class RichTextContentReq
     {
 
+        /// <summary>
+        /// The HTML content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("html", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Html { get; set; }
 
@@ -1190,10 +1310,16 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The SVG content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class SvgContentReq
     {
 
+        /// <summary>
+        /// The URL of the source SVG file
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("sourceFile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SourceFile { get; set; }
 
@@ -1214,10 +1340,16 @@ namespace N3O.Umbraco.Cloud.Content.Clients
 
     }
 
+    /// <summary>
+    /// The tags applied to the content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TagCollectionReq
     {
 
+        /// <summary>
+        /// The tags in the collection
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("entries", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<TagReq> Entries { get; set; }
 
@@ -1227,50 +1359,83 @@ namespace N3O.Umbraco.Cloud.Content.Clients
     public partial class TagReq
     {
 
+        /// <summary>
+        /// The key of the tag
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("key", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Key { get; set; }
 
+        /// <summary>
+        /// The value of the tag
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Value { get; set; }
 
+        /// <summary>
+        /// Indicates whether the tag is a system tag
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("isSystem", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? IsSystem { get; set; }
 
     }
 
+    /// <summary>
+    /// The textarea content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TextareaContentReq
     {
 
+        /// <summary>
+        /// The text
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("text", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Text { get; set; }
 
     }
 
+    /// <summary>
+    /// The textbox content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TextboxContentReq
     {
 
+        /// <summary>
+        /// The text
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("text", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Text { get; set; }
 
     }
 
+    /// <summary>
+    /// The simple video content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class VideoSimpleContentReq
     {
 
+        /// <summary>
+        /// The URL of the source video file
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("sourceFile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SourceFile { get; set; }
 
         [Newtonsoft.Json.JsonProperty("main", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public VideoSimpleProcessingReq Main { get; set; }
 
+        /// <summary>
+        /// The processing applied to each additional video
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("additional", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.IDictionary<string, VideoSimpleProcessingReq> Additional { get; set; }
 
     }
 
+    /// <summary>
+    /// The processing applied to the main video
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class VideoSimpleProcessingReq
     {

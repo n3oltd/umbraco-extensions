@@ -7,10 +7,18 @@ export declare class CartClient {
     });
     add(req: AddToCartReq): Promise<void>;
     protected processAdd(response: Response): Promise<void>;
+    addUpsellToCart(upsellOfferId: string, req: AddUpsellToCartReq): Promise<void>;
+    protected processAddUpsellToCart(response: Response): Promise<void>;
+    bulkRemove(req: BulkRemoveFromCartReq): Promise<void>;
+    protected processBulkRemove(response: Response): Promise<void>;
     getSummary(): Promise<CartSummaryRes>;
     protected processGetSummary(response: Response): Promise<CartSummaryRes>;
+    reset(): Promise<void>;
+    protected processReset(response: Response): Promise<void>;
     remove(req: RemoveFromCartReq): Promise<void>;
     protected processRemove(response: Response): Promise<void>;
+    removeUpsellFromCart(upsellOfferId: string): Promise<void>;
+    protected processRemoveUpsellFromCart(response: Response): Promise<void>;
 }
 export interface ProblemDetails {
     type?: string | undefined;
@@ -18,6 +26,7 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface AddToCartReq {
     givingType?: GivingType | undefined;
@@ -33,11 +42,17 @@ export interface AllocationReq {
     type?: AllocationType | undefined;
     value?: MoneyReq | undefined;
     fundDimensions?: FundDimensionValuesReq | undefined;
+    feedback?: FeedbackAllocationReq | undefined;
     fund?: FundAllocationReq | undefined;
     sponsorship?: SponsorshipAllocationReq | undefined;
+    pledgeUrl?: string | undefined;
+    upsellOfferId?: string | undefined;
+    notes?: string | undefined;
+    [key: string]: any;
 }
-/** One of 'fund', 'sponsorship' */
+/** One of 'feedback', 'fund', 'sponsorship' */
 export declare enum AllocationType {
+    Feedback = "feedback",
     Fund = "fund",
     Sponsorship = "sponsorship"
 }
@@ -51,96 +66,87 @@ export interface FundDimensionValuesReq {
     dimension3?: string | undefined;
     dimension4?: string | undefined;
 }
-export interface FundAllocationReq {
-    donationItem?: string | undefined;
+export interface FeedbackAllocationReq {
+    scheme?: string | undefined;
+    customFields?: FeedbackNewCustomFieldsReq | undefined;
 }
-export interface PriceContent {
+export interface FundDimensionOptions {
+    dimension1?: string[] | undefined;
+    dimension2?: string[] | undefined;
+    dimension3?: string[] | undefined;
+    dimension4?: string[] | undefined;
+}
+export interface Pricing {
+    price?: Price | undefined;
+    rules?: PricingRule[] | undefined;
+}
+export interface Price {
     amount?: number;
     locked?: boolean;
 }
-export interface PricingRuleElement {
-    content?: IPublishedElement | undefined;
-    amount?: number;
-    locked?: boolean;
+export interface PricingRule {
+    price?: Price | undefined;
+    fundDimensions?: FundDimensionValues | undefined;
+}
+export interface FundDimensionValues {
     dimension1?: string | undefined;
     dimension2?: string | undefined;
     dimension3?: string | undefined;
     dimension4?: string | undefined;
 }
-export interface IPublishedElement {
-    contentType?: IPublishedContentType | undefined;
-    key?: string;
-    properties?: IPublishedProperty[] | undefined;
-}
-export interface IPublishedContentType {
-    key?: string;
-    id?: number;
+export interface FeedbackCustomFieldDefinition {
+    type?: FeedbackCustomFieldType | undefined;
     alias?: string | undefined;
-    itemType?: PublishedItemType;
-    compositionAliases?: string[] | undefined;
-    variations?: ContentVariation;
-    isElement?: boolean;
-    propertyTypes?: IPublishedPropertyType[] | undefined;
+    name?: string | undefined;
+    required?: boolean;
+    textMaxLength?: number | undefined;
 }
-export declare enum PublishedItemType {
-    Unknown = 0,
-    Element = 1,
-    Content = 2,
-    Media = 3,
-    Member = 4
+/** One of 'bool', 'date', 'text' */
+export declare enum FeedbackCustomFieldType {
+    Bool = "bool",
+    Date = "date",
+    Text = "text"
 }
-export declare enum ContentVariation {
-    Nothing = 0,
-    Culture = 1,
-    Segment = 2,
-    CultureAndSegment = 3
+export interface FeedbackNewCustomFieldsReq {
+    entries?: FeedbackNewCustomFieldReq[] | undefined;
 }
-export interface IPublishedPropertyType {
-    contentType?: IPublishedContentType | undefined;
-    dataType?: PublishedDataType | undefined;
+export interface FeedbackNewCustomFieldReq {
     alias?: string | undefined;
-    editorAlias?: string | undefined;
-    isUserProperty?: boolean;
-    variations?: ContentVariation;
-    cacheLevel?: PropertyCacheLevel;
-    modelClrType?: string | undefined;
-    clrType?: string | undefined;
+    bool?: boolean | undefined;
+    date?: string | undefined;
+    text?: string | undefined;
 }
-export interface PublishedDataType {
-    id?: number;
-    editorAlias?: string | undefined;
-    configuration?: any | undefined;
-}
-export declare enum PropertyCacheLevel {
-    Unknown = 0,
-    Element = 1,
-    Elements = 2,
-    Snapshot = 3,
-    None = 4
-}
-export interface IPublishedProperty {
-    propertyType?: IPublishedPropertyType | undefined;
-    alias?: string | undefined;
+export interface FundAllocationReq {
+    donationItem?: string | undefined;
 }
 export interface SponsorshipAllocationReq {
-    beneficiary?: string | undefined;
+    beneficiaryReference?: string | undefined;
     scheme?: string | undefined;
     duration?: SponsorshipDuration | undefined;
     components?: SponsorshipComponentAllocationReq[] | undefined;
 }
-/** One of '_6', '_12', '_18', '_24' */
+/** One of '_6', '_12', '_18', '_24', '_36', '_48', '_60' */
 export declare enum SponsorshipDuration {
     _6 = "_6",
     _12 = "_12",
     _18 = "_18",
-    _24 = "_24"
+    _24 = "_24",
+    _36 = "_36",
+    _48 = "_48",
+    _60 = "_60"
 }
 export interface SponsorshipComponentAllocationReq {
     component?: string | undefined;
     value?: MoneyReq | undefined;
 }
+export interface AddUpsellToCartReq {
+    amount?: number | undefined;
+}
+export interface BulkRemoveFromCartReq {
+    givingType?: GivingType | undefined;
+    indexes?: number[] | undefined;
+}
 export interface CartSummaryRes {
-    /** A well formed revision ID string */
     revisionId?: string | undefined;
     itemCount?: number;
 }

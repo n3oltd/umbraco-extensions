@@ -954,6 +954,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("emailAddress", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string EmailAddress { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("forexMoney", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public ForexMoney ForexMoney { get; set; }
+
         [Newtonsoft.Json.JsonProperty("integer", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public long? Integer { get; set; }
 
@@ -971,6 +974,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("string", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string String { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("tags", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Tags { get; set; }
 
         [Newtonsoft.Json.JsonProperty("time", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Time { get; set; }
@@ -1022,6 +1028,21 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public CellModel Value { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ForexMoney
+    {
+
+        [Newtonsoft.Json.JsonProperty("base", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public Money Base { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("quote", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public Money Quote { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exchangeRate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double? ExchangeRate { get; set; }
 
     }
 
