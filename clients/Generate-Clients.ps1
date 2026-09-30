@@ -1,9 +1,6 @@
 n3o-tool clients --url "https://localhost:6001/swagger/Accounts/swagger.json" --language "TypeScript" --output-path "@n3oltd/umbraco-accounts-client" --name "AccountsClient" --package-name "@n3oltd/umbraco-accounts-client" --package-description "TODO"
 n3o-tool clients --url "https://localhost:6001/swagger/Accounts/swagger.json" --language "CSharp" --output-path "../src/N3O.Umbraco.Clients/Accounts" --name "AccountsClient" --namespace "N3O.Umbraco.Clients.Accounts"
 
-n3o-tool clients --url "https://localhost:6001/swagger/Cropper/swagger.json" --language "TypeScript" --output-path "@n3oltd/umbraco-cropper-client" --name "CropperClient" --package-name "@n3oltd/umbraco-cropper-client" --package-description "TODO"
-n3o-tool clients --url "https://localhost:6001/swagger/Cropper/swagger.json" --language "CSharp" --output-path "../src/N3O.Umbraco.Clients/Plugins/Cropper" --name "CropperClient" --namespace "N3O.Umbraco.Clients.Plugins.Cropper"
-
 n3o-tool clients --url "https://localhost:6001/swagger/Crowdfunding/swagger.json" --language "TypeScript" --output-path "@n3oltd/umbraco-crowdfunding-client" --name "CrowdfundingClient" --package-name "@n3oltd/umbraco-crowdfunding-client" --package-description "TODO"
 n3o-tool clients --url "https://localhost:6001/swagger/Crowdfunding/swagger.json" --language "CSharp" --output-path "../src/N3O.Umbraco.Clients/Crowdfunding" --name "CrowdfundingClient" --namespace "N3O.Umbraco.Clients.Crowdfunding"
 
@@ -57,9 +54,6 @@ n3o-tool clients --url "https://localhost:6001/swagger/PayPal/swagger.json" --la
 
 n3o-tool clients --url "https://localhost:6001/swagger/Stripe/swagger.json" --language "TypeScript" --output-path "@n3oltd/umbraco-payments-stripe-client" --name "StripeClient" --package-name "@n3oltd/umbraco-payments-stripe-client" --package-description "TODO"
 n3o-tool clients --url "https://localhost:6001/swagger/Stripe/swagger.json" --language "CSharp" --output-path "../src/N3O.Umbraco.Clients/Payments/Stripe" --name "StripeClient" --namespace "N3O.Umbraco.Clients.Payments.Stripe"
-
-n3o-tool clients --url "https://localhost:6001/swagger/Uploader/swagger.json" --language "TypeScript" --output-path "@n3oltd/umbraco-uploader-client" --name "UploaderClient" --package-name "@n3oltd/umbraco-uploader-client" --package-description "TODO"
-n3o-tool clients --url "https://localhost:6001/swagger/Uploader/swagger.json" --language "CSharp" --output-path "../src/N3O.Umbraco.Clients/Plugins/Uploader" --name "UploaderClient" --namespace "N3O.Umbraco.Clients.Plugins.Uploader"
 
 n3o-tool clients --url "https://beta.n3o.cloud/eu1/api/content/docs/openapi/umbraco-v1.0.json" --language "CSharp" --output-path "../src/Cloud/N3O.Umbraco.Cloud.Platforms/Clients" --name "ContentClient" --namespace "N3O.Umbraco.Cloud.Content.Clients" --connect-api
 
