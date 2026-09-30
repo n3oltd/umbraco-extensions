@@ -71,7 +71,7 @@ public class BlockGridDataTypeDesigner : DataTypeDesigner {
 
     private BlockGridConfiguration.BlockGridBlockConfiguration BuildBlock(BlockGridBlockBuilder block,
                                                                           BlockGridConfiguration existing) {
-        return block.Build(ResolveElementType,
+        return block.Build(_contentTypeService.GetOrThrow,
                            areaAlias => GetAreaKey(block.ElementTypeAlias, areaAlias, existing));
     }
 
@@ -84,16 +84,6 @@ public class BlockGridDataTypeDesigner : DataTypeDesigner {
         var existingArea = existingBlock?.Areas.FirstOrDefault(x => x.Alias.EqualsInvariant(areaAlias));
 
         return existingArea?.Key ?? UmbracoId.Deterministic(IdScope.BlockArea, elementTypeAlias, areaAlias);
-    }
-
-    private IContentType ResolveElementType(string alias) {
-        var elementType = _contentTypeService.Get(alias);
-
-        if (elementType == null) {
-            throw new Exception($"No element type found with alias {alias.Quote()}");
-        }
-
-        return elementType;
     }
 }
 

@@ -65,18 +65,8 @@ public class RichTextDataTypeDesigner : DataTypeDesigner {
     private RichTextConfiguration.RichTextBlockConfiguration BuildBlock(string elementTypeAlias) {
         var block = new RichTextConfiguration.RichTextBlockConfiguration();
 
-        block.ContentElementTypeKey = ResolveElementType(elementTypeAlias).Key;
+        block.ContentElementTypeKey = _contentTypeService.GetOrThrow(elementTypeAlias).Key;
 
         return block;
-    }
-
-    private IContentType ResolveElementType(string alias) {
-        var elementType = _contentTypeService.Get(alias);
-
-        if (elementType == null) {
-            throw new Exception($"No element type found with alias {alias.Quote()}");
-        }
-
-        return elementType;
     }
 }

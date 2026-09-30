@@ -59,7 +59,7 @@ public class BlockListDataTypeDesigner : DataTypeDesigner {
     protected override object BuildConfiguration(IDataType existing) {
         var configuration = new BlockListConfiguration();
 
-        configuration.Blocks = _blocks.Select(x => x.Build(ResolveElementType)).ToArray();
+        configuration.Blocks = _blocks.Select(x => x.Build(_contentTypeService.GetOrThrow)).ToArray();
         configuration.UseSingleBlockMode = _useSingleBlockMode;
 
         if (_minBlocks.HasValue() || _maxBlocks.HasValue()) {
@@ -71,16 +71,6 @@ public class BlockListDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.BlockList;
-
-    private IContentType ResolveElementType(string alias) {
-        var elementType = _contentTypeService.Get(alias);
-
-        if (elementType == null) {
-            throw new Exception($"No element type found with alias {alias.Quote()}");
-        }
-
-        return elementType;
-    }
 }
 
 public class BlockListBlockBuilder {
