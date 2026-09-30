@@ -16,12 +16,15 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 
 using Umbraco.Extensions;
+using UmbracoUdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
 
 namespace N3O.Umbraco.ValueConverters;
 
 public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePickerValueConverter {
-    private readonly ModelsBuilderSettings _modelBuilderSettings;
     private readonly IContentTypeService _contentTypeService;
+    private readonly IMediaTypeService _mediaTypeService;
+    private readonly IMemberTypeService _memberTypeService;
+    private readonly ModelsBuilderSettings _modelBuilderSettings;
 
     public StronglyTypedMultiNodeTreePickerValueConverter(IUmbracoContextAccessor umbracoContextAccessor,
                                                           IMemberService memberService,
@@ -31,9 +34,13 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
                                                           IPublishedMediaCache mediaCache,
                                                           IPublishedMemberCache memberCache,
                                                           IContentTypeService contentTypeService,
+                                                          IMediaTypeService mediaTypeService,
+                                                          IMemberTypeService memberTypeService,
                                                           IOptions<ModelsBuilderSettings> modelBuilderSettings)
         : base(umbracoContextAccessor, memberService, apiContentBuilder, apiMediaBuilder, contentCache, mediaCache, memberCache) {
         _contentTypeService = contentTypeService;
+        _mediaTypeService = mediaTypeService;
+        _memberTypeService = memberTypeService;
         _modelBuilderSettings = modelBuilderSettings.Value;
     }
 
@@ -72,7 +79,9 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
 
     private Type GetElementType(IPublishedPropertyType propertyType) {
         var config = propertyType.DataType.ConfigurationAs<MultiNodePickerConfiguration>();
-        var contentType = config.Filter.HasValue() ? GetPickerContentTypeName(config.Filter) : null;
+        var contentType = config.Filter.HasValue()
+                              ? GetPickerContentTypeName(config.TreeSource?.ObjectType, config.Filter)
+                              : null;
 
         if (!contentType.HasValue() || contentType == nameof(IPublishedContent)) {
             return typeof(IPublishedContent);
@@ -87,19 +96,21 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         return typeof(IEnumerable<>).MakeGenericType(elementType);
     }
 
-    // The picker's type filter holds content type keys, not aliases, and an unknown model name silently
-    // resolves to a dynamic type rather than failing.
-    private string GetContentTypeAlias(string filterEntry) {
-        if (!Guid.TryParse(filterEntry, out var key)) {
-            return filterEntry;
-        }
+    private string GetContentTypeAlias(string objectType, string filterEntry) {
+        var key = Guid.Parse(filterEntry);
 
-        return _contentTypeService.Get(key)?.Alias ?? filterEntry;
+        var alias = objectType switch {
+            UmbracoUdiEntityType.Media => _mediaTypeService.Get(key)?.Alias,
+            UmbracoUdiEntityType.Member => _memberTypeService.Get(key)?.Alias,
+            _ => _contentTypeService.Get(key)?.Alias
+        };
+
+        return alias ?? filterEntry;
     }
 
-    private string GetPickerContentTypeName(string filter) {
+    private string GetPickerContentTypeName(string objectType, string filter) {
         var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                 .Select(GetContentTypeAlias)
+                                 .Select(x => GetContentTypeAlias(objectType, x))
                                  .Select(x => x.Pascalize())
                                  .ToList();
 
