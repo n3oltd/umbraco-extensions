@@ -1275,7 +1275,7 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     /// <summary>
-    /// One of 'n3o-campaign-id', 'n3o-offering-id', 'n3o-page-id'
+    /// One of 'n3o-campaign-id', 'n3o-language', 'n3o-offering-id', 'n3o-page-id', 'n3o-page-kind', 'n3o-page-published-path', 'n3o-page-title', 'n3o-page-url'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum PlatformsMetaTagName
@@ -1284,11 +1284,26 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [System.Runtime.Serialization.EnumMember(Value = @"n3o-campaign-id")]
         CampaignId = 0,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-language")]
+        Language = 1,
+
         [System.Runtime.Serialization.EnumMember(Value = @"n3o-offering-id")]
-        OfferingId = 1,
+        OfferingId = 2,
 
         [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-id")]
-        PageId = 2,
+        PageId = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-kind")]
+        PageKind = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-published-path")]
+        PagePublishedPath = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-title")]
+        PageTitle = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-url")]
+        PageUrl = 7,
 
     }
 
