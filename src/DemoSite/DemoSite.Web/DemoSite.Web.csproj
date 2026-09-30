@@ -7,10 +7,10 @@
         <CopyDebugSymbolFilesFromPackages>true</CopyDebugSymbolFilesFromPackages>
     </PropertyGroup>
     <ItemGroup>
-        <None Remove="Smidge\**" />
         <None Remove="wwwroot\umbraco\**" />
     </ItemGroup>
     <ItemGroup>
+        <ProjectReference Include="..\..\Bundling\N3O.Umbraco.Bundling\N3O.Umbraco.Bundling.csproj" />
         <ProjectReference Include="..\..\Data\N3O.Umbraco.Data\N3O.Umbraco.Data.csproj" />
         <ProjectReference Include="..\..\Forms\N3O.Umbraco.Forms.StaticAssets\N3O.Umbraco.Forms.StaticAssets.csproj" />
         <ProjectReference Include="..\..\N3O.Umbraco.Cms\N3O.Umbraco.Cms.csproj" />

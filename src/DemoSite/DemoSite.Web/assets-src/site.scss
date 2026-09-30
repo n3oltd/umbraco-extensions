@@ -1,0 +1,18 @@
+@use "sass:color";
+
+$brand: #c62828;
+$gutter: 16px;
+
+.demo-banner {
+    background: $brand;
+    padding: $gutter ($gutter * 2);
+
+    .demo-banner__title {
+        color: #fff;
+        margin: 0;
+    }
+
+    &:hover {
+        background: color.adjust($brand, $lightness: -8%);
+    }
+}

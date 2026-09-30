@@ -383,3 +383,6 @@ appsettings.Environment.json
 # not matched — and migrate into this rule automatically once their bundles move under wwwroot/.
 **/wwwroot/App_Plugins/**/*.js
 **/wwwroot/App_Plugins/**/*.js.map
+
+# Site asset bundles emitted by @n3oltd/asset-build
+**/wwwroot/**/bundles/
