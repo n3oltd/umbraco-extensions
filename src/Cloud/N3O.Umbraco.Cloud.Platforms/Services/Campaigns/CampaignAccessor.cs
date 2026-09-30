@@ -20,10 +20,12 @@ public class CampaignAccessor : ICampaignAccessor {
         var campaignId = await _campaignIdAccessor.GetIdAsync(content, cancellationToken: cancellationToken);
 
         if (campaignId.HasValue()) {
-            return await _cdnClient.DownloadPublishedContentAsync<PublishedCampaign>(PublishedFileKinds.Campaign,
-                                                                                     $"{campaignId}.json",
-                                                                                     JsonSerializers.JsonProvider,
-                                                                                     cancellationToken);
+            var result = await _cdnClient.DownloadPublishedContentAsync<PublishedCampaign>(PublishedFileKinds.Campaign,
+                                                                                           $"{campaignId}.json",
+                                                                                           JsonSerializers.JsonProvider,
+                                                                                           cancellationToken);
+
+            return result.Content;
         } else {
             return null;   
         }

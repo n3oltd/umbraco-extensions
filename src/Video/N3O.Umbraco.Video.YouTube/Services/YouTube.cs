@@ -1,5 +1,6 @@
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Localization;
+using N3O.Umbraco.Utilities;
 using N3O.Umbraco.Video.YouTube.Criteria;
 using N3O.Umbraco.Video.YouTube.Models;
 using N3O.Umbraco.Video.YouTube.QueryFilters;
@@ -40,7 +41,7 @@ public class YouTube : IYouTube {
 
     public virtual async Task<YouTubeChannel> GetChannelByIdAsync(string id,
                                                                   CancellationToken cancellationToken = default) {
-        var cacheKey = $"{nameof(YouTube)}{nameof(GetChannelByIdAsync)}";
+        var cacheKey = CacheKey.Generate<YouTube>(nameof(GetChannelByIdAsync), id);
         
         return await _appCache.GetCacheItem(cacheKey, async () => {
             var channel = await _client.Channels.GetAsync(id, cancellationToken);

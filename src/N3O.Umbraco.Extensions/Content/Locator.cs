@@ -15,7 +15,7 @@ public abstract class Locator : ILocator {
 
     public IReadOnlyList<IPublishedContent> All(string contentTypeAlias,
                                                 Func<IPublishedContent, bool> predicate = null) {
-        var allContent = GetAllContent(contentTypeAlias);
+        var allContent = GetAllContent(contentTypeAlias, null);
         var filteredContent = allContent.Where(x => predicate?.Invoke(x) ?? true).ToList();
 
         return filteredContent;
@@ -27,6 +27,10 @@ public abstract class Locator : ILocator {
         } else {
             return All(AliasHelper<T>.ContentTypeAlias(), x => predicate(x.As<T>())).Select(x => x.As<T>()).ToList();
         }
+    }
+
+    public IReadOnlyList<IPublishedContent> AllInCulture(string contentTypeAlias, string culture) {
+        return GetAllContent(contentTypeAlias, culture);
     }
 
     public IPublishedContent ById(int id) {
@@ -57,7 +61,7 @@ public abstract class Locator : ILocator {
         }
     }
 
-    private IReadOnlyList<IPublishedContent> GetAllContent(string contentTypeAlias) {
+    private IReadOnlyList<IPublishedContent> GetAllContent(string contentTypeAlias, string culture) {
         var allContent = new List<IPublishedContent>();
 
         foreach (var rootContent in GetRootContents()) {
@@ -65,14 +69,18 @@ public abstract class Locator : ILocator {
                 continue;
             }
 
+            if (culture != null && !rootContent.IsInvariantOrHasCulture(culture)) {
+                continue;
+            }
+
             if (contentTypeAlias == null) {
-                allContent.AddRange(rootContent.DescendantsOrSelf());
+                allContent.AddRange(rootContent.DescendantsOrSelf(culture));
             } else {
                 if (rootContent.ContentType.Alias.EqualsInvariant(contentTypeAlias)) {
                     allContent.Add(rootContent);
                 }
 
-                allContent.AddRange(rootContent.DescendantsOfType(contentTypeAlias));
+                allContent.AddRange(rootContent.DescendantsOfType(contentTypeAlias, culture));
             }
         }
 

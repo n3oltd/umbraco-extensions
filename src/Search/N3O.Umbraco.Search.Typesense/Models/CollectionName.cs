@@ -1,6 +1,9 @@
-﻿using N3O.Umbraco.Extensions;
+﻿using N3O.Umbraco.Constants;
+using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Hosting;
+using N3O.Umbraco.Utilities;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace N3O.Umbraco.Search.Typesense.Models;
 
@@ -11,19 +14,20 @@ public class CollectionName : Value {
     
     public string Base { get; }
 
-
-    
     protected override IEnumerable<object> GetAtomicValues() {
         yield return Base;
     }
     
     public string Resolve() {
-        var collectionName = TypesenseCollections.Collections.SingleOrDefault(x => x.Key.EqualsInvariant(Base)).Value;
+        var environment = Site.Environment;
+        var siteId = Site.Id;
 
-        if (collectionName.HasValue()) {
-            return collectionName;
+        if (!environment.HasValue() || !siteId.HasValue()) {
+            throw new Exception($"Cannot resolve the Typesense collection {Base.Quote()} because " +
+                                $"{EnvironmentData.GetOurKey(EnvironmentVariables.Environment).Quote()} and " +
+                                $"{EnvironmentData.GetOurKey(EnvironmentVariables.SiteId).Quote()} are both required");
         }
 
-        return Base;
+        return $"{Base}_{siteId}_{environment}";
     }
 }

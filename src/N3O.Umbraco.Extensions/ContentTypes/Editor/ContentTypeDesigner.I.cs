@@ -9,9 +9,9 @@ public interface IContentTypeDesigner {
     IPropertyContainerBuilder Group(string name);
     void InFolder(params string[] path);
     IContentType Save();
-    void SetDescription(string description);
-    void SetIcon(string icon);
-    void SetName(string name);
+    void SetDescription(string description, bool overwriteExisting = false);
+    void SetIcon(string icon, bool overwriteExisting = false);
+    void SetName(string name, bool overwriteExisting = false);
     IPropertyContainerBuilder Tab(string name);
     void VaryByCulture();
     void VaryBySegment();

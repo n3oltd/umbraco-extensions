@@ -37,13 +37,13 @@ public class PlatformsBackOfficeController : BackofficeAuthorizedApiController {
         var urlSettings = _contentCache.Single<UrlSettingsContent>();
 
         var isCampaign = content != null && content.IsCampaign(_contentTypeService);
-        var isCrowdfunder = content != null && content.IsCrowdfunder();
+        var isCrowdfundingCampaign = content != null && content.IsCrowdfundingCampaign();
         var isOffering = content != null && content.IsOffering(_contentTypeService);
 
         if (content == null ||
             !content.Published ||
             urlSettings == null ||
-            (!isCampaign && !isCrowdfunder && !isOffering)) {
+            (!isCampaign && !isCrowdfundingCampaign && !isOffering)) {
             return null;
         }
 
@@ -51,7 +51,7 @@ public class PlatformsBackOfficeController : BackofficeAuthorizedApiController {
 
         if (isCampaign) {
             path = _contentCache.GetCampaignPath(_slugHelper, content.Name);
-        } else if (isCrowdfunder) {
+        } else if (isCrowdfundingCampaign) {
             path = _contentCache.GetCrowdfundingCampaignPath(_slugHelper, content.Name);
         } else {
             var parent = _contentService.GetById(content.ParentId);

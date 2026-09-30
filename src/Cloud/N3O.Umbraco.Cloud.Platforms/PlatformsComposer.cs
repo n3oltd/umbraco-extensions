@@ -14,12 +14,19 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
+        builder.Components().Append<PlatformsSchemaComponent>();
+
         builder.Services.AddOpenApiDocument(PlatformsConstants.BackOfficeApiName);
         builder.Services.AddOpenApiDocument(PlatformsConstants.DevToolsApiName);
         builder.Services.AddSingleton<ICampaignAccessor, CampaignAccessor>();
         builder.Services.AddSingleton<ICampaignIdAccessor, CampaignIdAccessor>();
+        builder.Services.AddTransient<ICrowdfundingCampaignContentCopier, CrowdfundingCampaignContentCopier>();
         builder.Services.AddSingleton<INisab, Nisab>();
+        builder.Services.AddTransient<IPlatformsContentTypeSeeder, PlatformsContentTypeSeeder>();
+        builder.Services.AddTransient<IPlatformsDataTypeSeeder, PlatformsDataTypeSeeder>();
+        builder.Services.AddSingleton<IPlatformsMediaUrlBuilder, PlatformsMediaUrlBuilder>();
         builder.Services.AddSingleton<IPlatformsPageAccessor, PlatformsPageAccessor>();
+        builder.Services.AddTransient<IPlatformsSchemaAudit, PlatformsSchemaAudit>();
         builder.Services.AddSingleton<ITagHelperComponent, PlatformsTagHelperComponent>();
         
         builder.Services.AddScoped<PlatformsCdnFailureMiddleware>();
@@ -30,6 +37,9 @@ public class PlatformsComposer : Composer {
         
         RegisterAll(t => t.ImplementsInterface<IPlatformsPageContentPublisher>(),
                     t => builder.Services.AddTransient(typeof(IPlatformsPageContentPublisher), t));
+
+        RegisterAll(t => t.ImplementsInterface<IPlatformsPagesChangedHandler>(),
+                    t => builder.Services.AddTransient(typeof(IPlatformsPagesChangedHandler), t));
         
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {
             var filter = new UmbracoPipelineFilter(nameof(PlatformsCdnFailureMiddleware));

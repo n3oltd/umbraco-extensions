@@ -51,6 +51,10 @@ public class ContentSponsorshipComponents : LookupsCollection<SponsorshipCompone
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
 
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<SponsorshipComponent>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
 
@@ -58,7 +62,9 @@ public class ContentSponsorshipComponents : LookupsCollection<SponsorshipCompone
     }
 
     private IReadOnlyList<SponsorshipComponent> GetFromCache() {
-        var content = _contentCache.All<SponsorshipComponentContent>().OrderBy(x => x.Content().Name).ToList();
+        var content = _contentCache.AllInDefaultCulture<SponsorshipComponentContent>()
+                                   .OrderBy(x => x.Content().Name)
+                                   .ToList();
 
         var lookups = content.Select(ToSponsorshipComponent).ToList();
 
@@ -75,8 +81,6 @@ public class ContentSponsorshipComponents : LookupsCollection<SponsorshipCompone
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }

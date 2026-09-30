@@ -1,9 +1,11 @@
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Search.Typesense.Attributes;
+using N3O.Umbraco.Search.Typesense.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -11,6 +13,16 @@ namespace N3O.Umbraco.Search.Typesense;
 
 public static class TypesenseField {
     private static readonly NamingStrategy CamelCase = new CamelCaseNamingStrategy();
+
+    public static string Csv<TDocument>(params Expression<Func<TDocument, object>>[] fieldSelectors)
+        where TDocument : SearchDocument {
+        return fieldSelectors.Select(x => Get(x)).ToCsv();
+    }
+
+    public static string Get<TDocument>(Expression<Func<TDocument, object>> pathExpression)
+        where TDocument : SearchDocument {
+        return Get<TDocument, object>(pathExpression);
+    }
 
     public static string Get<T, TField>(Expression<Func<T, TField>> pathExpression) {
         var pathComponents = new List<string>();

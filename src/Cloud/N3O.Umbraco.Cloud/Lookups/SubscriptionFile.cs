@@ -18,6 +18,7 @@ public class SubscriptionFiles : StaticLookupsCollection<SubscriptionFile> {
     public static readonly SubscriptionFile FeedbackSchemes = new("feedbackSchemes");
     public static readonly SubscriptionFile FundStructure = new("fundStructure");
     public static readonly SubscriptionFile GivingSchedules = new("givingSchedules");
+    public static readonly SubscriptionFile Infrastructure = new("infrastructure");
     public static readonly SubscriptionFile Localization = new("localization");
     public static readonly SubscriptionFile Lookups = new("lookups");
     public static readonly SubscriptionFile Nisab = new("nisab");
