@@ -2,13 +2,10 @@
     <Import Project="$(MSBuildThisFileDirectory)src\build\N3O.Umbraco.ReactPlugin.props"
             Condition="'$(N3OReactPlugin)' == 'true'" />
 
-    <!-- Restore the shared npm workspace once. Gated on the N3OHasFrontend convention (not a literal
-         project name) so it runs for any frontend-having build, including a standalone pack. Inputs/Outputs
-         make it a no-op once the .n3o-frontend-restored stamp is newer than package-lock.json; in a full
-         solution build the first frontend project (ReactRuntime — a common ancestor of the others) restores
-         and the rest skip, so npm ci is never run concurrently. -->
+    <!-- Every other frontend project must reference the N3OFrontendAnchor project, or it can build before the
+         workspace has been restored and built. -->
     <Target Name="RestoreFrontendDependencies"
-            Condition="'$(N3OHasFrontend)' == 'true' And '$(DesignTimeBuild)' != 'true'"
+            Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             BeforeTargets="BeforeBuild"
             Inputs="$(N3OFrontendWorkspace)\package-lock.json"
             Outputs="$(N3OFrontendWorkspace)\node_modules\.n3o-frontend-restored">
@@ -20,7 +17,7 @@
          (an interrupted npm ci leaves the dir but no stamp). If the stamp is missing, self-heal by running
          npm ci (idempotent) so a clean standalone pack works without first building the whole solution. -->
     <Target Name="EnsureFrontendDependenciesRestored"
-            Condition="'$(N3OHasFrontend)' == 'true' And '$(DesignTimeBuild)' != 'true'"
+            Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             BeforeTargets="BuildFrontendWorkspace">
         <Exec Condition="!Exists('$(N3OFrontendWorkspace)\node_modules\.n3o-frontend-restored')"
               Command="npm ci" WorkingDirectory="$(N3OFrontendWorkspace)" />
@@ -32,11 +29,9 @@
 
     <!-- Build the whole npm workspace exactly once with a single Turbo invocation, instead of each project
          running its own filtered turbo run (which raced on the shared @n3oltd/backoffice-core dist/.turbo when
-         Cms and Data built in parallel under msbuild /m). Gated on the convention + Inputs/Outputs stamp so it
-         does real work once per source change; the first frontend project (ReactRuntime, a common ancestor)
-         runs it and the others — already ordered after it via ProjectReference — find the stamp and skip. -->
+         Cms and Data built in parallel under msbuild /m). -->
     <Target Name="BuildFrontendWorkspace"
-            Condition="'$(N3OHasFrontend)' == 'true' And '$(DesignTimeBuild)' != 'true'"
+            Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             DependsOnTargets="EnsureFrontendDependenciesRestored"
             Inputs="$(N3OFrontendWorkspace)\package-lock.json;@(_N3OFrontendWorkspaceSources)"
             Outputs="$(N3OFrontendWorkspace)\node_modules\.n3o-frontend-built">

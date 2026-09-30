@@ -38,6 +38,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Marketing\N3O.Umbraco.Marketing\N3O.Umbraco.Marketing.csproj" />
+        <ProjectReference Include="..\..\N3O.Umbraco.ReactRuntime\N3O.Umbraco.ReactRuntime.csproj" />
         <ProjectReference Include="..\N3O.Umbraco.Cloud.Platforms\N3O.Umbraco.Cloud.Platforms.csproj" />
     </ItemGroup>
     <ItemGroup>
