@@ -110,8 +110,6 @@ public class AssetManifest : IAssetManifest {
         }
     }
 
-    // A misspelled bundle name renders nothing, which is indistinguishable from a bundle that is
-    // deliberately empty. An empty manifest is the documented "not built yet" case and stays quiet.
     private void WarnUnknownBundle(string bundle, IReadOnlyDictionary<string, AssetBundle> bundles) {
         if (bundles.Count == 0 || !_warnedBundles.TryAdd(bundle, true)) {
             return;
