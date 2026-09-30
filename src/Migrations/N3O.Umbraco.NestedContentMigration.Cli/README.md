@@ -11,8 +11,9 @@ It replaces the old on-startup `PackageMigrationPlan` (`N3ONestedContentMigratio
 `NestedContentToBlockListMigration` in the `N3O.Umbraco` repo's `N3O.Umbraco.Extensions`, now commented out).
 
 Although it lives in this repository, it takes **no dependency** on any project in it — it talks to SQL Server
-directly and references only `Microsoft.Data.SqlClient` and `Newtonsoft.Json`, so it runs against a database
-whose site has not been upgraded yet. It is marked `IsPackable=false`, so it is built by CI but never packaged.
+directly and references only `Microsoft.Data.SqlClient`, `Newtonsoft.Json` and `HtmlAgilityPack`, so it runs
+against a database whose site has not been upgraded yet. It is marked `IsPackable=false`, so it is built by CI but
+never packaged.
 
 ## What it does
 
@@ -67,6 +68,26 @@ Handled automatically: the `PropType` block meta field is dropped (it is not a c
 property values (a property since removed from the element type) are dropped and flagged; blocks whose element
 type can't be resolved are dropped and flagged. **Not carried across:** Perplex v3 `variants` (culture/segment
 variant content) — flagged for manual review if present.
+
+### Rich text inside Perplex blocks
+
+Umbraco's own upgrade migrations only reach the editors they know, so two things in rich text held inside a
+Perplex value would otherwise survive the upgrade in a form the v17 editor cannot use. The frontend keeps
+rendering both, because Razor prints the stored HTML as-is; only the back office breaks. The pass fixes every
+`Umbraco.TinyMCE` / `Umbraco.RichText` value it finds in a Perplex value, including those in Block Lists nested
+inside a block, and it also runs on values that are already v4.
+
+- **Embeds.** Tiptap has no node for a bare `<iframe>` or `<object>`, so the editor drops it on load, and saving
+  the page deletes it for good. Each one is wrapped in `<span class="umb-embed-holder">`, which is how v17 stores
+  an embed: its Embedded Media node (inline, enabled on every migrated rich text data type) keeps whatever is
+  inside verbatim. Embeds already inside a holder are left alone.
+- **Local links.** Umbraco's V15 local link migration converts `/{localLink:umb://document/…}` to
+  `/{localLink:<key>}` with a `type` attribute, but not inside Perplex values. The pass does the same
+  conversion, including Umbraco's handling of `data-anchor`. A link it cannot convert is left as it was and
+  flagged `[REVIEW]`.
+
+The summary reports `Rich text : <n> embed(s) wrapped, <n> local link(s) converted`. Markup is edited in place,
+so nothing else in the HTML changes.
 
 > ⚠️ **Unverified — test on a local test site first.** The v4 shape is matched from an observed live value, not
 > a Perplex spec. Restore a copy, `--dry-run` then `--apply --include-perplex`, run the 13→17 + Perplex-4

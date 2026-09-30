@@ -363,21 +363,38 @@ public sealed class Migrator {
         var totalNestedConvertedInBlocks = 0;
         var totalNestedBlocks = 0;
         var totalNestedVerbatim = 0;
+        var totalEmbedsWrapped = 0;
+        var totalLinksConverted = 0;
+        var totalLinksUnconverted = 0;
 
         foreach (var pv in values) {
             var issues = new List<string>();
 
             try {
                 var result = PerplexContentBlocksValueConverter.Convert(pv.TextValue, contentTypeKeys, editorAliases);
+                var richText = new RichTextFixResult();
+                var fixedJson = PerplexRichTextFixer.Fix(result.Json ?? pv.TextValue, editorAliases, richText);
+                var newJson = fixedJson ?? result.Json;
+
+                if (newJson != null) {
+                    Execute(cn, tx, "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
+                            ("@value", newJson), ("@id", pv.Id));
+                }
+
+                totalEmbedsWrapped += richText.EmbedsWrapped;
+                totalLinksConverted += richText.LinksConverted;
+                totalLinksUnconverted += richText.UnconvertedLinks.Count;
+
+                if (richText.UnconvertedLinks.Count > 0) {
+                    issues.Add($"{richText.UnconvertedLinks.Count} local link(s) NOT converted, the editor cannot " +
+                               $"resolve them: {string.Join(", ", richText.UnconvertedLinks.Distinct())}");
+                }
 
                 if (result.Json == null) {
                     unchanged++;
                     issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4, empty or an unrecognised " +
-                               "shape); left untouched");
+                               "shape); left untouched" + (fixedJson != null ? " apart from its rich text" : ""));
                 } else {
-                    Execute(cn, tx, "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
-                            ("@value", result.Json), ("@id", pv.Id));
-
                     converted++;
                     totalBlocks += result.Blocks;
                     totalDropped += result.SkippedAliases.Count;
@@ -427,6 +444,8 @@ public sealed class Migrator {
                  $"{totalBlocks} block(s)");
         Log.Info($"Nested NC   : {totalNestedConvertedInBlocks} propertie(s) in {totalNestedBlocks} block(s)" +
                  (totalNestedVerbatim > 0 ? $", {totalNestedVerbatim} left verbatim — convert by hand" : ""));
+        Log.Info($"Rich text   : {totalEmbedsWrapped} embed(s) wrapped, {totalLinksConverted} local link(s) " +
+                 "converted" + (totalLinksUnconverted > 0 ? $", {totalLinksUnconverted} left as they were" : ""));
 
         if (totalDropped + totalOrphaned + variantValues + totalGeneratedKeys > 0) {
             Log.Info($"Dropped     : {totalDropped} block(s) (unmatched element type), {totalOrphaned} orphaned " +
