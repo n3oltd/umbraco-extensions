@@ -55,7 +55,7 @@ public class JobProxyController : ApiController {
     private bool IsAuthorized() {
         Request.Headers.TryGetValue("X-Api-Key", out var apiKey);
 
-        if (apiKey.HasValue() && apiKey.ToString() == TriggerKey.ApiSecurityKey) {
+        if (apiKey.HasValue() && apiKey.ToString().EqualsSecret(TriggerKey.ApiSecurityKey)) {
             return true;
         }
 
