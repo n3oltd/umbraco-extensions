@@ -6,15 +6,11 @@ using Newtonsoft.Json.Linq;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// Parses a raw stored property value (textValue) into a SourceFile. Returns null when the value is empty or not
-// the expected N3O shape (already migrated, or unrecognised) so the caller leaves it untouched.
 public static class SourceParsers {
-    // Extensions Umbraco treats as Image media (everything else becomes a File media item).
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase) {
         ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff", ".tif", ".svg"
     };
 
-    // CropperSource: { src, mediaId, filename, width, height, altText, crops:[{x,y,width,height}] }
     public static SourceFile ParseCropper(string textValue) {
         var obj = TryParseObject(textValue);
 
@@ -26,7 +22,7 @@ public static class SourceParsers {
         var filename = (string) obj["filename"];
 
         if (string.IsNullOrWhiteSpace(src) && string.IsNullOrWhiteSpace(filename)) {
-            return null; // not a Cropper value
+            return null;
         }
 
         var file = BuildBase(src, filename, (string) obj["mediaId"], (string) obj["altText"]);
@@ -47,7 +43,6 @@ public static class SourceParsers {
         return file;
     }
 
-    // UploaderSource: { altText, extension, filename, sizeMb, urlPath }
     public static SourceFile ParseUploader(string textValue) {
         var obj = TryParseObject(textValue);
 
@@ -59,7 +54,7 @@ public static class SourceParsers {
         var filename = (string) obj["filename"];
 
         if (string.IsNullOrWhiteSpace(urlPath) && string.IsNullOrWhiteSpace(filename)) {
-            return null; // not an Uploader value
+            return null;
         }
 
         var file = BuildBase(urlPath, filename, mediaId: null, altText: (string) obj["altText"]);
@@ -76,15 +71,12 @@ public static class SourceParsers {
         src = src?.Trim();
         filename = filename?.Trim();
 
-        // Derive filename from src if absent, and vice-versa.
         if (string.IsNullOrWhiteSpace(filename) && !string.IsNullOrWhiteSpace(src)) {
             filename = src.Split('/').LastOrDefault();
         }
 
-        // mediaId is the folder segment of "/media/{mediaId}/{filename}".
         if (string.IsNullOrWhiteSpace(mediaId) && !string.IsNullOrWhiteSpace(src)) {
             var parts = src.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            // parts: ["media", "{mediaId}", "{filename}"]
             if (parts.Length >= 3 && string.Equals(parts[0], "media", StringComparison.OrdinalIgnoreCase)) {
                 mediaId = parts[parts.Length - 2];
             }
@@ -109,7 +101,6 @@ public static class SourceParsers {
 
         var trimmed = textValue.TrimStart();
 
-        // A migrated MediaPicker3 value is a JSON array; never re-parse one as a source object.
         if (!trimmed.StartsWith("{")) {
             return null;
         }

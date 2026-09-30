@@ -115,8 +115,6 @@ public static class Program {
             throw new ArgumentException("Specify exactly one of --dry-run or --apply.");
         }
 
-        // --target inline creates no media nodes, so there is no parent to put them under. Rejecting this is
-        // better than ignoring it: someone passing --media-parent believes media nodes are about to be created.
         if (mediaParentGiven && target == MigrationTarget.Inline) {
             throw new ArgumentException("--media-parent only applies to --target mediapicker; --target inline " +
                                         "creates no media nodes. Drop --media-parent, or pass --target mediapicker.");

@@ -7,18 +7,6 @@ using System.Linq;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// Rewrites Block List / Block Grid values still in the Umbraco 13 "udi" shape into the v14+ key-based shape.
-//
-// Umbraco's own 13->17 upgrade never traverses INTO another editor's value, so a Block List nested inside a
-// Perplex ContentBlocks value keeps the legacy shape permanently: alias-keyed properties, lower-case "layout",
-// "udi" instead of "key".
-//
-// Runs last, after the media passes: each entry needs an "editorAlias" read from the LIVE umbracoDataType rows,
-// so it picks up the native aliases those passes just wrote. The capitalised "Layout", the retained contentUdi
-// and the "expose" array are what Umbraco itself produces, reproduced exactly.
-//
-// Values and layout items are cloned then adjusted, never rebuilt from a fixed key list, so members not modelled
-// here survive — notably a Block GRID item's "columnSpan"/"rowSpan" and its "areas" tree.
 public sealed class NestedBlockShapeNormalizer {
     private static readonly HashSet<string> EntryReservedKeys =
         new(StringComparer.OrdinalIgnoreCase) { "contentTypeKey", "udi", "key", "values" };
@@ -34,8 +22,6 @@ public sealed class NestedBlockShapeNormalizer {
         _verbose = verbose;
     }
 
-    // Failures go on totals.ValuesFailed rather than a return value: the caller decides whether to abort once
-    // every pass has run.
     public void Run(RunTotals totals) {
         LoadEditorAliases();
 
@@ -62,19 +48,12 @@ public sealed class NestedBlockShapeNormalizer {
             return;
         }
 
-        // Every row is attempted even after one fails, so a dry run reports everything, not just the first.
         foreach (var row in rows) {
             NormalizeRow(row, totals);
         }
     }
 
-    // (element content-type key, property alias) -> the property's CURRENT editor alias, resolved ACROSS
-    // COMPOSITIONS. Element types used in blocks compose heavily (a block item's "linkText" usually comes from a
-    // shared "Link" type), and reading cmsPropertyType alone made every inherited property unresolvable, writing
-    // "editorAlias": null onto real values so Umbraco stopped rendering them — 6,926 values on one site.
-    //
-    // nc-migrate has its own copy of this walk (BuildEditorAliases). Deliberate: each tool is a standalone exe
-    // with no reference to the other or to any N3O package, so sharing would mean a common library. Keep in step.
+    // nc-migrate's BuildEditorAliases is a deliberate copy of this walk; change the two together.
     private void LoadEditorAliases() {
         var propertyRows = Db.Query(_cn,
                                     _tx,
@@ -132,7 +111,6 @@ public sealed class NestedBlockShapeNormalizer {
                               $"(across {effective.Count} content type(s), compositions resolved).");
     }
 
-    // Inherited properties first, then own, so a locally declared alias wins over an inherited one.
     private static Dictionary<string, string> ResolveProperties(
             int contentTypeId,
             IReadOnlyDictionary<int, Dictionary<string, string>> ownProperties,
@@ -147,8 +125,6 @@ public sealed class NestedBlockShapeNormalizer {
 
         if (parents.TryGetValue(contentTypeId, out var parentIds)) {
             foreach (var parentId in parentIds) {
-                // visiting guards against a composition cycle, which Umbraco does not allow but which a
-                // hand-edited database could still contain — without it this would recurse until the stack blew.
                 if (!visiting.Add(parentId)) {
                     continue;
                 }
@@ -262,8 +238,6 @@ public sealed class NestedBlockShapeNormalizer {
         return token;
     }
 
-    // Legacy means: a block value whose contentData entries carry "udi" and no "values" array. A value already
-    // upgraded by Umbraco has "key" + "values", so it is left untouched.
     private static bool IsLegacyBlockValue(JObject obj) {
         if (obj["contentData"] is not JArray contentData) {
             return false;
@@ -278,8 +252,6 @@ public sealed class NestedBlockShapeNormalizer {
         var contentData = NormalizeEntries(legacy["contentData"] as JArray, contentKeys, context);
         var settingsData = NormalizeEntries(legacy["settingsData"] as JArray, new List<Guid>(), context);
 
-        // "expose" lists the CONTENT entries a variant surfaces (BlockValue.Expose is a list of
-        // BlockItemVariation keyed by ContentKey), so settings keys have no place in it.
         var expose = new JArray();
 
         foreach (var key in contentKeys) {
@@ -290,9 +262,6 @@ public sealed class NestedBlockShapeNormalizer {
             });
         }
 
-        // Start from the original so any member this normaliser does not know about survives, then overwrite
-        // the four it rewrites. The legacy shape's lower-case "layout" is replaced by the capitalised "Layout"
-        // Umbraco writes, so the old key is removed rather than left behind as a stale duplicate.
         var result = (JObject) legacy.DeepClone();
 
         result.Remove("layout");
@@ -319,7 +288,6 @@ public sealed class NestedBlockShapeNormalizer {
             var contentTypeKey = TryGuid(entry["contentTypeKey"]);
             var values = new JArray();
 
-            // Already-upgraded entries can appear alongside legacy ones; carry their values across untouched.
             if (entry["values"] is JArray existing) {
                 foreach (var item in existing) {
                     values.Add(Walk(item, context));
@@ -338,17 +306,8 @@ public sealed class NestedBlockShapeNormalizer {
                     editorAlias = resolved;
                 }
 
-                // Start from a clone so the walk below cannot mutate the entry being read.
                 var propertyValue = Walk(property.Value.DeepClone(), context);
 
-                // Umbraco resolves a block property's value editor from its editorAlias, so an unresolvable one
-                // is not a cosmetic gap — that property stops rendering. With compositions resolved (see
-                // LoadEditorAliases) the only aliases left unresolved are genuinely gone from the element type,
-                // i.e. a property deleted after the value was saved.
-                //
-                // Only reported when the property actually HOLDS a value. A deleted property almost always
-                // leaves a null behind on every block that ever had it, and there is nothing for anyone to do
-                // about an inert null — reporting those buried the real ones 3:1 on one production site.
                 if (editorAlias == null && propertyValue != null && propertyValue.Type != JTokenType.Null) {
                     context.Issues.Add($"'{property.Name}': has a value but no such property on element type " +
                                        $"{contentTypeKey?.ToString() ?? "unknown"} (compositions included), so " +
@@ -374,12 +333,6 @@ public sealed class NestedBlockShapeNormalizer {
         return output;
     }
 
-    // Keeps contentUdi (Umbraco's own upgrade does) and adds the key-based fields alongside it.
-    //
-    // Each item is CLONED and then adjusted rather than rebuilt from a fixed key list: a Block GRID layout item
-    // also carries "columnSpan", "rowSpan" and an "areas" array that holds a whole nested item tree, and
-    // rebuilding would silently discard all of it. Nested area items are the same shape, so they are recursed
-    // into and get the same key-based fields.
     private static JObject NormalizeLayout(JToken layout) {
         var output = new JObject();
 
@@ -419,7 +372,6 @@ public sealed class NestedBlockShapeNormalizer {
                                             ? new JValue(settingsKey.Value.ToString())
                                             : JValue.CreateNull();
 
-            // Block Grid: each area holds its own items, in the same layout-item shape.
             if (item["areas"] is JArray areas) {
                 var normalizedAreas = new JArray();
 
@@ -465,7 +417,6 @@ public sealed class NestedBlockShapeNormalizer {
     private sealed class WalkContext {
         public int Converted { get; set; }
 
-        // Anything about this value that needs a human, reported as one [REVIEW] block per property value.
         public List<string> Issues { get; } = new();
     }
 

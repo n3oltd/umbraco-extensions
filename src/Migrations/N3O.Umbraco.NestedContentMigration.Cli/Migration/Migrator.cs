@@ -9,23 +9,14 @@ using System.Text.RegularExpressions;
 
 namespace N3O.Umbraco.NestedContentMigration.Cli;
 
-// Runs the Nested Content → Block List conversion directly against an Umbraco SQL Server database.
-// Everything happens inside a single transaction; a dry run rolls it back, so partial conversions
-// can never be left behind and the dry run still validates the SQL against the real schema.
 public sealed class Migrator {
-    // No statement timeout: the whole migration runs in one transaction and may rewrite a large table; the
-    // default 30 s would abort a big migration mid-way. An interrupted run simply rolls back, so this is safe.
     private const int NoCommandTimeout = 0;
 
-    // "Nested <body>" with an optional trailing "(...)" of min/max, which is carried across unchanged.
     private static readonly Regex NestedNamePattern =
         new(@"^Nested\s+(?<body>.*?)\s*(?<suffix>\([^)]*\))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-    // Umbraco stores which serializer wrote the published cache under this umbracoKeyValue key. Clearing it
-    // makes Umbraco rebuild the whole published cache on the next start.
     private const string CacheSerializerKey = "Umbraco.Web.PublishedCache.NuCache.Serializer";
 
-    // SQL Server caps a command at 2100 parameters; QueryIn batches at this size to stay under it.
     private const int MaxInClauseParameters = 2000;
 
     private readonly CliOptions _options;
@@ -46,8 +37,6 @@ public sealed class Migrator {
         Log.Info($"Detected schema: {(hasUiAliasColumn ? "Umbraco 14+" : "Umbraco 13")} " +
                  $"(umbracoDataType.propertyEditorUiAlias {(hasUiAliasColumn ? "present" : "absent")}).");
 
-        // Refuse a v14+ schema: this writes the v13 udi shape, and Umbraco's own 13->17 upgrade is what turns
-        // that into the key-based shape. Run before upgrading.
         if (hasUiAliasColumn) {
             Log.Error("This database is on the Umbraco 14+ schema — this tool only migrates Umbraco 13 databases.");
             Log.Error("Run it before upgrading Umbraco; the Umbraco 13→17 upgrade converts the Block List values itself.");
@@ -59,10 +48,6 @@ public sealed class Migrator {
 
         var succeeded = Migrate(connection, transaction);
 
-        // cmsContentNu is a snapshot this tool does not write, so without invalidating it the site keeps
-        // serving pre-migration values and throws on every affected page. Clearing Umbraco's cache-serializer
-        // marker makes Umbraco rebuild it on next start; deleting cmsContentNu does NOT work, as neither v13
-        // nor v17 rebuilds an empty cache.
         if (succeeded) {
             var cleared = Execute(connection,
                                   transaction,
@@ -104,8 +89,6 @@ public sealed class Migrator {
             return false;
         }
 
-        // Optional second pass, same transaction: convert Perplex.ContentBlocks v3 values to v4. Runs on the
-        // v13 DB (offline, pre-upgrade) — see MigratePerplex.
         if (_options.IncludePerplex && !MigratePerplex(cn, tx)) {
             return false;
         }
@@ -114,7 +97,6 @@ public sealed class Migrator {
     }
 
     private bool MigrateNestedContent(SqlConnection cn, SqlTransaction tx) {
-        // Step 1: find every data type still using the Nested Content editor.
         var dataTypes = Query(cn, tx,
             "SELECT dt.nodeId, dt.[config], n.text FROM umbracoDataType dt " +
             "INNER JOIN umbracoNode n ON n.id = dt.nodeId " +
@@ -133,9 +115,6 @@ public sealed class Migrator {
 
         Log.Info($"Found {dataTypes.Count} Nested Content data type(s).");
 
-        // EVERY data type is converted, including ones no property points at: Umbraco.NestedContent does not
-        // exist from v14 on, so one left behind shows as "This property editor could not be found" regardless.
-        // Skipping them for Perplex v3's sake would be wrong — Perplex v4 stores no data type reference at all.
         var usedDataTypeIds = new HashSet<int>(QueryIn(cn, tx,
             "SELECT DISTINCT dataTypeId FROM cmsPropertyType WHERE dataTypeId IN ({0})",
             "u",
@@ -153,10 +132,8 @@ public sealed class Migrator {
             }
         }
 
-        // Map each data type to the element-type aliases declared in its config.
         var aliasMap = dataTypes.ToDictionary(dt => dt.Id, dt => ParseElementAliases(dt.Config, dt.Id));
 
-        // Step 2: resolve element-type alias → content-type key (GUID).
         var allAliases = aliasMap.Values.SelectMany(x => x).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         var contentTypeKeys = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
 
@@ -178,8 +155,6 @@ public sealed class Migrator {
             Log.Warn($"Element content type alias '{alias}' was not found — blocks of this type will be skipped.");
         }
 
-        // Step 3: convert each Nested Content data type to Block List (in place). v13 schema, so the UPDATE
-        // omits propertyEditorUiAlias (that column doesn't exist until Umbraco 14+).
         var renamed = 0;
 
         foreach (var dt in dataTypes) {
@@ -189,8 +164,6 @@ public sealed class Migrator {
                     "UPDATE umbracoDataType SET propertyEditorAlias = 'Umbraco.BlockList', [config] = @config WHERE nodeId = @nodeId",
                     ("@config", config), ("@nodeId", dt.Id));
 
-            // The editor's name is part of its identity to editors, so "Nested X" stops being accurate the
-            // moment it is a Block List. A data type's name is umbracoNode.text.
             var newName = BuildBlockListName(dt.Name);
 
             if (newName != null) {
@@ -205,7 +178,6 @@ public sealed class Migrator {
         }
 
 
-        // Step 4: convert the stored property values.
         var dataTypeIds = dataTypes.Select(d => d.Id).Cast<object>().ToList();
 
         var propertyTypes = QueryIn(cn, tx,
@@ -222,9 +194,6 @@ public sealed class Migrator {
 
         var propertyTypeIds = propertyTypes.Select(p => (object) p.Id).ToList();
 
-        // Also pull the owning content node (id + name) and the property alias so every per-item review entry
-        // points at a real, findable item. The node joins are LEFT joins so the set of values converted is
-        // unchanged even if a row's version/node can't be resolved.
         var values = QueryIn(cn, tx,
             "SELECT pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, n.text " +
             "FROM umbracoPropertyData pd " +
@@ -256,8 +225,6 @@ public sealed class Migrator {
         var totalCollisions = 0;
 
         foreach (var pv in values) {
-            // Collected per item: anything that wasn't a clean, complete conversion is reported as a
-            // separated [REVIEW] block (with the node + property) so the operator can manually check it.
             var issues = new List<string>();
 
             try {
@@ -326,8 +293,6 @@ public sealed class Migrator {
             Log.Info($"[REVIEW] items are in {Log.FilePath}");
         }
 
-        // A failed value conversion means the data type has already been flipped to Block List while some of
-        // its values are still raw Nested Content JSON — abort so the whole transaction rolls back.
         if (failed > 0) {
             Log.Error($"{failed} property value(s) failed to convert — aborting so nothing is left half-migrated.");
 
@@ -337,10 +302,6 @@ public sealed class Migrator {
         return true;
     }
 
-    // --include-perplex: Perplex.ContentBlocks v3 (block content is an NC array) -> v4 Block Editor shape.
-    // Perplex ships no content migration and Umbraco's upgrade ignores its custom value, so this writes the
-    // FINAL v4 shape directly; content-type keys are stable across the upgrade so v13-written keys resolve on
-    // v17. Runs offline on the v13 DB — never leave a v4 value on a running v3 site.
     private bool MigratePerplex(SqlConnection cn, SqlTransaction tx) {
         Log.Info("Perplex ContentBlocks v3 -> v4 (--include-perplex):");
 
@@ -356,8 +317,6 @@ public sealed class Migrator {
 
         Log.Info($"Found {dataTypeIds.Count} Perplex.ContentBlocks data type(s).");
 
-        // Element-type alias → content-type key, and content-type key → (property alias → editor alias),
-        // resolving composition-inherited properties, so each v4 block value carries its property's editorAlias.
         var contentTypeKeys = BuildElementTypeKeys(cn, tx, out var nodeIdByKey);
         var editorAliases = BuildEditorAliases(cn, tx, nodeIdByKey);
 
@@ -474,8 +433,6 @@ public sealed class Migrator {
                      $"propertie(s), {variantValues} value(s) with v3 variants; {totalGeneratedKeys} key(s) generated");
         }
 
-        // A failed value conversion means some Perplex values would be left as raw v3 — abort so the whole
-        // transaction rolls back rather than committing a half-converted set.
         if (failed > 0) {
             Log.Error($"{failed} Perplex value(s) failed to convert — aborting so nothing is left half-migrated.");
 
@@ -485,7 +442,6 @@ public sealed class Migrator {
         return true;
     }
 
-    // Every element content type: alias → content-type key (GUID), plus (out) key → umbracoNode id.
     private static Dictionary<string, Guid> BuildElementTypeKeys(SqlConnection cn, SqlTransaction tx,
                                                                  out Dictionary<Guid, int> nodeIdByKey) {
         var keys = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
@@ -506,9 +462,7 @@ public sealed class Migrator {
         return keys;
     }
 
-    // Content-type key → (property alias → property editor alias), expanded across compositions so inherited
-    // properties resolve too (Perplex block element types use compositions heavily). Own properties win over
-    // inherited ones of the same alias.
+    // media-migrate's LoadEditorAliases is a deliberate copy of this walk; change the two together.
     private static IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> BuildEditorAliases(
             SqlConnection cn, SqlTransaction tx, IReadOnlyDictionary<Guid, int> nodeIdByKey) {
         var propRows = Query(cn, tx,
@@ -609,8 +563,6 @@ public sealed class Migrator {
         return aliases;
     }
 
-    // Both keys are optional; missing means "no limit". Nested Content's nameTemplate, confirmDeletes,
-    // showIcons, expandsOnLoad and hideLabel have nowhere to go in BlockListConfiguration and are dropped.
     private static (int? Min, int? Max) ParseItemLimits(string config, int dataTypeId) {
         if (string.IsNullOrWhiteSpace(config)) {
             return (null, null);
@@ -646,9 +598,6 @@ public sealed class Migrator {
             });
         }
 
-        // Nested Content's minItems/maxItems are the same constraint as Block List's validationLimit, so they
-        // carry straight across. Either can be absent, which means "no limit" on both editors and so becomes
-        // null (BlockListConfiguration.NumberRange has int? Min and int? Max).
         var (min, max) = ParseItemLimits(nestedContentConfig, dataTypeId);
 
         var config = new JObject {
@@ -659,16 +608,12 @@ public sealed class Migrator {
             },
             ["useInlineEditingAsDefault"] = true,
             ["useLiveEditing"] = false,
-            // Real Umbraco 13 always emits useSingleBlockMode (verified = false across every live v13 Block
-            // List config). Absent it would default to false anyway, but match the native v13 shape.
             ["useSingleBlockMode"] = false
         };
 
         return JsonConvert.SerializeObject(config);
     }
 
-    // "Nested Price Handle (0, 5)" -> "Price Handle Block List (0, 5)". Returns null for a name not using the
-    // "Nested X" convention, leaving it alone. Trimmed rather than split on one space: real names exist with two.
     private static string BuildBlockListName(string name) {
         if (string.IsNullOrWhiteSpace(name)) {
             return null;
@@ -729,8 +674,6 @@ public sealed class Migrator {
         return cmd.ExecuteNonQuery();
     }
 
-    // Explicit SqlDbType rather than AddWithValue, which sizes each string to its exact length and so wrecks
-    // plan reuse. Strings are all nvarchar(max): plans are reused and large payloads are not truncated.
     private static void AddParameter(SqlCommand cmd, string name, object value) {
         var parameter = new SqlParameter(name, ToSqlDbType(value));
 
@@ -752,8 +695,6 @@ public sealed class Migrator {
         };
     }
 
-    // One query per batch of MaxInClauseParameters ids, so a set past SQL Server's 2100-parameter command limit
-    // still works instead of aborting. sqlFormat takes the IN-clause placeholder list as {0}.
     private static List<T> QueryIn<T>(SqlConnection cn, SqlTransaction tx, string sqlFormat, string prefix,
                                       IEnumerable<object> values, Func<SqlDataReader, T> map) {
         var results = new List<T>();
@@ -780,8 +721,6 @@ public sealed class Migrator {
             }
         }
 
-        // No trailing empty batch: an empty id set yields no batches at all, so QueryIn returns nothing rather
-        // than issuing an "IN ()" that SQL Server would reject.
         if (batch.Count > 0) {
             yield return batch;
         }

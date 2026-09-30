@@ -6,27 +6,18 @@ using Newtonsoft.Json.Linq;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// Native Umbraco JSON shapes for both --target values. Pure functions, no DB access.
 public static class NativeValueBuilder {
-    // Umbraco's ImageCropperConfigurationExtensions.ApplyConfiguration rebuilds the crop list from the DATA
-    // TYPE config on read, matching by alias, so an alias missing from the config is discarded — which is why
-    // the same cropDefinitions go into both the value and the config.
     public static (string Json, CropOutcome Crops) BuildImageCropperValue(
         SourceFile file, IReadOnlyList<CropDefinition> cropDefinitions) {
 
         var (crops, outcome) = BuildCrops(file, cropDefinitions);
 
-        // focalPoint stays null: the retired Cropper had none, and null makes an uncoordinated crop fall back
-        // to a centre crop rather than to an invented focal point.
         var value = new JObject {
             ["src"] = file.Src,
             ["crops"] = crops,
             ["focalPoint"] = null
         };
 
-        // No alt-text slot on this editor and no media node to name, so the text rides along as a non-standard
-        // member. Inert to Umbraco (ImageCropperValue ignores unknown members) and read back by
-        // IPublishedElement.AltText(alias). Migration continuity only: a backoffice re-save loses it.
         if (!string.IsNullOrWhiteSpace(file.AltText)) {
             value["altText"] = file.AltText;
         }
@@ -34,7 +25,6 @@ public static class NativeValueBuilder {
         return (JsonConvert.SerializeObject(value), outcome);
     }
 
-    // ImageCropperConfiguration is a single [ConfigurationField("crops")] of {alias, width, height}.
     public static string BuildImageCropperConfig(IReadOnlyList<CropDefinition> cropDefinitions) {
         var crops = new JArray();
 
@@ -49,9 +39,6 @@ public static class NativeValueBuilder {
         return JsonConvert.SerializeObject(new JObject { ["crops"] = crops });
     }
 
-    // The old Uploader stored ".png, .jpg"; UploadField wants ["png","jpg"], and an empty array means "no
-    // restriction" just as an unset allowedExtensions did. maxFileSizeMb, imagesOnly and altTextRequired have
-    // no native equivalent and are dropped.
     public static string BuildUploadFieldConfig(string allowedExtensions) {
         var extensions = new JArray();
 
@@ -62,11 +49,6 @@ public static class NativeValueBuilder {
         return JsonConvert.SerializeObject(new JObject { ["fileExtensions"] = extensions });
     }
 
-    // ImageCropper crops and MediaPicker3 local crops are the same shape, so one builder serves both.
-    //
-    // The old Cropper stored rectangles POSITIONALLY — rectangle i belongs to cropDefinitions[i], with no alias
-    // on the rectangle. Hence definitions drive the loop; surplus rectangles mean definitions were removed
-    // after the value was saved, so they have no alias to be written under and count as dropped.
     private static (JArray Crops, CropOutcome Outcome) BuildCrops(
         SourceFile file, IReadOnlyList<CropDefinition> cropDefinitions) {
 
@@ -87,9 +69,6 @@ public static class NativeValueBuilder {
             if (coordinates != null) {
                 crop["coordinates"] = coordinates;
             } else {
-                // No coordinates: the crop falls back to the focal point, or to a default centre crop when
-                // there is none. Flag for a manual check only when there WAS a stored rectangle we couldn't
-                // convert (missing image dimensions).
                 crop["coordinates"] = null;
 
                 if (rect != null && (rect.Width > 0 || rect.Height > 0)) {
@@ -123,13 +102,6 @@ public static class NativeValueBuilder {
                                 .ToList();
     }
 
-    // ---------------------------------------------------------------------------------------------------
-    // --target mediapicker
-    // ---------------------------------------------------------------------------------------------------
-
-    // The MediaPicker3 stored property value: a JSON array of one media item (these editors were single-value).
-    // crops/focalPoint are only populated for Cropper. Returns the serialised JSON plus what the caller must
-    // flag for review — see BuildCrops.
     public static (string Json, CropOutcome Crops) BuildPickerValue(
         Guid mediaKey, SourceFile file, IReadOnlyList<CropDefinition> cropDefinitions) {
 
@@ -145,7 +117,6 @@ public static class NativeValueBuilder {
         return (JsonConvert.SerializeObject(new JArray(item)), outcome);
     }
 
-    // The data type config when flipping to Umbraco.MediaPicker3. Single item; crops carried over for Cropper.
     public static string BuildMediaPickerConfig(IReadOnlyList<CropDefinition> cropDefinitions,
                                                 bool enableLocalFocalPoint) {
         var crops = new JArray();
@@ -171,8 +142,6 @@ public static class NativeValueBuilder {
         return JsonConvert.SerializeObject(config);
     }
 
-    // The umbracoFile value stored on a new media node. Image media uses the ImageCropper editor (JSON with a
-    // default centre focal point); File media uses the Upload editor (a plain path string).
     public static string BuildUmbracoFileValue(SourceFile file) {
         if (!file.IsImage) {
             return file.Src;
@@ -187,12 +156,7 @@ public static class NativeValueBuilder {
         return JsonConvert.SerializeObject(value);
     }
 
-    // ---------------------------------------------------------------------------------------------------
-
-    // Absolute pixel rectangle → relative-fraction coordinates {x1,y1,x2,y2} in [0,1]. These are INSETS from
-    // each edge, not corners: Umbraco passes them straight to ImageSharp's crop processor as
-    // "left,top,right,bottom". Null when the rectangle or the source image dimensions are missing/zero (can't
-    // convert without the original width/height).
+    // x2 and y2 are insets from the right and bottom edges, not corners.
     private static JObject ToCoordinates(CropRect rect, int? imageWidth, int? imageHeight) {
         if (rect == null || imageWidth is not > 0 || imageHeight is not > 0 || rect.Width <= 0 || rect.Height <= 0) {
             return null;

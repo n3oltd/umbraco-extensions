@@ -4,13 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-// Resolves the built-in Image and File media types (their content-type node id + the property-type ids of the
-// metadata properties) once, so the MediaNodeFactory can insert property data rows by id.
-// Only used by the --target mediapicker route, which is the only one that creates media nodes.
 public sealed class MediaTypes {
-    // Umbraco.Cms.Core Constants.ObjectTypes.MediaType. cmsContentType holds document types, media types and
-    // member types alike, all keyed by alias, so the object type is what distinguishes them: without it a
-    // DOCUMENT type aliased "Image" or "File" would resolve here and media nodes would be created against it.
     private static readonly Guid MediaTypeObjectType = new("4EA4382B-2F5A-4C2B-9587-AE9B3CF3602E");
 
     public MediaTypeInfo Image { get; private set; }
@@ -24,7 +18,6 @@ public sealed class MediaTypes {
     }
 
     private static MediaTypeInfo ResolveOne(SqlConnection cn, SqlTransaction tx, string alias) {
-        // The media type's content-type id is its umbracoNode id.
         var contentTypeIds = Db.Query(cn, tx,
             "SELECT ct.nodeId FROM cmsContentType ct " +
             "INNER JOIN umbracoNode n ON n.id = ct.nodeId " +
