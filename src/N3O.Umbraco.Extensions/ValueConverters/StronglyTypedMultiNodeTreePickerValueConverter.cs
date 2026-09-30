@@ -22,7 +22,6 @@ using UmbracoUdiEntityType = Umbraco.Cms.Core.Constants.UdiEntityType;
 namespace N3O.Umbraco.ValueConverters;
 
 public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePickerValueConverter {
-    // Lazy because the published content type cache builds its property types from this converter.
     private readonly Lazy<IPublishedContentTypeCache> _publishedContentTypeCache;
     private readonly IShortStringHelper _shortStringHelper;
     private readonly ModelsBuilderSettings _modelBuilderSettings;
@@ -96,12 +95,10 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
     }
 
     private string GetContentTypeAlias(string objectType, string filterEntry) {
-        // uSync keeps a legacy filter's aliases when none of them resolve to a type.
         if (!Guid.TryParse(filterEntry, out var key)) {
             return filterEntry;
         }
 
-        // The cache throws for the key of a deleted type, which Umbraco leaves in the filter.
         try {
             return _publishedContentTypeCache.Value.Get(GetPublishedItemType(objectType), key).Alias;
         } catch (Exception) {
@@ -109,7 +106,6 @@ public class StronglyTypedMultiNodeTreePickerValueConverter : MultiNodeTreePicke
         }
     }
 
-    // A deleted type has no content to pick.
     private string GetPickerContentTypeName(string objectType, string filter) {
         var contentTypes = filter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                                  .Select(x => GetContentTypeAlias(objectType, x))
