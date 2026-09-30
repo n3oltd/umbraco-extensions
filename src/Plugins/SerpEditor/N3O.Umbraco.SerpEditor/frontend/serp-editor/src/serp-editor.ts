@@ -5,6 +5,12 @@ import {
     type UmbPropertyEditorUiElement,
 } from '@umbraco-cms/backoffice/property-editor';
 import { UmbChangeEvent } from '@umbraco-cms/backoffice/event';
+import {
+    UMB_DOCUMENT_WORKSPACE_CONTEXT,
+    UmbDocumentUrlRepository,
+    UmbDocumentUrlsDataResolver,
+} from '@umbraco-cms/backoffice/document';
+import { observeMultiple } from '@umbraco-cms/backoffice/observable-api';
 import { UmbAuthFetchMixin } from '@n3oltd/backoffice-core';
 import type { AuthFetch } from '@n3oltd/backoffice-core';
 import { createElement } from 'react';
@@ -20,12 +26,61 @@ export class N3oSerpEditorElement extends UmbAuthFetchMixin(UmbElementMixin(HTML
     #value: SerpValue = { title: '', description: '' };
     #maxCharsTitle = 60;
     #maxCharsDescription = 160;
+    #urlRepository = new UmbDocumentUrlRepository(this);
+    #urlsDataResolver = new UmbDocumentUrlsDataResolver(this);
+    #isNew = false;
+    #unique: string | null | undefined;
+    #url = '';
 
     constructor() {
         super();
         const shadow = this.attachShadow({ mode: 'open' });
         this.#mount = document.createElement('div');
         shadow.appendChild(this.#mount);
+
+        this.consumeContext(UMB_DOCUMENT_WORKSPACE_CONTEXT, (context) => {
+            if (!context) {
+                return;
+            }
+
+            this.observe(observeMultiple([context.isNew, context.unique]), ([isNew, unique]) => {
+                this.#isNew = isNew === true;
+                this.#unique = unique;
+
+                void this.#loadUrls();
+            }, '_observeWorkspaceState');
+        });
+
+        // The resolver reads the variant context provided by the property dataset, so it yields the urls for
+        // the culture this editor is rendering.
+        this.observe(this.#urlsDataResolver.urls, (urls) => {
+            this.#url = this.#toAbsoluteUrl(urls.at(0)?.url);
+            this.#render();
+        }, '_observeUrls');
+    }
+
+    async #loadUrls(): Promise<void> {
+        this.#urlsDataResolver.setData([]);
+
+        if (this.#isNew || !this.#unique) {
+            return;
+        }
+
+        const { data } = await this.#urlRepository.requestItems([this.#unique]);
+
+        this.#urlsDataResolver.setData(data?.at(0)?.urls ?? []);
+    }
+
+    #toAbsoluteUrl(url: string | undefined): string {
+        if (!url) {
+            return '';
+        }
+
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+
+        return `${window.location.protocol}//${window.location.hostname}${url}`;
     }
 
     get value(): SerpValue {
@@ -73,6 +128,7 @@ export class N3oSerpEditorElement extends UmbAuthFetchMixin(UmbElementMixin(HTML
         this.#root?.render(
             createElement(SerpEditorApp, {
                 value: this.#value,
+                url: this.#url,
                 maxCharsTitle: this.#maxCharsTitle,
                 maxCharsDescription: this.#maxCharsDescription,
                 authFetch: this.authFetch,
