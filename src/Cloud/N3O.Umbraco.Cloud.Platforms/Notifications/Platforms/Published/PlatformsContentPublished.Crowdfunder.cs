@@ -45,8 +45,8 @@ public class CrowdfunderPublished : CloudContentPublished {
 
         var crowdfunderPagePublisher = _platformsPageContentPublishers.GetPublisher(PlatformsSchemas.CrowdfunderPage);
 
-        var campaignPagePublisher = _platformsPageContentPublishers
-                                    .SingleOrDefault(x => x.IsPublisherFor(PlatformsSchemas.CrowdfundingCampaignPage));
+        var campaignPagePublisher =
+            _platformsPageContentPublishers.SingleOrDefault(x => x.IsPublisherFor(PlatformsSchemas.CrowdfundingCampaignPage));
 
         var req = _mapper.Map<CrowdfunderContent, CrowdfundingCampaignWebhookBodyReq>(crowdfunder, ctx => {
             ctx.Items[CrowdfunderWebhookBodyReqMapping.CrowdfunderPageContentContext] =

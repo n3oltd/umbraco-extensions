@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using N3O.Umbraco.Context;
-using N3O.Umbraco.Extensions;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 
@@ -11,20 +9,15 @@ public class TagsCookie : Cookie {
     public TagsCookie(IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor) { }
 
     public JObject GetTags() {
-        var value = GetValue();
-
-        // The cookie is absent on a first visit, and GetValue answers null for it, which Parse rejects with an
-        // ArgumentNullException rather than a JsonException.
-        if (!value.HasValue()) {
-            return null;
-        }
+        var jObject = default(JObject);
 
         try {
-            return JObject.Parse(value);
-        } catch (JsonException) {
-            // Written from the browser, so the value is whatever the client put there.
-            return null;
+            jObject = JObject.Parse(GetValue());
+        } catch {
+            jObject = null;
         }
+
+        return jObject;
     }
 
     protected override void SetOptions(CookieOptions cookieOptions) {

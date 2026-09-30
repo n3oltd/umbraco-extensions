@@ -1,7 +1,4 @@
-using N3O.Umbraco.Extensions;
 using N3O.Umbraco.GeoIP;
-using System.Collections.Generic;
-using System.Linq;
 using Umbraco.Engage.Data.Analytics.Collection.Pageview;
 using Umbraco.Engage.Infrastructure.Analytics.Processed;
 using Umbraco.Engage.Infrastructure.Analytics.Processing.Extractors;
@@ -13,15 +10,11 @@ public class EngageLocationExtractor : IRawPageviewLocationExtractor {
 
     private readonly IIPGeoLocationProvider _ipGeoLocationProvider;
 
-    public EngageLocationExtractor(IEnumerable<IIPGeoLocationProvider> ipGeoLocationProviders) {
-        _ipGeoLocationProvider = ipGeoLocationProviders.ApplyAttributeOrdering().FirstOrDefault();
+    public EngageLocationExtractor(IIPGeoLocationProvider ipGeoLocationProvider) {
+        _ipGeoLocationProvider = ipGeoLocationProvider;
     }
 
     public ILocation Extract(IRawPageview rawPageview) {
-        if (_ipGeoLocationProvider == null) {
-            return null;
-        }
-
         var geoLookupResult = _ipGeoLocationProvider.GeoLocateAsync().GetAwaiter().GetResult();
 
         if (!geoLookupResult.Success) {

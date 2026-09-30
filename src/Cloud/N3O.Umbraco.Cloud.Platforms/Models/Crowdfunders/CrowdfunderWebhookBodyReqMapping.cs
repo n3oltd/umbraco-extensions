@@ -16,9 +16,7 @@ public class CrowdfunderWebhookBodyReqMapping : IMapDefinition {
     public const string CrowdfunderPageContentContext = nameof(CrowdfunderPageContentContext);
 
     public void DefineMaps(IUmbracoMapper mapper) {
-        mapper.Define<CrowdfunderContent, CrowdfundingCampaignWebhookBodyReq>(
-            (_, _) => new CrowdfundingCampaignWebhookBodyReq(),
-            Map);
+        mapper.Define<CrowdfunderContent, CrowdfundingCampaignWebhookBodyReq>((_, _) => new CrowdfundingCampaignWebhookBodyReq(), Map);
     }
 
     // Umbraco.Code.MapAll
