@@ -104,7 +104,7 @@ public class StagingMiddleware : IMiddleware {
     private void LogFailure(string lockOutKey) {
         var failedCount = FailedLogins.Get<int>(lockOutKey);
         var entryOptions = new MemoryCacheEntryOptions();
-        entryOptions.AbsoluteExpirationRelativeToNow = LockOutPeriod;
+        entryOptions.SlidingExpiration = LockOutPeriod;
 
         FailedLogins.Set(lockOutKey, failedCount + 1, entryOptions);
     }
@@ -134,7 +134,7 @@ public class StagingMiddleware : IMiddleware {
 
         if (TryReadBasicCredentials(header, out var username, out var password) &&
             username.EqualsInvariant(stagingSettings.Username) &&
-            password == stagingSettings.Password) {
+            password.EqualsSecret(stagingSettings.Password)) {
             return true;
         } else {
             return false;
