@@ -76,8 +76,15 @@ public abstract class UmbracoContent<T> : Value, IUmbracoContent {
 
     protected IEnumerable<TProperty> GetNestedAs<TProperty>(Expression<Func<T, IEnumerable<TProperty>>> memberExpression) {
         var alias = AliasHelper<T>.PropertyAlias(memberExpression);
-        var values = (IEnumerable) Content().Value(alias, VariationContext?.Culture, VariationContext?.Segment)
-                     ?? Enumerable.Empty<IPublishedElement>();
+        var value = Content().Value(alias, VariationContext?.Culture, VariationContext?.Segment);
+
+        // The editor migration rewrites Nested Content properties to a Block List, whose items wrap the element
+        // rather than being one, so casting them to IPublishedElement throws
+        if (value is IEnumerable<BlockListItem>) {
+            return GetBlockListValueAs(memberExpression);
+        }
+
+        var values = (IEnumerable) value ?? Enumerable.Empty<IPublishedElement>();
 
         return values.Cast<IPublishedElement>().Select(x => x.As<TProperty>(_content));
     }
@@ -152,6 +159,12 @@ public abstract class UmbracoContent<T> : Value, IUmbracoContent {
             return publishedContent.As<TProperty>();
         } else if (propertyValue is IPublishedElement publishedElement) {
             return publishedElement.As<TProperty>(_content);
+        } else if (propertyValue is IEnumerable<BlockListItem> blockList) {
+            // Nested Content handed back the element itself for a single-item property, so it matched the
+            // branch above. The editor migration rewrites those properties to a Block List, which hands back
+            // a BlockListModel instead, and without this the property answers null however much data it
+            // holds. Nothing throws at the point of the null, so it surfaces somewhere else entirely.
+            return blockList.FirstOrDefault().IfNotNull(x => x.Content.As<TProperty>(_content));
         } else {
             return default;
         }
