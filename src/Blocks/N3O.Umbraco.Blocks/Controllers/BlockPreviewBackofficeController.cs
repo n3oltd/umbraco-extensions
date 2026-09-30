@@ -100,7 +100,6 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             var markup = new Dictionary<string, string>();
 
             foreach (var blockKey in blockKeys) {
-                // The editor aborts a request whose context has changed and will not read its reply.
                 if (cancellationToken.IsCancellationRequested) {
                     break;
                 }
@@ -140,7 +139,6 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             json,
             content);
 
-        // A block grid nested inside another block is a property of that block's element type, not the document's.
         if (blockGridModel == null) {
             throw new BlockPreviewWarningException($"Property {propertyAlias.Quote()} is not a block grid on " +
                                                    $"{content.ContentType.Alias.Quote()}");

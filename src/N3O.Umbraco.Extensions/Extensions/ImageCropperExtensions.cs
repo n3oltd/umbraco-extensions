@@ -24,13 +24,9 @@ public static class ImageCropperExtensions {
         return value.Src.GetCropUrl(value, cropAlias: cropAlias, useCropDimensions: true);
     }
 
-    // altText is a member the image cropper data migration added to the stored JSON. ImageCropperValue does not
-    // read it, and saving the property in the backoffice drops it.
-    // TODO Remove once the sites calling AltText keep alt text in a property of its own.
     public static string AltText(this IPublishedElement content, string propertyAlias) {
         var sourceValue = content?.GetProperty(propertyAlias)?.GetSourceValue().ToSourceValueJson();
 
-        // Umbraco also accepts a bare image URL as an image cropper value.
         if (!sourceValue.HasValue() || !sourceValue.TrimStart().StartsWith('{')) {
             return null;
         }

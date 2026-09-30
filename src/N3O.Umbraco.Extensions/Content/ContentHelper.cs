@@ -134,8 +134,6 @@ public class ContentHelper : IContentHelper {
             return default;
         }
 
-        // Block editor converters dereference owner.ContentType for every block, and the content type is all they
-        // read from it.
         owner ??= new PublishedElement(publishedContentType,
                                        Guid.NewGuid(),
                                        new Dictionary<string, object>(),

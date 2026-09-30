@@ -101,9 +101,6 @@ public abstract class CmsStartup {
     protected virtual void ConfigureMiddleware(IUmbracoApplicationBuilderContext umbraco) { }
     protected virtual void ConfigureStaticFiles(StaticFileOptions staticFileOptions) { }
 
-    // Our plugin bundles are rebuilt in place under filenames that never change, so without Cache-Control the
-    // browser falls back to heuristic freshness and can run a stale bundle for hours. Other packages' App_Plugins
-    // folders include assets public pages load, which keep their caching.
     private static void RevalidateBackofficePlugins(StaticFileOptions staticFileOptions) {
         var configured = staticFileOptions.OnPrepareResponse;
 

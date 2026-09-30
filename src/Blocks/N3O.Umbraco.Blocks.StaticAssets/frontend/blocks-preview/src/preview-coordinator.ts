@@ -12,14 +12,10 @@ interface Answer {
     fingerprint: string;
 }
 
-// Each preview is rendered from the whole grid value, so one coordinator per block manager sends every block that
-// needs markup in a single request.
 export class PreviewCoordinator {
     readonly #blockManager: UmbBlockManagerContext;
     readonly #entries = new Map<string, PreviewEntry>();
     readonly #pending = new Set<string>();
-    // Keyed by content key, but only valid for the element that received it: moving a block between areas builds
-    // a new element for the same key, which starts out empty.
     readonly #answers = new Map<string, Answer>();
 
     #context: PreviewRequestContext = { nodeKey: null, documentTypeKey: null, propertyAlias: null, culture: '' };
@@ -44,8 +40,6 @@ export class PreviewCoordinator {
     }
 
     setAuthFetch(authFetch: AuthFetch | null): void {
-        // Every block pushes its own auth context into this one shared field, and the mixin reports null both
-        // before the context resolves and when an element disconnects.
         if (authFetch) {
             this.#authFetch = authFetch;
         }
@@ -83,8 +77,6 @@ export class PreviewCoordinator {
     }
 
     async #flush(): Promise<void> {
-        // The blocks in a request are no longer pending, so aborting it for a newer flush would leave them without
-        // a reply. The newer flush runs once the request completes.
         if (this.#inFlight) {
             this.#flushAgain = true;
 
@@ -96,7 +88,6 @@ export class PreviewCoordinator {
             .filter((entry): entry is PreviewEntry => !!entry)
             .filter((entry) => !this.#isAnswered(entry));
 
-        // The auth and property contexts resolve after a block joins, so until then its request stays pending.
         if (!due.length || !this.#authFetch || !this.#context.propertyAlias) {
             return;
         }
@@ -124,16 +115,12 @@ export class PreviewCoordinator {
             for (const entry of due) {
                 const blockMarkup = preview.markup[entry.contentKey];
 
-                // The server answers every key it read, so a key is missing only when the request itself could
-                // not be read.
                 if (typeof blockMarkup !== 'string') {
                     this.#fail(entry);
 
                     continue;
                 }
 
-                // A block the server could not render is answered with a banner, and is recorded like any other
-                // answer so that it is not sent again until its data or the context changes.
                 this.#answers.set(entry.contentKey, { entry, fingerprint: fingerprints.get(entry.contentKey)! });
 
                 entry.receive({ status: 'ready', markup: blockMarkup });
@@ -163,7 +150,7 @@ export class PreviewCoordinator {
         }
     }
 
-    // Queued again but not rescheduled, so the next edit, scroll or context change retries it.
+    // Not rescheduled: retrying from here would resend a failing request in a loop.
     #fail(entry: PreviewEntry): void {
         this.#pending.add(entry.contentKey);
 

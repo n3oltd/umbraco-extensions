@@ -89,7 +89,6 @@ public static class BlockItemDataExtensions {
             entity.TryGetPropertyValue("unique", out var unique) &&
             Guid.TryParse(unique?.ToString(), out var key) &&
             key != Guid.Empty) {
-            // Udi.Create throws on an entity type Umbraco does not know.
             return UdiParser.TryParse($"umb://{entityType}/{key:N}", out var udi) ? udi.ToString() : null;
         }
 

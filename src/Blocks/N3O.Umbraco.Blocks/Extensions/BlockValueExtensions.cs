@@ -7,7 +7,6 @@ using Umbraco.Cms.Core.Serialization;
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class BlockValueExtensions {
-    // Mutates blockValue: the converter backfills keys, clears the legacy raw values and rewrites Expose.
     public static BlockEditorData<BlockGridValue, BlockGridLayoutItem> ToEditorData(
         this BlockGridValue blockValue,
         IJsonSerializer jsonSerializer,
@@ -28,7 +27,6 @@ public static class BlockValueExtensions {
             return null;
         }
 
-        // Must follow the clean, which is what supplies the property types formatting reads.
         blockEditorData.BlockValue.ContentData.FormatBlockData();
         blockEditorData.BlockValue.SettingsData.FormatBlockData();
 
