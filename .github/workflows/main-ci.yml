@@ -13,7 +13,8 @@ jobs:
     name: MyGet
     uses: n3oltd/actions/.github/workflows/dotnet-build-pack-push.yml@main
     with:
-      dotnet-version: 8.x
+      dotnet-version: 10.x
+      setup-node: true
       run-pack: true
       version-strategy: date
       nuget-source: https://www.myget.org/F/n3o/api/v2/package

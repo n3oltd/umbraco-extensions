@@ -80,8 +80,8 @@ jobs:
     if: needs.prepare.outputs.should_run == 'true'
     uses: n3oltd/actions/.github/workflows/dotnet-build-pack-push.yml@main
     with:
-      dotnet-version: 8.x
-      run-tests: false
+      dotnet-version: 10.x
+      setup-node: true
       run-pack: true
       version: ${{ needs.prepare.outputs.version }}
     secrets:
