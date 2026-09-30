@@ -23,6 +23,10 @@
         <ProjectReference Include="..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
     </ItemGroup>
     <PropertyGroup>
+        <!-- This project owns the shared npm workspace: it alone runs `npm ci` and the single Turbo build (see
+             Directory.Build.targets). Every other frontend project takes a ProjectReference on it, which is what
+             makes MSBuild order them after it, so the restore cannot run concurrently. -->
+        <N3OFrontendAnchor>true</N3OFrontendAnchor>
         <!-- A directory, not a glob: a glob here expands at evaluation time, before Turbo has produced dist/
              (gitignored, absent on a clean checkout), so it ships nothing. BuildFrontend globs it at execution. -->
         <N3OFrontendExtraDistDir>$(MSBuildProjectDirectory)\..\frontend\backoffice-core\dist</N3OFrontendExtraDistDir>

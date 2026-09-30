@@ -12,13 +12,21 @@
     <Import Project="$(MSBuildThisFileDirectory)src\build\N3O.Umbraco.ReactPlugin.props"
             Condition="'$(N3OReactPlugin)' == 'true'" />
 
-    <!-- Restore the shared npm workspace once. Gated on the N3OHasFrontend convention (not a literal
-         project name) so it runs for any frontend-having build, including a standalone pack. Inputs/Outputs
-         make it a no-op once the .n3o-frontend-restored stamp is newer than package-lock.json; in a full
-         solution build the first frontend project (ReactRuntime — a common ancestor of the others) restores
-         and the rest skip, so npm ci is never run concurrently. -->
+    <!-- Restore the shared npm workspace once, and only from the anchor project (N3OFrontendAnchor, declared by
+         N3O.Umbraco.ReactRuntime). Every other frontend project takes a ProjectReference on the anchor, so
+         MSBuild finishes the anchor before starting any of them and the restore cannot run concurrently.
+
+         The anchor gate is load-bearing, not tidiness. This target used to be gated on N3OHasFrontend alone, on
+         the premise that "the first frontend project (ReactRuntime — a common ancestor of the others) restores
+         and the rest skip". That premise was false: N3OHasFrontend is set by convention for the ~12 projects
+         with a frontend/ folder, and most were NOT downstream of the anchor (SerpEditor, for one, referenced
+         only N3O.Umbraco.Plugins), so msbuild /m built them in parallel and each fired its own `npm ci` into
+         this same directory. Inputs/Outputs does not help — incrementality is per-project and evaluated at
+         target start, so under parallelism all of them see the stamp missing and all run. v17 CI failed every
+         run at `dotnet build` with `npm error ENOTEMPTY: rmdir '.../node_modules/queue-microtask'`; locally it
+         is invisible only because the stamp already exists and the restore is skipped entirely. -->
     <Target Name="RestoreFrontendDependencies"
-            Condition="'$(N3OHasFrontend)' == 'true' And '$(DesignTimeBuild)' != 'true'"
+            Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             BeforeTargets="BeforeBuild"
             Inputs="$(N3OFrontendWorkspace)\package-lock.json"
             Outputs="$(N3OFrontendWorkspace)\node_modules\.n3o-frontend-restored">
@@ -28,9 +36,10 @@
 
     <!-- Guard: the restore's success marker is the .n3o-frontend-restored stamp, not merely node_modules
          (an interrupted npm ci leaves the dir but no stamp). If the stamp is missing, self-heal by running
-         npm ci (idempotent) so a clean standalone pack works without first building the whole solution. -->
+         npm ci (idempotent) so a clean standalone pack works without first building the whole solution.
+         Anchor-only for the same reason as above — this is the second place npm ci could be invoked from. -->
     <Target Name="EnsureFrontendDependenciesRestored"
-            Condition="'$(N3OHasFrontend)' == 'true' And '$(DesignTimeBuild)' != 'true'"
+            Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             BeforeTargets="BuildFrontendWorkspace">
         <Exec Condition="!Exists('$(N3OFrontendWorkspace)\node_modules\.n3o-frontend-restored')"
               Command="npm ci" WorkingDirectory="$(N3OFrontendWorkspace)" />
@@ -42,11 +51,12 @@
 
     <!-- Build the whole npm workspace exactly once with a single Turbo invocation, instead of each project
          running its own filtered turbo run (which raced on the shared @n3oltd/backoffice-core dist/.turbo when
-         Cms and Data built in parallel under msbuild /m). Gated on the convention + Inputs/Outputs stamp so it
-         does real work once per source change; the first frontend project (ReactRuntime, a common ancestor)
-         runs it and the others — already ordered after it via ProjectReference — find the stamp and skip. -->
+         Cms and Data built in parallel under msbuild /m). Anchor-only, so "exactly once" is guaranteed by the
+         project graph rather than by every project racing to the same stamp. A non-anchor project's
+         BuildFrontend still depends on this target, where it is a no-op; the dist it copies is already on disk
+         because the anchor built the whole workspace before this project started. -->
     <Target Name="BuildFrontendWorkspace"
-            Condition="'$(N3OHasFrontend)' == 'true' And '$(DesignTimeBuild)' != 'true'"
+            Condition="'$(N3OFrontendAnchor)' == 'true' And '$(DesignTimeBuild)' != 'true'"
             DependsOnTargets="EnsureFrontendDependenciesRestored"
             Inputs="$(N3OFrontendWorkspace)\package-lock.json;@(_N3OFrontendWorkspaceSources)"
             Outputs="$(N3OFrontendWorkspace)\node_modules\.n3o-frontend-built">
