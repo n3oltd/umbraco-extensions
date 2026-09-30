@@ -21,20 +21,21 @@ public static class BlockListHelper {
         }
     }
 
-    public static TProperty GetSingleAs<TProperty>(IPublishedProperty property,
-                                                   object propertyValue,
-                                                   IPublishedContent parent) {
+    public static bool TryGetSingleAs<TProperty>(IPublishedProperty property,
+                                                 object propertyValue,
+                                                 IPublishedContent parent,
+                                                 out TProperty value) {
         var element = GetSingleElement(property, propertyValue);
 
-        if (element == null) {
-            return default;
+        if (element == null || (element is not TProperty && !typeof(TProperty).ImplementsInterface<IUmbracoElement>())) {
+            value = default;
+
+            return false;
         }
 
-        if (element is not TProperty && !typeof(TProperty).ImplementsInterface<IUmbracoElement>()) {
-            return default;
-        }
+        value = element.As<TProperty>(parent);
 
-        return element.As<TProperty>(parent);
+        return true;
     }
 
     // Nested Content answered a single element only when a property allowed exactly one item, and the editor

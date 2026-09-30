@@ -102,8 +102,10 @@ public abstract class UmbracoElement<T> : Value, IUmbracoElement {
             return publishedContent.As<TProperty>();
         } else if (propertyValue is IPublishedElement publishedElement) {
             return publishedElement.As<TProperty>(_parent);
+        } else if (BlockListHelper.TryGetSingleAs<TProperty>(property, propertyValue, _parent, out var blockListElement)) {
+            return blockListElement;
         } else {
-            return BlockListHelper.GetSingleAs<TProperty>(property, propertyValue, _parent);
+            return default;
         }
     }
     
