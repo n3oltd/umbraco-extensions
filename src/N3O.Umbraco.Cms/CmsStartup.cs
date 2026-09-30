@@ -68,7 +68,7 @@ public abstract class CmsStartup {
         var staticFileOptions = new StaticFileOptions();
         staticFileOptions.OnPrepareResponse = staticFileCachePolicy.Apply;
         ConfigureStaticFiles(staticFileOptions);
-
+        
         app.UseWhen(context => !context.Request.Path.StartsWithSegments("/media"),
                     appBuilder => appBuilder.UseStaticFiles(staticFileOptions));
         
