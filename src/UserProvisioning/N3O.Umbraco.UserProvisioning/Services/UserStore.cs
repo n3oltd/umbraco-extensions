@@ -46,15 +46,13 @@ public class UserStore : IScimStore<ScimUser> {
             throw ScimException.InvalidValue("A user requires either userName or a primary email address");
         }
 
-        // No group is assigned: granting one so the user can be read back grants access the directory
-        // never asked for, and nothing later takes it away
+        // Created without a group: one granted here is access the directory never asked for.
         var user = _userService.CreateUserWithIdentity(email, email);
         user.IsApproved = resource.Active ?? true;
         user.Name = GetName(resource, email);
 
         _userService.Save(user);
 
-        // Saving assigns the persisted key, so the in-memory entity is not the one this user is read by
         var created = _userService.GetByUsername(email);
 
         if (created == null) {
@@ -95,7 +93,6 @@ public class UserStore : IScimStore<ScimUser> {
         return Map(user, null);
     }
 
-    // Umbraco holds one name, so the parts are kept as sent rather than recovered by splitting it
     public static BackOfficeUser Map(IUser user, ScimUserState state) {
         var backOfficeUser = new BackOfficeUser();
         backOfficeUser.Active = user.IsApproved;
@@ -110,7 +107,6 @@ public class UserStore : IScimStore<ScimUser> {
         return backOfficeUser;
     }
 
-    // One user is patched more than once in a cycle, and a change read before another's write is lost
     private async Task<ScimUser> MutateAsync(string id, Func<IUser, Task<ScimUser>> mutate) {
         using (await _locker.LockAsync(LockKey.Generate<UserStore>(id))) {
             return await mutate(await GetRequiredAsync(id));
@@ -151,8 +147,6 @@ public class UserStore : IScimStore<ScimUser> {
                 ScimUserPatch.Apply(patched, operation);
             }
 
-            // Name parts are derived from the stored name on every read, so an unchanged name would
-            // otherwise outrank a displayName the patch did change
             if (Unchanged(original.Name, patched.Name) && !Same(original.DisplayName, patched.DisplayName)) {
                 patched.Name = null;
             }
@@ -237,8 +231,6 @@ public class UserStore : IScimStore<ScimUser> {
         return GetAll(_userService).Where(x => IsGoverned(x, provisioned.Contains(x.Key))).ToList();
     }
 
-    // IUserService offers no lookup by key, so the governed set is the only route from a SCIM ID to a
-    // user
     private async Task<IUser> GetRequiredAsync(string id) {
         if (!Guid.TryParse(id, out var key)) {
             throw ScimException.NotFound($"No user found with ID {id.Quote()}");
@@ -253,8 +245,6 @@ public class UserStore : IScimStore<ScimUser> {
         return user;
     }
 
-    // The governed domain is what keeps users created by hand outside the directory's reach; one the
-    // directory created is its own whether or not it has been put in a group yet
     private bool IsGoverned(IUser user, bool provisioned) {
         return _settings.Governs(user.Username) &&
                (provisioned || user.Groups.Any(x => _settings.UserGroups.Any(g => g.Alias.Is(x.Alias))));

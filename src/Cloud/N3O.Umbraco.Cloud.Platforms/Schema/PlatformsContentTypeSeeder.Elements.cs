@@ -16,8 +16,6 @@ public partial class PlatformsContentTypeSeeder {
         return AliasHelper<T>.PropertyAlias(expression);
     }
 
-    // Seeded here rather than with the other data types because a block list resolves its element type when it is
-    // saved, so it cannot be created until the suggested amount element exists.
     private void EnsureSuggestedAmountsDataType() {
         if (HasDataType(DataTypeNames.SuggestedAmounts)) {
             return;

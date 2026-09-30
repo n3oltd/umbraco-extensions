@@ -17,8 +17,6 @@ public class ScimAttributePath {
 
     public string Attribute => Elements.FirstOrDefault();
 
-    // A path may carry a schema URN, which contains the colons and dots the elements are split on, so the
-    // URN is taken off the front before anything is split
     public static ScimAttributePath Parse(string text) {
         if (!text.HasValue()) {
             throw ScimException.InvalidPath("An attribute path cannot be empty");

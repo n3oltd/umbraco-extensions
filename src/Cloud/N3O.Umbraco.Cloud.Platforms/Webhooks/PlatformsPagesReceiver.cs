@@ -79,10 +79,9 @@ public class PlatformsPagesReceiver : WebhookReceiver {
             return;
         }
 
-        // The read that follows is served fresh because of the eviction above, and consumes it.
         await EvictMergeModelsAsync(page.PagePublishedPath, cancellationToken);
 
-        // The CDN may not have had the new page yet, so the page is left marked for the next reader.
+        // Evicted again: the read above consumes the first eviction, and the CDN may not have the new page yet.
         _cdnClient.Evict(page.PagePublishedPath);
     }
 

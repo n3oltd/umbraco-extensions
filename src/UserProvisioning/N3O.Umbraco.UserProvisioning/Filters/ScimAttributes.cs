@@ -14,8 +14,6 @@ public class ScimAttributes {
         _values = new Dictionary<string, List<object>>(ScimText.Comparer);
     }
 
-    // An attribute is registered even when the resource carries no value for it, so a filter naming one
-    // the store does not project can be told apart from one that is merely empty
     public ScimAttributes Add(string path, object value) {
         if (!_values.TryGetValue(path, out var existing)) {
             existing = new List<object>();

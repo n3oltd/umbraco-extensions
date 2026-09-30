@@ -46,7 +46,6 @@ public class PropertyContainerBuilder : IPropertyContainerBuilder {
         return builder;
     }
 
-    // Camel cased because that is what the backoffice and uSync produce
     public string Alias => _parent == null
                            ? Name.ToSafeAlias(_shortStringHelper, true)
                            : $"{_parent.Alias}/{Name.ToSafeAlias(_shortStringHelper, true)}";

@@ -80,7 +80,6 @@ public class StagingMiddleware : IMiddleware {
         await next(context);
     }
 
-    // Keying per address lets a client reset the lock out by rotating through its /64.
     private string GetLockOutKey(IPAddress remoteIp) {
         if (remoteIp.AddressFamily == AddressFamily.InterNetworkV6) {
             var bytes = remoteIp.GetAddressBytes();

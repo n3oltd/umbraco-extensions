@@ -25,8 +25,6 @@ public class UserProvisioningSettings {
                                                                           UserProvisioningConstants.EditorGroupAlias))
                                                             .ToList();
 
-    // An address the directory cannot own is somebody the directory must not manage, whichever user
-    // group holds them
     public bool Governs(string email) {
         if (!email.HasValue()) {
             return false;

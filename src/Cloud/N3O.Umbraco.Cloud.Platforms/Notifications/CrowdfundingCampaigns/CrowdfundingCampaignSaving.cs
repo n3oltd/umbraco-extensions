@@ -56,7 +56,6 @@ public class CrowdfundingCampaignSaving : INotificationAsyncHandler<ContentSavin
             var creating = !content.HasIdentity;
             var campaignKey = content.GetCampaignKey();
 
-            // Cancelling stops the whole notification, not the one entity
             if (campaignKey == null) {
                 if (creating) {
                     notification.CancelWithError("A campaign must be selected");

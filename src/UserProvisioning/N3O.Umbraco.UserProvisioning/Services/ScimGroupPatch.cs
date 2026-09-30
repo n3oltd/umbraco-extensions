@@ -22,7 +22,6 @@ public static class ScimGroupPatch {
         return operation.Value is JObject json && json.Property("members", ScimText.Comparison) != null;
     }
 
-    // An identity provider re-sends its own key every cycle until a read gives it back
     public static string ReadExternalId(IEnumerable<ScimPatchOperation> operations) {
         string externalId = null;
 
@@ -45,7 +44,6 @@ public static class ScimGroupPatch {
         return externalId;
     }
 
-    // Not the members that change: naming one the group already holds is a claim to record all the same
     public static ISet<Guid> Named(IEnumerable<ScimPatchOperation> operations) {
         var named = new HashSet<Guid>();
 
@@ -77,7 +75,6 @@ public static class ScimGroupPatch {
                                                 "ones to add");
             }
 
-            // Without this a replace deletes the members its path selects and puts nothing back
             if (!op.Is("remove") && operation.Value.IsNull()) {
                 throw ScimException.InvalidValue($"A {op.ToLowerInvariant()} of members requires a value");
             }
@@ -87,7 +84,6 @@ public static class ScimGroupPatch {
             if (op.Is("add")) {
                 members.UnionWith(keys);
             } else if (op.Is("replace") && Selects(operation)) {
-                // A filter selects the records to replace, so the rest of the membership survives
                 if (!keys.Any()) {
                     throw ScimException.NoTarget("No member of this group matches the path");
                 }
@@ -100,8 +96,7 @@ public static class ScimGroupPatch {
             } else if (NamesNobody(operation)) {
                 members.Clear();
             } else if (keys.Any() || Selects(operation)) {
-                // The same removal arrives more than once, so refusing one that matches nobody fails
-                // every cycle that removes anyone
+                // A filtered removal that matches nobody is accepted, because the same removal arrives more than once.
                 members.ExceptWith(keys);
             } else {
                 throw ScimException.InvalidValue("The members to remove could not be read from the patch");
@@ -167,7 +162,6 @@ public static class ScimGroupPatch {
     private static bool NamesNobody(ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 
-        // An absent value names the whole attribute; an explicit null does not, and is refused
         return operation.Value == null && path != null && path.ValueFilter == null;
     }
 
@@ -189,8 +183,6 @@ public static class ScimGroupPatch {
         return keys;
     }
 
-    // A path filter selects among the members already held, so any shape of reference resolves without
-    // reading the literal out of the expression
     private static ISet<Guid> ReadKeys(IReadOnlyList<BackOfficeUser> held, ScimPatchOperation operation) {
         var path = ScimPath.Parse(operation.Path);
 

@@ -49,7 +49,6 @@ public class Sitemap : ISitemap {
         using (await _locker.LockAsync(LockKey.Generate<Sitemap>())) {
             var entries = await GetEntriesAsync();
 
-            // A loading NuCache snapshot reads as an empty tree
             if (!entries.Any() && WebRoot.GetFiles(_webHostEnvironment, SitemapFilePattern).Any()) {
                 return;
             }

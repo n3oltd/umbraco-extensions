@@ -39,7 +39,6 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
         return DataSource(typeof(TDataSource));
     }
 
-    // Contentment stores the source as an assembly-qualified name, so it must survive a rename of the type
     public ContentmentDataListDataTypeDesigner DataSource(Type dataSourceType) {
         _dataSourceKey = $"{dataSourceType.FullName}, {dataSourceType.Assembly.GetName().Name}";
 

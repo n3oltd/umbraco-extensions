@@ -55,7 +55,6 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
     private bool CanCopy(IContent content, string alias, out IProperty property) {
         property = content.HasProperty(alias) ? content.Properties[alias] : null;
 
-        // SetValue throws without a culture on a property that varies by one
         return property != null && !property.PropertyType.VariesByCulture();
     }
 

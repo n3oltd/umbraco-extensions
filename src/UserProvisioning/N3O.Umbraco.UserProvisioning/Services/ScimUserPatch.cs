@@ -95,8 +95,6 @@ public static class ScimUserPatch {
         }
     }
 
-    // Umbraco holds one address, so a patch of any email is a patch of that one, whichever member of
-    // the collection the path selects
     private static void SetEmails(ScimUser user, ScimPath path, JToken value, bool removing) {
         var elements = path.SubAttributes;
 
