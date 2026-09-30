@@ -13,6 +13,7 @@ interface TemplateOptionsResponse {
 
 type SerpEditorAppProps = {
     value: SerpValue;
+    url: string;
     maxCharsTitle: number;
     maxCharsDescription: number;
     authFetch: AuthFetch | null;
@@ -49,7 +50,14 @@ function loadTitleSuffix(authFetch: AuthFetch): Promise<string> {
     return titleSuffixRequest;
 }
 
-export function SerpEditorApp({ value, maxCharsTitle, maxCharsDescription, authFetch, onChange }: SerpEditorAppProps) {
+export function SerpEditorApp({
+    value,
+    url,
+    maxCharsTitle,
+    maxCharsDescription,
+    authFetch,
+    onChange,
+}: SerpEditorAppProps) {
     const [titleSuffix, setTitleSuffix] = useState(cachedTitleSuffix ?? '');
 
     useEffect(() => {
@@ -76,7 +84,6 @@ export function SerpEditorApp({ value, maxCharsTitle, maxCharsDescription, authF
 
     const title = value.title ?? '';
     const description = value.description ?? '';
-    const host = `${window.location.protocol}//${window.location.hostname}`;
 
     return (
         <>
@@ -110,7 +117,7 @@ export function SerpEditorApp({ value, maxCharsTitle, maxCharsDescription, authF
                             {title} {titleSuffix}
                         </h6>
                     ) : null}
-                    {title.length > 0 || description.length > 0 ? <p className="sv-url">{host}</p> : null}
+                    {title.length > 0 || description.length > 0 ? <p className="sv-url">{url}</p> : null}
                     <p>{description}</p>
                 </div>
             </div>
