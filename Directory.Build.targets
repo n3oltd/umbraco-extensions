@@ -1,4 +1,10 @@
 <Project>
+    <!-- Overrides the RazorCompileOnBuild false that web projects declare, so it must stay in a file imported
+         after the csproj body. -->
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <RazorCompileOnBuild>true</RazorCompileOnBuild>
+    </PropertyGroup>
+
     <Import Project="$(MSBuildThisFileDirectory)src\build\N3O.Umbraco.ReactPlugin.props"
             Condition="'$(N3OReactPlugin)' == 'true'" />
 
