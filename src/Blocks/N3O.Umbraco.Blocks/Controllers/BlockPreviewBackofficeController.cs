@@ -14,8 +14,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Umbraco.Cms.Core.Cache.PropertyEditors;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
@@ -33,6 +35,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IContentTypeService _contentTypeService;
+    private readonly IContentHelper _contentHelper;
+    private readonly IBlockEditorElementTypeCache _blockEditorElementTypeCache;
     private readonly ILogger<BlockPreviewBackofficeController> _logger;
 
     public BlockPreviewBackofficeController(IPublishedRouter publishedRouter,
@@ -43,6 +47,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
                                             IUmbracoContextAccessor umbracoContextAccessor,
                                             IJsonSerializer jsonSerializer,
                                             IContentTypeService contentTypeService,
+                                            IContentHelper contentHelper,
+                                            IBlockEditorElementTypeCache blockEditorElementTypeCache,
                                             ILogger<BlockPreviewBackofficeController> logger) {
         _publishedRouter = publishedRouter;
         _blockPreviewer = blockPreviewer;
@@ -52,26 +58,29 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         _umbracoContextAccessor = umbracoContextAccessor;
         _jsonSerializer = jsonSerializer;
         _contentTypeService = contentTypeService;
+        _contentHelper = contentHelper;
+        _blockEditorElementTypeCache = blockEditorElementTypeCache;
         _logger = logger;
     }
 
-    // Previews are requested for a whole document at once. Every block on a page previews from the same grid
-    // value, so sending and converting it once is the difference between one request and one conversion for the
-    // document and one of each per block.
     [HttpPost("previewGridBlocks")]
-    public async Task<IActionResult> PreviewGridBlocks([FromQuery(Name = "nodeKey")] Guid? contentId,
-                                                       [FromQuery(Name = "documentTypeKey")] Guid? contentTypeId,
-                                                       [FromQuery] string propertyAlias,
-                                                       [FromQuery] string culture) {
-        var req = await ReadRequestAsync();
-
-        if (req?.BlockKeys.HasAny() != true) {
-            return Ok(new Dictionary<string, string>());
-        }
-
-        var blockKeys = req.BlockKeys.Distinct().ToList();
+    public async Task<ActionResult<PreviewBlocksRes>> PreviewGridBlocks(
+        [FromQuery(Name = "nodeKey")] Guid? contentId,
+        [FromQuery(Name = "documentTypeKey")] Guid? contentTypeId,
+        [FromQuery] string propertyAlias,
+        [FromQuery] string culture,
+        CancellationToken cancellationToken) {
+        var blockKeys = new List<Guid>();
 
         try {
+            var req = await ReadRequestAsync();
+
+            if (!req.HasAny(x => x.BlockKeys)) {
+                return GetRes(new Dictionary<string, string>());
+            }
+
+            blockKeys = req.BlockKeys.Distinct().ToList();
+
             var publishedContent = GetPublishedContent(contentId, contentTypeId);
 
             if (publishedContent == null) {
@@ -81,66 +90,100 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             await SetCultureAsync(publishedContent, culture);
             await SetupPublishedRequest(publishedContent);
 
-            var blockEditorData = req.BlockValue.ToEditorData(_jsonSerializer, _contentTypeService);
+            var blockEditorData = req.BlockValue.ToEditorData(_jsonSerializer, _blockEditorElementTypeCache, _logger);
 
             if (blockEditorData == null) {
                 throw new BlockPreviewErrorException("The block data is invalid");
             }
 
+            var blockGridModel = GetBlockGridModel(publishedContent, propertyAlias, blockEditorData);
             var markup = new Dictionary<string, string>();
 
             foreach (var blockKey in blockKeys) {
+                // The editor aborts a request whose context has changed and will not read its reply.
+                if (cancellationToken.IsCancellationRequested) {
+                    break;
+                }
+
                 markup[blockKey.ToString()] = await PreviewBlockAsync(blockKey,
                                                                       publishedContent,
                                                                       propertyAlias,
+                                                                      blockGridModel,
                                                                       blockEditorData);
             }
 
-            return Ok(markup);
+            return GetRes(markup);
         } catch (Exception ex) {
-            // Anything thrown out here applies to the request as a whole, so every block shows the same banner.
             var banner = ex is BlockPreviewException previewException
                              ? previewException.Markup
                              : new BlockPreviewErrorException(ex.Message).Markup;
 
             if (ex is not BlockPreviewException) {
-                _logger.LogError(ex, "Failed to preview blocks for {NodeKey}", contentId);
+                _logger.LogError(ex,
+                                 "Failed to preview blocks of {PropertyAlias} for {NodeKey}",
+                                 propertyAlias,
+                                 contentId);
             }
 
-            return Ok(blockKeys.ToDictionary(x => x.ToString(), _ => banner));
+            return GetRes(blockKeys.ToDictionary(x => x.ToString(), _ => banner));
         }
     }
 
-    // One block failing to render says nothing about the rest, so each is caught on its own and the others
-    // still return markup.
+    private BlockGridModel GetBlockGridModel(IPublishedContent content,
+                                             string propertyAlias,
+                                             BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
+        var json = _jsonSerializer.Serialize(blockEditorData.BlockValue);
+
+        var blockGridModel = _contentHelper.GetConvertedValue<BlockGridPropertyValueConverter, BlockGridModel>(
+            content.ContentType.Alias,
+            propertyAlias,
+            json,
+            content);
+
+        // A block grid nested inside another block is a property of that block's element type, not the document's.
+        if (blockGridModel == null) {
+            throw new BlockPreviewWarningException($"Property {propertyAlias.Quote()} is not a block grid on " +
+                                                   $"{content.ContentType.Alias.Quote()}");
+        }
+
+        return blockGridModel;
+    }
+
+    private static PreviewBlocksRes GetRes(Dictionary<string, string> markup) {
+        var res = new PreviewBlocksRes();
+        res.Markup = markup;
+
+        return res;
+    }
+
     private async Task<string> PreviewBlockAsync(Guid blockKey,
                                                  IPublishedContent content,
                                                  string propertyAlias,
+                                                 BlockGridModel blockGridModel,
                                                  BlockEditorData<BlockGridValue, BlockGridLayoutItem> blockEditorData) {
         try {
-            var markup = await _blockPreviewer.PreviewBlockAsync(blockKey, content, propertyAlias, blockEditorData);
+            var markup = await _blockPreviewer.PreviewBlockAsync(blockKey, content, blockGridModel, blockEditorData);
 
             return markup.CleanUpMarkupForPreview();
         } catch (BlockPreviewException ex) {
             return ex.Markup;
         } catch (Exception ex) {
-            // The banner carries only the message, so without this the stack trace of a failing block is lost.
-            _logger.LogError(ex, "Failed to preview block {BlockKey}", blockKey);
+            _logger.LogError(ex,
+                             "Failed to preview block {BlockKey} of {PropertyAlias} on {NodeKey}",
+                             blockKey,
+                             propertyAlias,
+                             content.Key);
 
             return new BlockPreviewErrorException(ex.Message).Markup;
         }
     }
 
-    // The body is read as raw JSON rather than model bound. BlockValue.Layout is typed as an interface, which
-    // MVC's System.Text.Json formatter cannot deserialize; Umbraco's own IJsonSerializer carries the
-    // JsonBlockValueConverter that can. Binding would therefore throw in the formatter, before this action runs,
-    // where the catch above could not turn it into an error banner.
     private async Task<PreviewBlocksReq> ReadRequestAsync() {
-        using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+        using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true)) {
+            var json = await reader.ReadToEndAsync();
 
-        var json = await reader.ReadToEndAsync();
-
-        return json.HasValue() ? _jsonSerializer.Deserialize<PreviewBlocksReq>(json) : null;
+            return json.HasValue() ? _jsonSerializer.Deserialize<PreviewBlocksReq>(json) : null;
+        }
     }
 
     private async Task SetupPublishedRequest(IPublishedContent content = null) {
@@ -156,8 +199,6 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         context.PublishedRequest = requestBuilder.Build();
     }
 
-    // A document that has never been published is not in the published cache, so it cannot be routed against
-    // itself. Any published document of the same type will do, as the preview only needs a page to render in.
     private IPublishedContent GetPublishedContent(Guid? contentId, Guid? contentTypeId) {
         var content = contentId.IfNotNull(x => _contentLocator.ById(x));
 

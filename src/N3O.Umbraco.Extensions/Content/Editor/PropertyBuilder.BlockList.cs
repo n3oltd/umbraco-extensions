@@ -1,7 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Serialization;
@@ -15,11 +15,13 @@ public class BlockListPropertyBuilder : PropertyBuilder {
     private readonly IContentTypeService _contentTypeService;
     private readonly IJsonSerializer _jsonSerializer;
 
-    public BlockListPropertyBuilder(IContentTypeService contentTypeService, IServiceProvider serviceProvider)
+    public BlockListPropertyBuilder(IContentTypeService contentTypeService,
+                                    IServiceProvider serviceProvider,
+                                    IJsonSerializer jsonSerializer)
         : base(contentTypeService) {
         _serviceProvider = serviceProvider;
         _contentTypeService = contentTypeService;
-        _jsonSerializer = serviceProvider.GetRequiredService<IJsonSerializer>();
+        _jsonSerializer = jsonSerializer;
     }
 
     public IContentBuilder Add(string contentTypeAlias, Guid? customKey = null, int? order = null) {
@@ -63,6 +65,10 @@ public class BlockListPropertyBuilder : PropertyBuilder {
         
         blockValue.ContentData = blockItemDatas;
         blockValue.SettingsData = [];
+
+        // Umbraco renders only the blocks listed in Expose. A null culture is aligned to the default culture when
+        // the owner and element vary by culture.
+        blockValue.Expose = blockItemDatas.Select(x => new BlockItemVariation(x.Key, null, null)).ToList();
 
         return (_jsonSerializer.Serialize(blockValue), GetPropertyType(propertyAlias, parentContentTypeAlias));
     }
