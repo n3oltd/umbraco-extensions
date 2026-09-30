@@ -24,7 +24,7 @@ public class SyncDataHandler : IRequestHandler<SyncDataCommand, SyncDataReq, Non
             return None.Empty;
         }
 
-        if (providerRegistration.SharedSecret != req.Model.SharedSecret) {
+        if (!providerRegistration.SharedSecret.EqualsSecret(req.Model.SharedSecret)) {
             throw new UnauthorizedAccessException();
         }
 

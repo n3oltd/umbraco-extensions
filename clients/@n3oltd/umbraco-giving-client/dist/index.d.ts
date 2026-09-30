@@ -15,6 +15,8 @@ export declare class GivingClient {
     protected processGetLookupCurrencies(response: Response): Promise<CurrencyRes[]>;
     getLookupDonationItems(): Promise<DonationItemRes[]>;
     protected processGetLookupDonationItems(response: Response): Promise<DonationItemRes[]>;
+    getLookupFeedbackSchemes(): Promise<FeedbackSchemeRes[]>;
+    protected processGetLookupFeedbackSchemes(response: Response): Promise<FeedbackSchemeRes[]>;
     getLookupFundDimension1Values(): Promise<FundDimensionValueRes[]>;
     protected processGetLookupFundDimension1Values(response: Response): Promise<FundDimensionValueRes[]>;
     getLookupFundDimension2Values(): Promise<FundDimensionValueRes[]>;
@@ -41,21 +43,25 @@ export interface DonationFormRes {
     options?: DonationOptionRes[] | undefined;
 }
 export interface DonationOptionRes {
+    id?: number;
     name?: string | undefined;
+    campaignName?: string | undefined;
     type?: AllocationType | undefined;
     defaultGivingType?: GivingType | undefined;
-    dimension1?: FixedOrDefaultFundDimensionValueRes | undefined;
-    dimension2?: FixedOrDefaultFundDimensionValueRes | undefined;
-    dimension3?: FixedOrDefaultFundDimensionValueRes | undefined;
-    dimension4?: FixedOrDefaultFundDimensionValueRes | undefined;
+    dimension1?: InitialFundDimensionValueRes | undefined;
+    dimension2?: InitialFundDimensionValueRes | undefined;
+    dimension3?: InitialFundDimensionValueRes | undefined;
+    dimension4?: InitialFundDimensionValueRes | undefined;
     hideQuantity?: boolean;
     hideDonation?: boolean;
     hideRegularGiving?: boolean;
     fund?: FundDonationOptionRes | undefined;
     sponsorship?: SponsorshipDonationOptionRes | undefined;
+    feedback?: FeedbackDonationOptionRes | undefined;
 }
-/** One of 'fund', 'sponsorship' */
+/** One of 'feedback', 'fund', 'sponsorship' */
 export declare enum AllocationType {
+    Feedback = "feedback",
     Fund = "fund",
     Sponsorship = "sponsorship"
 }
@@ -64,9 +70,10 @@ export declare enum GivingType {
     Donation = "donation",
     RegularGiving = "regularGiving"
 }
-export interface FixedOrDefaultFundDimensionValueRes {
+export interface InitialFundDimensionValueRes {
     fixed?: FundDimensionValueRes | undefined;
     default?: FundDimensionValueRes | undefined;
+    suggested?: FundDimensionValueRes | undefined;
 }
 export interface FundDimensionValueRes {
     name?: string | undefined;
@@ -78,73 +85,29 @@ export interface FundDonationOptionRes {
     donationPriceHandles?: PriceHandleRes[] | undefined;
     regularGivingPriceHandles?: PriceHandleRes[] | undefined;
 }
-export interface PriceContent {
+export interface FundDimensionOptions {
+    dimension1?: string[] | undefined;
+    dimension2?: string[] | undefined;
+    dimension3?: string[] | undefined;
+    dimension4?: string[] | undefined;
+}
+export interface Pricing {
+    price?: Price | undefined;
+    rules?: PricingRule[] | undefined;
+}
+export interface Price {
     amount?: number;
     locked?: boolean;
 }
-export interface PricingRuleElement {
-    content?: IPublishedElement | undefined;
-    amount?: number;
-    locked?: boolean;
+export interface PricingRule {
+    price?: Price | undefined;
+    fundDimensions?: FundDimensionValues | undefined;
+}
+export interface FundDimensionValues {
     dimension1?: string | undefined;
     dimension2?: string | undefined;
     dimension3?: string | undefined;
     dimension4?: string | undefined;
-}
-export interface IPublishedElement {
-    contentType?: IPublishedContentType | undefined;
-    key?: string;
-    properties?: IPublishedProperty[] | undefined;
-}
-export interface IPublishedContentType {
-    key?: string;
-    id?: number;
-    alias?: string | undefined;
-    itemType?: PublishedItemType;
-    compositionAliases?: string[] | undefined;
-    variations?: ContentVariation;
-    isElement?: boolean;
-    propertyTypes?: IPublishedPropertyType[] | undefined;
-}
-export declare enum PublishedItemType {
-    Unknown = 0,
-    Element = 1,
-    Content = 2,
-    Media = 3,
-    Member = 4
-}
-export declare enum ContentVariation {
-    Nothing = 0,
-    Culture = 1,
-    Segment = 2,
-    CultureAndSegment = 3
-}
-export interface IPublishedPropertyType {
-    contentType?: IPublishedContentType | undefined;
-    dataType?: PublishedDataType | undefined;
-    alias?: string | undefined;
-    editorAlias?: string | undefined;
-    isUserProperty?: boolean;
-    variations?: ContentVariation;
-    cacheLevel?: PropertyCacheLevel;
-    modelClrType?: string | undefined;
-    clrType?: string | undefined;
-}
-export interface PublishedDataType {
-    id?: number;
-    editorAlias?: string | undefined;
-    configuration?: any | undefined;
-}
-export declare enum PropertyCacheLevel {
-    Unknown = 0,
-    Element = 1,
-    Elements = 2,
-    Snapshot = 3,
-    None = 4
-}
-export interface IPublishedProperty {
-    propertyType?: IPublishedPropertyType | undefined;
-    alias?: string | undefined;
 }
 export interface PriceHandleRes {
     amount?: number;
@@ -161,12 +124,31 @@ export interface MoneyRes {
 export interface SponsorshipDonationOptionRes {
     scheme?: string | undefined;
 }
-/** One of '_6', '_12', '_18', '_24' */
+/** One of '_6', '_12', '_18', '_24', '_36', '_48', '_60' */
 export declare enum SponsorshipDuration {
     _6 = "_6",
     _12 = "_12",
     _18 = "_18",
-    _24 = "_24"
+    _24 = "_24",
+    _36 = "_36",
+    _48 = "_48",
+    _60 = "_60"
+}
+export interface FeedbackDonationOptionRes {
+    scheme?: string | undefined;
+}
+export interface FeedbackCustomFieldDefinition {
+    type?: FeedbackCustomFieldType | undefined;
+    alias?: string | undefined;
+    name?: string | undefined;
+    required?: boolean;
+    textMaxLength?: number | undefined;
+}
+/** One of 'bool', 'date', 'text' */
+export declare enum FeedbackCustomFieldType {
+    Bool = "bool",
+    Date = "date",
+    Text = "text"
 }
 export interface ProblemDetails {
     type?: string | undefined;
@@ -174,6 +156,7 @@ export interface ProblemDetails {
     status?: number | undefined;
     detail?: string | undefined;
     instance?: string | undefined;
+    [key: string]: any;
 }
 export interface FundStructureRes {
     dimension1?: FundDimensionRes | undefined;
@@ -196,33 +179,37 @@ export interface CurrencyRes {
     name?: string | undefined;
     id?: string | undefined;
     code?: string | undefined;
-    isBaseCurrency?: boolean;
     symbol?: string | undefined;
+    icon?: string | undefined;
+    decimalDigits?: number;
+    isBaseCurrency?: boolean;
 }
 export interface DonationItemRes {
     name?: string | undefined;
     id?: string | undefined;
     allowedGivingTypes?: GivingType[] | undefined;
-    dimension1Options?: FundDimensionValueRes[] | undefined;
-    dimension2Options?: FundDimensionValueRes[] | undefined;
-    dimension3Options?: FundDimensionValueRes[] | undefined;
-    dimension4Options?: FundDimensionValueRes[] | undefined;
+    fundDimensionOptions?: FundDimensionOptionsRes | undefined;
     pricing?: PricingRes | undefined;
 }
+export interface FundDimensionOptionsRes {
+    dimension1?: string[] | undefined;
+    dimension2?: string[] | undefined;
+    dimension3?: string[] | undefined;
+    dimension4?: string[] | undefined;
+}
 export interface PricingRes {
-    amount?: number;
-    currencyValues?: {
-        [key: string]: MoneyRes;
-    } | undefined;
-    locked?: boolean;
+    price?: PriceRes | undefined;
     priceRules?: PricingRuleRes[] | undefined;
 }
-export interface PricingRuleRes {
+export interface PriceRes {
     amount?: number;
     currencyValues?: {
         [key: string]: MoneyRes;
     } | undefined;
     locked?: boolean;
+}
+export interface PricingRuleRes {
+    price?: PriceRes | undefined;
     fundDimensions?: FundDimensionValuesRes | undefined;
 }
 export interface FundDimensionValuesRes {
@@ -230,6 +217,21 @@ export interface FundDimensionValuesRes {
     dimension2?: string | undefined;
     dimension3?: string | undefined;
     dimension4?: string | undefined;
+}
+export interface FeedbackSchemeRes {
+    name?: string | undefined;
+    id?: string | undefined;
+    allowedGivingTypes?: GivingType[] | undefined;
+    customFields?: FeedbackCustomFieldDefinitionRes[] | undefined;
+    fundDimensionOptions?: FundDimensionOptionsRes | undefined;
+    pricing?: PricingRes | undefined;
+}
+export interface FeedbackCustomFieldDefinitionRes {
+    type?: FeedbackCustomFieldType | undefined;
+    alias?: string | undefined;
+    name?: string | undefined;
+    required?: boolean;
+    textMaxLength?: number | undefined;
 }
 export interface SponsorshipDurationRes {
     name?: string | undefined;
@@ -241,10 +243,7 @@ export interface SponsorshipSchemeRes {
     id?: string | undefined;
     allowedGivingTypes?: GivingType[] | undefined;
     allowedDurations?: SponsorshipDuration[] | undefined;
-    dimension1Options?: FundDimensionValueRes[] | undefined;
-    dimension2Options?: FundDimensionValueRes[] | undefined;
-    dimension3Options?: FundDimensionValueRes[] | undefined;
-    dimension4Options?: FundDimensionValueRes[] | undefined;
+    fundDimensionOptions?: FundDimensionOptionsRes | undefined;
     components?: SponsorshipComponentRes[] | undefined;
 }
 export interface SponsorshipComponentRes {
@@ -253,15 +252,9 @@ export interface SponsorshipComponentRes {
     pricing?: PricingRes | undefined;
     mandatory?: boolean;
 }
-export interface PriceRes {
-    amount?: number;
-    currencyValues?: {
-        [key: string]: MoneyRes;
-    } | undefined;
-    locked?: boolean;
-}
 export interface PriceCriteria {
     donationItem?: string | undefined;
+    feedbackScheme?: string | undefined;
     sponsorshipComponent?: string | undefined;
     fundDimensions?: FundDimensionValuesReq | undefined;
 }

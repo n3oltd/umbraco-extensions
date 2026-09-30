@@ -35,6 +35,16 @@ public class ContentHelper : IContentHelper {
         _publishedContentTypeCache = publishedContentTypeCache;
     }
 
+    public IReadOnlyList<IContent> GetAllOfType(string contentTypeAlias) {
+        var contentType = _contentTypeService.Value.Get(contentTypeAlias);
+
+        if (contentType == null) {
+            return [];
+        }
+
+        return GetAllPagedContent(contentType.Id, _contentService.Value.GetPagedOfType);
+    }
+
     public IReadOnlyList<IContent> GetAncestors(IContent content) {
         var list = new List<IContent>();
 
@@ -48,7 +58,7 @@ public class ContentHelper : IContentHelper {
     }
 
     public IReadOnlyList<IContent> GetChildren(IContent content) {
-        return GetAllPagedContent(content, GetPagedChildren);
+        return GetAllPagedContent(content.Id, GetPagedChildren);
     }
 
     public ContentProperties GetContentProperties(IContent content, string culture = null) {
@@ -134,8 +144,6 @@ public class ContentHelper : IContentHelper {
             return default;
         }
 
-        // Block editor converters dereference owner.ContentType for every block, and the content type is all they
-        // read from it.
         owner ??= new PublishedElement(publishedContentType,
                                        Guid.NewGuid(),
                                        new Dictionary<string, object>(),
@@ -153,7 +161,7 @@ public class ContentHelper : IContentHelper {
     }
     
     public IReadOnlyList<IContent> GetDescendants(IContent content, IQuery<IContent> query = null) {
-        return GetAllPagedContent(content, _contentService.Value.GetPagedDescendants, query);
+        return GetAllPagedContent(content.Id, _contentService.Value.GetPagedDescendants, query);
     }
 
     public IReadOnlyList<T> GetPublishedAncestors<T>(IContent content) where T : IPublishedContent {
@@ -168,7 +176,7 @@ public class ContentHelper : IContentHelper {
         return GetDescendants(content).Select(x => _contentLocator.Value.ById<T>(x.Key)).ToList();
     }
 
-    private IReadOnlyList<IContent> GetAllPagedContent(IContent content,
+    private IReadOnlyList<IContent> GetAllPagedContent(int id,
                                                        GetPagedContent getPagedContent,
                                                        IQuery<IContent> query = null) {
         var descendants = new List<IContent>();
@@ -177,7 +185,7 @@ public class ContentHelper : IContentHelper {
         var pageSize = 100;
 
         while (true) {
-            descendants.AddRange(getPagedContent(content.Id, pageIndex, pageSize, out var totalRecords, query));
+            descendants.AddRange(getPagedContent(id, pageIndex, pageSize, out var totalRecords, query));
 
             if ((pageIndex + 1) * pageSize >= totalRecords) {
                 break;

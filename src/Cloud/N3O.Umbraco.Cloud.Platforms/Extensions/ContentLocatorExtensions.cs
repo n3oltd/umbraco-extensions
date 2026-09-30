@@ -1,4 +1,4 @@
-using Flurl;
+﻿using Flurl;
 using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
@@ -18,6 +18,24 @@ public static class ContentLocatorExtensions {
             campaignUrl.AppendPathSegment(campaignSlug);
 
             return campaignUrl;
+        } else {
+            return null;
+        }
+    }
+
+    public static string GetCrowdfundingCampaignPath(this IContentCache contentCache,
+                                                     ISlugHelper slugHelper,
+                                                     string name) {
+        var crowdfundingCampaignPage = contentCache.Special(PlatformsSpecialPages.CrowdfundingCampaign);
+
+        if (crowdfundingCampaignPage.HasValue()) {
+            var crowdfundingCampaignSlug = slugHelper.GenerateSlug(name);
+            var crowdfundingCampaignUrl = new Url(crowdfundingCampaignPage.RelativeUrl());
+
+            crowdfundingCampaignUrl.RemovePathSegment();
+            crowdfundingCampaignUrl.AppendPathSegment(crowdfundingCampaignSlug);
+
+            return crowdfundingCampaignUrl;
         } else {
             return null;
         }

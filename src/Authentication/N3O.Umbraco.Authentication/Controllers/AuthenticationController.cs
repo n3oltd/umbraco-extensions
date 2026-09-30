@@ -36,8 +36,14 @@ public class AuthenticationController : SurfaceController {
     [HttpGet("signout")]
     public async Task<IActionResult> HandleLogout([FromQuery] string returnUrl) {
         await _signInManager.SignOutAsync(HttpContext);
-        
-        return Redirect(returnUrl ?? HttpContext.Request.Headers.Referer);
+
+        var redirectUrl = returnUrl ?? HttpContext.Request.Headers.Referer.ToString();
+
+        if (!Url.IsLocalUrl(redirectUrl)) {
+            redirectUrl = "/";
+        }
+
+        return Redirect(redirectUrl);
     }
     
     [HttpGet("password/reset")]

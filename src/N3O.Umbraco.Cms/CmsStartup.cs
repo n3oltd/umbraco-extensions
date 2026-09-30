@@ -53,6 +53,9 @@ public abstract class CmsStartup {
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+        UseSecurityHeaders(app);
+        app.UseMiddleware<NotFoundCacheControlMiddleware>();
+
         if (env.IsProduction()) {
             app.UseHsts();
         } else {
@@ -61,7 +64,10 @@ public abstract class CmsStartup {
 
         app.UseRewriter(GetRewriteOptions());
         
+        var staticFileCachePolicy = app.ApplicationServices.GetRequiredService<StaticFileCachePolicy>();
+
         var staticFileOptions = new StaticFileOptions();
+        staticFileOptions.OnPrepareResponse = staticFileCachePolicy.Apply;
         ConfigureStaticFiles(staticFileOptions);
         RevalidateBackofficePlugins(staticFileOptions);
 
@@ -101,9 +107,6 @@ public abstract class CmsStartup {
     protected virtual void ConfigureMiddleware(IUmbracoApplicationBuilderContext umbraco) { }
     protected virtual void ConfigureStaticFiles(StaticFileOptions staticFileOptions) { }
 
-    // Our plugin bundles are rebuilt in place under filenames that never change, so without Cache-Control the
-    // browser falls back to heuristic freshness and can run a stale bundle for hours. Other packages' App_Plugins
-    // folders include assets public pages load, which keep their caching.
     private static void RevalidateBackofficePlugins(StaticFileOptions staticFileOptions) {
         var configured = staticFileOptions.OnPrepareResponse;
 
@@ -130,5 +133,30 @@ public abstract class CmsStartup {
         rules.Do(x => options.Rules.Add(x));
 
         return options;
+    }
+
+    private void UseSecurityHeaders(IApplicationBuilder app) {
+        app.Use((context, next) => {
+            context.Response.OnStarting(() => {
+                var headers = context.Response.Headers;
+
+                if (!headers.ContainsKey("X-Content-Type-Options")) {
+                    headers["X-Content-Type-Options"] = "nosniff";
+                }
+
+                if (!headers.ContainsKey("X-Frame-Options")) {
+                    // Not DENY: backoffice preview frames the front end.
+                    headers["X-Frame-Options"] = "SAMEORIGIN";
+                }
+
+                if (!headers.ContainsKey("Referrer-Policy")) {
+                    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+                }
+
+                return Task.CompletedTask;
+            });
+
+            return next(context);
+        });
     }
 }

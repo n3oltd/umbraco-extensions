@@ -51,5 +51,5 @@ public class OfferingPublished : CloudContentPublished {
         return Task.FromResult<object>(offeringReq);
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.Offerings;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.Offerings;
 }

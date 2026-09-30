@@ -47,8 +47,8 @@ public class PropertyContainerBuilder : IPropertyContainerBuilder {
     }
 
     public string Alias => _parent == null
-                           ? Name.ToSafeAlias(_shortStringHelper)
-                           : $"{_parent.Alias}/{Name.ToSafeAlias(_shortStringHelper)}";
+                           ? Name.ToSafeAlias(_shortStringHelper, true)
+                           : $"{_parent.Alias}/{Name.ToSafeAlias(_shortStringHelper, true)}";
 
     public IReadOnlyList<PropertyContainerBuilder> Children => _children;
     public bool IsTab { get; }

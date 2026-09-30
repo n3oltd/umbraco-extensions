@@ -1,12 +1,12 @@
-using Flurl;
+using N3O.Umbraco.Cloud.Exceptions;
 using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Search;
 using N3O.Umbraco.Search.Models;
 using N3O.Umbraco.Utilities;
-using NodaTime;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -19,38 +19,40 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
 
     private readonly ICdnClient _cdnClient;
     private readonly IUrlBuilder _urlBuilder;
-    private readonly IClock _clock;
     private readonly ICampaignOfferingVisibility _visibility;
 
     public CampaignOfferingsSitemapEntriesProvider(ICdnClient cdnClient,
                                                    IUrlBuilder urlBuilder,
-                                                   IClock clock,
                                                    ICampaignOfferingVisibility visibility) {
         _cdnClient = cdnClient;
         _urlBuilder = urlBuilder;
-        _clock = clock;
         _visibility = visibility;
     }
 
     public async Task<IEnumerable<SitemapEntry>> GetEntriesAsync(CancellationToken cancellationToken = default) {
         var entries = new List<SitemapEntry>();
 
-        var today = _clock.GetCurrentInstant().InUtc().Date;
+        _cdnClient.EvictSubscriptionContent(SubscriptionFiles.Campaigns);
 
-        var publishedCampaigns = await _cdnClient.DownloadSubscriptionContentAsync<PublishedCampaigns>(SubscriptionFiles.Campaigns,
-                                                                                                       JsonSerializers.JsonProvider,
-                                                                                                       cancellationToken);
+        var campaigns = await _cdnClient.DownloadPublishedContentAsync<PublishedCampaigns>(PublishedFileKinds.Subscription,
+                                                                                          SubscriptionFiles.Campaigns.Filename,
+                                                                                          JsonSerializers.JsonProvider,
+                                                                                          cancellationToken);
 
-        foreach (var publishedCampaign in publishedCampaigns.OrEmpty(x => x.Campaigns)) {
+        if (campaigns.Error || campaigns.NotFound) {
+            throw new PublishedContentUnavailableException(campaigns.Path);
+        }
+
+        foreach (var publishedCampaign in campaigns.Content.OrEmpty(x => x.Campaigns)) {
             if (!_visibility.IsVisible(publishedCampaign)) {
                 continue;
             }
 
-            AddSitemapEntry(entries, publishedCampaign.Url, today);
+            AddSitemapEntry(entries, publishedCampaign.Url);
 
             foreach (var publishedOffering in publishedCampaign.Offerings.OrEmpty()) {
                 if (_visibility.IsVisible(publishedOffering)) {
-                    AddSitemapEntry(entries, publishedOffering.Url, today);
+                    AddSitemapEntry(entries, publishedOffering.Url);
                 }
             }
         }
@@ -58,28 +60,13 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
         return entries;
     }
 
-    private void AddSitemapEntry(List<SitemapEntry> entries, Uri publishedUrl, LocalDate today) {
-        var url = RebaseOnSiteRoot(publishedUrl);
+    private void AddSitemapEntry(List<SitemapEntry> entries, Uri publishedUrl) {
+        var url = publishedUrl.RebaseOnSiteRoot(_urlBuilder);
 
         if (!url.HasValue()) {
             return;
         }
 
-        entries.Add(new SitemapEntry(url, null, AppealsSection, today, null));
-    }
-
-    private string RebaseOnSiteRoot(Uri url) {
-        if (!url.HasValue()) {
-            return null;
-        }
-
-        var rootUrl = _urlBuilder.Root();
-        var rebasedUrl = new Url(url.IsAbsoluteUri ? url.AbsolutePath : url.OriginalString);
-
-        rebasedUrl.Scheme = rootUrl.Scheme;
-        rebasedUrl.Host = rootUrl.Host;
-        rebasedUrl.Port = rootUrl.Port;
-
-        return rebasedUrl;
+        entries.Add(new SitemapEntry(url, null, AppealsSection, null, null));
     }
 }

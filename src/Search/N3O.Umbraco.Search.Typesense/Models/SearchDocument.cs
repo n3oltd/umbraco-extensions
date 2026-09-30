@@ -14,7 +14,7 @@ public abstract class SearchDocument : Value {
 
     [Field("culture", FieldType.String, false, true, facet: true)]
     public string Culture { get; set; }
-    
+
     public static string GetId(Guid contentKey, string culture) {
         return culture.HasValue() ? $"{contentKey}_{culture}" : contentKey.ToString();
     }

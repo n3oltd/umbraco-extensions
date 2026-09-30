@@ -53,6 +53,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The allocation intent for the donation
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AllocationIntentReq
     {
@@ -82,6 +85,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("platformsContribution", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PlatformsContributionInfoReq PlatformsContribution { get; set; }
 
+        /// <summary>
+        /// Any notes to store against the allocation
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
@@ -108,10 +114,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The boolean content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class BooleanContentReq
     {
 
+        /// <summary>
+        /// The boolean value
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Value { get; set; }
 
@@ -141,6 +153,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The campaign the contribution was made towards
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CampaignInfoReq
     {
@@ -148,15 +163,24 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
+        /// <summary>
+        /// The campaign reference
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("reference", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Reference { get; set; }
 
     }
 
+    /// <summary>
+    /// The order in which the campaign is shown
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CampaignOrderReq
     {
 
+        /// <summary>
+        /// The position in the order
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("order", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Order { get; set; }
 
@@ -166,9 +190,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class CampaignReq
     {
 
+        /// <summary>
+        /// The name of the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Any notes about the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
@@ -223,6 +253,27 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// One of 'hcaptcha', 'recaptcha', 'turnstile'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum CaptchaType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"hcaptcha")]
+        Hcaptcha = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"recaptcha")]
+        Recaptcha = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"turnstile")]
+        Turnstile = 2,
+
+    }
+
+    /// <summary>
+    /// The cart item the donation form creates
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CartItemReq
     {
@@ -250,12 +301,21 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("tags", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public TagCollectionReq Tags { get; set; }
 
+        /// <summary>
+        /// The notes for the item
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
+        /// <summary>
+        /// The client state stored with the item
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("state", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public object State { get; set; }
 
+        /// <summary>
+        /// The data attached to the item by cart extensions
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("extensionsData", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public object ExtensionsData { get; set; }
 
@@ -301,6 +361,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The giving options for the campaign
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ConnectGivingOptionsReq
     {
@@ -312,6 +375,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public MoneyReq Value { get; set; }
 
+        /// <summary>
+        /// Whether to send a confirmation each time a payment is collected
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("paymentConfirmations", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? PaymentConfirmations { get; set; }
 
@@ -323,6 +389,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The options for regular giving
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ConnectRegularGivingOptionsReq
     {
@@ -360,6 +429,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The options for scheduled giving
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ConnectScheduledGivingOptionsReq
     {
@@ -367,9 +439,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("scheduleId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string ScheduleId { get; set; }
 
+        /// <summary>
+        /// The name of the start date used
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("startDateName", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string StartDateName { get; set; }
 
+        /// <summary>
+        /// The name of the split preset used
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("presetName", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string PresetName { get; set; }
 
@@ -378,18 +456,30 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The content of the campaign page
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ContentReq
     {
 
+        /// <summary>
+        /// The alias of the schema the content follows
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("schemaAlias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SchemaAlias { get; set; }
 
+        /// <summary>
+        /// The content of the properties
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("properties", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<PropertyContentReq> Properties { get; set; }
 
     }
 
+    /// <summary>
+    /// The details used to create the campaign
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreateCampaignReq
     {
@@ -398,9 +488,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public CampaignType? Type { get; set; }
 
+        /// <summary>
+        /// The name of the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Any notes about the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
@@ -415,27 +511,45 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details used to create the cross-sell
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreateCrossSellReq
     {
 
+        /// <summary>
+        /// The name of the cross-sell
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
     }
 
+    /// <summary>
+    /// The details used to create the offering
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CreateOfferingReq
     {
 
+        /// <summary>
+        /// The name of the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Any notes about the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
     }
 
+    /// <summary>
+    /// The cross-sell the contribution came from
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CrossSellInfoReq
     {
@@ -443,6 +557,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
+        /// <summary>
+        /// The name of the cross-sell
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
@@ -452,15 +569,24 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class CrossSellReq
     {
 
+        /// <summary>
+        /// The name of the cross-sell
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
     }
 
+    /// <summary>
+    /// The targeting that determines where the cross-sell is shown
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CrossSellTargetingReq
     {
 
+        /// <summary>
+        /// The campaigns the cross-sell is shown on
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("campaigns", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> Campaigns { get; set; }
 
@@ -485,6 +611,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The crowdfunder the contribution was made to
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CrowdfunderInfoReq
     {
@@ -492,11 +621,17 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
+        /// <summary>
+        /// The crowdfunder reference
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("reference", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Reference { get; set; }
 
     }
 
+    /// <summary>
+    /// The crowdfunding team the contribution was made to
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CrowdfundingTeamInfoReq
     {
@@ -504,13 +639,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
+        /// <summary>
+        /// The crowdfunding team reference
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("reference", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Reference { get; set; }
 
     }
 
     /// <summary>
-    /// One of 'AED', 'AFN', 'ALL', 'AMD', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BOV', 'BRL', 'BSD', 'BTC', 'BTN', 'BWP', 'BYN', 'BZD', 'CAD', 'CDF', 'CHE', 'CHF', 'CHW', 'CLF', 'CLP', 'CNY', 'COP', 'COU', 'CRC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP', 'ERN', 'ETB', 'ETH', 'EUR', 'FJD', 'FKP', 'GBP', 'GEL', 'GHS', 'GIP', 'GMD', 'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HTG', 'HUF', 'IDR', 'ILS', 'INR', 'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT', 'LAK', 'LBP', 'LKR', 'LRD', 'LSL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRU', 'MUR', 'MVR', 'MWK', 'MXN', 'MXV', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLE', 'SOS', 'SRD', 'SSP', 'STN', 'SVC', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX', 'USD', 'USN', 'UYI', 'UYU', 'UYW', 'UZS', 'VED', 'VES', 'VND', 'VUV', 'WST', 'XAD', 'XAF', 'XAG', 'XAU', 'XBA', 'XBB', 'XBC', 'XBD', 'XCD', 'XCG', 'XDR', 'XOF', 'XPD', 'XPF', 'XPT', 'XSU', 'XTS', 'XUA', 'XXX', 'YER', 'ZAR', 'ZMW', 'ZWG'
+    /// The currency
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum Currency
@@ -1058,46 +1196,73 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details used to create or update the custom element
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CustomElementReqDonationButtonReq
     {
 
+        /// <summary>
+        /// The name of the custom element
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
         [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public DonationButtonReq Data { get; set; }
 
+        /// <summary>
+        /// Whether to activate the custom element
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("activate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Activate { get; set; }
 
     }
 
+    /// <summary>
+    /// The details used to create or update the custom element
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CustomElementReqDonationFormReq
     {
 
+        /// <summary>
+        /// The name of the custom element
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
         [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public DonationFormReq Data { get; set; }
 
+        /// <summary>
+        /// Whether to activate the custom element
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("activate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Activate { get; set; }
 
     }
 
+    /// <summary>
+    /// The details used to create or update the custom element
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CustomElementReqDonationPopupReq
     {
 
+        /// <summary>
+        /// The name of the custom element
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
         [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public DonationPopupReq Data { get; set; }
 
+        /// <summary>
+        /// Whether to activate the custom element
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("activate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Activate { get; set; }
 
@@ -1151,12 +1316,117 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The date and time content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DateTimeContentReq
     {
 
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Value { get; set; }
+
+    }
+
+    /// <summary>
+    /// One of '1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '2', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '3', '30', '31', '4', '5', '6', '7', '8', '9'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum DayOfMonth
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"1")]
+        _1 = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"10")]
+        _10 = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"11")]
+        _11 = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"12")]
+        _12 = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"13")]
+        _13 = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"14")]
+        _14 = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"15")]
+        _15 = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"16")]
+        _16 = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"17")]
+        _17 = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"18")]
+        _18 = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"19")]
+        _19 = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"2")]
+        _2 = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"20")]
+        _20 = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"21")]
+        _21 = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"22")]
+        _22 = 14,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"23")]
+        _23 = 15,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"24")]
+        _24 = 16,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"25")]
+        _25 = 17,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"26")]
+        _26 = 18,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"27")]
+        _27 = 19,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"28")]
+        _28 = 20,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"29")]
+        _29 = 21,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"3")]
+        _3 = 22,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"30")]
+        _30 = 23,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"31")]
+        _31 = 24,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"4")]
+        _4 = 25,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"5")]
+        _5 = 26,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"6")]
+        _6 = 27,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"7")]
+        _7 = 28,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"8")]
+        _8 = 29,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"9")]
+        _9 = 30,
 
     }
 
@@ -1190,6 +1460,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the existing feedback to donate to
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonateToFeedbackIntentReq
     {
@@ -1199,6 +1472,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the existing qurbani to donate to
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonateToQurbaniIntentReq
     {
@@ -1208,6 +1484,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the existing sponsorship to donate to
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonateToSponsorshipIntentReq
     {
@@ -1235,10 +1514,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The settings for the custom element
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationButtonReq
     {
 
+        /// <summary>
+        /// The text shown on the button
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("text", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Text { get; set; }
 
@@ -1254,10 +1539,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The content shown on the campaign's donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationFormContentReq
     {
 
+        /// <summary>
+        /// The summary shown on the donation form
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("summary", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Summary { get; set; }
 
@@ -1272,22 +1563,37 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The notes field on the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationFormNotesFieldReq
     {
 
+        /// <summary>
+        /// Indicates whether the notes field is shown on the donation form
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("visible", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Visible { get; set; }
 
+        /// <summary>
+        /// The label for the notes field
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("label", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Label { get; set; }
 
     }
 
+    /// <summary>
+    /// The options for the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationFormOptionsReq
     {
 
+        /// <summary>
+        /// The suggested amounts offered for each gift type
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("suggestedAmounts", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<DonationFormSuggestedAmountsReq> SuggestedAmounts { get; set; }
 
@@ -1302,15 +1608,24 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The Qurbani options for the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationFormQurbaniOptionsReq
     {
 
+        /// <summary>
+        /// The Qurbani categories available on the donation form
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("categories", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> Categories { get; set; }
 
     }
 
+    /// <summary>
+    /// The settings for the custom element
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationFormReq
     {
@@ -1323,6 +1638,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The initial state of the cross-sell's donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationFormStateReq
     {
@@ -1333,6 +1651,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("options", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public DonationFormOptionsReq Options { get; set; }
 
+        /// <summary>
+        /// Any additional data to accompany the donation form state
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("extensions", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public object Extensions { get; set; }
 
@@ -1342,9 +1663,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class DonationFormSuggestedAmountReq
     {
 
+        /// <summary>
+        /// The amount suggested on the donation form
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public double? Amount { get; set; }
 
+        /// <summary>
+        /// The description shown alongside the suggested amount
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Description { get; set; }
 
@@ -1358,11 +1685,17 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public GiftType? GiftType { get; set; }
 
+        /// <summary>
+        /// The suggested donation amounts
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("amounts", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<DonationFormSuggestedAmountReq> Amounts { get; set; }
 
     }
 
+    /// <summary>
+    /// The filters suggested on the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationFormSuggestedFiltersReq
     {
@@ -1390,10 +1723,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The settings for the custom element
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DonationPopupReq
     {
 
+        /// <summary>
+        /// The number of seconds to wait before showing the popup
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("timeDelaySeconds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? TimeDelaySeconds { get; set; }
 
@@ -1543,23 +1882,35 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The EditorJs content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class EditorJsContentReq
     {
 
+        /// <summary>
+        /// The version of the editor that produced the content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("version", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Version { get; set; }
 
+        /// <summary>
+        /// The time the content was last saved
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("time", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public long? Time { get; set; }
 
+        /// <summary>
+        /// The blocks that make up the content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("blocks", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<object> Blocks { get; set; }
 
     }
 
     /// <summary>
-    /// One of 'contentFeed', 'createCrowdfunderButton', 'donationButton', 'donationForm', 'donationPopup', 'featuredCrowdfunders'
+    /// One of 'contentFeed', 'createCrowdfunderButton', 'donationButton', 'donationForm', 'donationPopup', 'featuredCampaigns', 'featuredCrowdfunders'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ElementCategory
@@ -1580,100 +1931,100 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopup")]
         DonationPopup = 4,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCampaigns")]
+        FeaturedCampaigns = 5,
+
         [System.Runtime.Serialization.EnumMember(Value = @"featuredCrowdfunders")]
-        FeaturedCrowdfunders = 5,
+        FeaturedCrowdfunders = 6,
 
     }
 
     /// <summary>
-    /// One of 'almostCompleteFeaturedCrowdfunders', 'contentFeedCollection', 'contentFeedCustom', 'contentFeedLibrary', 'createCrowdfunderButton', 'createCrowdfunderButtonCampaign', 'createCrowdfunderButtonCustom', 'customFeaturedCrowdfunders', 'donationButton', 'donationButtonCampaign', 'donationButtonCustom', 'donationButtonMenu', 'donationButtonOffering', 'donationForm', 'donationFormCampaign', 'donationFormCustom', 'donationFormMenu', 'donationFormOffering', 'donationPopup', 'donationPopupCampaign', 'donationPopupCustom', 'donationPopupMenu', 'donationPopupOffering', 'endingSoonFeaturedCrowdfunders', 'popularFeaturedCrowdfunders', 'recentlyStartedFeaturedCrowdfunders'
+    /// One of 'contentFeedCollection', 'contentFeedCustom', 'contentFeedLibrary', 'createCrowdfunderButton', 'createCrowdfunderButtonCampaign', 'createCrowdfunderButtonCustom', 'customFeaturedCrowdfunders', 'donationButton', 'donationButtonCampaign', 'donationButtonCustom', 'donationButtonMenu', 'donationButtonOffering', 'donationForm', 'donationFormCampaign', 'donationFormCustom', 'donationFormMenu', 'donationFormOffering', 'donationPopup', 'donationPopupCampaign', 'donationPopupCustom', 'donationPopupMenu', 'donationPopupOffering', 'featuredCampaigns', 'featuredCampaignsCustom', 'featuredCrowdfunders'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ElementKind
     {
 
-        [System.Runtime.Serialization.EnumMember(Value = @"almostCompleteFeaturedCrowdfunders")]
-        AlmostCompleteFeaturedCrowdfunders = 0,
-
         [System.Runtime.Serialization.EnumMember(Value = @"contentFeedCollection")]
-        ContentFeedCollection = 1,
+        ContentFeedCollection = 0,
 
         [System.Runtime.Serialization.EnumMember(Value = @"contentFeedCustom")]
-        ContentFeedCustom = 2,
+        ContentFeedCustom = 1,
 
         [System.Runtime.Serialization.EnumMember(Value = @"contentFeedLibrary")]
-        ContentFeedLibrary = 3,
+        ContentFeedLibrary = 2,
 
         [System.Runtime.Serialization.EnumMember(Value = @"createCrowdfunderButton")]
-        CreateCrowdfunderButton = 4,
+        CreateCrowdfunderButton = 3,
 
         [System.Runtime.Serialization.EnumMember(Value = @"createCrowdfunderButtonCampaign")]
-        CreateCrowdfunderButtonCampaign = 5,
+        CreateCrowdfunderButtonCampaign = 4,
 
         [System.Runtime.Serialization.EnumMember(Value = @"createCrowdfunderButtonCustom")]
-        CreateCrowdfunderButtonCustom = 6,
+        CreateCrowdfunderButtonCustom = 5,
 
         [System.Runtime.Serialization.EnumMember(Value = @"customFeaturedCrowdfunders")]
-        CustomFeaturedCrowdfunders = 7,
+        CustomFeaturedCrowdfunders = 6,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButton")]
-        DonationButton = 8,
+        DonationButton = 7,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonCampaign")]
-        DonationButtonCampaign = 9,
+        DonationButtonCampaign = 8,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonCustom")]
-        DonationButtonCustom = 10,
+        DonationButtonCustom = 9,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonMenu")]
-        DonationButtonMenu = 11,
+        DonationButtonMenu = 10,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationButtonOffering")]
-        DonationButtonOffering = 12,
+        DonationButtonOffering = 11,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationForm")]
-        DonationForm = 13,
+        DonationForm = 12,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormCampaign")]
-        DonationFormCampaign = 14,
+        DonationFormCampaign = 13,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormCustom")]
-        DonationFormCustom = 15,
+        DonationFormCustom = 14,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormMenu")]
-        DonationFormMenu = 16,
+        DonationFormMenu = 15,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationFormOffering")]
-        DonationFormOffering = 17,
+        DonationFormOffering = 16,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopup")]
-        DonationPopup = 18,
+        DonationPopup = 17,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupCampaign")]
-        DonationPopupCampaign = 19,
+        DonationPopupCampaign = 18,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupCustom")]
-        DonationPopupCustom = 20,
+        DonationPopupCustom = 19,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupMenu")]
-        DonationPopupMenu = 21,
+        DonationPopupMenu = 20,
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopupOffering")]
-        DonationPopupOffering = 22,
+        DonationPopupOffering = 21,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"endingSoonFeaturedCrowdfunders")]
-        EndingSoonFeaturedCrowdfunders = 23,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCampaigns")]
+        FeaturedCampaigns = 22,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"popularFeaturedCrowdfunders")]
-        PopularFeaturedCrowdfunders = 24,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCampaignsCustom")]
+        FeaturedCampaignsCustom = 23,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"recentlyStartedFeaturedCrowdfunders")]
-        RecentlyStartedFeaturedCrowdfunders = 25,
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCrowdfunders")]
+        FeaturedCrowdfunders = 24,
 
     }
 
     /// <summary>
-    /// One of 'element_checkoutComplete', 'element_crowdfunderContributions', 'element_crowdfunderLogin', 'element_crowdfunderOwner', 'element_crowdfunderProgress', 'element_featuredCrowdfunders'
+    /// One of 'element_checkoutComplete', 'element_crowdfunderContributions', 'element_crowdfunderLogin', 'element_crowdfunderOwner', 'element_crowdfunderProgress', 'element_featuredCampaigns', 'element_featuredCrowdfunders'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum ElementPlatformsComposition
@@ -1694,11 +2045,173 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [System.Runtime.Serialization.EnumMember(Value = @"element_crowdfunderProgress")]
         Element_crowdfunderProgress = 4,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"element_featuredCampaigns")]
+        Element_featuredCampaigns = 5,
+
         [System.Runtime.Serialization.EnumMember(Value = @"element_featuredCrowdfunders")]
-        Element_featuredCrowdfunders = 5,
+        Element_featuredCrowdfunders = 6,
 
     }
 
+    /// <summary>
+    /// One of 'account', 'accountAttachment', 'accountEmail', 'accountPreference', 'accountTelephone', 'beneficiary', 'beneficiaryDeactivation', 'call', 'callAppointment', 'campaign', 'cart', 'checkout', 'contribution', 'credential', 'crowdfunder', 'crowdfundingTeam', 'customCorrespondence', 'deposit', 'digitalAd', 'digitalAdCampaign', 'donation', 'donationAllocation', 'donationItem', 'emailCampaign', 'emailList', 'feedback', 'feedbackProject', 'household', 'managedContent', 'payment', 'pledge', 'pledgeAllocation', 'project', 'qurbani', 'qurbaniItem', 'regularGiving', 'regularGivingAllocation', 'report', 'role', 'scheduledGiving', 'scheduledGivingAllocation', 'sitePage', 'sponsorship', 'tags', 'taxReliefDeclaration', 'taxReliefStatement', 'taxReliefSubmission', 'transformRule', 'user'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum EntityType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"account")]
+        Account = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountAttachment")]
+        AccountAttachment = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountEmail")]
+        AccountEmail = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountPreference")]
+        AccountPreference = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"accountTelephone")]
+        AccountTelephone = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"beneficiary")]
+        Beneficiary = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"beneficiaryDeactivation")]
+        BeneficiaryDeactivation = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"call")]
+        Call = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"callAppointment")]
+        CallAppointment = 8,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"campaign")]
+        Campaign = 9,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"cart")]
+        Cart = 10,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"checkout")]
+        Checkout = 11,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"contribution")]
+        Contribution = 12,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"credential")]
+        Credential = 13,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfunder")]
+        Crowdfunder = 14,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfundingTeam")]
+        CrowdfundingTeam = 15,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"customCorrespondence")]
+        CustomCorrespondence = 16,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"deposit")]
+        Deposit = 17,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"digitalAd")]
+        DigitalAd = 18,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"digitalAdCampaign")]
+        DigitalAdCampaign = 19,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"donation")]
+        Donation = 20,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"donationAllocation")]
+        DonationAllocation = 21,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"donationItem")]
+        DonationItem = 22,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"emailCampaign")]
+        EmailCampaign = 23,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"emailList")]
+        EmailList = 24,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"feedback")]
+        Feedback = 25,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"feedbackProject")]
+        FeedbackProject = 26,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"household")]
+        Household = 27,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"managedContent")]
+        ManagedContent = 28,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"payment")]
+        Payment = 29,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"pledge")]
+        Pledge = 30,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"pledgeAllocation")]
+        PledgeAllocation = 31,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"project")]
+        Project = 32,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"qurbani")]
+        Qurbani = 33,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"qurbaniItem")]
+        QurbaniItem = 34,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"regularGiving")]
+        RegularGiving = 35,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"regularGivingAllocation")]
+        RegularGivingAllocation = 36,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"report")]
+        Report = 37,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"role")]
+        Role = 38,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"scheduledGiving")]
+        ScheduledGiving = 39,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"scheduledGivingAllocation")]
+        ScheduledGivingAllocation = 40,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"sitePage")]
+        SitePage = 41,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"sponsorship")]
+        Sponsorship = 42,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"tags")]
+        Tags = 43,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"taxReliefDeclaration")]
+        TaxReliefDeclaration = 44,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"taxReliefStatement")]
+        TaxReliefStatement = 45,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"taxReliefSubmission")]
+        TaxReliefSubmission = 46,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"transformRule")]
+        TransformRule = 47,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"user")]
+        User = 48,
+
+    }
+
+    /// <summary>
+    /// The details of the feedback allocation to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class FeedbackIntentReq
     {
@@ -1780,19 +2293,34 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The fund dimensions suggested on the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class FundDimensionsFilterReq
     {
 
+        /// <summary>
+        /// The value of the first fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension1", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension1 { get; set; }
 
+        /// <summary>
+        /// The value of the second fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension2", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension2 { get; set; }
 
+        /// <summary>
+        /// The value of the third fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension3", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension3 { get; set; }
 
+        /// <summary>
+        /// The value of the fourth fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension4", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension4 { get; set; }
 
@@ -1816,24 +2344,42 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The fund dimension values of the allocation
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class FundDimensionValuesReq
     {
 
+        /// <summary>
+        /// The value of the first fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension1", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension1 { get; set; }
 
+        /// <summary>
+        /// The value of the second fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension2", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension2 { get; set; }
 
+        /// <summary>
+        /// The value of the third fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension3", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension3 { get; set; }
 
+        /// <summary>
+        /// The value of the fourth fund dimension
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension4", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension4 { get; set; }
 
     }
 
+    /// <summary>
+    /// The details of the fund allocation to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class FundIntentReq
     {
@@ -1873,6 +2419,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The goal the contribution was made towards
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class GoalInfoReq
     {
@@ -1894,6 +2443,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The donation being paid for
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class IdReferenceReq
     {
@@ -1906,19 +2458,34 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The crop applied to the image
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ImageCropReq
     {
 
+        /// <summary>
+        /// The height of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("height", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Height { get; set; }
 
+        /// <summary>
+        /// The width of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("width", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Width { get; set; }
 
+        /// <summary>
+        /// The X coordinate of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("x", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? X { get; set; }
 
+        /// <summary>
+        /// The Y coordinate of the crop area
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("y", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Y { get; set; }
 
@@ -1942,30 +2509,66 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The image shown on the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ImageSimpleContentReq
     {
 
+        /// <summary>
+        /// The URL of the source image file
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("sourceFile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SourceFile { get; set; }
 
+        /// <summary>
+        /// The alternative text for the image
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("altText", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string AltText { get; set; }
 
         [Newtonsoft.Json.JsonProperty("main", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public ImageSimpleProcessingReq Main { get; set; }
 
+        /// <summary>
+        /// The processing applied to each additional image
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("additional", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.IDictionary<string, ImageSimpleProcessingReq> Additional { get; set; }
 
     }
 
+    /// <summary>
+    /// The processing applied to the main image
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ImageSimpleProcessingReq
     {
 
         [Newtonsoft.Json.JsonProperty("crop", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public ImageCropReq Crop { get; set; }
+
+    }
+
+    /// <summary>
+    /// One of 'attention', 'informational', 'negative', 'positive'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum LookupSignal
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"attention")]
+        Attention = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"informational")]
+        Informational = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"negative")]
+        Negative = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"positive")]
+        Positive = 3,
 
     }
 
@@ -2006,6 +2609,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The value of the giving
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class MoneyReq
     {
@@ -2014,6 +2620,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public Currency? Currency { get; set; }
 
+        /// <summary>
+        /// The amount
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("amount", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public double? Amount { get; set; }
 
@@ -2040,28 +2649,42 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     {
 
         [Newtonsoft.Json.JsonProperty("collectionDay", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string CollectionDay { get; set; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public DayOfMonth? CollectionDay { get; set; }
 
     }
 
+    /// <summary>
+    /// The options for monthly based giving
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class MonthlyGivingOptionsReq
     {
 
         [Newtonsoft.Json.JsonProperty("collectionDay", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string CollectionDay { get; set; }
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public DayOfMonth? CollectionDay { get; set; }
 
     }
 
+    /// <summary>
+    /// The multiple nested content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NestedContentMultipleContentReq
     {
 
+        /// <summary>
+        /// The nested content elements
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("elements", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<ContentReq> Elements { get; set; }
 
     }
 
+    /// <summary>
+    /// The single nested content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NestedContentSingleContentReq
     {
@@ -2071,6 +2694,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the new donation
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NewDonationReq
     {
@@ -2084,29 +2710,47 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class NewFeedbackIntentCustomFieldReq
     {
 
+        /// <summary>
+        /// The alias of the custom field
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("alias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Alias { get; set; }
 
+        /// <summary>
+        /// The boolean value of the custom field
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("bool", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Bool { get; set; }
 
         [Newtonsoft.Json.JsonProperty("date", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Date { get; set; }
 
+        /// <summary>
+        /// The text value of the custom field
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("text", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Text { get; set; }
 
     }
 
+    /// <summary>
+    /// The custom fields to set on the feedback
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NewFeedbackIntentCustomFieldsReq
     {
 
+        /// <summary>
+        /// The custom fields to set on the feedback
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("entries", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<NewFeedbackIntentCustomFieldReq> Entries { get; set; }
 
     }
 
+    /// <summary>
+    /// The details of the feedback to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NewFeedbackIntentReq
     {
@@ -2119,6 +2763,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the new giving
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NewGivingReq
     {
@@ -2131,6 +2778,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the qurbani to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NewQurbaniIntentReq
     {
@@ -2141,6 +2791,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("season", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Season { get; set; }
 
+        /// <summary>
+        /// The names of the individuals on whose behalf the qurbani is performed
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("onBehalfOf", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> OnBehalfOf { get; set; }
 
@@ -2150,9 +2803,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class NewSponsorshipCommitmentComponentIntentReq
     {
 
+        /// <summary>
+        /// The name of the component
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// The quantity of the component that is sponsored
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("quantity", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Quantity { get; set; }
 
@@ -2161,6 +2820,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the sponsorship commitment to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NewSponsorshipCommitmentIntentReq
     {
@@ -2176,15 +2838,24 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("fundDimensions", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public FundDimensionValuesReq FundDimensions { get; set; }
 
+        /// <summary>
+        /// The components of the sponsorship commitment
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("components", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<NewSponsorshipCommitmentComponentIntentReq> Components { get; set; }
 
     }
 
+    /// <summary>
+    /// The details of the sponsorship to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class NewSponsorshipIntentReq
     {
 
+        /// <summary>
+        /// The reference of the beneficiary to sponsor
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("beneficiaryReference", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string BeneficiaryReference { get; set; }
 
@@ -2194,11 +2865,17 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("commitment", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public NewSponsorshipCommitmentIntentReq Commitment { get; set; }
 
+        /// <summary>
+        /// Whether to create the sponsorship as tentative
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("tentative", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Tentative { get; set; }
 
     }
 
+    /// <summary>
+    /// The offering the contribution was made towards
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class OfferingInfoReq
     {
@@ -2206,24 +2883,39 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
+        /// <summary>
+        /// The name of the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
     }
 
+    /// <summary>
+    /// The options for the offering
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class OfferingOptionsReq
     {
 
+        /// <summary>
+        /// Indicates whether crowdfunders can be created for the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("allowCrowdfunding", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? AllowCrowdfunding { get; set; }
 
     }
 
+    /// <summary>
+    /// The order in which the offering is shown
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class OfferingOrderReq
     {
 
+        /// <summary>
+        /// The position in the order
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("order", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Order { get; set; }
 
@@ -2266,6 +2958,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The page the contribution was made on
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PageInfoReq
     {
@@ -2273,16 +2968,22 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
+        /// <summary>
+        /// The name of the page
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// The URL of the page
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("url", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Url { get; set; }
 
     }
 
     /// <summary>
-    /// One of 'page_campaign', 'page_crowdfunder', 'page_offering'
+    /// One of 'page_campaign', 'page_crowdfunder', 'page_crowdfundingCampaign', 'page_offering'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum PagePlatformsComposition
@@ -2294,11 +2995,17 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [System.Runtime.Serialization.EnumMember(Value = @"page_crowdfunder")]
         Page_crowdfunder = 1,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"page_crowdfundingCampaign")]
+        Page_crowdfundingCampaign = 2,
+
         [System.Runtime.Serialization.EnumMember(Value = @"page_offering")]
-        Page_offering = 2,
+        Page_offering = 3,
 
     }
 
+    /// <summary>
+    /// The details of the payment for an existing donation
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PayForDonationReq
     {
@@ -2327,7 +3034,7 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     /// <summary>
-    /// One of 'contentFeed', 'donationFormBeneficiaryCaption', 'donationFormBeneficiaryProfile', 'element', 'featuredCrowdfunders', 'mobileAppView', 'page', 'view'
+    /// One of 'contentFeed', 'donationFormBeneficiaryCaption', 'donationFormBeneficiaryProfile', 'element', 'featuredCampaigns', 'featuredCrowdfunders', 'mobileAppView', 'page', 'view'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum PlatformsCompositionType
@@ -2345,20 +3052,26 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [System.Runtime.Serialization.EnumMember(Value = @"element")]
         Element = 3,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"featuredCampaigns")]
+        FeaturedCampaigns = 4,
+
         [System.Runtime.Serialization.EnumMember(Value = @"featuredCrowdfunders")]
-        FeaturedCrowdfunders = 4,
+        FeaturedCrowdfunders = 5,
 
         [System.Runtime.Serialization.EnumMember(Value = @"mobileAppView")]
-        MobileAppView = 5,
+        MobileAppView = 6,
 
         [System.Runtime.Serialization.EnumMember(Value = @"page")]
-        Page = 6,
+        Page = 7,
 
         [System.Runtime.Serialization.EnumMember(Value = @"view")]
-        View = 7,
+        View = 8,
 
     }
 
+    /// <summary>
+    /// The Platforms contribution the allocation came from
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PlatformsContributionInfoReq
     {
@@ -2366,9 +3079,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("contributionId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string ContributionId { get; set; }
 
+        /// <summary>
+        /// The name of the contributor
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// The comment left by the contributor
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("comment", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Comment { get; set; }
 
@@ -2392,6 +3111,27 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("crowdfunder", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public CrowdfunderInfoReq Crowdfunder { get; set; }
+
+    }
+
+    /// <summary>
+    /// One of 'campaign', 'crowdfunder', 'crowdfundingCampaign', 'offering'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsPage
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"campaign")]
+        Campaign = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfunder")]
+        Crowdfunder = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"crowdfundingCampaign")]
+        CrowdfundingCampaign = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"offering")]
+        Offering = 3,
 
     }
 
@@ -2441,7 +3181,7 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     /// <summary>
-    /// One of 'campaigns', 'crossSells', 'donationButton', 'donationForm', 'donationMenu', 'donationPopup', 'elements'
+    /// One of 'campaigns', 'crossSells', 'donationButton', 'donationForm', 'donationMenu', 'donationPopup'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum PlatformsSubscriptionFile
@@ -2464,9 +3204,6 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [System.Runtime.Serialization.EnumMember(Value = @"donationPopup")]
         DonationPopup = 5,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"elements")]
-        Elements = 6,
 
     }
 
@@ -2547,9 +3284,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public PropertyEditor? Editor { get; set; }
 
+        /// <summary>
+        /// The alias of the property
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("alias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Alias { get; set; }
 
+        /// <summary>
+        /// The editor-specific data for the property
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("data", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public object Data { get; set; }
 
@@ -2732,6 +3475,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class PublishedCampaign
     {
 
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string CreatedAt { get; set; }
+
         [Newtonsoft.Json.JsonProperty("offerings", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<PublishedOffering> Offerings { get; set; }
 
@@ -2820,6 +3566,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
 
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
@@ -2926,6 +3676,19 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("googleAnalytics", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PublishedCampaignGoogleAnalytics GoogleAnalytics { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublishedCaptchaSettings
+    {
+
+        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public CaptchaType? Type { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("siteKey", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string SiteKey { get; set; }
 
     }
 
@@ -3128,6 +3891,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
+
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
@@ -3155,6 +3922,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
 
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
@@ -3273,6 +4044,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
+
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
@@ -3359,6 +4134,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
+
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
@@ -3397,6 +4176,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
+
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
@@ -3408,6 +4191,42 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("elements", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<PublishedElement> Elements { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublishedFeaturedCampaigns
+    {
+
+        [Newtonsoft.Json.JsonProperty("title", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Title { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("compositionAlias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string CompositionAlias { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("search", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public PublishedTypesenseSearch Search { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public PlatformsPage? Page { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("elementKind", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public ElementKind? ElementKind { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("embedCode", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string EmbedCode { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Name { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Id { get; set; }
 
     }
 
@@ -3815,15 +4634,6 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PublishedPlatformsCaptchaSettings
-    {
-
-        [Newtonsoft.Json.JsonProperty("recaptchaSiteKey", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string RecaptchaSiteKey { get; set; }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PublishedPlatformsContributionInfo
     {
 
@@ -4070,6 +4880,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("signal", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public LookupSignal? Signal { get; set; }
+
         [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Id { get; set; }
 
@@ -4315,6 +5129,21 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublishedTypesenseSearch
+    {
+
+        [Newtonsoft.Json.JsonProperty("collectionId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string CollectionId { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("pageSize", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? PageSize { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("parameters", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public SearchParameters Parameters { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PublishedVideoContent
     {
 
@@ -4330,6 +5159,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The Qurbani options for the campaign
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class QurbaniCampaignOptionsReq
     {
@@ -4360,6 +5192,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the qurbani allocation to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class QurbaniIntentReq
     {
@@ -4372,6 +5207,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The range of seconds of the video to play
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Rangelong
     {
@@ -4695,12 +5533,219 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The description shown on the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class RichTextContentReq
     {
 
+        /// <summary>
+        /// The HTML content
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("html", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Html { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class SearchParameters
+    {
+
+        [Newtonsoft.Json.JsonProperty("q", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Q { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("query_by", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Query_by { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("prefix", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Prefix { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("infix", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Infix { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("preset", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Preset { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("pre_segmented_query", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Pre_segmented_query { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("stopwords", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Stopwords { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("validate_field_names", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Validate_field_names { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter_by", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Filter_by { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("enable_lazy_filter", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Enable_lazy_filter { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("max_filter_by_candidates", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Max_filter_by_candidates { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("query_by_weights", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Query_by_weights { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("text_match_type", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Text_match_type { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("sort_by", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Sort_by { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("prioritize_exact_match", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Prioritize_exact_match { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("prioritize_token_position", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Prioritize_token_position { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("prioritize_num_matching_fields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Prioritize_num_matching_fields { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("pinned_hits", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Pinned_hits { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("hidden_hits", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Hidden_hits { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("filter_curated_hits", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Filter_curated_hits { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("enable_overrides", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Enable_overrides { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("curation_tags", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Curation_tags { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("enable_synonyms", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Enable_synonyms { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("synonym_prefix", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Synonym_prefix { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Page { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("per_page", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Per_page { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("offset", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Offset { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("limit", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Limit { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("max_hits", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Max_hits { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("facet_by", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Facet_by { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("facet_strategy", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Facet_strategy { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("max_facet_values", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Max_facet_values { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("facet_query", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Facet_query { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("facet_query_num_typos", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Facet_query_num_typos { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("facet_return_parent", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Facet_return_parent { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("facet_sample_percent", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Facet_sample_percent { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("facet_sample_threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Facet_sample_threshold { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("include_fields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Include_fields { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exclude_fields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Exclude_fields { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("highlight_full_fields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Highlight_full_fields { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("highlight_fields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Highlight_fields { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("highlight_affix_num_tokens", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Highlight_affix_num_tokens { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("highlight_start_tag", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Highlight_start_tag { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("highlight_end_tag", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Highlight_end_tag { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("snippet_threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Snippet_threshold { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("limit_hits", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Limit_hits { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("search_cutoff_ms", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Search_cutoff_ms { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("max_candidates", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Max_candidates { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("exhaustive_search", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Exhaustive_search { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("num_typos", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Num_typos { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("min_len_1typo", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Min_len_1typo { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("min_len_2typo", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Min_len_2typo { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("split_join_tokens", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Split_join_tokens { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("typo_tokens_threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Typo_tokens_threshold { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("drop_tokens_threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Drop_tokens_threshold { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("drop_tokens_mode", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string Drop_tokens_mode { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("enable_typos_for_numerical_tokens", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Enable_typos_for_numerical_tokens { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("enable_typos_for_alpha_numerical_tokens", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Enable_typos_for_alpha_numerical_tokens { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("synonym_num_typos", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Synonym_num_typos { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("use_cache", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Use_cache { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("cache_ttl", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Cache_ttl { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("remote_embedding_timeout_ms", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Remote_embedding_timeout_ms { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("rerank_hybrid_matches", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Rerank_hybrid_matches { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("remote_embedding_num_tries", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Remote_embedding_num_tries { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("enable_analytics", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Enable_analytics { get; set; }
 
     }
 
@@ -4776,6 +5821,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details of the sponsorship allocation to create
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class SponsorshipIntentReq
     {
@@ -4788,10 +5836,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The icon shown on the donation form
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class SvgContentReq
     {
 
+        /// <summary>
+        /// The URL of the source SVG file
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("sourceFile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SourceFile { get; set; }
 
@@ -4807,15 +5861,21 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Value { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("isSystem", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool? IsSystem { get; set; }
+        [Newtonsoft.Json.JsonProperty("isAutoPopulated", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? IsAutoPopulated { get; set; }
 
     }
 
+    /// <summary>
+    /// The tags applied to the item
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TagCollectionReq
     {
 
+        /// <summary>
+        /// The tags in the collection
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("entries", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<TagReq> Entries { get; set; }
 
@@ -4825,17 +5885,29 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     public partial class TagReq
     {
 
+        /// <summary>
+        /// The key of the tag
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("key", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Key { get; set; }
 
+        /// <summary>
+        /// The value of the tag
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("value", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Value { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("isSystem", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public bool? IsSystem { get; set; }
+        /// <summary>
+        /// Indicates whether the tag is populated automatically
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("isAutoPopulated", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? IsAutoPopulated { get; set; }
 
     }
 
+    /// <summary>
+    /// The telethon options for the campaign
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TelethonCampaignOptionsReq
     {
@@ -4848,52 +5920,85 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The textarea content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TextareaContentReq
     {
 
+        /// <summary>
+        /// The text
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("text", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Text { get; set; }
 
     }
 
+    /// <summary>
+    /// The textbox content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TextboxContentReq
     {
 
+        /// <summary>
+        /// The text
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("text", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Text { get; set; }
 
     }
 
+    /// <summary>
+    /// The details used to update the campaign
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class UpdateCampaignReq
     {
 
+        /// <summary>
+        /// The slug for the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("slug", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Slug { get; set; }
 
         [Newtonsoft.Json.JsonProperty("order", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public CampaignOrderReq Order { get; set; }
 
+        /// <summary>
+        /// The badges shown on the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("badges", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> Badges { get; set; }
 
         [Newtonsoft.Json.JsonProperty("formContent", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public DonationFormContentReq FormContent { get; set; }
 
+        /// <summary>
+        /// The fundraising target for the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("target", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public double? Target { get; set; }
 
         [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public ContentReq Page { get; set; }
 
+        /// <summary>
+        /// Whether to activate the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("activate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Activate { get; set; }
 
+        /// <summary>
+        /// The name of the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Any notes about the campaign
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
@@ -4908,10 +6013,16 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details used to update the cross-sell
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class UpdateCrossSellReq
     {
 
+        /// <summary>
+        /// The order in which the cross-sell is shown
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("order", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Order { get; set; }
 
@@ -4928,24 +6039,39 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("formState", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public DonationFormStateReq FormState { get; set; }
 
+        /// <summary>
+        /// Whether to activate the cross-sell
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("activate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Activate { get; set; }
 
+        /// <summary>
+        /// The name of the cross-sell
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
     }
 
+    /// <summary>
+    /// The details used to update the offering
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class UpdateOfferingReq
     {
 
+        /// <summary>
+        /// The slug for the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("slug", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Slug { get; set; }
 
         [Newtonsoft.Json.JsonProperty("order", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public OfferingOrderReq Order { get; set; }
 
+        /// <summary>
+        /// The badges shown on the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("badges", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> Badges { get; set; }
 
@@ -4961,32 +6087,53 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("page", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public ContentReq Page { get; set; }
 
+        /// <summary>
+        /// Whether to activate the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("activate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Activate { get; set; }
 
+        /// <summary>
+        /// The name of the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// Any notes about the offering
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("notes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Notes { get; set; }
 
     }
 
+    /// <summary>
+    /// The simple video content
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class VideoSimpleContentReq
     {
 
+        /// <summary>
+        /// The URL of the source video file
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("sourceFile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string SourceFile { get; set; }
 
         [Newtonsoft.Json.JsonProperty("main", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public VideoSimpleProcessingReq Main { get; set; }
 
+        /// <summary>
+        /// The processing applied to each additional video
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("additional", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.IDictionary<string, VideoSimpleProcessingReq> Additional { get; set; }
 
     }
 
+    /// <summary>
+    /// The processing applied to the main video
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class VideoSimpleProcessingReq
     {
@@ -5017,25 +6164,46 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The details used to create or update the view
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ViewReq
     {
 
+        /// <summary>
+        /// The alias for the view
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("alias", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Alias { get; set; }
 
+        /// <summary>
+        /// The name of the view
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }
 
+        /// <summary>
+        /// The labels an account must have for the view to be shown
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("showToLabels", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> ShowToLabels { get; set; }
 
+        /// <summary>
+        /// The labels that prevent the view being shown to an account
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("hideFromLabels", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> HideFromLabels { get; set; }
 
+        /// <summary>
+        /// The priority used when choosing between matching views
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("priority", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Priority { get; set; }
 
+        /// <summary>
+        /// Whether to activate the view
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("activate", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Activate { get; set; }
 
@@ -5085,6 +6253,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// The options for weekly based giving
+    /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class WeeklyGivingOptionsReq
     {

@@ -16,7 +16,7 @@
         <ContentTargetFolders>.</ContentTargetFolders>
         <Authors>N3O Ltd</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>TODO</Description>
+        <Description>Adds an Umbraco Engage segment rule that is satisfied while a telethon campaign is on air.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
         <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>
@@ -38,6 +38,7 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\..\Marketing\N3O.Umbraco.Marketing\N3O.Umbraco.Marketing.csproj" />
+        <ProjectReference Include="..\..\N3O.Umbraco.ReactRuntime\N3O.Umbraco.ReactRuntime.csproj" />
         <ProjectReference Include="..\N3O.Umbraco.Cloud.Platforms\N3O.Umbraco.Cloud.Platforms.csproj" />
     </ItemGroup>
     <ItemGroup>

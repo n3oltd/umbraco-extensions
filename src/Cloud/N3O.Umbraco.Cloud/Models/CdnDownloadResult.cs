@@ -3,18 +3,19 @@
 namespace N3O.Umbraco.Cloud.Models;
 
 public class CdnDownloadResult {
-    private static readonly Duration MaxAge = Duration.FromMinutes(5);
-    private static readonly Duration NotFoundRetryInterval = Duration.FromMinutes(15);
     private static readonly Duration ErrorRetryInterval = Duration.FromSeconds(10);
 
-    // No result stays put for longer than this, so anything older refreshes of its own accord.
-    public static readonly Duration MaxRetention = NotFoundRetryInterval;
-
-    private CdnDownloadResult(bool success, bool error, string content, Instant timestamp, Duration retryInterval) {
+    private CdnDownloadResult(bool success,
+                              bool error,
+                              string content,
+                              Instant timestamp,
+                              Duration maxAge,
+                              Duration retryInterval) {
         Success = success;
         Error = error;
         Content = content;
         Timestamp = timestamp;
+        MaxAge = maxAge;
         RetryInterval = retryInterval;
     }
 
@@ -24,6 +25,7 @@ public class CdnDownloadResult {
     public Instant Timestamp { get; }
     public bool NotFound => !Success && !Error;
 
+    private Duration MaxAge { get; }
     private Duration RetryInterval { get; }
 
     public bool CanRetry(IClock clock) {
@@ -35,7 +37,7 @@ public class CdnDownloadResult {
             return age > RetryInterval;
         }
     }
-    
+
     public bool IsExpired(IClock clock) {
         if (Success) {
             var age = clock.GetCurrentInstant() - Timestamp;
@@ -45,30 +47,30 @@ public class CdnDownloadResult {
             return false;
         }
     }
-    
+
     public bool WasInvalidated(Instant? invalidatedAt) {
         if (invalidatedAt == null) {
             return false;
         }
-        
+
         return Timestamp <= invalidatedAt.Value;
     }
 
-    public static CdnDownloadResult ForNotFound(Instant startedAt) {
-        return new CdnDownloadResult(false, false, null, startedAt, NotFoundRetryInterval);
+    public static CdnDownloadResult ForNotFound(Instant startedAt, Duration retryInterval) {
+        return new CdnDownloadResult(false, false, null, startedAt, Duration.Zero, retryInterval);
     }
 
     // A not-found that displaces content the CDN was serving may be a blip mid-publish rather than a
     // deletion, and until it is retried the page it replaced is gone.
     public static CdnDownloadResult ForNotFoundReplacingSuccess(Instant startedAt) {
-        return new CdnDownloadResult(false, false, null, startedAt, ErrorRetryInterval);
+        return new CdnDownloadResult(false, false, null, startedAt, Duration.Zero, ErrorRetryInterval);
     }
 
     public static CdnDownloadResult ForError(Instant startedAt) {
-        return new CdnDownloadResult(false, true, null, startedAt, ErrorRetryInterval);
+        return new CdnDownloadResult(false, true, null, startedAt, Duration.Zero, ErrorRetryInterval);
     }
 
-    public static CdnDownloadResult ForSuccess(Instant startedAt, string content) {
-        return new CdnDownloadResult(true, false, content, startedAt, Duration.Zero);
+    public static CdnDownloadResult ForSuccess(Instant startedAt, string content, Duration maxAge) {
+        return new CdnDownloadResult(true, false, content, startedAt, maxAge, Duration.Zero);
     }
 }

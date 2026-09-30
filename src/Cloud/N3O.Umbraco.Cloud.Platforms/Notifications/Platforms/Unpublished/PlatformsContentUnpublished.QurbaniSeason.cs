@@ -22,5 +22,5 @@ public class QurbaniSeasonUnpublished : CloudContentUnpublished {
         return req;
     }
 
-    protected override string HookId => PlatformsConstants.WebhookIds.QurbaniSeason;
+    protected override string HookId => PlatformsConstants.Webhooks.HookIds.QurbaniSeason;
 }
