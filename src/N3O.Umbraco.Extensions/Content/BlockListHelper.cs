@@ -8,8 +8,6 @@ using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Content;
 
-// The editor migration rewrites Nested Content properties to Block Lists, whose items wrap their element rather
-// than being one. Single block mode answers one item instead of a list.
 public static class BlockListHelper {
     public static IEnumerable<IPublishedElement> GetElements(object propertyValue) {
         if (propertyValue is BlockListItem item) {
@@ -38,8 +36,6 @@ public static class BlockListHelper {
         return true;
     }
 
-    // Nested Content answered a single element only when a property allowed exactly one item, and the editor
-    // migration carries those limits onto the Block List.
     private static IPublishedElement GetSingleElement(IPublishedProperty property, object propertyValue) {
         if (propertyValue is BlockListItem item) {
             return item.Content;
