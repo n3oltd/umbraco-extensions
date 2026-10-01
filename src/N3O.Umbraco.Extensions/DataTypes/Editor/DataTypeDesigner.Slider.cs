@@ -49,4 +49,6 @@ public class SliderDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.Slider;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Slider";
 }

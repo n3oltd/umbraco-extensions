@@ -56,4 +56,6 @@ public class DecimalDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.Decimal;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Decimal";
 }

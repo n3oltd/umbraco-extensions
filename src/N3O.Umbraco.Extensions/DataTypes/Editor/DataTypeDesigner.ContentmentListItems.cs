@@ -55,4 +55,6 @@ public class ContentmentListItemsDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => "Umbraco.Community.Contentment.ListItems";
+
+    protected override string EditorUiAlias => "Umb.Contentment.PropertyEditorUi.ListItems";
 }

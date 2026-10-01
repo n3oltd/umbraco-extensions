@@ -29,4 +29,6 @@ public class DropdownDataTypeDesigner : ValueListDataTypeDesigner<DropdownDataTy
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.DropDownListFlexible;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Dropdown";
 }

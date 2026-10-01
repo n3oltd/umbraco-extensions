@@ -89,4 +89,6 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => "Umbraco.Community.Contentment.DataList";
+
+    protected override string EditorUiAlias => "Umb.Contentment.PropertyEditorUi.DataList";
 }

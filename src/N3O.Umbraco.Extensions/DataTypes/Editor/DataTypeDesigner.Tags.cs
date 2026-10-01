@@ -31,4 +31,6 @@ public class TagsDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.Tags;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Tags";
 }

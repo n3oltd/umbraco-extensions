@@ -19,4 +19,6 @@ public class DateTimeDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.DateTime;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.DatePicker";
 }

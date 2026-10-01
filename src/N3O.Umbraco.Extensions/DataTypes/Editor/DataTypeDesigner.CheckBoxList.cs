@@ -13,4 +13,6 @@ public class CheckBoxListDataTypeDesigner : ValueListDataTypeDesigner<CheckBoxLi
         : base(dataTypeService, dataTypeContainerService, propertyEditors, configurationEditorJsonSerializer) { }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.CheckBoxList;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.CheckBoxList";
 }

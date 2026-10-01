@@ -71,4 +71,6 @@ public class MediaPickerDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.MediaPicker3;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.MediaPicker";
 }

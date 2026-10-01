@@ -55,6 +55,8 @@ public class ColorPickerDataTypeDesigner : DataTypeDesigner {
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.ColorPicker;
 
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.ColorPicker";
+
     private string ToHex(string color) {
         return color.TrimStart('#');
     }

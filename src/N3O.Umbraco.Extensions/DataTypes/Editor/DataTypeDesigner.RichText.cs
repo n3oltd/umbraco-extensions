@@ -62,6 +62,8 @@ public class RichTextDataTypeDesigner : DataTypeDesigner {
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.RichText;
 
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Tiptap";
+
     private RichTextConfiguration.RichTextBlockConfiguration BuildBlock(string elementTypeAlias) {
         var block = new RichTextConfiguration.RichTextBlockConfiguration();
 
