@@ -142,7 +142,7 @@ public static class Program {
         Console.WriteLine("                (NestedContent) shape to the v4 (Block Editor) shape, in the same");
         Console.WriteLine("                transaction. Off by default. Run offline on the v13 DB before the");
         Console.WriteLine("                13->17 + Perplex-4 upgrade (Perplex v4 ships no content migration).");
-        Console.WriteLine("                Also wraps bare <iframe>/<object> embeds and converts umb:// local");
+        Console.WriteLine("                Also wraps bare <iframe>/<object>/<button> and converts umb:// local");
         Console.WriteLine("                links in the rich text inside Perplex values, for the v17 editor.");
         Console.WriteLine("  --verbose     Log each data type / property value processed");
         Console.WriteLine("  --log <path>  Write the full log to this file (default: nc-migrate-<UTC>.log in");

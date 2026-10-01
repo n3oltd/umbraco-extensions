@@ -77,8 +77,8 @@ rendering both, because Razor prints the stored HTML as-is; only the back office
 `Umbraco.TinyMCE` / `Umbraco.RichText` value it finds in a Perplex value, including those in Block Lists nested
 inside a block, and it also runs on values that are already v4.
 
-- **Embeds.** Tiptap has no node for a bare `<iframe>` or `<object>`, so the editor drops it on load, and saving
-  the page deletes it for good. Each one is wrapped in `<span class="umb-embed-holder">`, which is how v17 stores
+- **Embeds.** Tiptap has no node for a bare `<iframe>`, `<object>` or `<button>`, so the editor drops it on load
+  (a button keeps only its text), and saving the page makes the loss permanent. Each one is wrapped in `<span class="umb-embed-holder">`, which is how v17 stores
   an embed: its Embedded Media node (inline, enabled on every migrated rich text data type) keeps whatever is
   inside verbatim. Embeds already inside a holder are left alone.
 - **Local links.** Umbraco's V15 local link migration converts `/{localLink:umb://document/…}` to

@@ -12,7 +12,7 @@ public static class RichTextMarkupFixer {
     private const string EmbedHolderClass = "umb-embed-holder";
 
     private static readonly HashSet<string> EmbedTags =
-        new(StringComparer.OrdinalIgnoreCase) { "iframe", "object" };
+        new(StringComparer.OrdinalIgnoreCase) { "button", "iframe", "object" };
 
     private static readonly HashSet<string> LinkEntityTypes =
         new(StringComparer.OrdinalIgnoreCase) { "document", "media" };
