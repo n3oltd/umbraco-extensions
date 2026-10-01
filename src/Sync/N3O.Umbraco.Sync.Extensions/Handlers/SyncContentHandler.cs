@@ -1,3 +1,5 @@
+using Jumoo.Processing.Core.Pipelines;
+using Jumoo.Processing.Core.Pipelines.Models;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Mediator;
@@ -7,13 +9,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Services;
 using uSync.Core;
 using uSync.Core.Dependency;
 using uSync.Core.Sync;
 using uSync.Publisher.Models;
 using uSync.Publisher.Process.Models;
+using uSync.Publisher.Publishers;
 using uSync.Publisher.Strategies.Models;
-using uSync.Publisher.Strategies.Processor;
 
 namespace N3O.Umbraco.Sync.Extensions.Handlers;
 
@@ -21,11 +24,18 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
     private static readonly string Document = global::Umbraco.Cms.Core.Constants.UdiEntityType.Document;
 
     private readonly IContentLocator _contentLocator;
-    private readonly PublisherProcessor _publisherProcessor;
+    private readonly IPipelineService _pipelineService;
+    private readonly SyncPublisherFactory _syncPublisherFactory;
+    private readonly IUserService _userService;
 
-    public SyncContentHandler(IContentLocator contentLocator, PublisherProcessor publisherProcessor) {
+    public SyncContentHandler(IContentLocator contentLocator,
+                              IPipelineService pipelineService,
+                              SyncPublisherFactory syncPublisherFactory,
+                              IUserService userService) {
         _contentLocator = contentLocator;
-        _publisherProcessor = publisherProcessor;
+        _pipelineService = pipelineService;
+        _syncPublisherFactory = syncPublisherFactory;
+        _userService = userService;
     }
 
     public async Task<None> Handle(SyncContentCommand req, CancellationToken cancellationToken) {
@@ -48,14 +58,29 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         options.PublisherOptions = new SyncPublisherOptions();
         options.PublisherOptions.PublishedDependencies = true;
 
-        var request = new PublisherActionRequest(requestId, requestId.ToString());
-        request.Server = req.Model.ServerAlias;
-        request.Mode = PublishMode.Push;
+        // uSync.Publisher refuses to create or process a pipeline without a back-office user holding
+        // uSync.UserPermission.Push, and a background job has no current user. uSync grants that permission to
+        // the admin group, which the super user belongs to.
+        var user = await _userService.GetAsync(global::Umbraco.Cms.Core.Constants.Security.SuperUserKey);
+        var publisher = _syncPublisherFactory.GetPublisherByServer(req.Model.ServerAlias);
 
-        var result = await _publisherProcessor.Process(request, options);
+        var createPipelineOptions = new CreatePipelineOptions();
+        createPipelineOptions.Alias = publisher.Processor;
+        createPipelineOptions.Strategy = publisher.GetStrategy(PublishMode.Push);
+        createPipelineOptions.User = user;
 
-        if (!result.Success) {
-            throw new Exception($"Sync of {contentId} failed with error: {result.Message}");
+        var pipeline = await _pipelineService.CreatePipeline(createPipelineOptions);
+
+        await _pipelineService.UpdateOptions(pipeline.Id, options, user);
+
+        // Each call runs one pipeline step. Waiting marks a step that would show a back-office screen, which
+        // processing moves past; Background means uSync's own queue finishes the push.
+        do {
+            pipeline = await _pipelineService.Process(pipeline.Id, user, requestId.ToString(), false);
+        } while (pipeline.State.Status is PipelineStatus.Running or PipelineStatus.Waiting);
+
+        if (pipeline.State.Status == PipelineStatus.Failed) {
+            throw new Exception($"Sync of {contentId} failed with error: {pipeline.Results?.Error?.Message}");
         }
 
         return None.Empty;
