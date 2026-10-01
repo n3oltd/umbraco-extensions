@@ -78,14 +78,14 @@ public static class UmbracoPropertyInfoExtensions {
             return false;
         }
     }
-
+    
     public static bool HasTimeFormat(this UmbracoPropertyInfo propertyInfo) {
         var format = propertyInfo.DataType
                                  .ConfigurationData
                                  .FirstOrDefault(x => x.Key.EqualsInvariant("format"))
                                  .Value as string;
 
-        // h or H in a format indicates a time component, and the date picker shows no time without a format
+        // The date picker shows no time when the format is absent or has no hour component.
         return format?.Contains("h", StringComparison.InvariantCultureIgnoreCase) == true;
     }
 }
