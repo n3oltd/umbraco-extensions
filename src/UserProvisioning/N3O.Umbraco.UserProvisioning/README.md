@@ -33,3 +33,12 @@ address another user already holds. A disable that such a request carries still 
 A directory group named in neither setting is refused, and a group named in both fails startup.
 `BearerToken` belongs in a secret store. `LogRequests` is off by default because request bodies
 carry names and email addresses.
+
+## Upgrading from Umbraco 13
+
+Umbraco 14 gives every back office user a new key, and a user's key is their SCIM `id`. On the first
+start with the endpoint enabled, a migration moves the stored external IDs, name parts and directory
+group memberships onto the new keys, so memberships the directory claimed are kept. The identity
+provider still holds the old IDs, which now answer 404, so clear its provisioning state and restart
+provisioning once the site is upgraded; it then matches each user again by `userName` and picks up
+the new IDs.

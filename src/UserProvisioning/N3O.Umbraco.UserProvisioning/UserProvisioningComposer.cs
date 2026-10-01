@@ -5,6 +5,7 @@ using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.UserProvisioning.Extensions;
 using N3O.Umbraco.UserProvisioning.Hosting;
+using N3O.Umbraco.UserProvisioning.Migrations;
 using N3O.Umbraco.UserProvisioning.Models;
 using N3O.Umbraco.UserProvisioning.Security;
 using N3O.Umbraco.UserProvisioning.Services;
@@ -33,6 +34,8 @@ public class UserProvisioningComposer : Composer {
         builder.Services.AddScoped<IScimState, ScimState>();
         builder.Services.AddScoped<IScimStore<ScimGroup>, UserGroupStore>();
         builder.Services.AddScoped<IScimStore<ScimUser>, UserStore>();
+
+        builder.Components().Append<UserProvisioningMigrationsComponent>();
 
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {
             var filter = new UmbracoPipelineFilter(UserProvisioningConstants.PipelineFilterName);
