@@ -1,5 +1,6 @@
 using N3O.Umbraco.Constants;
 using N3O.Umbraco.Entities;
+using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Json;
 using N3O.Umbraco.Types;
 using N3O.Umbraco.UserProvisioning.Entities;
@@ -53,12 +54,27 @@ public class ScimUserKeysMigration : AsyncMigrationBase {
             }
 
             var old = _jsonProvider.DeserializeObject<ScimUserState>(row.Json);
+            var existingRow = rows.SingleOrDefault(x => x.Id == key);
 
-            var state = ScimUserState.Create(new EntityId(key));
-            state.SetExternalId(old.ExternalId);
-            state.SetName(old.GivenName, old.FamilyName);
+            if (existingRow == null) {
+                var state = ScimUserState.Create(new EntityId(key));
+                state.SetExternalId(old.ExternalId);
+                state.SetName(old.GivenName, old.FamilyName);
 
-            Database.Insert(Tables.Entities.Name, Tables.Entities.PrimaryKey, false, ToRow(state));
+                Database.Insert(Tables.Entities.Name, Tables.Entities.PrimaryKey, false, ToRow(state));
+            } else {
+                var state = _jsonProvider.DeserializeObject<ScimUserState>(existingRow.Json);
+
+                if (!state.ExternalId.HasValue()) {
+                    state.SetExternalId(old.ExternalId);
+                }
+
+                if (!state.GivenName.HasValue() && !state.FamilyName.HasValue()) {
+                    state.SetName(old.GivenName, old.FamilyName);
+                }
+
+                await Database.UpdateAsync(ToRow(state));
+            }
 
             await Database.ExecuteAsync(Sql($"DELETE FROM {Tables.Entities.Name} WHERE Id = @0", row.Id));
         }

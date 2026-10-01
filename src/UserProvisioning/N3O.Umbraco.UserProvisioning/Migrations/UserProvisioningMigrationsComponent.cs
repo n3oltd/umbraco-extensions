@@ -29,7 +29,7 @@ public class UserProvisioningMigrationsComponent : IAsyncComponent {
 
     public async Task InitializeAsync(bool isRestarting, CancellationToken cancellationToken) {
         if (_runtimeState.Level == RuntimeLevel.Run) {
-            var migrationPlan = new MigrationPlan("N3O_UserProvisioning");
+            var migrationPlan = new MigrationPlan(UserProvisioningConstants.MigrationPlanName);
             migrationPlan.From(string.Empty).To<ScimUserKeysMigration>("v1");
 
             var upgrader = new Upgrader(migrationPlan);
