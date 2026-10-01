@@ -120,20 +120,23 @@ public class ContentHelper : IContentHelper {
     public TProperty GetConvertedValue<TConverter, TProperty>(string contentTypeAlias,
                                                               string propertyTypeAlias,
                                                               object propertyValue,
-                                                              IPublishedElement owner = null)
+                                                              IPublishedElement owner = null,
+                                                              bool preview = false)
         where TConverter : class, IPropertyValueConverter {
         return GetConvertedValue<TProperty>(typeof(TConverter),
                                             contentTypeAlias,
                                             propertyTypeAlias,
                                             propertyValue,
-                                            owner);
+                                            owner,
+                                            preview);
     }
 
     public TProperty GetConvertedValue<TProperty>(Type converterType,
                                                   string contentTypeAlias,
                                                   string propertyTypeAlias,
                                                   object propertyValue,
-                                                  IPublishedElement owner = null) {
+                                                  IPublishedElement owner = null,
+                                                  bool preview = false) {
         var converter = (IPropertyValueConverter) _serviceProvider.Value.GetRequiredService(converterType);
         var publishedContentType = _publishedContentTypeCache.Value.Get(_contentTypeService.Value, contentTypeAlias);
         var publishedPropertyType = publishedContentType?.GetPropertyType(propertyTypeAlias);
@@ -147,15 +150,15 @@ public class ContentHelper : IContentHelper {
         owner ??= new PublishedElement(publishedContentType,
                                        Guid.NewGuid(),
                                        new Dictionary<string, object>(),
-                                       false,
+                                       preview,
                                        new VariationContext());
 
-        var intermediate = converter.ConvertSourceToIntermediate(owner, publishedPropertyType, source, false);
+        var intermediate = converter.ConvertSourceToIntermediate(owner, publishedPropertyType, source, preview);
         var result = (TProperty) converter.ConvertIntermediateToObject(owner,
                                                                        publishedPropertyType,
                                                                        PropertyCacheLevel.None,
                                                                        intermediate,
-                                                                       false);
+                                                                       preview);
 
         return result;
     }

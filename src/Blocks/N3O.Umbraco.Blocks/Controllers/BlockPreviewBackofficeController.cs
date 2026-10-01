@@ -139,7 +139,8 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
             content.ContentType.Alias,
             propertyAlias,
             json,
-            content);
+            content,
+            preview: true);
 
         if (blockGridModel == null) {
             throw new BlockPreviewWarningException($"Property {propertyAlias.Quote()} is not a block grid on " +
