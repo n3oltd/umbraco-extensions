@@ -22,7 +22,10 @@ with its own Auth0 application, so the two can point at different tenants or con
         "M2M": { "ApiIdentifier": "<api identifier>" }
       }
     },
-    "BackOffice": { "Auth0": { } }
+    "BackOffice": {
+      "Auth0": { },
+      "AutoRedirect": true
+    }
   }
 }
 ```
@@ -33,3 +36,24 @@ application and they are not interchangeable. `AutoCreateDirectoryUser` creates 
 save when one does not already exist, which is how someone added directly in Umbraco becomes able to
 sign in; it is read from whichever of the two sections the account belongs to. With `Passwordless`
 set, the user is created without a password, so sign-in has to go through a passwordless connection.
+
+## Back office auto redirect
+
+`Authentication:BackOffice:AutoRedirect` defaults to `true`, which sends the back office login straight
+to Auth0 instead of showing the provider picker. It replaces v13's
+`AutoRedirectLoginToExternalProvider`, which no longer exists in v17, so a site whose composer set
+`AutoRedirectLoginToExternalProvider = !IsDevelopment()` must now set `AutoRedirect` to `false` in
+`appsettings.Development.json` to keep the login screen locally:
+
+```json
+{
+  "Authentication": {
+    "BackOffice": { "AutoRedirect": false }
+  }
+}
+```
+
+The v17 back office applies `autoRedirect` only in the `loggingIn` state; after a logout or a session
+timeout it shows the provider picker regardless
+([`app-auth.controller.ts`](https://github.com/umbraco/Umbraco-CMS/blob/release-17.3.5/src/Umbraco.Web.UI.Client/src/apps/app/app-auth.controller.ts),
+`makeAuthorizationRequest`).
