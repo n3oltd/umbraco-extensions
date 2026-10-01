@@ -76,11 +76,17 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         // Each call runs one pipeline step. Waiting marks a step that would show a back-office screen, which
         // processing moves past; Background means uSync's own queue finishes the push.
         do {
+            cancellationToken.ThrowIfCancellationRequested();
+
             pipeline = await _pipelineService.Process(pipeline.Id, user, requestId.ToString(), false);
         } while (pipeline.State.Status is PipelineStatus.Running or PipelineStatus.Waiting);
 
+        if (pipeline.State.Status is PipelineStatus.Completed or PipelineStatus.Failed) {
+            await _pipelineService.ClearPipeline(pipeline.Id, user);
+        }
+
         if (pipeline.State.Status == PipelineStatus.Failed) {
-            throw new Exception($"Sync of {contentId} failed with error: {pipeline.Results?.Error?.Message}");
+            throw new Exception($"Sync of {contentId} failed with error: {pipeline.Results.Error.Message}");
         }
 
         return None.Empty;
