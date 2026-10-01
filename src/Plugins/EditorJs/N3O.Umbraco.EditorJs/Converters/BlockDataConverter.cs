@@ -51,7 +51,7 @@ public abstract class BlockDataConverter<TData> : IBlockDataConverter where TDat
             return null;
         }
 
-        // Older content wraps the UDI in {localLink:...}, URL-encoded when it follows an absolute URL.
+        // Stored hrefs can wrap the UDI in {localLink:...}, URL-encoded when it follows an absolute URL.
         return Regex.Replace(text,
                              @"(<a\s+(?:[^>]*?\s+)?href="")(?:[^""]*?(?:\{|%7B)localLink:)?" +
                              @"(umb://[^""]*?)(?:\}|%7D)?""",
