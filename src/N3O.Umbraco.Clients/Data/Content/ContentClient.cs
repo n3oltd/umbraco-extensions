@@ -120,8 +120,8 @@ namespace N3O.Umbraco.Clients.Data.Content
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "umbraco/api/Content/{contentId}/children/find"
-                    urlBuilder_.Append("umbraco/api/Content/");
+                    // Operation Path: "umbraco/backoffice/api/Content/{contentId}/children/find"
+                    urlBuilder_.Append("umbraco/backoffice/api/Content/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(contentId, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/children/find");
 
@@ -244,8 +244,8 @@ namespace N3O.Umbraco.Clients.Data.Content
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "umbraco/api/Content/{contentId}/descendants/find"
-                    urlBuilder_.Append("umbraco/api/Content/");
+                    // Operation Path: "umbraco/backoffice/api/Content/{contentId}/descendants/find"
+                    urlBuilder_.Append("umbraco/backoffice/api/Content/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(contentId, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/descendants/find");
 
@@ -361,8 +361,8 @@ namespace N3O.Umbraco.Clients.Data.Content
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "umbraco/api/Content/{contentId}"
-                    urlBuilder_.Append("umbraco/api/Content/");
+                    // Operation Path: "umbraco/backoffice/api/Content/{contentId}"
+                    urlBuilder_.Append("umbraco/backoffice/api/Content/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(contentId, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
