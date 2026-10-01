@@ -1,5 +1,5 @@
 // Type stub for the Engage backoffice module that Engage serves through its import map. The
-// @umbraco-engage/backoffice npm package pins its own @umbraco-cms/backoffice version, so it is not installed.
+// @umbraco-engage/backoffice npm package peer-depends on exactly @umbraco-cms/backoffice 17.0.0, so it is not installed.
 
 declare module '@umbraco-engage/backoffice/personalization' {
     import type { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
@@ -19,10 +19,13 @@ declare module '@umbraco-engage/backoffice/personalization' {
         };
     }
 
-    export class UeSegmentRuleBaseElement extends UmbLitElement {
-        readonly: boolean;
+    export abstract class UeSegmentRuleBaseElement extends UmbLitElement {
+        readonly?: boolean;
         manifest?: UeSegmentRuleManifest;
         pending?: UeSegmentRuleValue;
         value?: UeSegmentRuleValue;
+
+        abstract renderReadOnly(): unknown;
+        abstract renderEditor(): unknown;
     }
 }
