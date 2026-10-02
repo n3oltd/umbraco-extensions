@@ -21,6 +21,10 @@ public static partial class UmbracoBuilderExtensions {
     
     public static IUmbracoBuilder AddAuth0MemberExternalLogins(this IUmbracoBuilder builder,
                                                                Action<MemberExternalLoginProviderOptions> configure = null) {
+        if (!builder.Config.GetMembersAuthenticationSection().Exists()) {
+            return builder;
+        }
+
         if (configure != null) {
             builder.Services.AddSingleton(configure);
         }
