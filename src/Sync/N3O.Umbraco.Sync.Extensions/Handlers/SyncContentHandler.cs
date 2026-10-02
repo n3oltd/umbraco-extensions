@@ -58,9 +58,7 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         options.PublisherOptions = new SyncPublisherOptions();
         options.PublisherOptions.PublishedDependencies = true;
 
-        // uSync.Publisher refuses to create or process a pipeline without a back-office user holding
-        // uSync.UserPermission.Push, and a background job has no current user. uSync grants that permission to
-        // the admin group, which the super user belongs to.
+        // Pipelines require a user with uSync's Push permission and a background job has none
         var user = await _userService.GetAsync(global::Umbraco.Cms.Core.Constants.Security.SuperUserKey);
         var publisher = _syncPublisherFactory.GetPublisherByServer(req.Model.ServerAlias);
 
@@ -73,8 +71,7 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
 
         await _pipelineService.UpdateOptions(pipeline.Id, options, user);
 
-        // Each call runs one pipeline step. Waiting marks a step that would show a back-office screen, which
-        // processing moves past; Background means uSync's own queue finishes the push.
+        // Process runs one step per call; Background means uSync's queue finishes the push
         do {
             cancellationToken.ThrowIfCancellationRequested();
 
