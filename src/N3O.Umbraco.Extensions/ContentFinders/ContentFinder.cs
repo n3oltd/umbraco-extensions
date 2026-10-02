@@ -49,7 +49,8 @@ public abstract class ContentFinder : IContentFinder {
             throw new Exception($"Found multiple content collections for {contentCollectionTypeAlias}: {contentCollections.Select(x => x.Id).ToCsv(true)}");
         }
     
-        var pagePath = pages.Single().RelativeUrl();
+        var culture = request.Culture;
+        var pagePath = GetRelativePath(pages.Single(), culture);
     
         var path = GetRequestedPath(request.Uri, pagePath);
 
@@ -58,9 +59,9 @@ public abstract class ContentFinder : IContentFinder {
         }
 
         var match = contentCollections.Single()
-                                      .Descendants()
+                                      .Descendants(culture)
                                      .Where(x => x.ContentType.Alias.EqualsInvariant(contentTypeAlias))
-                                     .FirstOrDefault(x => StrippedPath(x, pagePath).EqualsInvariant(path));
+                                     .FirstOrDefault(x => StrippedPath(x, pagePath, culture).EqualsInvariant(path));
 
         if (match != null) {
             request.SetPublishedContent(match);
@@ -71,8 +72,8 @@ public abstract class ContentFinder : IContentFinder {
         return Task.FromResult(false);
     }
 
-    protected string StrippedPath(IPublishedContent content, string strip) {
-        return content.RelativeUrl().Substring(strip.Length).RemoveLeadingSlashes();
+    protected string StrippedPath(IPublishedContent content, string strip, string culture = null) {
+        return GetRelativePath(content, culture).Substring(strip.Length).RemoveLeadingSlashes();
     }
 
     protected string GetRequestedPath(Uri url, string strip = null) {
@@ -88,4 +89,10 @@ public abstract class ContentFinder : IContentFinder {
     }
 
     protected IContentCache ContentCache { get; }
+
+    private string GetRelativePath(IPublishedContent content, string culture) {
+        var url = culture.HasValue() ? content.Url(culture, UrlMode.Relative) : content.RelativeUrl();
+
+        return Uri.UnescapeDataString(url);
+    }
 }
