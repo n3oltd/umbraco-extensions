@@ -47,7 +47,7 @@ public class CampaignContent : UmbracoContent<CampaignContent> {
     public void PopulateContributionInfo(ICdnClient cdnClient, PlatformsContributionInfoReq platformsContribution) {
         var publishedCampaign = cdnClient.DownloadPublishedContentAsync<PublishedCampaign>(PublishedFileKinds.Campaign,
                                                                                            $"{Key}.json",
-                                                                                           JsonSerializers.Simple)
+                                                                                           JsonSerializers.JsonProvider)
                                          .GetAwaiter().GetResult().Content;
 
         if (publishedCampaign == null) {
