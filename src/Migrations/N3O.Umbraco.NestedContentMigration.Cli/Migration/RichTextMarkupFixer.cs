@@ -11,7 +11,6 @@ namespace N3O.Umbraco.NestedContentMigration.Cli;
 public static class RichTextMarkupFixer {
     private const string EmbedDialogClass = "embeditem";
     private const string EmbedHolderClass = "umb-embed-holder";
-    private const int ExcerptLength = 120;
     private const string LocalLinkPatternText =
         @"^(?<lead>/?)(?<open>\{|%7B)localLink:(?<id>[^}%]*)(?:\}|%7D)(?<tail>.*)$";
     private const string StartTagPatternText =
@@ -104,7 +103,7 @@ public static class RichTextMarkupFixer {
 
             if (end == null) {
                 result.Problems.Add($"<{embed.Name}> has no end tag, so it was NOT wrapped and the v17 editor will " +
-                                    $"drop it: {Excerpt(html, embed.OuterStartIndex)}");
+                                    $"drop it: {TextExcerpt.From(html, embed.OuterStartIndex)}");
             } else {
                 AddEdit(edits, embed.OuterStartIndex, 0, GetHolderStartTag(embed));
                 AddEdit(edits, end.Value, 0, "</span>");
@@ -188,16 +187,12 @@ public static class RichTextMarkupFixer {
         }
     }
 
-    private static string Excerpt(string html, int start) {
-        return html.Substring(start, Math.Min(ExcerptLength, html.Length - start));
-    }
-
     private static int? FindEnd(HtmlNode embed, string html) {
         var startTag = StartTagPattern.Match(html, embed.OuterStartIndex);
 
         if (!IsTagOf(startTag, embed.Name)) {
             throw new Exception($"<{embed.Name}> does not start where the parser placed it, at " +
-                                $"{embed.OuterStartIndex}: {Excerpt(html, embed.OuterStartIndex)}");
+                                $"{embed.OuterStartIndex}: {TextExcerpt.From(html, embed.OuterStartIndex)}");
         }
 
         if (HtmlNode.IsEmptyElement(embed.Name)) {
@@ -211,7 +206,8 @@ public static class RichTextMarkupFixer {
 
             if (!IsTagOf(endTag, embed.Name) || endTag.Length != embed.EndNode.OuterLength) {
                 throw new Exception($"<{embed.Name}> does not end where the parser placed it, at " +
-                                    $"{embed.EndNode.OuterStartIndex}: {Excerpt(html, embed.OuterStartIndex)}");
+                                    $"{embed.EndNode.OuterStartIndex}: " +
+                                    TextExcerpt.From(html, embed.OuterStartIndex));
             }
 
             return endTag.Index + endTag.Length;

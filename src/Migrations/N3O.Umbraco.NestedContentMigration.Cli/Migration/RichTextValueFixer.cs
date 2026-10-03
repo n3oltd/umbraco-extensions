@@ -8,8 +8,6 @@ using System.Linq;
 namespace N3O.Umbraco.NestedContentMigration.Cli;
 
 public static class RichTextValueFixer {
-    private const int ExcerptLength = 120;
-
     private static readonly HashSet<string> RichTextEditorAliases = new(StringComparer.InvariantCultureIgnoreCase) {
         "Umbraco.RichText", "Umbraco.TinyMCE"
     };
@@ -49,10 +47,6 @@ public static class RichTextValueFixer {
         }
     }
 
-    private static string Excerpt(string text) {
-        return text.Substring(0, Math.Min(ExcerptLength, text.Length));
-    }
-
     private static string FixNestedJson(string text,
                                         IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                         Func<string, string> fixMarkup,
@@ -61,12 +55,12 @@ public static class RichTextValueFixer {
 
         if (token == null && IsJson(text)) {
             result.Problems.Add("a nested value holds a number outside the decimal range, so its rich text was NOT " +
-                                $"checked: {Excerpt(text)}");
+                                $"checked: {TextExcerpt.From(text, 0)}");
 
             return null;
         } else if (token != null && hasTrailingText && HoldsObject(token)) {
             result.Problems.Add("a nested value has text after its JSON, so its rich text was NOT checked: " +
-                                Excerpt(text));
+                                TextExcerpt.From(text, 0));
 
             return null;
         } else if (token == null || hasTrailingText || !FixToken(token, editorAliases, fixMarkup, result)) {
@@ -111,7 +105,7 @@ public static class RichTextValueFixer {
                                     RichTextFixResult result) {
         if (richText["markup"] is not JValue { Type: JTokenType.String } markup) {
             result.Problems.Add("rich text is JSON without a markup string, so it was NOT checked: " +
-                                Excerpt(richText.ToString(Formatting.None)));
+                                TextExcerpt.From(richText.ToString(Formatting.None), 0));
 
             return false;
         } else {
@@ -135,7 +129,8 @@ public static class RichTextValueFixer {
         var token = TryParse(text, out var hasTrailingText);
 
         if (token is JObject && hasTrailingText) {
-            result.Problems.Add($"rich text has text after its JSON, so it was NOT checked: {Excerpt(text)}");
+            result.Problems.Add("rich text has text after its JSON, so it was NOT checked: " +
+                                TextExcerpt.From(text, 0));
 
             return null;
         } else if (token is JObject richText) {
@@ -144,7 +139,7 @@ public static class RichTextValueFixer {
             return changed ? JsonConvert.SerializeObject(richText) : null;
         } else if (token == null && IsJson(text)) {
             result.Problems.Add("rich text holds a number outside the decimal range, so it was NOT checked: " +
-                                Excerpt(text));
+                                TextExcerpt.From(text, 0));
 
             return null;
         } else {

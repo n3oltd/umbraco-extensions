@@ -113,6 +113,7 @@ public sealed class Migrator {
         var editorAliases = BuildEditorAliases(cn, tx, nodeIdByKey);
         var checkedValues = 0;
         var changed = 0;
+        var flagged = 0;
         var unchanged = 0;
         var failed = 0;
         var totalEmbedsWrapped = 0;
@@ -124,7 +125,7 @@ public sealed class Migrator {
             page = Query(cn,
                          tx,
                          "SELECT TOP (@pageSize) pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, " +
-                         "n.text, dt.propertyEditorAlias " +
+                         "n.text, pd.versionId, dt.propertyEditorAlias " +
                          "FROM umbracoPropertyData pd " +
                          "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
                          "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
@@ -134,7 +135,7 @@ public sealed class Migrator {
                          "('Umbraco.TinyMCE', 'Umbraco.RichText', 'Umbraco.BlockList', 'Umbraco.BlockGrid') " +
                          "AND pd.textValue IS NOT NULL AND pd.textValue <> '' AND pd.id > @lastId " +
                          "ORDER BY pd.id",
-                         ReadRichTextValue,
+                         ReadPropertyDataRow,
                          ("@pageSize", RichTextPageSize),
                          ("@lastId", lastId));
 
@@ -150,7 +151,9 @@ public sealed class Migrator {
                                                                          wrapEmbeds,
                                                                          richText);
 
-                    if (fixedValue == null) {
+                    if (fixedValue == null && richText.Problems.Count > 0) {
+                        flagged++;
+                    } else if (fixedValue == null) {
                         unchanged++;
                     } else {
                         Execute(cn,
@@ -163,8 +166,9 @@ public sealed class Migrator {
                         totalEmbedsWrapped += richText.EmbedsWrapped.Count;
                         totalButtonsWrapped += richText.ButtonsWrapped.Count;
 
-                        Log.Info($"Embeds      : value id {pv.Id} | node {pv.NodeDescription} | property " +
-                                 $"'{pv.PropertyAlias}' — {DescribeRichTextChanges(richText)}");
+                        Log.Info($"Changed     : rich text value id {pv.Id}, version {pv.VersionId} | node " +
+                                 $"{pv.NodeDescription} | property '{pv.PropertyAlias}' — " +
+                                 DescribeRichTextChanges(richText));
                     }
 
                     AddRichTextIssues(issues, richText);
@@ -174,7 +178,9 @@ public sealed class Migrator {
                 }
 
                 if (issues.Count > 0) {
-                    Log.Item($"value id {pv.Id} | node {pv.NodeDescription} | property '{pv.PropertyAlias}'", issues);
+                    Log.Item($"rich text value id {pv.Id}, version {pv.VersionId} | node {pv.NodeDescription} | " +
+                             $"property '{pv.PropertyAlias}'",
+                             issues);
                 }
 
                 checkedValues++;
@@ -183,8 +189,8 @@ public sealed class Migrator {
         } while (page.Count == RichTextPageSize);
 
         Log.Info($"Embeds      : {checkedValues} rich text and block value(s) checked, {changed} changed, " +
-                 $"{unchanged} unchanged, {failed} failed; {totalEmbedsWrapped} embed(s) wrapped " +
-                 $"({totalButtonsWrapped} button(s))");
+                 $"{flagged} flagged and left as they were, {unchanged} unchanged, {failed} failed; " +
+                 $"{totalEmbedsWrapped} embed(s) wrapped ({totalButtonsWrapped} button(s))");
 
         if (failed > 0) {
             Log.Error($"{failed} value(s) failed in the embed pass — aborting so nothing is left half-migrated.");
@@ -431,28 +437,25 @@ public sealed class Migrator {
             return true;
         }
 
-        var values = QueryIn(cn, tx,
-            "SELECT pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, n.text " +
-            "FROM umbracoPropertyData pd " +
-            "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
-            "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
-            "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
-            "WHERE pd.propertyTypeId IN ({0}) AND pd.textValue IS NOT NULL AND pd.textValue <> ''",
-            "p",
-            propertyTypeIds,
-            r => new PropertyDataRow {
-                Id = r.GetInt32(0),
-                PropertyTypeId = r.GetInt32(1),
-                TextValue = r.GetString(2),
-                PropertyAlias = r.IsDBNull(3) ? null : r.GetString(3),
-                NodeId = r.IsDBNull(4) ? (int?) null : r.GetInt32(4),
-                NodeName = r.IsDBNull(5) ? null : r.GetString(5)
-            });
+        var values = QueryIn(cn,
+                             tx,
+                             "SELECT pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, n.text, " +
+                             "pd.versionId, dt.propertyEditorAlias " +
+                             "FROM umbracoPropertyData pd " +
+                             "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
+                             "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
+                             "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
+                             "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
+                             "WHERE pd.propertyTypeId IN ({0}) AND pd.textValue IS NOT NULL AND pd.textValue <> ''",
+                             "p",
+                             propertyTypeIds,
+                             ReadPropertyDataRow);
 
         Log.Info($"Found {values.Count} Perplex property value(s) to inspect.");
 
         var converted = 0;
         var richTextOnly = 0;
+        var flagged = 0;
         var unchanged = 0;
         var failed = 0;
         var totalBlocks = 0;
@@ -509,13 +512,18 @@ public sealed class Migrator {
                 totalLinksUnconverted += richText.UnconvertedLinks.Count;
 
                 if (fixedJson != null) {
-                    Log.Info($"Rich text   : perplex value id {pv.Id} | node {pv.NodeDescription} | property " +
-                             $"'{pv.PropertyAlias}' — {DescribeRichTextChanges(richText)}");
+                    Log.Info($"Changed     : perplex value id {pv.Id}, version {pv.VersionId} | node " +
+                             $"{pv.NodeDescription} | property '{pv.PropertyAlias}' — " +
+                             DescribeRichTextChanges(richText));
                 }
 
                 AddRichTextIssues(issues, richText);
 
-                if (result.Json == null && fixedJson == null) {
+                if (result.Json == null && fixedJson == null && richText.Problems.Count > 0) {
+                    flagged++;
+                    issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4, empty or an unrecognised " +
+                               "shape); left untouched");
+                } else if (result.Json == null && fixedJson == null) {
                     unchanged++;
                     issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4, empty or an unrecognised " +
                                "shape); left untouched");
@@ -570,7 +578,8 @@ public sealed class Migrator {
         }
 
         Log.Info($"Perplex     : {converted} value(s) converted, {richTextOnly} rewritten for their rich text " +
-                 $"only, {unchanged} unchanged, {failed} failed; {totalBlocks} block(s)");
+                 $"only, {flagged} flagged and left as they were, {unchanged} unchanged, {failed} failed; " +
+                 $"{totalBlocks} block(s)");
         Log.Info($"Nested NC   : {totalNestedConvertedInBlocks} propertie(s) in {totalNestedBlocks} block(s)" +
                  (totalNestedVerbatim > 0 ? $", {totalNestedVerbatim} left verbatim — convert by hand" : ""));
         Log.Info($"Rich text   : {totalEmbedsWrapped} embed(s) wrapped ({totalButtonsWrapped} button(s)), " +
@@ -724,7 +733,7 @@ public sealed class Migrator {
         return new LocalLinkTarget(reader.GetGuid(0), entityType);
     }
 
-    private static PropertyDataRow ReadRichTextValue(SqlDataReader reader) {
+    private static PropertyDataRow ReadPropertyDataRow(SqlDataReader reader) {
         var row = new PropertyDataRow();
         row.Id = reader.GetInt32(0);
         row.PropertyTypeId = reader.GetInt32(1);
@@ -732,7 +741,8 @@ public sealed class Migrator {
         row.PropertyAlias = reader.IsDBNull(3) ? null : reader.GetString(3);
         row.NodeId = reader.IsDBNull(4) ? (int?) null : reader.GetInt32(4);
         row.NodeName = reader.IsDBNull(5) ? null : reader.GetString(5);
-        row.EditorAlias = reader.GetString(6);
+        row.VersionId = reader.GetInt32(6);
+        row.EditorAlias = reader.GetString(7);
 
         return row;
     }
@@ -962,6 +972,7 @@ public sealed class Migrator {
         public string NodeName { get; set; }
         public string PropertyAlias { get; set; }
         public string EditorAlias { get; set; }
+        public int VersionId { get; set; }
 
         public string NodeDescription => NodeId.HasValue ? $"{NodeId} \"{NodeName}\"" : "(unknown)";
     }
