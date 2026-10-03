@@ -395,10 +395,10 @@ public sealed class Migrator {
             try {
                 var result = PerplexContentBlocksValueConverter.Convert(pv.TextValue, contentTypeKeys, editorAliases);
                 var richText = new RichTextFixResult();
-                var fixedJson = PerplexRichTextFixer.Fix(result.Json ?? pv.TextValue,
-                                                         editorAliases,
-                                                         FindNodeTarget,
-                                                         richText);
+                var fixedJson = RichTextValueFixer.Fix(result.Json ?? pv.TextValue,
+                                                       editorAliases,
+                                                       html => RichTextMarkupFixer.Fix(html, FindNodeTarget, richText),
+                                                       richText);
                 var newJson = fixedJson ?? result.Json;
 
                 if (newJson != null) {

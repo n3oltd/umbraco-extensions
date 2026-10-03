@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace N3O.Umbraco.NestedContentMigration.Cli;
 
-public static class PerplexRichTextFixer {
+public static class RichTextValueFixer {
     private const int ExcerptLength = 120;
 
     private static readonly HashSet<string> RichTextEditorAliases =
@@ -15,7 +15,7 @@ public static class PerplexRichTextFixer {
 
     public static string Fix(string json,
                              IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                             Func<int, LocalLinkTarget> findNodeTarget,
+                             Func<string, string> fixMarkup,
                              RichTextFixResult result) {
         var token = TryParse(json);
 
@@ -25,10 +25,22 @@ public static class PerplexRichTextFixer {
                                 "the value is not JSON, so its rich text was NOT checked");
 
             return null;
-        } else if (!FixToken(token, editorAliases, findNodeTarget, result)) {
+        } else if (!FixToken(token, editorAliases, fixMarkup, result)) {
             return null;
         } else {
             return JsonConvert.SerializeObject(token);
+        }
+    }
+
+    public static string FixPropertyValue(string value,
+                                          string editorAlias,
+                                          IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
+                                          Func<string, string> fixMarkup,
+                                          RichTextFixResult result) {
+        if (RichTextEditorAliases.Contains(editorAlias)) {
+            return FixRichTextValue(value, editorAliases, fixMarkup, result);
+        } else {
+            return Fix(value, editorAliases, fixMarkup, result);
         }
     }
 
@@ -36,13 +48,13 @@ public static class PerplexRichTextFixer {
     // contentTypeKey and take their editors from the element type.
     private static bool FixToken(JToken token,
                                  IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                 Func<int, LocalLinkTarget> findNodeTarget,
+                                 Func<string, string> fixMarkup,
                                  RichTextFixResult result) {
         var changed = false;
 
         if (token is JArray array) {
             foreach (var item in array) {
-                changed |= FixToken(item, editorAliases, findNodeTarget, result);
+                changed |= FixToken(item, editorAliases, fixMarkup, result);
             }
         } else if (token is JObject obj) {
             var inlineEditor = obj["editorAlias"] is JValue { Type: JTokenType.String } editor ? (string) editor : null;
@@ -57,7 +69,7 @@ public static class PerplexRichTextFixer {
                     elementEditors.TryGetValue(property.Name, out editorAlias);
                 }
 
-                changed |= FixProperty(property, editorAlias, editorAliases, findNodeTarget, result);
+                changed |= FixProperty(property, editorAlias, editorAliases, fixMarkup, result);
             }
         }
 
@@ -67,15 +79,15 @@ public static class PerplexRichTextFixer {
     private static bool FixProperty(JProperty property,
                                     string editorAlias,
                                     IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                    Func<int, LocalLinkTarget> findNodeTarget,
+                                    Func<string, string> fixMarkup,
                                     RichTextFixResult result) {
         var isRichText = editorAlias != null && RichTextEditorAliases.Contains(editorAlias);
 
         if (property.Value is JValue { Type: JTokenType.String } stringValue) {
             var text = (string) stringValue;
             var fixedText = isRichText ?
-                            FixRichTextValue(text, editorAliases, findNodeTarget, result) :
-                            FixNestedJson(text, editorAliases, findNodeTarget, result);
+                            FixRichTextValue(text, editorAliases, fixMarkup, result) :
+                            FixNestedJson(text, editorAliases, fixMarkup, result);
 
             if (fixedText == null) {
                 return false;
@@ -87,21 +99,21 @@ public static class PerplexRichTextFixer {
         }
 
         if (isRichText && property.Value is JObject richText) {
-            return FixRichText(richText, editorAliases, findNodeTarget, result);
+            return FixRichText(richText, editorAliases, fixMarkup, result);
         }
 
-        return FixToken(property.Value, editorAliases, findNodeTarget, result);
+        return FixToken(property.Value, editorAliases, fixMarkup, result);
     }
 
     // A rich text value is either the raw HTML or, once it holds blocks, {markup, blocks}.
     private static string FixRichTextValue(string text,
                                            IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                           Func<int, LocalLinkTarget> findNodeTarget,
+                                           Func<string, string> fixMarkup,
                                            RichTextFixResult result) {
         var token = TryParse(text);
 
         if (token is JObject richText) {
-            var changed = FixRichText(richText, editorAliases, findNodeTarget, result);
+            var changed = FixRichText(richText, editorAliases, fixMarkup, result);
 
             return changed ? JsonConvert.SerializeObject(richText) : null;
         } else if (token == null && IsJson(text)) {
@@ -110,7 +122,7 @@ public static class PerplexRichTextFixer {
 
             return null;
         } else {
-            var fixedHtml = RichTextMarkupFixer.Fix(text, findNodeTarget, result);
+            var fixedHtml = fixMarkup(text);
 
             return fixedHtml == text ? null : fixedHtml;
         }
@@ -118,13 +130,13 @@ public static class PerplexRichTextFixer {
 
     private static bool FixRichText(JObject richText,
                                     IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                    Func<int, LocalLinkTarget> findNodeTarget,
+                                    Func<string, string> fixMarkup,
                                     RichTextFixResult result) {
-        var changed = FixToken(richText["blocks"], editorAliases, findNodeTarget, result);
+        var changed = FixToken(richText["blocks"], editorAliases, fixMarkup, result);
 
         if (richText["markup"] is JValue { Type: JTokenType.String } markup) {
             var html = (string) markup;
-            var fixedHtml = RichTextMarkupFixer.Fix(html, findNodeTarget, result);
+            var fixedHtml = fixMarkup(html);
 
             if (fixedHtml != html) {
                 richText["markup"] = fixedHtml;
@@ -138,7 +150,7 @@ public static class PerplexRichTextFixer {
     // Block editor values nested in a block are stored as serialised JSON strings.
     private static string FixNestedJson(string text,
                                         IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                        Func<int, LocalLinkTarget> findNodeTarget,
+                                        Func<string, string> fixMarkup,
                                         RichTextFixResult result) {
         var token = TryParse(text);
 
@@ -147,7 +159,7 @@ public static class PerplexRichTextFixer {
                                 $"checked: {Excerpt(text)}");
 
             return null;
-        } else if (token == null || !FixToken(token, editorAliases, findNodeTarget, result)) {
+        } else if (token == null || !FixToken(token, editorAliases, fixMarkup, result)) {
             return null;
         } else {
             return JsonConvert.SerializeObject(token);

@@ -54,19 +54,22 @@ public static class RichTextMarkupFixer {
         AddLocalLinkEdits(document, html, findNodeTarget, edits, result);
         FlagRichTextBlocks(document, result);
 
-        if (edits.Count == 0) {
+        return ApplyEdits(html, edits);
+    }
+
+    public static string WrapEmbeds(string html, RichTextFixResult result) {
+        if (string.IsNullOrEmpty(html)) {
             return html;
         }
 
-        EnsureNoOverlap(edits);
+        var document = new HtmlDocument();
+        document.LoadHtml(html);
 
-        var fixedHtml = html;
+        var edits = new List<Edit>();
 
-        foreach (var edit in edits.OrderByDescending(x => x.Index).ThenByDescending(x => x.Sequence)) {
-            fixedHtml = fixedHtml.Remove(edit.Index, edit.Length).Insert(edit.Index, edit.Text);
-        }
+        AddEmbedEdits(document, html, edits, result);
 
-        return fixedHtml;
+        return ApplyEdits(html, edits);
     }
 
     private static void AddEdit(List<Edit> edits, int index, int length, string text) {
@@ -150,6 +153,18 @@ public static class RichTextMarkupFixer {
                 result.LinksConverted++;
             }
         }
+    }
+
+    private static string ApplyEdits(string html, List<Edit> edits) {
+        EnsureNoOverlap(edits);
+
+        var fixedHtml = html;
+
+        foreach (var edit in edits.OrderByDescending(x => x.Index).ThenByDescending(x => x.Sequence)) {
+            fixedHtml = fixedHtml.Remove(edit.Index, edit.Length).Insert(edit.Index, edit.Text);
+        }
+
+        return fixedHtml;
     }
 
     private static void EnsureNoOverlap(IReadOnlyList<Edit> edits) {
