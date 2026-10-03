@@ -19,4 +19,6 @@ public class EyeDropperDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.ColorPickerEyeDropper;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.EyeDropper";
 }

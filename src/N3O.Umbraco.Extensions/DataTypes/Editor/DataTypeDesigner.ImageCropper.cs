@@ -37,4 +37,6 @@ public class ImageCropperDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.ImageCropper;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.ImageCropper";
 }

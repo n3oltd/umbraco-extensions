@@ -69,6 +69,8 @@ public class BlockGridDataTypeDesigner : DataTypeDesigner {
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.BlockGrid;
 
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.BlockGrid";
+
     private BlockGridConfiguration.BlockGridBlockConfiguration BuildBlock(BlockGridBlockBuilder block,
                                                                           BlockGridConfiguration existing) {
         return block.Build(_contentTypeService.GetOrThrow,

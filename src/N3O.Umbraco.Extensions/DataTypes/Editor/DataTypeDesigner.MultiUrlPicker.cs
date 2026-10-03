@@ -33,4 +33,6 @@ public class MultiUrlPickerDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.MultiUrlPicker;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.MultiUrlPicker";
 }

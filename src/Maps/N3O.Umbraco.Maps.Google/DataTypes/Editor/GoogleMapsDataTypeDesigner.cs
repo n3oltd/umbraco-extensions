@@ -37,7 +37,6 @@ public class GoogleMapsDataTypeDesigner : DataTypeDesigner {
         return this;
     }
 
-    // The editor ships as a package manifest, so Umbraco gives it the dictionary configuration editor
     protected override object BuildConfiguration(IDataType existing) {
         var configuration = new Dictionary<string, object>();
 
@@ -55,4 +54,6 @@ public class GoogleMapsDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => GoogleMapsConstants.PropertyEditorAlias;
+
+    protected override string EditorUiAlias => "GMaps.PropertyEditorUi.SingleMap";
 }

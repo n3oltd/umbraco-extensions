@@ -49,6 +49,9 @@ public abstract class DataTypeDesigner : IDataTypeDesigner {
 
         dataType.Name = _name;
 
+        // Umbraco never derives this, so without it the backoffice resolves the schema alias as the UI and finds none
+        dataType.EditorUiAlias = EditorUiAlias;
+
         // Only the backoffice save path derives this, so without it every value would be stored as Ntext
         dataType.DatabaseType = ValueTypes.ToStorageType(ResolveEditor().GetValueEditor().ValueType);
 
@@ -90,6 +93,8 @@ public abstract class DataTypeDesigner : IDataTypeDesigner {
     protected abstract object BuildConfiguration(IDataType existing);
 
     protected abstract string EditorAlias { get; }
+
+    protected virtual string EditorUiAlias => EditorAlias;
 
     protected string Name => _name;
 

@@ -18,4 +18,6 @@ public class UserPickerDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.UserPicker;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.UserPicker";
 }

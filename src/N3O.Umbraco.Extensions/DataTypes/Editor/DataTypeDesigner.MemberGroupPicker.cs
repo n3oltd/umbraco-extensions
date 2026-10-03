@@ -18,4 +18,6 @@ public class MemberGroupPickerDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.MemberGroupPicker;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.MemberGroupPicker";
 }
