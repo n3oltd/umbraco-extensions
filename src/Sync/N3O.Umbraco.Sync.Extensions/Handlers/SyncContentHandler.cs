@@ -73,13 +73,19 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
 
         var pipeline = await _pipelineService.CreatePipeline(createPipelineOptions);
 
-        await _pipelineService.UpdateOptions(pipeline.Id, options, user);
+        try {
+            await _pipelineService.UpdateOptions(pipeline.Id, options, user);
 
-        do {
-            cancellationToken.ThrowIfCancellationRequested();
+            do {
+                cancellationToken.ThrowIfCancellationRequested();
 
-            pipeline = await _pipelineService.Process(pipeline.Id, user, requestId.ToString(), false);
-        } while (pipeline.State.Status is PipelineStatus.Running or PipelineStatus.Waiting);
+                pipeline = await _pipelineService.Process(pipeline.Id, user, requestId.ToString(), false);
+            } while (pipeline.State.Status is PipelineStatus.Running or PipelineStatus.Waiting);
+        } catch {
+            await _pipelineService.ClearPipeline(pipeline.Id, user);
+
+            throw;
+        }
 
         if (pipeline.State.Status is PipelineStatus.Completed or PipelineStatus.Failed) {
             await _pipelineService.ClearPipeline(pipeline.Id, user);
