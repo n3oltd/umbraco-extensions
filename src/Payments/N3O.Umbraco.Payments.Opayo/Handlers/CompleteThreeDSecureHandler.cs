@@ -46,7 +46,7 @@ public class CompleteThreeDSecureHandler :
         apiReq.PaRes = req.PaRes;
         apiReq.TransactionId = payment.OpayoTransactionId;
 
-        await _opayoClient.CompleteThreeDSecureFallbackResponseAsync(apiReq);
+        await _opayoClient.CompleteThreeDSecureFallbackResponseAsync(apiReq.TransactionId, apiReq);
 
         payment.ThreeDSecureComplete(req.PaRes);
 
@@ -61,7 +61,7 @@ public class CompleteThreeDSecureHandler :
         apiReq.CRes = req.CRes;
         apiReq.TransactionId = payment.OpayoTransactionId;
 
-        var transaction = await _opayoClient.CompleteThreeDSecureChallengeResponseAsync(apiReq);
+        var transaction = await _opayoClient.CompleteThreeDSecureChallengeResponseAsync(apiReq.TransactionId, apiReq);
 
         payment.ThreeDSecureComplete(req.CRes);
 
