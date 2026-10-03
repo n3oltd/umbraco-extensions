@@ -24,15 +24,15 @@ namespace N3O.Umbraco.Sync.Extensions.Handlers;
 public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncContentReq, None> {
     private static readonly string Document = global::Umbraco.Cms.Core.Constants.UdiEntityType.Document;
     
-    private readonly ISyncPublisherActionService _publisherActionService;
     private readonly IContentLocator _contentLocator;
+    private readonly ISyncPublisherActionService _syncPublisherActionService;
     private readonly SyncPublisherFactory _syncPublisherFactory;
 
-    public SyncContentHandler(ISyncPublisherActionService publisherActionService,
-                              IContentLocator contentLocator,
+    public SyncContentHandler(IContentLocator contentLocator,
+                              ISyncPublisherActionService syncPublisherActionService,
                               SyncPublisherFactory syncPublisherFactory) {
-        _publisherActionService = publisherActionService;
         _contentLocator = contentLocator;
+        _syncPublisherActionService = syncPublisherActionService;
         _syncPublisherFactory = syncPublisherFactory;
     }
 
@@ -41,7 +41,8 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         var publisher = _syncPublisherFactory.GetPublisher(req.Model.ServerAlias);
 
         if (publisher is not SyncRealtimePublisher) {
-            throw new Exception($"Sync of {req.Model.ContentId} needs server {req.Model.ServerAlias} to use the realtime publisher, not {publisher.Alias}");
+            throw new Exception($"Sync of {req.Model.ContentId} needs server {req.Model.ServerAlias} to use the " +
+                                $"realtime publisher, not {publisher.Alias}");
         }
 
         var syncItem = new SyncItem();
@@ -63,39 +64,43 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         process.Steps = new SyncActionStepInfo();
         process.Options = options;
 
-        var itemResults = new Dictionary<Guid, uSyncAction>();
-        PublisherActionResult result;
+        var failedItems = new List<uSyncAction>();
+        var result = default(PublisherActionResult);
 
         do {
-            var action = await _publisherActionService.GetAction(process.Server,
-                                                                 process.ActionAlias,
-                                                                 process.Mode,
-                                                                 process.Options,
-                                                                 process.Items);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            result = await _publisherActionService.PerformAction(CreateRequest(process, action), null);
+            var action = await _syncPublisherActionService.GetAction(process.Server,
+                                                                     process.ActionAlias,
+                                                                     process.Mode,
+                                                                     process.Options,
+                                                                     process.Items);
+
+            result = await _syncPublisherActionService.PerformAction(MakePublishRequest(process, action), null);
 
             if (!result.Success) {
                 throw new Exception($"Sync of {req.Model.ContentId} failed with error: {result.Error.Message}");
             }
 
-            foreach (var itemResult in result.Actions.OrEmpty()) {
-                itemResults[itemResult.key] = itemResult;
-            }
+            failedItems.AddRange(result.Actions.OrEmpty().Where(IsError));
 
             UpdateProcess(process, result);
         } while (!result.ProcessComplete);
 
-        var failedItems = itemResults.Values.Where(IsError).ToList();
-
         if (failedItems.Any()) {
-            throw new Exception($"Sync of {req.Model.ContentId} failed to import {failedItems.Select(x => $"{x.Name} ({x.Change}: {x.Message})").ToCsv(true)}");
+            var failures = failedItems.Select(x => $"{x.Name} ({x.Change}: {x.Message})").Distinct().ToCsv(true);
+
+            throw new Exception($"Sync of {req.Model.ContentId} failed to import {failures}");
         }
         
         return None.Empty;
     }
 
-    private PublisherActionRequest CreateRequest(SyncActionProcess process, PublisherAction action) {
+    private bool IsError(uSyncAction itemResult) {
+        return uSync.BackOffice.uSyncActionExtensions.ContainsErrors([itemResult]);
+    }
+
+    private PublisherActionRequest MakePublishRequest(SyncActionProcess process, PublisherAction action) {
         var request = new PublisherActionRequest();
         request.Id = process.Id;
         request.Server = process.Server;
@@ -109,12 +114,6 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         request.AdditionalData = process.AdditionalData;
 
         return request;
-    }
-
-    private bool IsError(uSyncAction itemResult) {
-        List<uSyncAction> itemResults = [itemResult];
-
-        return itemResults.ContainsErrors();
     }
 
     private void UpdateProcess(SyncActionProcess process, PublisherActionResult result) {
