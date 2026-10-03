@@ -390,6 +390,8 @@ public sealed class Migrator {
                                $"resolve them: {string.Join(", ", richText.UnconvertedLinks.Distinct())}");
                 }
 
+                issues.AddRange(richText.Problems);
+
                 if (result.Json == null) {
                     unchanged++;
                     issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4, empty or an unrecognised " +
