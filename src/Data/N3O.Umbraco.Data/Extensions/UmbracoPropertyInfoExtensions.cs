@@ -85,7 +85,7 @@ public static class UmbracoPropertyInfoExtensions {
                                  .FirstOrDefault(x => x.Key.EqualsInvariant("format"))
                                  .Value as string;
 
-        // The date picker shows no time when the format is absent or has no hour component.
+        // A format without an hour token is date-only.
         return format?.Contains("h", StringComparison.InvariantCultureIgnoreCase) == true;
     }
 }
