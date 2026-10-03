@@ -62,6 +62,10 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         var user = await _userService.GetAsync(global::Umbraco.Cms.Core.Constants.Security.SuperUserKey);
         var publisher = _syncPublisherFactory.GetPublisherByServer(req.Model.ServerAlias);
 
+        if (publisher is not SyncRealtimePublisher) {
+            throw new Exception($"Sync of {contentId} needs server {req.Model.ServerAlias} to use the realtime publisher, not {publisher.Alias}");
+        }
+
         var createPipelineOptions = new CreatePipelineOptions();
         createPipelineOptions.Alias = publisher.Processor;
         createPipelineOptions.Strategy = publisher.GetStrategy(PublishMode.Push);
@@ -71,7 +75,6 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
 
         await _pipelineService.UpdateOptions(pipeline.Id, options, user);
 
-        // Process runs one step per call; Background means uSync's queue finishes the push
         do {
             cancellationToken.ThrowIfCancellationRequested();
 
