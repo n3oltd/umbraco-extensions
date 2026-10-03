@@ -72,11 +72,12 @@ variant content) — flagged for manual review if present.
 
 ### Rich text inside Perplex blocks
 
-Umbraco's own upgrade migrations only reach the editors they know, so two things in rich text held inside a
-Perplex value would otherwise survive the upgrade in a form the v17 editor cannot use. The frontend keeps
-rendering both, because Razor prints the stored HTML as-is; only the back office breaks. The pass fixes every
-`Umbraco.TinyMCE` / `Umbraco.RichText` value it finds in a Perplex value, including those in Block Lists nested
-inside a block, and it also runs on values that are already v4.
+Umbraco's upgrade converts local links only in the editors it knows, and wraps no bare embeds
+anywhere, so two things in rich text held inside a Perplex value would otherwise survive the upgrade
+in a form the v17 editor cannot use. The frontend keeps rendering both, because Razor prints the
+stored HTML as-is; only the back office breaks. The pass fixes every `Umbraco.TinyMCE` /
+`Umbraco.RichText` value it finds in a Perplex value, including those in Block Lists nested inside a
+block, and it also runs on values that are already v4.
 
 - **Embeds.** Tiptap has no node for a bare `<iframe>`, `<object>`, `<embed>`, `<video>`,
   `<audio>`, `<canvas>` or `<button>`, so the editor drops it on load (a button keeps only its
@@ -106,6 +107,29 @@ place, so nothing else in the HTML changes.
 > a Perplex spec. Restore a copy, `--dry-run` then `--apply --include-perplex`, run the 13→17 + Perplex-4
 > upgrade, and confirm Perplex renders the converted blocks in the backoffice **and** front-end before running
 > against real/client data.
+
+## Embeds in all other rich text (`--include-embeds`)
+
+Opt-in third pass (off by default). Umbraco's 13→17 upgrade wraps no bare embeds in any rich text,
+so a bare `<iframe>`, `<object>`, `<embed>`, `<video>`, `<audio>`, `<canvas>` or `<button>` in an
+ordinary rich text property is dropped by the v17 editor on load and lost on the next save, exactly
+as in Perplex. With `--include-embeds`, the same run wraps each one as the Perplex pass does (see
+[Rich text inside Perplex blocks](#rich-text-inside-perplex-blocks)), in every `umbracoPropertyData`
+value whose data type is `Umbraco.TinyMCE`, `Umbraco.RichText`, `Umbraco.BlockList` or
+`Umbraco.BlockGrid`. That covers the rich text values themselves, rich text inside Block List and
+Block Grid items at any depth, and rich text inside a rich text value's blocks. Block List values
+the Nested Content pass has just converted are included.
+
+It wraps embeds only. Local links in these editors are left to Umbraco's own V15 local link
+migration, which handles them, so no link is converted twice. Perplex values are not read by this
+pass; their rich text is fixed by `--include-perplex` alone.
+
+Each changed value gets an `Embeds :` line naming its node and property. Wrapped buttons, elements
+with no end tag and values the pass cannot read are flagged `[REVIEW]`, and a value that fails stops
+the run like any other. The summary reports
+`Embeds : <n> rich text and block value(s) checked, <n> changed, <n> unchanged, <n> failed`. Values
+are read in pages of 500, so the pass never holds every rich text value in memory. Running it again
+changes nothing, because an embed already inside a holder is left alone.
 
 ## Converts EVERY Nested Content data type, and renames them
 

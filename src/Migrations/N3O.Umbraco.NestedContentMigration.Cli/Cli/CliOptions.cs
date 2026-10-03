@@ -8,5 +8,6 @@ public sealed class CliOptions {
     public bool Verbose { get; set; }
     public string LogFilePath { get; set; }
 
+    public bool IncludeEmbeds { get; set; }
     public bool IncludePerplex { get; set; }
 }

@@ -22,6 +22,8 @@ public sealed class Migrator {
 
     private const int MaxInClauseParameters = 2000;
 
+    private const int RichTextPageSize = 500;
+
     private readonly CliOptions _options;
 
     public Migrator(CliOptions options) {
@@ -93,6 +95,10 @@ public sealed class Migrator {
         }
 
         if (_options.IncludePerplex && !MigratePerplex(cn, tx)) {
+            return false;
+        }
+
+        if (_options.IncludeEmbeds && !MigrateEmbeds(cn, tx)) {
             return false;
         }
 
@@ -416,17 +422,7 @@ public sealed class Migrator {
                              $"'{pv.PropertyAlias}' — {DescribeRichTextChanges(richText)}");
                 }
 
-                if (richText.ButtonsWrapped.Count > 0) {
-                    issues.Add($"{richText.ButtonsWrapped.Count} <button>(s) kept as embeds, so their labels can " +
-                               $"only be edited in the source view: {string.Join(" | ", richText.ButtonsWrapped)}");
-                }
-
-                if (richText.UnconvertedLinks.Count > 0) {
-                    issues.Add($"{richText.UnconvertedLinks.Count} local link(s) NOT converted, the editor cannot " +
-                               $"resolve them: {string.Join(", ", richText.UnconvertedLinks.Distinct())}");
-                }
-
-                issues.AddRange(richText.Problems);
+                AddRichTextIssues(issues, richText);
 
                 if (result.Json == null && fixedJson == null) {
                     unchanged++;
@@ -497,6 +493,92 @@ public sealed class Migrator {
 
         if (failed > 0) {
             Log.Error($"{failed} Perplex value(s) failed to convert — aborting so nothing is left half-migrated.");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool MigrateEmbeds(SqlConnection cn, SqlTransaction tx) {
+        Log.Info("Embeds in rich text (--include-embeds):");
+
+        BuildElementTypeKeys(cn, tx, out var nodeIdByKey);
+
+        var editorAliases = BuildEditorAliases(cn, tx, nodeIdByKey);
+        var checkedValues = 0;
+        var changed = 0;
+        var unchanged = 0;
+        var failed = 0;
+        var totalEmbedsWrapped = 0;
+        var totalButtonsWrapped = 0;
+        var lastId = 0;
+        List<PropertyDataRow> page;
+
+        do {
+            page = Query(cn, tx,
+                "SELECT TOP (@pageSize) pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, n.text, " +
+                "dt.propertyEditorAlias " +
+                "FROM umbracoPropertyData pd " +
+                "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
+                "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
+                "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
+                "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
+                "WHERE dt.propertyEditorAlias IN " +
+                "('Umbraco.TinyMCE', 'Umbraco.RichText', 'Umbraco.BlockList', 'Umbraco.BlockGrid') " +
+                "AND pd.textValue IS NOT NULL AND pd.textValue <> '' AND pd.id > @lastId " +
+                "ORDER BY pd.id",
+                ReadRichTextValue,
+                ("@pageSize", RichTextPageSize),
+                ("@lastId", lastId));
+
+            foreach (var pv in page) {
+                var issues = new List<string>();
+                var richText = new RichTextFixResult();
+
+                try {
+                    var wrapEmbeds = (string html) => RichTextMarkupFixer.WrapEmbeds(html, richText);
+                    var fixedValue = RichTextValueFixer.FixPropertyValue(pv.TextValue,
+                                                                         pv.EditorAlias,
+                                                                         editorAliases,
+                                                                         wrapEmbeds,
+                                                                         richText);
+
+                    if (fixedValue == null) {
+                        unchanged++;
+                    } else {
+                        Execute(cn, tx, "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
+                                ("@value", fixedValue), ("@id", pv.Id));
+
+                        changed++;
+                        totalEmbedsWrapped += richText.EmbedsWrapped.Count;
+                        totalButtonsWrapped += richText.ButtonsWrapped.Count;
+
+                        Log.Info($"Embeds      : value id {pv.Id} | node {pv.NodeDescription} | property " +
+                                 $"'{pv.PropertyAlias}' — {DescribeRichTextChanges(richText)}");
+                    }
+
+                    AddRichTextIssues(issues, richText);
+                } catch (Exception ex) {
+                    failed++;
+                    issues.Add($"FAILED to wrap embeds — {ex.Message}");
+                }
+
+                if (issues.Count > 0) {
+                    Log.Item($"value id {pv.Id} | node {pv.NodeDescription} | property '{pv.PropertyAlias}'", issues);
+                }
+
+                checkedValues++;
+                lastId = pv.Id;
+            }
+        } while (page.Count == RichTextPageSize);
+
+        Log.Info($"Embeds      : {checkedValues} rich text and block value(s) checked, {changed} changed, " +
+                 $"{unchanged} unchanged, {failed} failed; {totalEmbedsWrapped} embed(s) wrapped " +
+                 $"({totalButtonsWrapped} button(s))");
+
+        if (failed > 0) {
+            Log.Error($"{failed} value(s) failed in the embed pass — aborting so nothing is left half-migrated.");
 
             return false;
         }
@@ -599,6 +681,20 @@ public sealed class Migrator {
         return byKey;
     }
 
+    private static void AddRichTextIssues(List<string> issues, RichTextFixResult richText) {
+        if (richText.ButtonsWrapped.Count > 0) {
+            issues.Add($"{richText.ButtonsWrapped.Count} <button>(s) kept as embeds, so their labels can only be " +
+                       $"edited in the source view: {string.Join(" | ", richText.ButtonsWrapped)}");
+        }
+
+        if (richText.UnconvertedLinks.Count > 0) {
+            issues.Add($"{richText.UnconvertedLinks.Count} local link(s) NOT converted, the editor cannot resolve " +
+                       $"them: {string.Join(", ", richText.UnconvertedLinks.Distinct())}");
+        }
+
+        issues.AddRange(richText.Problems);
+    }
+
     private static string DescribeRichTextChanges(RichTextFixResult richText) {
         var changes = new List<string>();
 
@@ -613,6 +709,19 @@ public sealed class Migrator {
         }
 
         return string.Join("; ", changes);
+    }
+
+    private static PropertyDataRow ReadRichTextValue(SqlDataReader reader) {
+        var row = new PropertyDataRow();
+        row.Id = reader.GetInt32(0);
+        row.PropertyTypeId = reader.GetInt32(1);
+        row.TextValue = reader.GetString(2);
+        row.PropertyAlias = reader.IsDBNull(3) ? null : reader.GetString(3);
+        row.NodeId = reader.IsDBNull(4) ? (int?) null : reader.GetInt32(4);
+        row.NodeName = reader.IsDBNull(5) ? null : reader.GetString(5);
+        row.EditorAlias = reader.GetString(6);
+
+        return row;
     }
 
     private static List<string> ParseElementAliases(string config, int dataTypeId) {
@@ -839,6 +948,7 @@ public sealed class Migrator {
         public int? NodeId { get; set; }
         public string NodeName { get; set; }
         public string PropertyAlias { get; set; }
+        public string EditorAlias { get; set; }
 
         public string NodeDescription => NodeId.HasValue ? $"{NodeId} \"{NodeName}\"" : "(unknown)";
     }

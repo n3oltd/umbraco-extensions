@@ -57,6 +57,7 @@ public static class Program {
         var dryRun = false;
         var apply = false;
         var verbose = false;
+        var includeEmbeds = false;
         var includePerplex = false;
         string logPath = null;
 
@@ -72,6 +73,10 @@ public static class Program {
 
                 case "--apply":
                     apply = true;
+                    break;
+
+                case "--include-embeds":
+                    includeEmbeds = true;
                     break;
 
                 case "--include-perplex":
@@ -103,13 +108,15 @@ public static class Program {
             throw new ArgumentException("Specify exactly one of --dry-run or --apply.");
         }
 
-        return new CliOptions {
-            ConnectionString = connection,
-            DryRun = dryRun,
-            Verbose = verbose,
-            IncludePerplex = includePerplex,
-            LogFilePath = logPath
-        };
+        var options = new CliOptions();
+        options.ConnectionString = connection;
+        options.DryRun = dryRun;
+        options.IncludeEmbeds = includeEmbeds;
+        options.IncludePerplex = includePerplex;
+        options.LogFilePath = logPath;
+        options.Verbose = verbose;
+
+        return options;
     }
 
     private static string RequireValue(string[] args, ref int i, string name) {
@@ -128,7 +135,7 @@ public static class Program {
         Console.WriteLine();
         Console.WriteLine("USAGE:");
         Console.WriteLine("  nc-migrate --connection \"<conn>\" (--dry-run | --apply) [--include-perplex]");
-        Console.WriteLine("             [--verbose] [--log <path>]");
+        Console.WriteLine("             [--include-embeds] [--verbose] [--log <path>]");
         Console.WriteLine();
         Console.WriteLine("Migrates an Umbraco 13 database in place to the v13 (udi-based) Block List shape. Run it");
         Console.WriteLine("before upgrading Umbraco; the 13->17 upgrade then converts the values to the v17 shape.");
@@ -145,6 +152,10 @@ public static class Program {
         Console.WriteLine("                Also wraps bare embeds (<iframe>, <object>, <button> and the like) and");
         Console.WriteLine("                converts legacy local links in the rich text inside Perplex values,");
         Console.WriteLine("                for the v17 editor.");
+        Console.WriteLine("  --include-embeds  Also wrap bare embeds (<iframe>, <object>, <button> and the");
+        Console.WriteLine("                like) in every other rich text value, including those inside Block");
+        Console.WriteLine("                List and Block Grid items, so the v17 editor keeps them. Off by");
+        Console.WriteLine("                default. Local links there are left to Umbraco's own upgrade.");
         Console.WriteLine("  --verbose     Log each data type / property value processed");
         Console.WriteLine("  --log <path>  Write the full log to this file (default: nc-migrate-<UTC>.log in");
         Console.WriteLine("                the current directory). Every item that wasn't cleanly migrated is");
