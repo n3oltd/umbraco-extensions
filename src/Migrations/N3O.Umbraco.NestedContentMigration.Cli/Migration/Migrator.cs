@@ -356,6 +356,7 @@ public sealed class Migrator {
         Log.Info($"Found {values.Count} Perplex property value(s) to inspect.");
 
         var converted = 0;
+        var richTextOnly = 0;
         var unchanged = 0;
         var failed = 0;
         var totalBlocks = 0;
@@ -367,6 +368,7 @@ public sealed class Migrator {
         var totalNestedBlocks = 0;
         var totalNestedVerbatim = 0;
         var totalEmbedsWrapped = 0;
+        var totalButtonsWrapped = 0;
         var totalLinksConverted = 0;
         var totalLinksUnconverted = 0;
         var nodeTargets = new Dictionary<int, LocalLinkTarget>();
@@ -404,9 +406,20 @@ public sealed class Migrator {
                             ("@value", newJson), ("@id", pv.Id));
                 }
 
-                totalEmbedsWrapped += richText.EmbedsWrapped;
+                totalEmbedsWrapped += richText.EmbedsWrapped.Count;
+                totalButtonsWrapped += richText.ButtonsWrapped.Count;
                 totalLinksConverted += richText.LinksConverted;
                 totalLinksUnconverted += richText.UnconvertedLinks.Count;
+
+                if (fixedJson != null) {
+                    Log.Info($"Rich text   : perplex value id {pv.Id} | node {pv.NodeDescription} | property " +
+                             $"'{pv.PropertyAlias}' — {DescribeRichTextChanges(richText)}");
+                }
+
+                if (richText.ButtonsWrapped.Count > 0) {
+                    issues.Add($"{richText.ButtonsWrapped.Count} <button>(s) kept as embeds, so their labels can " +
+                               $"only be edited in the source view: {string.Join(" | ", richText.ButtonsWrapped)}");
+                }
 
                 if (richText.UnconvertedLinks.Count > 0) {
                     issues.Add($"{richText.UnconvertedLinks.Count} local link(s) NOT converted, the editor cannot " +
@@ -415,10 +428,14 @@ public sealed class Migrator {
 
                 issues.AddRange(richText.Problems);
 
-                if (result.Json == null) {
+                if (result.Json == null && fixedJson == null) {
                     unchanged++;
                     issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4, empty or an unrecognised " +
-                               "shape); left untouched" + (fixedJson != null ? " apart from its rich text" : ""));
+                               "shape); left untouched");
+                } else if (result.Json == null) {
+                    richTextOnly++;
+                    issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4 or an unrecognised shape); left " +
+                               "untouched apart from its rich text");
                 } else {
                     converted++;
                     totalBlocks += result.Blocks;
@@ -465,12 +482,13 @@ public sealed class Migrator {
             }
         }
 
-        Log.Info($"Perplex     : {converted} value(s) converted, {unchanged} unchanged, {failed} failed; " +
-                 $"{totalBlocks} block(s)");
+        Log.Info($"Perplex     : {converted} value(s) converted, {richTextOnly} rewritten for their rich text " +
+                 $"only, {unchanged} unchanged, {failed} failed; {totalBlocks} block(s)");
         Log.Info($"Nested NC   : {totalNestedConvertedInBlocks} propertie(s) in {totalNestedBlocks} block(s)" +
                  (totalNestedVerbatim > 0 ? $", {totalNestedVerbatim} left verbatim — convert by hand" : ""));
-        Log.Info($"Rich text   : {totalEmbedsWrapped} embed(s) wrapped, {totalLinksConverted} local link(s) " +
-                 "converted" + (totalLinksUnconverted > 0 ? $", {totalLinksUnconverted} left as they were" : ""));
+        Log.Info($"Rich text   : {totalEmbedsWrapped} embed(s) wrapped ({totalButtonsWrapped} button(s)), " +
+                 $"{totalLinksConverted} local link(s) converted" +
+                 (totalLinksUnconverted > 0 ? $", {totalLinksUnconverted} left as they were" : ""));
 
         if (totalDropped + totalOrphaned + variantValues + totalGeneratedKeys > 0) {
             Log.Info($"Dropped     : {totalDropped} block(s) (unmatched element type), {totalOrphaned} orphaned " +
@@ -579,6 +597,22 @@ public sealed class Migrator {
         }
 
         return byKey;
+    }
+
+    private static string DescribeRichTextChanges(RichTextFixResult richText) {
+        var changes = new List<string>();
+
+        if (richText.EmbedsWrapped.Count > 0) {
+            var tags = richText.EmbedsWrapped.GroupBy(x => x).Select(x => $"<{x.Key}> × {x.Count()}");
+
+            changes.Add($"wrapped {string.Join(", ", tags)}");
+        }
+
+        if (richText.LinksConverted > 0) {
+            changes.Add($"converted {richText.LinksConverted} local link(s)");
+        }
+
+        return string.Join("; ", changes);
     }
 
     private static List<string> ParseElementAliases(string config, int dataTypeId) {

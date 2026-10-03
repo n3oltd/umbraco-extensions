@@ -91,7 +91,11 @@ public static class RichTextMarkupFixer {
                 AddEdit(edits, embed.OuterStartIndex, 0, GetHolderStartTag(embed));
                 AddEdit(edits, end.Value, 0, "</span>");
 
-                result.EmbedsWrapped++;
+                result.EmbedsWrapped.Add(embed.Name);
+
+                if (embed.Name == "button") {
+                    result.ButtonsWrapped.Add(html.Substring(embed.OuterStartIndex, end.Value - embed.OuterStartIndex));
+                }
             }
         }
     }
