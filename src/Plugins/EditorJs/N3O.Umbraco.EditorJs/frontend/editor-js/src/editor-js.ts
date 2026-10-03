@@ -8,6 +8,7 @@ import type {
 import { UMB_MODAL_MANAGER_CONTEXT, type UmbModalManagerContext } from '@umbraco-cms/backoffice/modal';
 import { UMB_MEDIA_PICKER_MODAL, UmbMediaUrlRepository, UmbMediaItemRepository } from '@umbraco-cms/backoffice/media';
 import { UMB_LINK_PICKER_MODAL } from '@umbraco-cms/backoffice/multi-url-picker';
+import { imageSize } from '@umbraco-cms/backoffice/utils';
 import type { MediaPickerResultItem } from './tools/UmbracoImageTool';
 import type { EditorJsFrameConfig } from './editor-js-frame';
 
@@ -176,12 +177,17 @@ export class N3oEditorJsElement
                     return null;
                 }
 
+                // A media file that fails to load is still picked, without dimensions.
+                const size = await imageSize(url).catch(() => undefined);
+
                 return {
                     url,
                     name: itemResult.data?.[0]?.name ?? '',
                     unique,
                     // Umbraco's Udi expects umb://media/<guid> in dash-less form.
                     udi: `umb://media/${unique.replace(/-/g, '')}`,
+                    width: size?.naturalWidth,
+                    height: size?.naturalHeight,
                 };
             } finally {
                 urlRepo.destroy();
