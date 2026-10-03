@@ -54,6 +54,7 @@ public static class RichTextMarkupFixer {
 
         AddEmbedEdits(document, html, edits, result);
         AddLocalLinkEdits(document, html, findNodeTarget, edits, result);
+        FlagRichTextBlocks(document, result);
 
         if (edits.Count == 0) {
             return html;
@@ -118,6 +119,13 @@ public static class RichTextMarkupFixer {
             }
 
             return endTag.Index + endTag.Length;
+        }
+    }
+
+    private static void FlagRichTextBlocks(HtmlDocument document, RichTextFixResult result) {
+        if (document.DocumentNode.Descendants().Any(x => x.Name is "umb-rte-block" or "umb-rte-block-inline")) {
+            result.Problems.Add("rich text holds blocks (<umb-rte-block>), which this pass does NOT convert to the " +
+                                "v17 form, so the v17 editor cannot load them; convert them by hand");
         }
     }
 
