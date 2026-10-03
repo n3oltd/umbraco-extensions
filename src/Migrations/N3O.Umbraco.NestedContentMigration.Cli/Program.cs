@@ -153,9 +153,10 @@ public static class Program {
         Console.WriteLine("                converts legacy local links in the rich text inside Perplex values,");
         Console.WriteLine("                for the v17 editor.");
         Console.WriteLine("  --include-embeds  Also wrap bare embeds (<iframe>, <object>, <button> and the");
-        Console.WriteLine("                like) in every other rich text value, including those inside Block");
-        Console.WriteLine("                List and Block Grid items, so the v17 editor keeps them. Off by");
-        Console.WriteLine("                default. Local links there are left to Umbraco's own upgrade.");
+        Console.WriteLine("                like) in every Umbraco.TinyMCE, Umbraco.RichText, Umbraco.BlockList");
+        Console.WriteLine("                and Umbraco.BlockGrid value, including rich text inside their");
+        Console.WriteLine("                blocks, so the v17 editor keeps them. Other editors are not read.");
+        Console.WriteLine("                Off by default. Local links there are left to Umbraco's upgrade.");
         Console.WriteLine("  --verbose     Log each data type / property value processed");
         Console.WriteLine("  --log <path>  Write the full log to this file (default: nc-migrate-<UTC>.log in");
         Console.WriteLine("                the current directory). Every item that wasn't cleanly migrated is");

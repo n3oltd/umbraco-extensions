@@ -39,11 +39,11 @@ so one dry run gives you the complete list of what needs attention.
 
 Opt-in second pass (off by default) for sites that use **Perplex ContentBlocks**. Perplex v4 changed
 block storage from NestedContent to the Block Editor shape. It ships its own migration, which runs
-during the upgrade, converts only the eight latest versions of each value and skips any value
-already above version 3, so it leaves every value this pass converts alone. With
-`--include-perplex`, the same run also rewrites every `Perplex.ContentBlocks` value from the v3
-shape (each block's `content` is a NestedContent array) to the v4 shape (`content: {contentTypeKey,
-key, values:[{editorAlias, alias, value}]}`, `version` 3→4), in the same transaction.
+during the upgrade, converts only each value's most recent versions and skips any value already
+above version 3, so it leaves alone every value this pass converts. With `--include-perplex`, the
+same run also rewrites every `Perplex.ContentBlocks` value from the v3 shape (each block's `content`
+is a NestedContent array) to the v4 shape (`content: {contentTypeKey, key, values:[{editorAlias,
+alias, value}]}`, `version` 3→4), in the same transaction.
 
 Unlike the Nested Content → Block List pass (which writes the v13 udi shape and lets Umbraco's own 13→17
 upgrade finish it), this writes the **final v4 shape directly** — Umbraco's upgrade does not touch Perplex's
@@ -54,7 +54,7 @@ still resolve on v17.
 the Umbraco 13→17 + Perplex-4 upgrade. (It runs on the v13 database, in the same offline window as the NC pass;
 it never leaves a v4-shape value on a still-running v3 site.)
 
-**Nested Nested Content is converted recursively (fixed 2026-08-26).** An element property whose own value
+**Nested Nested Content is converted recursively.** An element property whose own value
 is Nested Content is converted to Block List too, to any depth. This matters because step 1 flips *every*
 in-use NC data type to Block List — including the ones assigned to element-type properties — so leaving an
 inner value as an NC array would leave the data type and its stored value disagreeing, and the inner content
@@ -79,29 +79,32 @@ stored HTML as-is; only the back office breaks. The pass fixes every `Umbraco.Ti
 `Umbraco.RichText` value it finds in a Perplex value, including those in Block Lists nested inside a
 block, and it also runs on values that are already v4.
 
-- **Embeds.** Tiptap has no node for a bare `<iframe>`, `<object>`, `<embed>`, `<video>`,
-  `<audio>`, `<canvas>` or `<button>`, so the editor drops it on load (a button keeps only its
-  text), and saving the page makes the loss permanent. Each one is wrapped in
+- **Embeds.** Tiptap has no node for a bare `<iframe>`, `<object>`, `<embed>`, `<video>`, `<audio>`,
+  `<canvas>` or `<button>`, so the editor drops it on load (a button keeps only its text), and
+  saving the page makes the loss permanent. Each one is wrapped in
   `<span class="umb-embed-holder">`, which is how v17 stores an embed: its Embedded Media node
   (inline, enabled on every migrated rich text data type) keeps what is inside. The holder closes
-  after the element's own end tag, and an element with no end tag is left alone and flagged
-  `[REVIEW]`. An embed made with the v13 embed dialog keeps its `data-embed-url`, width, height and
-  constrain on the holder, so the v17 Embed dialog can edit it. Embeds already inside a holder are
-  left alone. Each wrapped button is listed for review, since the v17 editor can change its label
-  only in source view.
+  after the element's own end tag, or after the start tag of an element that has none, such as
+  `<embed>`. An element that needs an end tag but has none is left alone and flagged `[REVIEW]`. An
+  embed made with the v13 embed dialog keeps its `data-embed-url`, width, height and constrain on
+  the holder, so the v17 Embed dialog can edit it. Embeds already inside a holder are left alone.
+  Each wrapped button is listed for review, since the v17 editor can change its label only in source
+  view.
 - **Local links.** Umbraco's V15 local link migration converts `/{localLink:umb://document/…}`,
   `/{localLink:1234}` and URL-encoded `/%7BlocalLink:…%7D` to `/{localLink:<key>}` with a `type`
   attribute, but not inside Perplex values. The pass does the same on any element's `href`,
   including Umbraco's handling of `data-anchor`: an integer is looked up in `umbracoNode`, and an
-  encoded link is written back with plain braces. A link it cannot convert, or one that already has
-  a `type` other than `document` or `media`, is left as it was and flagged `[REVIEW]`.
+  encoded link is written back with plain braces. A link it cannot convert, or one whose existing
+  `type` disagrees with its target, is left as it was and flagged `[REVIEW]`.
 - **Blocks in rich text.** Rich text inside a rich text value's blocks is fixed as well. The
   `<umb-rte-block>` markup itself is not converted to the v17 form, so it is flagged `[REVIEW]` for
   converting by hand.
 
-Each changed value gets a `Rich text :` line naming its node and property, and the summary reports
-`Rich text : <n> embed(s) wrapped (<n> button(s)), <n> local link(s) converted`. Markup is edited in
-place, so nothing else in the HTML changes.
+Each changed value gets a `Changed :` line naming its value id, content version, node and property,
+and the summary reports
+`Rich text : <n> embed(s) wrapped (<n> button(s)), <n> local link(s) converted`. A value that cannot
+be read (not JSON, text after its JSON, or a number outside the decimal range) is flagged `[REVIEW]`
+and left as it was. Markup is edited in place, so nothing else in the HTML changes.
 
 > ⚠️ **Unverified — test on a local test site first.** The v4 shape is matched from an observed live value, not
 > a Perplex spec. Restore a copy, `--dry-run` then `--apply --include-perplex`, run the 13→17 + Perplex-4
@@ -111,24 +114,29 @@ place, so nothing else in the HTML changes.
 ## Embeds in all other rich text (`--include-embeds`)
 
 Opt-in third pass (off by default). Umbraco's 13→17 upgrade wraps no bare embeds in any rich text,
-so a bare `<iframe>`, `<object>`, `<embed>`, `<video>`, `<audio>`, `<canvas>` or `<button>` in an
-ordinary rich text property is dropped by the v17 editor on load and lost on the next save, exactly
-as in Perplex. With `--include-embeds`, the same run wraps each one as the Perplex pass does (see
+so a bare embed in an ordinary rich text property is dropped by the v17 editor on load and lost on
+the next save, exactly as in Perplex. With `--include-embeds`, the same run wraps the same elements
+as the Perplex pass, in the same way (see
 [Rich text inside Perplex blocks](#rich-text-inside-perplex-blocks)), in every `umbracoPropertyData`
 value whose data type is `Umbraco.TinyMCE`, `Umbraco.RichText`, `Umbraco.BlockList` or
-`Umbraco.BlockGrid`. That covers the rich text values themselves, rich text inside Block List and
-Block Grid items at any depth, and rich text inside a rich text value's blocks. Block List values
-the Nested Content pass has just converted are included.
+`Umbraco.BlockGrid`, and in no other editor. That covers the rich text values themselves, rich text
+inside Block List and Block Grid items at any depth, and rich text inside a rich text value's
+blocks. Block List values the Nested Content pass has just converted are included. Rich text held by
+any other complex editor is not read.
 
 It wraps embeds only. Local links in these editors are left to Umbraco's own V15 local link
 migration, which handles them, so no link is converted twice. Perplex values are not read by this
 pass; their rich text is fixed by `--include-perplex` alone.
 
-Each changed value gets an `Embeds :` line naming its node and property. Wrapped buttons, elements
-with no end tag and values the pass cannot read are flagged `[REVIEW]`, and a value that fails stops
-the run like any other. The summary reports
-`Embeds : <n> rich text and block value(s) checked, <n> changed, <n> unchanged, <n> failed`. Values
-are read in pages of 500, so the pass never holds every rich text value in memory. Running it again
+Each changed value gets a `Changed :` line naming its value id, content version, node and property.
+Wrapped buttons, elements that need an end tag but have none, and values the pass cannot read are
+flagged `[REVIEW]`, and a value that fails stops the run like any other. The summary reads:
+
+```
+Embeds      : <n> rich text and block value(s) checked, <n> changed, <n> flagged and left as they were, <n> unchanged, <n> failed; <n> embed(s) wrapped (<n> button(s))
+```
+
+Values are read in pages, so the pass never holds every rich text value in memory. Running it again
 changes nothing, because an embed already inside a holder is left alone.
 
 ## Converts EVERY Nested Content data type, and renames them
@@ -188,7 +196,7 @@ they are. A data type's name is `umbracoNode.text`.
 
 `cmsContentNu` is a serialized snapshot of every content item and this tool does not write it, so without
 invalidating it the site keeps serving **pre-migration Nested Content** and throws
-`Cannot deserialize the current JSON array ... into type 'BlockValue'` on every affected page. The tool now
+`Cannot deserialize the current JSON array ... into type 'BlockValue'` on every affected page. The tool
 deletes Umbraco's cache-serializer marker (`umbracoKeyValue` key
 `Umbraco.Web.PublishedCache.NuCache.Serializer`) in the same transaction, which makes Umbraco rebuild the whole
 published cache itself on the next start.
@@ -229,6 +237,7 @@ From this project's folder:
 dotnet run -- \
   --connection "<sql server connection string>" \
   (--dry-run | --apply) \
+  [--include-perplex] [--include-embeds] \
   [--verbose] [--log <path>]
 ```
 
@@ -241,6 +250,7 @@ Or build once with `dotnet build -c Release` and run `bin\Release\net10.0\nc-mig
 | `--dry-run` | Run everything in a transaction, then roll back; report what **would** change. |
 | `--apply` | Commit the changes. Mutually exclusive with `--dry-run`. |
 | `--include-perplex` | Also convert `Perplex.ContentBlocks` values from the v3 (NestedContent) shape to the v4 (Block Editor) shape, in the same transaction. **Off by default.** See [Perplex ContentBlocks](#perplex-contentblocks-v3--v4---include-perplex) below. |
+| `--include-embeds` | Also wrap bare embeds in every `Umbraco.TinyMCE`, `Umbraco.RichText`, `Umbraco.BlockList` and `Umbraco.BlockGrid` value, so the v17 editor keeps them. **Off by default.** See [Embeds in all other rich text](#embeds-in-all-other-rich-text---include-embeds) below. |
 | `--verbose` | Log each data type / property value processed. |
 | `--log` | Write the full log to this file (default: `nc-migrate-<UTC timestamp>.log` in the current directory). Every item that wasn't cleanly migrated is written as a clearly-separated `[REVIEW]` block — node id + name, property alias, and the reason — so you can find and manually check each one. |
 | `--help`, `-h` | Show help. |
@@ -324,8 +334,8 @@ Exit code is `0` on success, `1` on validation failure or error.
   [Converts EVERY Nested Content data type](#converts-every-nested-content-data-type-and-renames-them).
 - **Inline editing mode** is enabled on every converted Block List data type
   (`useInlineEditingAsDefault: true`).
-- **Nested Content inside Nested Content is NOT converted** — the inner value is copied verbatim and the
-  count is reported as a warning. Convert those manually.
+- **Nested Content inside Nested Content is converted** recursively, to any depth. A value that
+  cannot be converted is copied verbatim and flagged `[REVIEW]`; convert those by hand.
 - Blocks whose element-type alias can't be resolved to an **element** content type are **skipped** and
   reported (not silently dropped) — fix the missing element type and re-run if you see those warnings.
 - **Verified:** the written v13 value + config shape survives a real direct **13 → 17** upgrade (Umbraco's
