@@ -1,3 +1,4 @@
+using Jumoo.Json;
 using Jumoo.Processing.Core.Pipelines;
 using Jumoo.Processing.Core.Pipelines.Models;
 using N3O.Umbraco.Content;
@@ -6,10 +7,15 @@ using N3O.Umbraco.Mediator;
 using N3O.Umbraco.Sync.Extensions.Commands;
 using N3O.Umbraco.Sync.Extensions.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Services;
+using uSync.BackOffice.Models;
 using uSync.Core;
 using uSync.Core.Dependency;
 using uSync.Core.Sync;
@@ -21,6 +27,7 @@ using uSync.Publisher.Strategies.Models;
 namespace N3O.Umbraco.Sync.Extensions.Handlers;
 
 public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncContentReq, None> {
+    private const string ActionsResultKey = "actions";
     private static readonly string Document = global::Umbraco.Cms.Core.Constants.UdiEntityType.Document;
 
     private readonly IContentLocator _contentLocator;
@@ -95,6 +102,26 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
             throw new Exception($"Sync of {contentId} failed with error: {pipeline.Results.Error.Message}");
         }
 
+        var failedItems = GetItemResults(pipeline).Where(x => !x.Success).ToList();
+
+        if (failedItems.Any()) {
+            throw new Exception($"Sync of {contentId} failed to import {failedItems.Select(x => $"{x.Name} ({x.Message})").ToCsv(true)}");
+        }
+
         return None.Empty;
+    }
+
+    private IReadOnlyList<uSyncActionView> GetItemResults(IPipeline pipeline) {
+        var actions = default(object);
+
+        if (pipeline.Results?.Results.TryGetValue(ActionsResultKey, out actions) != true || actions == null) {
+            return [];
+        } else if (actions is IEnumerable<uSyncActionView> actionViews) {
+            return actionViews.ToList();
+        } else if (actions is JsonNode jsonNode) {
+            return jsonNode.Deserialize<List<uSyncActionView>>(JsonTextOptions.GetOptions());
+        } else {
+            throw new Exception($"Pipeline {pipeline.Id} has {ActionsResultKey} of unrecognised type {actions.GetType()}");
+        }
     }
 }
