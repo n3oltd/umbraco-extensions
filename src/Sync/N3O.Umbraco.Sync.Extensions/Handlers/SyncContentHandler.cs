@@ -17,7 +17,6 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Services;
 using uSync.BackOffice.Models;
 using uSync.Core;
-using uSync.Core.Dependency;
 using uSync.Core.Sync;
 using uSync.Publisher.Models;
 using uSync.Publisher.Process.Models;
@@ -57,7 +56,6 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
             Name = name
         };
         syncItem.Change = ChangeType.Create;
-        syncItem.Flags = DependencyFlags.PublishedDependencies;
 
         var options = new PublisherProcessingOptions();
         options.Mode = PublishMode.Push;
@@ -103,10 +101,10 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
             throw new Exception($"Sync of {contentId} failed with error: {pipeline.Results.Error.Message}");
         }
 
-        var failedItems = GetItemResults(pipeline).Where(x => !x.Success).ToList();
+        var failedItems = GetItemResults(pipeline).Where(IsError).ToList();
 
         if (failedItems.Any()) {
-            throw new Exception($"Sync of {contentId} failed to import {failedItems.Select(x => $"{x.Name} ({x.Message})").ToCsv(true)}");
+            throw new Exception($"Sync of {contentId} failed to import {failedItems.Select(x => $"{x.Name} ({x.Change}: {x.Message})").ToCsv(true)}");
         }
 
         return None.Empty;
@@ -124,5 +122,9 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         } else {
             throw new Exception($"Pipeline {pipeline.Id} has {ActionsResultKey} of unrecognised type {actions.GetType()}");
         }
+    }
+
+    private bool IsError(uSyncActionView itemResult) {
+        return (itemResult.Change >= ChangeType.Fail && itemResult.Change != ChangeType.Hidden) || !itemResult.Success;
     }
 }
