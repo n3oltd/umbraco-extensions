@@ -233,7 +233,7 @@ public static class RichTextMarkupFixer {
         }
     }
 
-    // A span, not a div: the holder sits inside <p>, which a browser closes before any block element.
+    // The holder must stay inline: it can sit inside <p>, which HTML parsing closes before any block element.
     private static string GetHolderStartTag(HtmlNode embed) {
         var startTag = new StringBuilder($"<span class=\"{EmbedHolderClass}\"");
         var embedDialog = embed.Ancestors().FirstOrDefault(x => x.HasClass(EmbedDialogClass));

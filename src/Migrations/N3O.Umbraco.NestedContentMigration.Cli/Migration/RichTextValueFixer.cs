@@ -48,8 +48,6 @@ public static class RichTextValueFixer {
         }
     }
 
-    // An {editorAlias, alias, value} entry names its own editor; a v13 Block List item's properties sit beside
-    // contentTypeKey and take their editors from the element type.
     private static bool FixToken(JToken token,
                                  IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                  Func<string, string> fixMarkup,
@@ -109,7 +107,6 @@ public static class RichTextValueFixer {
         return FixToken(property.Value, editorAliases, fixMarkup, result);
     }
 
-    // A rich text value is either the raw HTML or, once it holds blocks, {markup, blocks}.
     private static string FixRichTextValue(string text,
                                            IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                            Func<string, string> fixMarkup,
@@ -159,7 +156,6 @@ public static class RichTextValueFixer {
         }
     }
 
-    // Block editor values nested in a block are stored as serialised JSON strings.
     private static string FixNestedJson(string text,
                                         IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                         Func<string, string> fixMarkup,
@@ -227,7 +223,7 @@ public static class RichTextValueFixer {
         }
     }
 
-    // No date parsing and decimal floats: a rewrite must not reformat dates or round numbers elsewhere in the value.
+    // A rewrite must not reformat dates or round numbers elsewhere in the value.
     private static JToken TryParse(string text, out bool hasTrailingText) {
         var trimmed = text?.TrimStart();
 
