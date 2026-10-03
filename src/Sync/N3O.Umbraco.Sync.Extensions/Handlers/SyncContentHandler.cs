@@ -12,6 +12,7 @@ using uSync.Core.Dependency;
 using uSync.Core.Sync;
 using uSync.Publisher.Client;
 using uSync.Publisher.Models;
+using uSync.Publisher.Publishers;
 
 namespace N3O.Umbraco.Sync.Extensions.Handlers;
 
@@ -20,15 +21,24 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
     
     private readonly IPublisherStateService _publisherStateService;
     private readonly IContentLocator _contentLocator;
+    private readonly SyncPublisherFactory _syncPublisherFactory;
 
-    public SyncContentHandler(IPublisherStateService publisherStateService, IContentLocator contentLocator) {
+    public SyncContentHandler(IPublisherStateService publisherStateService,
+                              IContentLocator contentLocator,
+                              SyncPublisherFactory syncPublisherFactory) {
         _publisherStateService = publisherStateService;
         _contentLocator = contentLocator;
+        _syncPublisherFactory = syncPublisherFactory;
     }
 
     public async Task<None> Handle(SyncContentCommand req, CancellationToken cancellationToken) {
         var requestId = req.Model.RequestId.GetValueOrThrow();
         var content = _contentLocator.ById(req.Model.ContentId.GetValueOrThrow());
+        var publisher = _syncPublisherFactory.GetPublisher(req.Model.ServerAlias);
+
+        if (publisher is not SyncRealtimePublisher) {
+            throw new Exception($"Sync of {req.Model.ContentId} needs server {req.Model.ServerAlias} to use the realtime publisher, not {publisher.Alias}");
+        }
 
         if (!_publisherStateService.HasProcess(requestId)) {
             var syncItem = new SyncItem();
