@@ -2,9 +2,9 @@
 /App_Plugins/
 /Smidge/
 /umbraco/
-/uSync/v9/Media/
-/uSync/v9/UserGroups/
-/uSync/v9/Users/
+/uSync/v17/Media/
+/uSync/v17/UserGroups/
+/uSync/v17/Users/
 /Views/MacroPartials/
 /Views/Partials/Forms/
 /Views/Partials/blocklist/
