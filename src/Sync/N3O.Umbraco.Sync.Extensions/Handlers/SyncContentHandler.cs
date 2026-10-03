@@ -86,10 +86,10 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
             UpdateProcess(process, result);
         } while (!result.ProcessComplete);
 
-        var failedItems = itemResults.Values.Where(x => !x.Success).ToList();
+        var failedItems = itemResults.Values.Where(IsError).ToList();
 
         if (failedItems.Any()) {
-            throw new Exception($"Sync of {req.Model.ContentId} failed to import {failedItems.Select(x => $"{x.Name} ({x.Message})").ToCsv(true)}");
+            throw new Exception($"Sync of {req.Model.ContentId} failed to import {failedItems.Select(x => $"{x.Name} ({x.Change}: {x.Message})").ToCsv(true)}");
         }
         
         return None.Empty;
@@ -109,6 +109,12 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         request.AdditionalData = process.AdditionalData;
 
         return request;
+    }
+
+    private bool IsError(uSyncAction itemResult) {
+        List<uSyncAction> itemResults = [itemResult];
+
+        return itemResults.ContainsErrors();
     }
 
     private void UpdateProcess(SyncActionProcess process, PublisherActionResult result) {
