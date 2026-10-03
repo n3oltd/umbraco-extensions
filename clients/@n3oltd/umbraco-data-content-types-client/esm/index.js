@@ -27,7 +27,7 @@ var ContentTypesClient = /** @class */ (function () {
     }
     ContentTypesClient.prototype.findContentTypes = function (req) {
         var _this = this;
-        var url_ = this.baseUrl + "/umbraco/api/ContentTypes/find";
+        var url_ = this.baseUrl + "/umbraco/backoffice/api/ContentTypes/find";
         url_ = url_.replace(/[?&]$/, "");
         var content_ = JSON.stringify(req);
         var options_ = {
@@ -85,7 +85,7 @@ var ContentTypesClient = /** @class */ (function () {
     };
     ContentTypesClient.prototype.getContentTypeByAlias = function (contentType) {
         var _this = this;
-        var url_ = this.baseUrl + "/umbraco/api/ContentTypes/{contentType}";
+        var url_ = this.baseUrl + "/umbraco/backoffice/api/ContentTypes/{contentType}";
         if (contentType === undefined || contentType === null)
             throw new Error("The parameter 'contentType' must be defined.");
         url_ = url_.replace("{contentType}", encodeURIComponent("" + contentType));
@@ -143,7 +143,7 @@ var ContentTypesClient = /** @class */ (function () {
     };
     ContentTypesClient.prototype.getRelationContentTypes = function (type, contentId) {
         var _this = this;
-        var url_ = this.baseUrl + "/umbraco/api/ContentTypes/{contentId}/relations?";
+        var url_ = this.baseUrl + "/umbraco/backoffice/api/ContentTypes/{contentId}/relations?";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));

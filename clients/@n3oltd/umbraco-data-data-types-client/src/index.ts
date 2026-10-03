@@ -19,7 +19,7 @@ export class DataTypesClient {
     }
 
     findDataTypes(req: DataTypeCriteria): Promise<DataTypeRes[]> {
-        let url_ = this.baseUrl + "/umbraco/api/DataTypes/find";
+        let url_ = this.baseUrl + "/umbraco/backoffice/api/DataTypes/find";
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(req);
