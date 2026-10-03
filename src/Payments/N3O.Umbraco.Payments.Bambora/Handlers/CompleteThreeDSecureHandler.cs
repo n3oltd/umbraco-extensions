@@ -33,7 +33,7 @@ public class CompleteThreeDSecureHandler :
             apiReq.ThreeDSessionData = payment.Card.ThreeDSecureV2.SessionData;
             apiReq.CardResponse.Cres = req.Model.CRes;
 
-            var apiPayment = await _paymentsClient.CompleteThreeDSecureAsync(apiReq);
+            var apiPayment = await _paymentsClient.CompleteThreeDSecureAsync(apiReq.ThreeDSessionData, apiReq);
 
             payment.ThreeDSecureComplete(req.Model.CRes);
 
