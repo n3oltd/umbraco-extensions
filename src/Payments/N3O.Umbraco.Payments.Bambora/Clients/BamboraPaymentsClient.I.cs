@@ -7,6 +7,6 @@ public interface IBamboraPaymentsClient {
     [Post("/payments")]
     Task<ApiPaymentRes> CreatePaymentAsync(ApiPaymentReq req);
     
-    [Post("/payments/{req.ThreeDSessionData}/continue")]
-    Task<ApiPaymentRes> CompleteThreeDSecureAsync(ThreeDSecureChallenge req);
+    [Post("/payments/{threeDSessionData}/continue")]
+    Task<ApiPaymentRes> CompleteThreeDSecureAsync(string threeDSessionData, [Body] ThreeDSecureChallenge req);
 }
