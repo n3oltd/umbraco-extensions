@@ -14,3 +14,6 @@ must be at least five minutes.
 Content syncs separately. A published content model marked `[SyncOnPublish]` with a server alias is
 queued for transfer to that server whenever it is published, which turns a manual push into
 something that follows editing.
+
+The server must use uSync's realtime publisher. Any other publisher only queues the push, so the
+transfer job fails rather than report content as sent before it has arrived.
