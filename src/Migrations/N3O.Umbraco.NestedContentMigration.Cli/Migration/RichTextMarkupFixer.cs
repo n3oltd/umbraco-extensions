@@ -1,6 +1,7 @@
 using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -23,11 +24,7 @@ public static class RichTextMarkupFixer {
         };
 
     private static readonly HashSet<string> LinkEntityTypes =
-        new(StringComparer.OrdinalIgnoreCase) { "document", "media" };
-
-    private static readonly Regex LegacyLocalLinkPattern =
-        new(@"^(?<lead>/?)\{localLink:umb://(?<type>[a-z]+)/(?<id>[0-9a-f-]{32,36})\}(?<tail>.*)$",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+        new(StringComparer.InvariantCultureIgnoreCase) { "document", "media" };
 
     private static readonly Regex EndTagPattern =
         new(@"\G</(?<name>[^\s/>]+)\s*>", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -37,7 +34,15 @@ public static class RichTextMarkupFixer {
             @"(?:(?:[\s/]+|(?<=[""']))[^\s/>=""']+(?:\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+))?)*[\s/]*>",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    public static string Fix(string html, RichTextFixResult result) {
+    private static readonly Regex LocalLinkPattern =
+        new(@"^(?<lead>/?)(?<open>\{|%7B)localLink:(?<id>[^}%]*)(?:\}|%7D)(?<tail>.*)$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+
+    private static readonly Regex UdiPattern =
+        new(@"^umb://(?<type>[a-z-]+)/(?<key>[0-9a-f-]+)$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+    public static string Fix(string html, Func<int, LocalLinkTarget> findNodeTarget, RichTextFixResult result) {
         if (string.IsNullOrEmpty(html)) {
             return html;
         }
@@ -48,7 +53,7 @@ public static class RichTextMarkupFixer {
         var edits = new List<Edit>();
 
         AddEmbedEdits(document, html, edits, result);
-        AddLocalLinkEdits(document, html, edits, result);
+        AddLocalLinkEdits(document, html, findNodeTarget, edits, result);
 
         if (edits.Count == 0) {
             return html;
@@ -116,6 +121,21 @@ public static class RichTextMarkupFixer {
         }
     }
 
+    private static LocalLinkTarget FindLinkTarget(string id, Func<int, LocalLinkTarget> findNodeTarget) {
+        var udi = UdiPattern.Match(id);
+
+        if (udi.Success) {
+            var entityType = udi.Groups["type"].Value.ToLowerInvariant();
+            var isKey = Guid.TryParse(udi.Groups["key"].Value, out var key);
+
+            return isKey && LinkEntityTypes.Contains(entityType) ? new LocalLinkTarget(key, entityType) : null;
+        } else if (int.TryParse(id, NumberStyles.Integer, CultureInfo.InvariantCulture, out var nodeId)) {
+            return findNodeTarget(nodeId);
+        } else {
+            return null;
+        }
+    }
+
     private static string GetHolderStartTag(HtmlNode embed) {
         var startTag = new StringBuilder($"<span class=\"{EmbedHolderClass}\"");
         var embedDialog = embed.Ancestors().FirstOrDefault(x => x.HasClass(EmbedDialogClass));
@@ -140,48 +160,45 @@ public static class RichTextMarkupFixer {
     // follows the href.
     private static void AddLocalLinkEdits(HtmlDocument document,
                                           string html,
+                                          Func<int, LocalLinkTarget> findNodeTarget,
                                           List<Edit> edits,
                                           RichTextFixResult result) {
-        foreach (var anchor in document.DocumentNode.Descendants("a")) {
-            var href = anchor.Attributes["href"];
+        foreach (var element in document.DocumentNode.Descendants().Where(x => x.Attributes["href"] != null)) {
+            var href = element.Attributes["href"];
+            var match = LocalLinkPattern.Match(href.Value);
 
-            if (href == null) {
+            if (!match.Success || IsKeyLink(element, match)) {
                 continue;
             }
 
-            var match = LegacyLocalLinkPattern.Match(href.Value);
+            var target = FindLinkTarget(match.Groups["id"].Value, findNodeTarget);
+            var type = element.GetAttributeValue("type", null);
 
-            if (!match.Success) {
-                continue;
-            }
-
-            var entityType = match.Groups["type"].Value.ToLowerInvariant();
-
-            if (!LinkEntityTypes.Contains(entityType) || !Guid.TryParse(match.Groups["id"].Value, out var key)) {
+            if (target == null) {
                 result.UnconvertedLinks.Add(href.Value);
+            } else if (type != null && !type.Equals(target.EntityType, StringComparison.InvariantCultureIgnoreCase)) {
+                result.UnconvertedLinks.Add($"{href.Value} (it already has type=\"{type}\")");
+            } else {
+                var tail = match.Groups["tail"].Value;
+                var dataAnchor = element.GetAttributeValue("data-anchor", null);
 
-                continue;
+                if (!string.IsNullOrEmpty(dataAnchor) && !tail.Contains(dataAnchor) && !tail.Contains('#')) {
+                    tail += dataAnchor;
+                }
+
+                var hrefEnd = href.ValueStartIndex + href.ValueLength;
+                var localLink = $"{match.Groups["lead"].Value}{{localLink:{target.Key:D}}}{tail}";
+
+                AddEdit(edits, href.ValueStartIndex, href.ValueLength, localLink);
+
+                if (type == null) {
+                    var afterQuote = hrefEnd < html.Length && html[hrefEnd] is '"' or '\'' ? hrefEnd + 1 : hrefEnd;
+
+                    AddEdit(edits, afterQuote, 0, $" type=\"{target.EntityType}\"");
+                }
+
+                result.LinksConverted++;
             }
-
-            var tail = match.Groups["tail"].Value;
-            var dataAnchor = anchor.GetAttributeValue("data-anchor", null);
-
-            if (!string.IsNullOrEmpty(dataAnchor) && !tail.Contains(dataAnchor) && !tail.Contains('#')) {
-                tail += dataAnchor;
-            }
-
-            var hrefEnd = href.ValueStartIndex + href.ValueLength;
-            var localLink = $"{match.Groups["lead"].Value}{{localLink:{key:D}}}{tail}";
-
-            AddEdit(edits, href.ValueStartIndex, href.ValueLength, localLink);
-
-            if (anchor.Attributes["type"] == null) {
-                var afterQuote = hrefEnd < html.Length && html[hrefEnd] is '"' or '\'' ? hrefEnd + 1 : hrefEnd;
-
-                AddEdit(edits, afterQuote, 0, $" type=\"{entityType}\"");
-            }
-
-            result.LinksConverted++;
         }
     }
 
@@ -215,6 +232,15 @@ public static class RichTextMarkupFixer {
 
     private static bool IsEmbedOrHolder(HtmlNode node) {
         return EmbedTags.Contains(node.Name) || node.HasClass(EmbedHolderClass);
+    }
+
+    private static bool IsKeyLink(HtmlNode element, Match localLink) {
+        var type = element.GetAttributeValue("type", null);
+
+        return localLink.Groups["open"].Value == "{" &&
+               Guid.TryParse(localLink.Groups["id"].Value, out _) &&
+               type != null &&
+               LinkEntityTypes.Contains(type);
     }
 
     private static bool IsTagOf(Match tag, string name) {

@@ -17,6 +17,9 @@ public sealed class Migrator {
 
     private const string CacheSerializerKey = "Umbraco.Web.PublishedCache.NuCache.Serializer";
 
+    private static readonly Guid DocumentObjectType = new("C66BA18E-EAF3-4CFF-8A22-41B16D66A972");
+    private static readonly Guid MediaObjectType = new("B796F64C-1F99-4FFB-B886-4BF4BC011A9C");
+
     private const int MaxInClauseParameters = 2000;
 
     private readonly CliOptions _options;
@@ -366,6 +369,23 @@ public sealed class Migrator {
         var totalEmbedsWrapped = 0;
         var totalLinksConverted = 0;
         var totalLinksUnconverted = 0;
+        var nodeTargets = new Dictionary<int, LocalLinkTarget>();
+
+        LocalLinkTarget FindNodeTarget(int nodeId) {
+            if (!nodeTargets.TryGetValue(nodeId, out var target)) {
+                target = Query(cn, tx,
+                    "SELECT uniqueId, nodeObjectType FROM umbracoNode " +
+                    "WHERE id = @id AND nodeObjectType IN (@document, @media)",
+                    r => new LocalLinkTarget(r.GetGuid(0), r.GetGuid(1) == DocumentObjectType ? "document" : "media"),
+                    ("@id", nodeId),
+                    ("@document", DocumentObjectType),
+                    ("@media", MediaObjectType)).SingleOrDefault();
+
+                nodeTargets[nodeId] = target;
+            }
+
+            return target;
+        }
 
         foreach (var pv in values) {
             var issues = new List<string>();
@@ -373,7 +393,10 @@ public sealed class Migrator {
             try {
                 var result = PerplexContentBlocksValueConverter.Convert(pv.TextValue, contentTypeKeys, editorAliases);
                 var richText = new RichTextFixResult();
-                var fixedJson = PerplexRichTextFixer.Fix(result.Json ?? pv.TextValue, editorAliases, richText);
+                var fixedJson = PerplexRichTextFixer.Fix(result.Json ?? pv.TextValue,
+                                                         editorAliases,
+                                                         FindNodeTarget,
+                                                         richText);
                 var newJson = fixedJson ?? result.Json;
 
                 if (newJson != null) {
