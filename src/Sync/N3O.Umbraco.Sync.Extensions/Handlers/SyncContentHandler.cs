@@ -46,13 +46,15 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
     }
 
     public async Task<None> Handle(SyncContentCommand req, CancellationToken cancellationToken) {
-        var requestId = req.Model.RequestId.GetValueOrThrow();
         var contentId = req.Model.ContentId.GetValueOrThrow();
         var content = _contentLocator.ById(req.Model.ContentId.GetValueOrThrow());
 
+        var udi = Udi.Create(Document, contentId);
+        var name = content.Name;
+
         var syncItem = new SyncItem {
-            Udi = Udi.Create(Document, contentId),
-            Name = content.Name
+            Udi = udi,
+            Name = name
         };
         syncItem.Change = ChangeType.Create;
         syncItem.Flags = DependencyFlags.PublishedDependencies;
@@ -65,7 +67,6 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         options.PublisherOptions = new SyncPublisherOptions();
         options.PublisherOptions.PublishedDependencies = true;
 
-        // Pipelines require a user with uSync's Push permission and a background job has none
         var user = await _userService.GetAsync(global::Umbraco.Cms.Core.Constants.Security.SuperUserKey);
         var publisher = _syncPublisherFactory.GetPublisherByServer(req.Model.ServerAlias);
 
@@ -86,7 +87,7 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
             do {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                pipeline = await _pipelineService.Process(pipeline.Id, user, requestId.ToString(), false);
+                pipeline = await _pipelineService.Process(pipeline.Id, user, null, false);
             } while (pipeline.State.Status is PipelineStatus.Running or PipelineStatus.Waiting);
         } catch {
             await _pipelineService.ClearPipeline(pipeline.Id, user);
