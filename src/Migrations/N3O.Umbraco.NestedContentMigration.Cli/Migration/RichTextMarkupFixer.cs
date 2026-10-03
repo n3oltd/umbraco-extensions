@@ -9,8 +9,6 @@ using System.Text.RegularExpressions;
 namespace N3O.Umbraco.NestedContentMigration.Cli;
 
 public static class RichTextMarkupFixer {
-    // Umbraco's Tiptap Embedded Media node keeps whatever is inside an element with this class verbatim. Umbraco
-    // registers it as inline, so a span holder is valid in the <p> and <div> parents embeds sit in.
     private const string EmbedHolderClass = "umb-embed-holder";
     private const string EmbedDialogClass = "embeditem";
     private const int ExcerptLength = 120;
@@ -148,6 +146,7 @@ public static class RichTextMarkupFixer {
         }
     }
 
+    // A span, not a div: the holder sits inside <p>, which a browser closes before any block element.
     private static string GetHolderStartTag(HtmlNode embed) {
         var startTag = new StringBuilder($"<span class=\"{EmbedHolderClass}\"");
         var embedDialog = embed.Ancestors().FirstOrDefault(x => x.HasClass(EmbedDialogClass));
@@ -167,9 +166,6 @@ public static class RichTextMarkupFixer {
         return startTag.ToString();
     }
 
-    // Mirrors Umbraco's own V15 local link migration, which never sees links held inside Perplex values: the UDI
-    // becomes a key, a data-anchor is appended unless the href already has a fragment, and a type attribute
-    // follows the href.
     private static void AddLocalLinkEdits(HtmlDocument document,
                                           string html,
                                           Func<int, LocalLinkTarget> findNodeTarget,

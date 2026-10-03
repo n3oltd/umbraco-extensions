@@ -32,8 +32,8 @@ public static class PerplexRichTextFixer {
         }
     }
 
-    // A property's editor is named inline in the v4 / v17 shape ({editorAlias, alias, value}); in a v13 Block List
-    // item the properties are keys beside contentTypeKey, so the editor comes from the element type.
+    // An {editorAlias, alias, value} entry names its own editor; a v13 Block List item's properties sit beside
+    // contentTypeKey and take their editors from the element type.
     private static bool FixToken(JToken token,
                                  IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                  Func<int, LocalLinkTarget> findNodeTarget,
@@ -186,7 +186,7 @@ public static class PerplexRichTextFixer {
         }
     }
 
-    // Dates and decimals are kept as written, so a value only changes where markup was fixed.
+    // No date parsing and decimal floats: a rewrite must not reformat dates or round numbers elsewhere in the value.
     private static JToken TryParse(string text) {
         var trimmed = text?.TrimStart();
 
