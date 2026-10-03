@@ -1,47 +1,24 @@
-import { LitElement, css, customElement, html, property } from '@umbraco-cms/backoffice/external/lit';
-import { UmbElementMixin } from '@umbraco-cms/backoffice/element-api';
-
-interface SegmentRule {
-    name?: string;
-    type?: string;
-}
+import { customElement, html, nothing } from '@umbraco-cms/backoffice/external/lit';
+import { UeSegmentRuleBaseElement } from '@umbraco-engage/backoffice/personalization';
 
 const elementName = 'segment-rule-telethon-on-air-editor';
 
 @customElement(elementName)
-export class SegmentRuleTelethonOnAirEditorElement extends UmbElementMixin(LitElement) {
-    @property({ attribute: false }) rule?: SegmentRule;
-    @property({ attribute: false }) config?: Record<string, unknown>;
-    @property({ attribute: false }) save?: () => void;
+export class SegmentRuleTelethonOnAirEditorElement extends UeSegmentRuleBaseElement {
+    override connectedCallback(): void {
+        super.connectedCallback();
 
-    #onSave(): void {
-        this.save?.();
+        // Save does nothing without a pending value, and this rule has no parameters to set one.
+        this.pending ??= this.value;
     }
 
-    override render() {
-        const name = this.rule?.name ?? 'Telethon On Air';
-        const type = this.rule?.type ?? 'TelethonOnAir';
-
-        return html`
-            <div class="ums-segmentrule__editor">
-                <uui-box headline=${name}>
-                    <p class="type">${type}</p>
-                    <uui-button look="primary" label="Save" @click=${this.#onSave}>Save</uui-button>
-                </uui-box>
-            </div>
-        `;
+    renderReadOnly() {
+        return html`${this.manifest?.meta.name}`;
     }
 
-    static override styles = css`
-        :host {
-            display: block;
-        }
-
-        .type {
-            color: var(--uui-color-text-alt);
-            margin: 0 0 var(--uui-size-space-4) 0;
-        }
-    `;
+    renderEditor() {
+        return nothing;
+    }
 }
 
 export default SegmentRuleTelethonOnAirEditorElement;
