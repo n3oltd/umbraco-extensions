@@ -1,5 +1,5 @@
-// Type stub for the Engage backoffice module that Engage serves through its import map. The
-// @umbraco-engage/backoffice npm package peer-depends on exactly @umbraco-cms/backoffice 17.0.0, so it is not installed.
+// Hand-written and never checked against Engage's class: installing @umbraco-engage/backoffice nests a
+// second @umbraco-cms/backoffice (17.0.0) under this package.
 
 declare module '@umbraco-engage/backoffice/personalization' {
     import type { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';

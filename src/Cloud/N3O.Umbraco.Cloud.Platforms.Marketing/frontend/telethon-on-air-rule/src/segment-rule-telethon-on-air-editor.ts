@@ -8,7 +8,7 @@ export class SegmentRuleTelethonOnAirEditorElement extends UeSegmentRuleBaseElem
     override connectedCallback(): void {
         super.connectedCallback();
 
-        // Engage's "Save parameter" button only saves a pending value, and this rule has no parameters to edit.
+        // Save does nothing without a pending value, and this rule has no parameters to set one.
         this.pending ??= this.value;
     }
 
