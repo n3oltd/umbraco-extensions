@@ -37,12 +37,13 @@ so one dry run gives you the complete list of what needs attention.
 
 ## Perplex ContentBlocks v3 → v4 (`--include-perplex`)
 
-Opt-in second pass (off by default) for sites that use **Perplex ContentBlocks**. Perplex v4 changed block
-storage from NestedContent to the Block Editor shape and ships **no content migration**, so existing v13
-Perplex content does not render on v17 until it is converted. With `--include-perplex`, the same run also
-rewrites every `Perplex.ContentBlocks` value from the v3 shape (each block's `content` is a NestedContent
-array) to the v4 shape (`content: {contentTypeKey, key, values:[{editorAlias, alias, value}]}`, `version`
-3→4), in the same transaction.
+Opt-in second pass (off by default) for sites that use **Perplex ContentBlocks**. Perplex v4 changed
+block storage from NestedContent to the Block Editor shape. It ships its own migration, which runs
+during the upgrade, converts only the eight latest versions of each value and skips any value
+already above version 3, so it leaves every value this pass converts alone. With
+`--include-perplex`, the same run also rewrites every `Perplex.ContentBlocks` value from the v3
+shape (each block's `content` is a NestedContent array) to the v4 shape (`content: {contentTypeKey,
+key, values:[{editorAlias, alias, value}]}`, `version` 3→4), in the same transaction.
 
 Unlike the Nested Content → Block List pass (which writes the v13 udi shape and lets Umbraco's own 13→17
 upgrade finish it), this writes the **final v4 shape directly** — Umbraco's upgrade does not touch Perplex's
@@ -77,17 +78,29 @@ rendering both, because Razor prints the stored HTML as-is; only the back office
 `Umbraco.TinyMCE` / `Umbraco.RichText` value it finds in a Perplex value, including those in Block Lists nested
 inside a block, and it also runs on values that are already v4.
 
-- **Embeds.** Tiptap has no node for a bare `<iframe>`, `<object>` or `<button>`, so the editor drops it on load
-  (a button keeps only its text), and saving the page makes the loss permanent. Each one is wrapped in `<span class="umb-embed-holder">`, which is how v17 stores
-  an embed: its Embedded Media node (inline, enabled on every migrated rich text data type) keeps whatever is
-  inside verbatim. Embeds already inside a holder are left alone.
-- **Local links.** Umbraco's V15 local link migration converts `/{localLink:umb://document/…}` to
-  `/{localLink:<key>}` with a `type` attribute, but not inside Perplex values. The pass does the same
-  conversion, including Umbraco's handling of `data-anchor`. A link it cannot convert is left as it was and
-  flagged `[REVIEW]`.
+- **Embeds.** Tiptap has no node for a bare `<iframe>`, `<object>`, `<embed>`, `<video>`,
+  `<audio>`, `<canvas>` or `<button>`, so the editor drops it on load (a button keeps only its
+  text), and saving the page makes the loss permanent. Each one is wrapped in
+  `<span class="umb-embed-holder">`, which is how v17 stores an embed: its Embedded Media node
+  (inline, enabled on every migrated rich text data type) keeps what is inside. The holder closes
+  after the element's own end tag, and an element with no end tag is left alone and flagged
+  `[REVIEW]`. An embed made with the v13 embed dialog keeps its `data-embed-url`, width, height and
+  constrain on the holder, so the v17 Embed dialog can edit it. Embeds already inside a holder are
+  left alone. Each wrapped button is listed for review, since the v17 editor can change its label
+  only in source view.
+- **Local links.** Umbraco's V15 local link migration converts `/{localLink:umb://document/…}`,
+  `/{localLink:1234}` and URL-encoded `/%7BlocalLink:…%7D` to `/{localLink:<key>}` with a `type`
+  attribute, but not inside Perplex values. The pass does the same on any element's `href`,
+  including Umbraco's handling of `data-anchor`: an integer is looked up in `umbracoNode`, and an
+  encoded link is written back with plain braces. A link it cannot convert, or one that already has
+  a `type` other than `document` or `media`, is left as it was and flagged `[REVIEW]`.
+- **Blocks in rich text.** Rich text inside a rich text value's blocks is fixed as well. The
+  `<umb-rte-block>` markup itself is not converted to the v17 form, so it is flagged `[REVIEW]` for
+  converting by hand.
 
-The summary reports `Rich text : <n> embed(s) wrapped, <n> local link(s) converted`. Markup is edited in place,
-so nothing else in the HTML changes.
+Each changed value gets a `Rich text :` line naming its node and property, and the summary reports
+`Rich text : <n> embed(s) wrapped (<n> button(s)), <n> local link(s) converted`. Markup is edited in
+place, so nothing else in the HTML changes.
 
 > ⚠️ **Unverified — test on a local test site first.** The v4 shape is matched from an observed live value, not
 > a Perplex spec. Restore a copy, `--dry-run` then `--apply --include-perplex`, run the 13→17 + Perplex-4
