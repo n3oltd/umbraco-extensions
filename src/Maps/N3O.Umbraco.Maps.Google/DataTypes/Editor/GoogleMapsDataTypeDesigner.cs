@@ -37,7 +37,6 @@ public class GoogleMapsDataTypeDesigner : DataTypeDesigner {
         return this;
     }
 
-    // The editor declares no configuration editor of its own, so Umbraco gives it the dictionary configuration editor
     protected override object BuildConfiguration(IDataType existing) {
         var configuration = new Dictionary<string, object>();
 
