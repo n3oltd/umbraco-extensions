@@ -12,64 +12,71 @@ public static class RichTextMarkupFixer {
     private const string EmbedDialogClass = "embeditem";
     private const string EmbedHolderClass = "umb-embed-holder";
     private const int ExcerptLength = 120;
+    private const string LocalLinkPatternText =
+        @"^(?<lead>/?)(?<open>\{|%7B)localLink:(?<id>[^}%]*)(?:\}|%7D)(?<tail>.*)$";
+    private const string StartTagPatternText =
+        @"\G<(?<name>[^\s/>]+)(?:(?:[\s/]+|(?<=[""']))[^\s/>=""']+(?:\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+))?)*[\s/]*>";
 
-    private static readonly string[] EmbedDialogAttributes =
-        ["data-embed-constrain", "data-embed-height", "data-embed-url", "data-embed-width"];
+    private static readonly string[] EmbedDialogAttributes = ["data-embed-constrain",
+                                                              "data-embed-height",
+                                                              "data-embed-url",
+                                                              "data-embed-width"];
 
-    private static readonly HashSet<string> EmbedTags =
-        new(StringComparer.InvariantCultureIgnoreCase) {
-            "audio", "button", "canvas", "embed", "iframe", "object", "video"
-        };
+    private static readonly HashSet<string> EmbedTags = new(StringComparer.InvariantCultureIgnoreCase) {
+        "audio", "button", "canvas", "embed", "iframe", "object", "video"
+    };
 
-    private static readonly Regex EndTagPattern =
-        new(@"\G</(?<name>[^\s/>]+)\s*>", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly Regex EndTagPattern = new(@"\G</(?<name>[^\s/>]+)\s*>",
+                                                      RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    private static readonly HashSet<string> LinkEntityTypes =
-        new(StringComparer.InvariantCultureIgnoreCase) { "document", "media" };
+    private static readonly HashSet<string> LinkEntityTypes = new(StringComparer.InvariantCultureIgnoreCase) {
+        LocalLinkTarget.DocumentEntityType, LocalLinkTarget.MediaEntityType
+    };
 
-    private static readonly Regex LocalLinkPattern =
-        new(@"^(?<lead>/?)(?<open>\{|%7B)localLink:(?<id>[^}%]*)(?:\}|%7D)(?<tail>.*)$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+    private static readonly Regex LocalLinkPattern = new(LocalLinkPatternText,
+                                                         RegexOptions.Compiled |
+                                                         RegexOptions.CultureInvariant |
+                                                         RegexOptions.IgnoreCase |
+                                                         RegexOptions.Singleline);
 
-    private static readonly Regex StartTagPattern =
-        new(@"\G<(?<name>[^\s/>]+)" +
-            @"(?:(?:[\s/]+|(?<=[""']))[^\s/>=""']+(?:\s*=\s*(?:""[^""]*""|'[^']*'|[^\s>]+))?)*[\s/]*>",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly Regex StartTagPattern = new(StartTagPatternText,
+                                                        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    private static readonly Regex UdiPattern =
-        new(@"^umb://(?<type>[a-z-]+)/(?<key>[0-9a-f-]+)$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    private static readonly Regex UdiPattern = new(@"^umb://(?<type>[a-z-]+)/(?<key>[0-9a-f-]+)$",
+                                                   RegexOptions.Compiled |
+                                                   RegexOptions.CultureInvariant |
+                                                   RegexOptions.IgnoreCase);
 
     public static string Fix(string html, Func<int, LocalLinkTarget> findNodeTarget, RichTextFixResult result) {
         if (string.IsNullOrEmpty(html)) {
             return html;
+        } else {
+            var document = new HtmlDocument();
+            document.LoadHtml(html);
+
+            var edits = new List<Edit>();
+
+            AddEmbedEdits(document, html, edits, result);
+            AddLocalLinkEdits(document, html, findNodeTarget, edits, result);
+            FlagRichTextBlocks(document, result);
+
+            return ApplyEdits(html, edits);
         }
-
-        var document = new HtmlDocument();
-        document.LoadHtml(html);
-
-        var edits = new List<Edit>();
-
-        AddEmbedEdits(document, html, edits, result);
-        AddLocalLinkEdits(document, html, findNodeTarget, edits, result);
-        FlagRichTextBlocks(document, result);
-
-        return ApplyEdits(html, edits);
     }
 
     public static string WrapEmbeds(string html, RichTextFixResult result) {
         if (string.IsNullOrEmpty(html)) {
             return html;
+        } else {
+            var document = new HtmlDocument();
+            document.LoadHtml(html);
+
+            var edits = new List<Edit>();
+
+            AddEmbedEdits(document, html, edits, result);
+
+            return ApplyEdits(html, edits);
         }
-
-        var document = new HtmlDocument();
-        document.LoadHtml(html);
-
-        var edits = new List<Edit>();
-
-        AddEmbedEdits(document, html, edits, result);
-
-        return ApplyEdits(html, edits);
     }
 
     private static void AddEdit(List<Edit> edits, int index, int length, string text) {

@@ -105,6 +105,96 @@ public sealed class Migrator {
         return true;
     }
 
+    private bool MigrateEmbeds(SqlConnection cn, SqlTransaction tx) {
+        Log.Info("Embeds in rich text (--include-embeds):");
+
+        BuildElementTypeKeys(cn, tx, out var nodeIdByKey);
+
+        var editorAliases = BuildEditorAliases(cn, tx, nodeIdByKey);
+        var checkedValues = 0;
+        var changed = 0;
+        var unchanged = 0;
+        var failed = 0;
+        var totalEmbedsWrapped = 0;
+        var totalButtonsWrapped = 0;
+        var lastId = 0;
+        var page = default(List<PropertyDataRow>);
+
+        do {
+            page = Query(cn,
+                         tx,
+                         "SELECT TOP (@pageSize) pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, " +
+                         "n.text, dt.propertyEditorAlias " +
+                         "FROM umbracoPropertyData pd " +
+                         "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
+                         "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
+                         "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
+                         "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
+                         "WHERE dt.propertyEditorAlias IN " +
+                         "('Umbraco.TinyMCE', 'Umbraco.RichText', 'Umbraco.BlockList', 'Umbraco.BlockGrid') " +
+                         "AND pd.textValue IS NOT NULL AND pd.textValue <> '' AND pd.id > @lastId " +
+                         "ORDER BY pd.id",
+                         ReadRichTextValue,
+                         ("@pageSize", RichTextPageSize),
+                         ("@lastId", lastId));
+
+            foreach (var pv in page) {
+                var issues = new List<string>();
+                var richText = new RichTextFixResult();
+
+                try {
+                    var wrapEmbeds = (string html) => RichTextMarkupFixer.WrapEmbeds(html, richText);
+                    var fixedValue = RichTextValueFixer.FixPropertyValue(pv.TextValue,
+                                                                         pv.EditorAlias,
+                                                                         editorAliases,
+                                                                         wrapEmbeds,
+                                                                         richText);
+
+                    if (fixedValue == null) {
+                        unchanged++;
+                    } else {
+                        Execute(cn,
+                                tx,
+                                "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
+                                ("@value", fixedValue),
+                                ("@id", pv.Id));
+
+                        changed++;
+                        totalEmbedsWrapped += richText.EmbedsWrapped.Count;
+                        totalButtonsWrapped += richText.ButtonsWrapped.Count;
+
+                        Log.Info($"Embeds      : value id {pv.Id} | node {pv.NodeDescription} | property " +
+                                 $"'{pv.PropertyAlias}' — {DescribeRichTextChanges(richText)}");
+                    }
+
+                    AddRichTextIssues(issues, richText);
+                } catch (Exception ex) {
+                    failed++;
+                    issues.Add($"FAILED to wrap embeds — {ex.Message}");
+                }
+
+                if (issues.Count > 0) {
+                    Log.Item($"value id {pv.Id} | node {pv.NodeDescription} | property '{pv.PropertyAlias}'", issues);
+                }
+
+                checkedValues++;
+                lastId = pv.Id;
+            }
+        } while (page.Count == RichTextPageSize);
+
+        Log.Info($"Embeds      : {checkedValues} rich text and block value(s) checked, {changed} changed, " +
+                 $"{unchanged} unchanged, {failed} failed; {totalEmbedsWrapped} embed(s) wrapped " +
+                 $"({totalButtonsWrapped} button(s))");
+
+        if (failed > 0) {
+            Log.Error($"{failed} value(s) failed in the embed pass — aborting so nothing is left half-migrated.");
+
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private bool MigrateNestedContent(SqlConnection cn, SqlTransaction tx) {
         var dataTypes = Query(cn, tx,
             "SELECT dt.nodeId, dt.[config], n.text FROM umbracoDataType dt " +
@@ -381,13 +471,14 @@ public sealed class Migrator {
 
         LocalLinkTarget FindNodeTarget(int nodeId) {
             if (!nodeTargets.TryGetValue(nodeId, out var target)) {
-                target = Query(cn, tx,
-                    "SELECT uniqueId, nodeObjectType FROM umbracoNode " +
-                    "WHERE id = @id AND nodeObjectType IN (@document, @media)",
-                    r => new LocalLinkTarget(r.GetGuid(0), r.GetGuid(1) == DocumentObjectType ? "document" : "media"),
-                    ("@id", nodeId),
-                    ("@document", DocumentObjectType),
-                    ("@media", MediaObjectType)).SingleOrDefault();
+                target = Query(cn,
+                               tx,
+                               "SELECT uniqueId, nodeObjectType FROM umbracoNode " +
+                               "WHERE id = @id AND nodeObjectType IN (@document, @media)",
+                               ReadLocalLinkTarget,
+                               ("@id", nodeId),
+                               ("@document", DocumentObjectType),
+                               ("@media", MediaObjectType)).SingleOrDefault();
 
                 nodeTargets[nodeId] = target;
             }
@@ -493,92 +584,6 @@ public sealed class Migrator {
 
         if (failed > 0) {
             Log.Error($"{failed} Perplex value(s) failed to convert — aborting so nothing is left half-migrated.");
-
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool MigrateEmbeds(SqlConnection cn, SqlTransaction tx) {
-        Log.Info("Embeds in rich text (--include-embeds):");
-
-        BuildElementTypeKeys(cn, tx, out var nodeIdByKey);
-
-        var editorAliases = BuildEditorAliases(cn, tx, nodeIdByKey);
-        var checkedValues = 0;
-        var changed = 0;
-        var unchanged = 0;
-        var failed = 0;
-        var totalEmbedsWrapped = 0;
-        var totalButtonsWrapped = 0;
-        var lastId = 0;
-        List<PropertyDataRow> page;
-
-        do {
-            page = Query(cn, tx,
-                "SELECT TOP (@pageSize) pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, n.text, " +
-                "dt.propertyEditorAlias " +
-                "FROM umbracoPropertyData pd " +
-                "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
-                "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
-                "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
-                "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
-                "WHERE dt.propertyEditorAlias IN " +
-                "('Umbraco.TinyMCE', 'Umbraco.RichText', 'Umbraco.BlockList', 'Umbraco.BlockGrid') " +
-                "AND pd.textValue IS NOT NULL AND pd.textValue <> '' AND pd.id > @lastId " +
-                "ORDER BY pd.id",
-                ReadRichTextValue,
-                ("@pageSize", RichTextPageSize),
-                ("@lastId", lastId));
-
-            foreach (var pv in page) {
-                var issues = new List<string>();
-                var richText = new RichTextFixResult();
-
-                try {
-                    var wrapEmbeds = (string html) => RichTextMarkupFixer.WrapEmbeds(html, richText);
-                    var fixedValue = RichTextValueFixer.FixPropertyValue(pv.TextValue,
-                                                                         pv.EditorAlias,
-                                                                         editorAliases,
-                                                                         wrapEmbeds,
-                                                                         richText);
-
-                    if (fixedValue == null) {
-                        unchanged++;
-                    } else {
-                        Execute(cn, tx, "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
-                                ("@value", fixedValue), ("@id", pv.Id));
-
-                        changed++;
-                        totalEmbedsWrapped += richText.EmbedsWrapped.Count;
-                        totalButtonsWrapped += richText.ButtonsWrapped.Count;
-
-                        Log.Info($"Embeds      : value id {pv.Id} | node {pv.NodeDescription} | property " +
-                                 $"'{pv.PropertyAlias}' — {DescribeRichTextChanges(richText)}");
-                    }
-
-                    AddRichTextIssues(issues, richText);
-                } catch (Exception ex) {
-                    failed++;
-                    issues.Add($"FAILED to wrap embeds — {ex.Message}");
-                }
-
-                if (issues.Count > 0) {
-                    Log.Item($"value id {pv.Id} | node {pv.NodeDescription} | property '{pv.PropertyAlias}'", issues);
-                }
-
-                checkedValues++;
-                lastId = pv.Id;
-            }
-        } while (page.Count == RichTextPageSize);
-
-        Log.Info($"Embeds      : {checkedValues} rich text and block value(s) checked, {changed} changed, " +
-                 $"{unchanged} unchanged, {failed} failed; {totalEmbedsWrapped} embed(s) wrapped " +
-                 $"({totalButtonsWrapped} button(s))");
-
-        if (failed > 0) {
-            Log.Error($"{failed} value(s) failed in the embed pass — aborting so nothing is left half-migrated.");
 
             return false;
         }
@@ -709,6 +714,14 @@ public sealed class Migrator {
         }
 
         return string.Join("; ", changes);
+    }
+
+    private static LocalLinkTarget ReadLocalLinkTarget(SqlDataReader reader) {
+        var entityType = reader.GetGuid(1) == DocumentObjectType ?
+                         LocalLinkTarget.DocumentEntityType :
+                         LocalLinkTarget.MediaEntityType;
+
+        return new LocalLinkTarget(reader.GetGuid(0), entityType);
     }
 
     private static PropertyDataRow ReadRichTextValue(SqlDataReader reader) {

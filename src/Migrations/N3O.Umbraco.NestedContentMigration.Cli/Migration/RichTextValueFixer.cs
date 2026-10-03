@@ -10,8 +10,9 @@ namespace N3O.Umbraco.NestedContentMigration.Cli;
 public static class RichTextValueFixer {
     private const int ExcerptLength = 120;
 
-    private static readonly HashSet<string> RichTextEditorAliases =
-        new(StringComparer.OrdinalIgnoreCase) { "Umbraco.RichText", "Umbraco.TinyMCE" };
+    private static readonly HashSet<string> RichTextEditorAliases = new(StringComparer.InvariantCultureIgnoreCase) {
+        "Umbraco.RichText", "Umbraco.TinyMCE"
+    };
 
     public static string Fix(string json,
                              IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
@@ -48,34 +49,31 @@ public static class RichTextValueFixer {
         }
     }
 
-    private static bool FixToken(JToken token,
-                                 IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                 Func<string, string> fixMarkup,
-                                 RichTextFixResult result) {
-        var changed = false;
+    private static string Excerpt(string text) {
+        return text.Substring(0, Math.Min(ExcerptLength, text.Length));
+    }
 
-        if (token is JArray array) {
-            foreach (var item in array) {
-                changed |= FixToken(item, editorAliases, fixMarkup, result);
-            }
-        } else if (token is JObject obj) {
-            var inlineEditor = obj["editorAlias"] is JValue { Type: JTokenType.String } editor ? (string) editor : null;
-            var elementEditors = GetElementEditors(obj, editorAliases);
+    private static string FixNestedJson(string text,
+                                        IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
+                                        Func<string, string> fixMarkup,
+                                        RichTextFixResult result) {
+        var token = TryParse(text, out var hasTrailingText);
 
-            foreach (var property in obj.Properties().ToList()) {
-                string editorAlias = null;
+        if (token == null && IsJson(text)) {
+            result.Problems.Add("a nested value holds a number outside the decimal range, so its rich text was NOT " +
+                                $"checked: {Excerpt(text)}");
 
-                if (inlineEditor != null && property.Name == "value") {
-                    editorAlias = inlineEditor;
-                } else if (elementEditors != null) {
-                    elementEditors.TryGetValue(property.Name, out editorAlias);
-                }
+            return null;
+        } else if (token != null && hasTrailingText && HoldsObject(token)) {
+            result.Problems.Add("a nested value has text after its JSON, so its rich text was NOT checked: " +
+                                Excerpt(text));
 
-                changed |= FixProperty(property, editorAlias, editorAliases, fixMarkup, result);
-            }
+            return null;
+        } else if (token == null || hasTrailingText || !FixToken(token, editorAliases, fixMarkup, result)) {
+            return null;
+        } else {
+            return JsonConvert.SerializeObject(token);
         }
-
-        return changed;
     }
 
     private static bool FixProperty(JProperty property,
@@ -107,6 +105,29 @@ public static class RichTextValueFixer {
         return FixToken(property.Value, editorAliases, fixMarkup, result);
     }
 
+    private static bool FixRichText(JObject richText,
+                                    IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
+                                    Func<string, string> fixMarkup,
+                                    RichTextFixResult result) {
+        if (richText["markup"] is not JValue { Type: JTokenType.String } markup) {
+            result.Problems.Add("rich text is JSON without a markup string, so it was NOT checked: " +
+                                Excerpt(richText.ToString(Formatting.None)));
+
+            return false;
+        } else {
+            var changed = FixToken(richText["blocks"], editorAliases, fixMarkup, result);
+            var html = (string) markup;
+            var fixedHtml = fixMarkup(html);
+
+            if (fixedHtml != html) {
+                richText["markup"] = fixedHtml;
+                changed = true;
+            }
+
+            return changed;
+        }
+    }
+
     private static string FixRichTextValue(string text,
                                            IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                            Func<string, string> fixMarkup,
@@ -133,54 +154,34 @@ public static class RichTextValueFixer {
         }
     }
 
-    private static bool FixRichText(JObject richText,
-                                    IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                    Func<string, string> fixMarkup,
-                                    RichTextFixResult result) {
-        if (richText["markup"] is not JValue { Type: JTokenType.String } markup) {
-            result.Problems.Add("rich text is JSON without a markup string, so it was NOT checked: " +
-                                Excerpt(richText.ToString(Formatting.None)));
+    private static bool FixToken(JToken token,
+                                 IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
+                                 Func<string, string> fixMarkup,
+                                 RichTextFixResult result) {
+        var changed = false;
 
-            return false;
-        } else {
-            var changed = FixToken(richText["blocks"], editorAliases, fixMarkup, result);
-            var html = (string) markup;
-            var fixedHtml = fixMarkup(html);
-
-            if (fixedHtml != html) {
-                richText["markup"] = fixedHtml;
-                changed = true;
+        if (token is JArray array) {
+            foreach (var item in array) {
+                changed |= FixToken(item, editorAliases, fixMarkup, result);
             }
+        } else if (token is JObject obj) {
+            var inlineEditor = obj["editorAlias"] is JValue { Type: JTokenType.String } editor ? (string) editor : null;
+            var elementEditors = GetElementEditors(obj, editorAliases);
 
-            return changed;
+            foreach (var property in obj.Properties().ToList()) {
+                string editorAlias = null;
+
+                if (inlineEditor != null && property.Name == "value") {
+                    editorAlias = inlineEditor;
+                } else if (elementEditors != null) {
+                    elementEditors.TryGetValue(property.Name, out editorAlias);
+                }
+
+                changed |= FixProperty(property, editorAlias, editorAliases, fixMarkup, result);
+            }
         }
-    }
 
-    private static string FixNestedJson(string text,
-                                        IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
-                                        Func<string, string> fixMarkup,
-                                        RichTextFixResult result) {
-        var token = TryParse(text, out var hasTrailingText);
-
-        if (token == null && IsJson(text)) {
-            result.Problems.Add("a nested value holds a number outside the decimal range, so its rich text was NOT " +
-                                $"checked: {Excerpt(text)}");
-
-            return null;
-        } else if (token != null && hasTrailingText && HoldsObject(token)) {
-            result.Problems.Add("a nested value has text after its JSON, so its rich text was NOT checked: " +
-                                Excerpt(text));
-
-            return null;
-        } else if (token == null || hasTrailingText || !FixToken(token, editorAliases, fixMarkup, result)) {
-            return null;
-        } else {
-            return JsonConvert.SerializeObject(token);
-        }
-    }
-
-    private static string Excerpt(string text) {
-        return text.Substring(0, Math.Min(ExcerptLength, text.Length));
+        return changed;
     }
 
     private static IReadOnlyDictionary<string, string> GetElementEditors(
@@ -212,14 +213,14 @@ public static class RichTextValueFixer {
 
         if (string.IsNullOrEmpty(trimmed) || (trimmed[0] != '{' && trimmed[0] != '[')) {
             return false;
-        }
+        } else {
+            try {
+                JToken.Parse(text);
 
-        try {
-            JToken.Parse(text);
-
-            return true;
-        } catch (JsonReaderException) {
-            return false;
+                return true;
+            } catch (JsonReaderException) {
+                return false;
+            }
         }
     }
 
