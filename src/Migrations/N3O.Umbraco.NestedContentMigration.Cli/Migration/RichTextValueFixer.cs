@@ -17,12 +17,16 @@ public static class RichTextValueFixer {
                              IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                              Func<string, string> fixMarkup,
                              RichTextFixResult result) {
-        var token = TryParse(json);
+        var token = TryParse(json, out var hasTrailingText);
 
         if (token == null) {
             result.Problems.Add(IsJson(json) ?
                                 "the value holds a number outside the decimal range, so its rich text was NOT checked" :
                                 "the value is not JSON, so its rich text was NOT checked");
+
+            return null;
+        } else if (hasTrailingText) {
+            result.Problems.Add("the value has text after its JSON, so its rich text was NOT checked");
 
             return null;
         } else if (!FixToken(token, editorAliases, fixMarkup, result)) {
@@ -110,9 +114,13 @@ public static class RichTextValueFixer {
                                            IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                            Func<string, string> fixMarkup,
                                            RichTextFixResult result) {
-        var token = TryParse(text);
+        var token = TryParse(text, out var hasTrailingText);
 
-        if (token is JObject richText) {
+        if (token is JObject && hasTrailingText) {
+            result.Problems.Add($"rich text has text after its JSON, so it was NOT checked: {Excerpt(text)}");
+
+            return null;
+        } else if (token is JObject richText) {
             var changed = FixRichText(richText, editorAliases, fixMarkup, result);
 
             return changed ? JsonConvert.SerializeObject(richText) : null;
@@ -132,9 +140,13 @@ public static class RichTextValueFixer {
                                     IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                     Func<string, string> fixMarkup,
                                     RichTextFixResult result) {
-        var changed = FixToken(richText["blocks"], editorAliases, fixMarkup, result);
+        if (richText["markup"] is not JValue { Type: JTokenType.String } markup) {
+            result.Problems.Add("rich text is JSON without a markup string, so it was NOT checked: " +
+                                Excerpt(richText.ToString(Formatting.None)));
 
-        if (richText["markup"] is JValue { Type: JTokenType.String } markup) {
+            return false;
+        } else {
+            var changed = FixToken(richText["blocks"], editorAliases, fixMarkup, result);
             var html = (string) markup;
             var fixedHtml = fixMarkup(html);
 
@@ -142,9 +154,9 @@ public static class RichTextValueFixer {
                 richText["markup"] = fixedHtml;
                 changed = true;
             }
-        }
 
-        return changed;
+            return changed;
+        }
     }
 
     // Block editor values nested in a block are stored as serialised JSON strings.
@@ -152,14 +164,19 @@ public static class RichTextValueFixer {
                                         IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>> editorAliases,
                                         Func<string, string> fixMarkup,
                                         RichTextFixResult result) {
-        var token = TryParse(text);
+        var token = TryParse(text, out var hasTrailingText);
 
         if (token == null && IsJson(text)) {
             result.Problems.Add("a nested value holds a number outside the decimal range, so its rich text was NOT " +
                                 $"checked: {Excerpt(text)}");
 
             return null;
-        } else if (token == null || !FixToken(token, editorAliases, fixMarkup, result)) {
+        } else if (token != null && hasTrailingText && HoldsObject(token)) {
+            result.Problems.Add("a nested value has text after its JSON, so its rich text was NOT checked: " +
+                                Excerpt(text));
+
+            return null;
+        } else if (token == null || hasTrailingText || !FixToken(token, editorAliases, fixMarkup, result)) {
             return null;
         } else {
             return JsonConvert.SerializeObject(token);
@@ -182,6 +199,18 @@ public static class RichTextValueFixer {
         return editors;
     }
 
+    private static bool HasMoreContent(JsonReader reader) {
+        try {
+            return reader.Read();
+        } catch (JsonReaderException) {
+            return true;
+        }
+    }
+
+    private static bool HoldsObject(JToken token) {
+        return token is JObject || (token is JArray array && array.Any(x => x is JObject));
+    }
+
     private static bool IsJson(string text) {
         var trimmed = text?.TrimStart();
 
@@ -199,22 +228,28 @@ public static class RichTextValueFixer {
     }
 
     // No date parsing and decimal floats: a rewrite must not reformat dates or round numbers elsewhere in the value.
-    private static JToken TryParse(string text) {
+    private static JToken TryParse(string text, out bool hasTrailingText) {
         var trimmed = text?.TrimStart();
+
+        hasTrailingText = false;
 
         if (string.IsNullOrEmpty(trimmed) || (trimmed[0] != '{' && trimmed[0] != '[')) {
             return null;
-        }
+        } else {
+            try {
+                using (var reader = new JsonTextReader(new StringReader(text))) {
+                    reader.DateParseHandling = DateParseHandling.None;
+                    reader.FloatParseHandling = FloatParseHandling.Decimal;
 
-        try {
-            using (var reader = new JsonTextReader(new StringReader(text))) {
-                reader.DateParseHandling = DateParseHandling.None;
-                reader.FloatParseHandling = FloatParseHandling.Decimal;
+                    var token = JToken.ReadFrom(reader);
 
-                return JToken.ReadFrom(reader);
+                    hasTrailingText = HasMoreContent(reader);
+
+                    return token;
+                }
+            } catch (JsonReaderException) {
+                return null;
             }
-        } catch (JsonReaderException) {
-            return null;
         }
     }
 }
