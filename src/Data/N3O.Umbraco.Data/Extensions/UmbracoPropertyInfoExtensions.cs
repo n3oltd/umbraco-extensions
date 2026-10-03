@@ -78,4 +78,14 @@ public static class UmbracoPropertyInfoExtensions {
             return false;
         }
     }
+    
+    public static bool HasTimeFormat(this UmbracoPropertyInfo propertyInfo) {
+        var format = propertyInfo.DataType
+                                 .ConfigurationData
+                                 .FirstOrDefault(x => x.Key.EqualsInvariant("format"))
+                                 .Value as string;
+
+        // A format without an hour token is date-only.
+        return format?.Contains("h", StringComparison.InvariantCultureIgnoreCase) == true;
+    }
 }

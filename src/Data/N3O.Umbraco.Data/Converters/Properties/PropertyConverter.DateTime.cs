@@ -1,5 +1,6 @@
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Data.Builders;
+using N3O.Umbraco.Data.Extensions;
 using N3O.Umbraco.Data.Models;
 using N3O.Umbraco.Data.Parsing;
 using N3O.Umbraco.Extensions;
@@ -16,7 +17,8 @@ public class DateTimePropertyConverter : PropertyConverter<LocalDateTime?> {
     public DateTimePropertyConverter(IColumnRangeBuilder columnRangeBuilder) : base(columnRangeBuilder) { }
     
     public override bool IsConverter(UmbracoPropertyInfo propertyInfo) {
-        return propertyInfo.Type.PropertyEditorAlias.EqualsInvariant(UmbracoPropertyEditors.Aliases.DateTime);
+        return propertyInfo.Type.PropertyEditorAlias.EqualsInvariant(UmbracoPropertyEditors.Aliases.DateTime) &&
+               propertyInfo.HasTimeFormat();
     }
 
     protected override IEnumerable<Cell<LocalDateTime?>> GetCells(IContentProperty contentProperty,
