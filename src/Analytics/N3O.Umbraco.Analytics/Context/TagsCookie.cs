@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using N3O.Umbraco.Context;
+using N3O.Umbraco.Extensions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 
@@ -9,15 +11,17 @@ public class TagsCookie : Cookie {
     public TagsCookie(IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor) { }
 
     public JObject GetTags() {
-        var jObject = default(JObject);
+        var value = GetValue();
 
-        try {
-            jObject = JObject.Parse(GetValue());
-        } catch {
-            jObject = null;
+        if (!value.HasValue()) {
+            return null;
         }
 
-        return jObject;
+        try {
+            return JObject.Parse(value);
+        } catch (JsonException) {
+            return null;
+        }
     }
 
     protected override void SetOptions(CookieOptions cookieOptions) {
