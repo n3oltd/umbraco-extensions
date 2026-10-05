@@ -22,7 +22,6 @@ public static class PlatformsSchemaConstants {
 
     // Data type names are the adoption key on every existing site, so they must match what is deployed
     public static class DataTypes {
-        public const string AnalyticsTagsList = "Platforms Analytics Tags List";
         public const string CampaignsMultiple = "Platforms Campaigns Data List (0, n)";
         public const string CampaignsSingle = "Platforms Campaigns Data List (0, 1)";
         public const string DonateButtonAction = "Platforms Donate Button Action Data List (0, 1)";
@@ -71,7 +70,6 @@ public static class PlatformsSchemaConstants {
     }
 
     public static class Groups {
-        public const string Analytics = "Analytics";
         public const string Defaults = "Defaults";
         public const string Embed = "Embed";
         public const string Filters = "Filters";
