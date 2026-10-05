@@ -1,6 +1,7 @@
 using MaxMind.GeoIP2;
 using MaxMind.GeoIP2.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
+using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.GeoIP.Models;
@@ -13,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace N3O.Umbraco.GeoIP.MaxMind;
 
+[Order(1)]
 public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
     private const int ResultsCacheSizeLimit = 10_000;
 
