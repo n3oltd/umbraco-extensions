@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.GeoIP.Models;
 using N3O.Umbraco.Lookups;
@@ -8,6 +9,8 @@ using System.Threading.Tasks;
 
 namespace N3O.Umbraco.GeoIP.Cloudflare;
 
+// Reads headers already on the request, so it is asked before any provider that calls a lookup service.
+[Order(0)]
 public class CloudflareIPGeoLocationProvider : IIPGeoLocationProvider {
     private static readonly string CityHeader = "CF-IPCity";
     private static readonly string CountryHeader = "CF-IPCountry";
