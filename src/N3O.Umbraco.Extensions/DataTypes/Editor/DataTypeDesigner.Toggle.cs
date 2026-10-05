@@ -20,4 +20,6 @@ public class ToggleDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.Boolean;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Toggle";
 }

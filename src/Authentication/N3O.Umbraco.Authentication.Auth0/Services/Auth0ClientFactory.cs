@@ -35,10 +35,8 @@ public class Auth0ClientFactory : IAuth0ClientFactory {
     public async Task<IManagementApiClient> GetManagementApiClientAsync(UserDirectoryType userDirectoryType) {
         var managementOptions = GetClientOptions(userDirectoryType).Management;
 
-        var tokenProvider = new ClientCredentialsTokenProvider(managementOptions.Domain,
-                                                               managementOptions.ClientId,
-                                                               managementOptions.ClientSecret,
-                                                               managementOptions.ApiIdentifier);
+        var tokenProvider = new DelegateTokenProvider(
+            _ => _tokenAccessor.GetTokenAsync(managementOptions, managementOptions.ApiIdentifier));
 
         return ManagementClientBuilder.Build(_httpClientFactory, tokenProvider, managementOptions.Domain);
     }

@@ -40,7 +40,7 @@ public class QueueWebhookHandler : IRequestHandler<QueueWebhookCommand, None, No
     }
 
     public async Task<None> Handle(QueueWebhookCommand req, CancellationToken cancellationToken) {
-        var payload = CreatePayload(req.HookId.Value, req.HookRoute.Value);
+        var payload = await CreatePayloadAsync(req.HookId.Value, req.HookRoute.Value, cancellationToken);
 
         if (payload.GetHeader("N3O-Foreground-Job").HasValue()) {
             try {
@@ -59,7 +59,9 @@ public class QueueWebhookHandler : IRequestHandler<QueueWebhookCommand, None, No
         return None.Empty;
     }
 
-    private WebhookPayload CreatePayload(string hookId, string route) {
+    private async Task<WebhookPayload> CreatePayloadAsync(string hookId,
+                                                          string route,
+                                                          CancellationToken cancellationToken) {
         var httpRequest = _httpContextAccessor.HttpContext.Request;
 
         var timestamp = _clock.GetCurrentInstant();
@@ -80,14 +82,16 @@ public class QueueWebhookHandler : IRequestHandler<QueueWebhookCommand, None, No
 
         var postData = new Dictionary<string, string>();
         if (httpRequest.HasFormContentType) {
-            foreach (var postParameter in httpRequest.Form) {
+            var form = await httpRequest.ReadFormAsync(cancellationToken);
+
+            foreach (var postParameter in form) {
                 postData.Add(postParameter.Key, postParameter.Value.First());
             }
         }
 
         string body;
         using (var reader = new StreamReader(httpRequest.Body)) {
-            body = reader.ReadToEnd();
+            body = await reader.ReadToEndAsync(cancellationToken);
         }
 
         return new WebhookPayload(hookId, timestamp, remoteIp, headerData, postData, queryData, routeSegments, body);

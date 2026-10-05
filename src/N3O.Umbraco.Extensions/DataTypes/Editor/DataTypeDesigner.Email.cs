@@ -19,4 +19,6 @@ public class EmailDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.EmailAddress;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.EmailAddress";
 }

@@ -30,4 +30,6 @@ public class TextBoxDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.TextBox;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.TextBox";
 }

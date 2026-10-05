@@ -53,4 +53,6 @@ public class MultiNodeTreePickerDataTypeDesigner : DataTypeDesigner {
 
     protected override string EditorAlias =>
         UmbracoPropertyEditors.Aliases.MultiNodeTreePicker;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.ContentPicker";
 }

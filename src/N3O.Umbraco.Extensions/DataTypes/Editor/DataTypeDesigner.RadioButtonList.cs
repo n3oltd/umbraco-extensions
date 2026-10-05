@@ -14,4 +14,6 @@ public class RadioButtonListDataTypeDesigner : ValueListDataTypeDesigner<RadioBu
 
     protected override string EditorAlias =>
         UmbracoPropertyEditors.Aliases.RadioButtonList;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.RadioButtonList";
 }

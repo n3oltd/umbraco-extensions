@@ -30,4 +30,6 @@ public class LabelDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.Label;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Label";
 }

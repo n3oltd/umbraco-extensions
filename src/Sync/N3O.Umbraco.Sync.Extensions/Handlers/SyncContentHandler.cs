@@ -1,44 +1,66 @@
+using Jumoo.Json;
+using Jumoo.Processing.Core.Pipelines;
+using Jumoo.Processing.Core.Pipelines.Models;
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Mediator;
 using N3O.Umbraco.Sync.Extensions.Commands;
 using N3O.Umbraco.Sync.Extensions.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Models.Membership;
+using Umbraco.Cms.Core.Services;
+using uSync.BackOffice.Models;
 using uSync.Core;
-using uSync.Core.Dependency;
 using uSync.Core.Sync;
 using uSync.Publisher.Models;
 using uSync.Publisher.Process.Models;
+using uSync.Publisher.Publishers;
 using uSync.Publisher.Strategies.Models;
-using uSync.Publisher.Strategies.Processor;
 
 namespace N3O.Umbraco.Sync.Extensions.Handlers;
 
 public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncContentReq, None> {
+    private const string ActionsResultKey = "actions";
     private static readonly string Document = global::Umbraco.Cms.Core.Constants.UdiEntityType.Document;
 
     private readonly IContentLocator _contentLocator;
-    private readonly PublisherProcessor _publisherProcessor;
+    private readonly ILogger<SyncContentHandler> _logger;
+    private readonly IPipelineService _pipelineService;
+    private readonly SyncPublisherFactory _syncPublisherFactory;
+    private readonly IUserService _userService;
 
-    public SyncContentHandler(IContentLocator contentLocator, PublisherProcessor publisherProcessor) {
+    public SyncContentHandler(IContentLocator contentLocator,
+                              ILogger<SyncContentHandler> logger,
+                              IPipelineService pipelineService,
+                              SyncPublisherFactory syncPublisherFactory,
+                              IUserService userService) {
         _contentLocator = contentLocator;
-        _publisherProcessor = publisherProcessor;
+        _logger = logger;
+        _pipelineService = pipelineService;
+        _syncPublisherFactory = syncPublisherFactory;
+        _userService = userService;
     }
 
     public async Task<None> Handle(SyncContentCommand req, CancellationToken cancellationToken) {
-        var requestId = req.Model.RequestId.GetValueOrThrow();
         var contentId = req.Model.ContentId.GetValueOrThrow();
         var content = _contentLocator.ById(req.Model.ContentId.GetValueOrThrow());
 
+        var udi = Udi.Create(Document, contentId);
+        var name = content.Name;
+
         var syncItem = new SyncItem {
-            Udi = Udi.Create(Document, contentId),
-            Name = content.Name
+            Udi = udi,
+            Name = name
         };
         syncItem.Change = ChangeType.Create;
-        syncItem.Flags = DependencyFlags.PublishedDependencies;
 
         var options = new PublisherProcessingOptions();
         options.Mode = PublishMode.Push;
@@ -48,16 +70,73 @@ public class SyncContentHandler : IRequestHandler<SyncContentCommand, SyncConten
         options.PublisherOptions = new SyncPublisherOptions();
         options.PublisherOptions.PublishedDependencies = true;
 
-        var request = new PublisherActionRequest(requestId, requestId.ToString());
-        request.Server = req.Model.ServerAlias;
-        request.Mode = PublishMode.Push;
+        var user = await _userService.GetAsync(global::Umbraco.Cms.Core.Constants.Security.SuperUserKey);
+        var publisher = _syncPublisherFactory.GetPublisherByServer(req.Model.ServerAlias);
 
-        var result = await _publisherProcessor.Process(request, options);
+        if (publisher is not SyncRealtimePublisher) {
+            throw new Exception($"Sync of {contentId} needs server {req.Model.ServerAlias} to use the realtime " +
+                                $"publisher, not {publisher.Alias}");
+        }
 
-        if (!result.Success) {
-            throw new Exception($"Sync of {contentId} failed with error: {result.Message}");
+        var createPipelineOptions = new CreatePipelineOptions();
+        createPipelineOptions.Alias = publisher.Processor;
+        createPipelineOptions.Strategy = publisher.GetStrategy(PublishMode.Push);
+        createPipelineOptions.User = user;
+
+        var pipeline = await _pipelineService.CreatePipeline(createPipelineOptions);
+        var failedItems = new List<uSyncActionView>();
+
+        try {
+            await _pipelineService.UpdateOptions(pipeline.Id, options, user);
+
+            do {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                pipeline = await _pipelineService.Process(pipeline.Id, user, null, false);
+
+                failedItems.AddRange(GetItemResults(pipeline).Where(IsError));
+            } while (pipeline.State.Status is PipelineStatus.Running or PipelineStatus.Waiting);
+        } finally {
+            await ClearPipelineAsync(pipeline.Id, user);
+        }
+
+        if (pipeline.State.Status == PipelineStatus.Failed) {
+            throw new Exception($"Sync of {contentId} failed with error: {pipeline.Results.Error.Message}");
+        } else if (pipeline.State.Status != PipelineStatus.Completed) {
+            throw new Exception($"Sync of {contentId} stopped with pipeline status {pipeline.State.Status}");
+        } else if (failedItems.Any()) {
+            var failures = failedItems.Select(x => $"{x.Name} ({x.Change}: {x.Message})").Distinct().ToCsv(true);
+
+            throw new Exception($"Sync of {contentId} failed to import {failures}");
         }
 
         return None.Empty;
+    }
+
+    private async Task ClearPipelineAsync(Guid pipelineId, IUser user) {
+        try {
+            await _pipelineService.ClearPipeline(pipelineId, user);
+        } catch (Exception ex) {
+            _logger.LogError(ex, "Could not clear sync pipeline {PipelineId}", pipelineId);
+        }
+    }
+
+    private IReadOnlyList<uSyncActionView> GetItemResults(IPipeline pipeline) {
+        var actions = default(object);
+
+        if (pipeline.Results?.Results.TryGetValue(ActionsResultKey, out actions) != true || actions == null) {
+            return [];
+        } else if (actions is IEnumerable<uSyncActionView> actionViews) {
+            return actionViews.ToList();
+        } else if (actions is JsonNode jsonNode) {
+            return jsonNode.Deserialize<List<uSyncActionView>>(JsonTextOptions.GetOptions());
+        } else {
+            throw new Exception($"Pipeline {pipeline.Id} has {ActionsResultKey} of unrecognised type " +
+                                $"{actions.GetType().GetFriendlyName()}");
+        }
+    }
+
+    private bool IsError(uSyncActionView itemResult) {
+        return (itemResult.Change >= ChangeType.Fail && itemResult.Change != ChangeType.Hidden) || !itemResult.Success;
     }
 }

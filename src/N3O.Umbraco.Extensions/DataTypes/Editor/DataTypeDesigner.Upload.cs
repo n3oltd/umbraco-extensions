@@ -32,4 +32,6 @@ public class UploadDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.UploadField;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.UploadField";
 }

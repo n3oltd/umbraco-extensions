@@ -34,4 +34,6 @@ public class MultipleTextStringDataTypeDesigner : DataTypeDesigner {
 
     protected override string EditorAlias =>
         UmbracoPropertyEditors.Aliases.MultipleTextstring;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.MultipleTextString";
 }

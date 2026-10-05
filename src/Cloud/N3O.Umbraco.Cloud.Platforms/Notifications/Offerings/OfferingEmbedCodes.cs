@@ -2,7 +2,6 @@ using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
-using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System;
@@ -34,9 +33,9 @@ public class OfferingEmbedCodes :
     public Task HandleAsync(ContentPublishingNotification notification, CancellationToken cancellationToken) {
         foreach (var content in notification.PublishedEntities) {
             if (content.IsOffering(_contentTypeService)) {
-                content.SetValue(DonationButtonEmbedCodeAlias, EmbedCode(ElementTypes.DonationButton.TagName, content.Key, ElementKind.DonationButtonOffering));
-                content.SetValue(DonationFormEmbedCodeAlias, EmbedCode(ElementTypes.DonationForm.TagName, content.Key, ElementKind.DonationFormOffering));
-                content.SetValue(DonationPopupEmbedCodeAlias, EmbedCode(ElementTypes.DonationPopup.TagName, content.Key, ElementKind.DonationPopupOffering));
+                content.SetValue(DonationButtonEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationButton.ToEnumString(), content.Key, ElementKind.DonationButtonOffering));
+                content.SetValue(DonationFormEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationForm.ToEnumString(), content.Key, ElementKind.DonationFormOffering));
+                content.SetValue(DonationPopupEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationPopup.ToEnumString(), content.Key, ElementKind.DonationPopupOffering));
             }
         }
 

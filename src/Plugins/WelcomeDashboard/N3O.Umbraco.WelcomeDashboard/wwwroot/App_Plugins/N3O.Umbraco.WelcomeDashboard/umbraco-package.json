@@ -15,7 +15,7 @@
             "alias": "N3O.Dashboard.Welcome",
             "name": "N3O Welcome Dashboard",
             "element": "/App_Plugins/N3O.Umbraco.WelcomeDashboard/welcome-dashboard.js",
-            "weight": -10,
+            "weight": 100,
             "meta": {
                 "label": "Welcome",
                 "pathname": "welcome"

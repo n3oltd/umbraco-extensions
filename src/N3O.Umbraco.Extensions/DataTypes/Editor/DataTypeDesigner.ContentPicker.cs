@@ -19,4 +19,6 @@ public class ContentPickerDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.ContentPicker;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.DocumentPicker";
 }

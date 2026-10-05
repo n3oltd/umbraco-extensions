@@ -20,4 +20,6 @@ public class MarkdownDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.MarkdownEditor;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.MarkdownEditor";
 }

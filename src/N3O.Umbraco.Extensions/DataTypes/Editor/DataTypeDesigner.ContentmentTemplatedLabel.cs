@@ -56,4 +56,6 @@ public class ContentmentTemplatedLabelDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => "Umbraco.Community.Contentment.TemplatedLabel";
+
+    protected override string EditorUiAlias => "Umb.Contentment.PropertyEditorUi.TemplatedLabel";
 }

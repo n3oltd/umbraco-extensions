@@ -17,7 +17,12 @@ public sealed class Migrator {
 
     private const string CacheSerializerKey = "Umbraco.Web.PublishedCache.NuCache.Serializer";
 
+    private static readonly Guid DocumentObjectType = new("C66BA18E-EAF3-4CFF-8A22-41B16D66A972");
+    private static readonly Guid MediaObjectType = new("B796F64C-1F99-4FFB-B886-4BF4BC011A9C");
+
     private const int MaxInClauseParameters = 2000;
+
+    private const int RichTextPageSize = 500;
 
     private readonly CliOptions _options;
 
@@ -93,7 +98,107 @@ public sealed class Migrator {
             return false;
         }
 
+        if (_options.IncludeEmbeds && !MigrateEmbeds(cn, tx)) {
+            return false;
+        }
+
         return true;
+    }
+
+    private bool MigrateEmbeds(SqlConnection cn, SqlTransaction tx) {
+        Log.Info("Embeds in rich text (--include-embeds):");
+
+        BuildElementTypeKeys(cn, tx, out var nodeIdByKey);
+
+        var editorAliases = BuildEditorAliases(cn, tx, nodeIdByKey);
+        var checkedValues = 0;
+        var changed = 0;
+        var flagged = 0;
+        var unchanged = 0;
+        var failed = 0;
+        var totalEmbedsWrapped = 0;
+        var totalButtonsWrapped = 0;
+        var lastId = 0;
+        var page = default(List<PropertyDataRow>);
+
+        do {
+            page = Query(cn,
+                         tx,
+                         "SELECT TOP (@pageSize) pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, " +
+                         "n.text, pd.versionId, dt.propertyEditorAlias " +
+                         "FROM umbracoPropertyData pd " +
+                         "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
+                         "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
+                         "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
+                         "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
+                         "WHERE dt.propertyEditorAlias IN " +
+                         "('Umbraco.TinyMCE', 'Umbraco.RichText', 'Umbraco.BlockList', 'Umbraco.BlockGrid') " +
+                         "AND pd.textValue IS NOT NULL AND pd.textValue <> '' AND pd.id > @lastId " +
+                         "ORDER BY pd.id",
+                         ReadPropertyDataRow,
+                         ("@pageSize", RichTextPageSize),
+                         ("@lastId", lastId));
+
+            foreach (var pv in page) {
+                var issues = new List<string>();
+                var richText = new RichTextFixResult();
+
+                try {
+                    var wrapEmbeds = (string html) => RichTextMarkupFixer.WrapEmbeds(html, richText);
+                    var fixedValue = RichTextValueFixer.FixPropertyValue(pv.TextValue,
+                                                                         pv.EditorAlias,
+                                                                         editorAliases,
+                                                                         wrapEmbeds,
+                                                                         richText);
+
+                    if (fixedValue == null && richText.Problems.Count > 0) {
+                        flagged++;
+                    } else if (fixedValue == null) {
+                        unchanged++;
+                    } else {
+                        Execute(cn,
+                                tx,
+                                "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
+                                ("@value", fixedValue),
+                                ("@id", pv.Id));
+
+                        changed++;
+                        totalEmbedsWrapped += richText.EmbedsWrapped.Count;
+                        totalButtonsWrapped += richText.ButtonsWrapped.Count;
+
+                        Log.Info($"Changed     : rich text value id {pv.Id}, version {pv.VersionId} | node " +
+                                 $"{pv.NodeDescription} | property '{pv.PropertyAlias}' — " +
+                                 DescribeRichTextChanges(richText));
+                    }
+
+                    AddRichTextIssues(issues, richText);
+                } catch (Exception ex) {
+                    failed++;
+                    issues.Add($"FAILED to wrap embeds — {ex.Message}");
+                }
+
+                if (issues.Count > 0) {
+                    Log.Item($"rich text value id {pv.Id}, version {pv.VersionId} | node {pv.NodeDescription} | " +
+                             $"property '{pv.PropertyAlias}'",
+                             issues);
+                }
+
+                checkedValues++;
+                lastId = pv.Id;
+            }
+        } while (page.Count == RichTextPageSize);
+
+        Log.Info($"Embeds      : {checkedValues} rich text and block value(s) checked, {changed} changed, " +
+                 $"{flagged} flagged and left as they were, {unchanged} unchanged, {failed} failed; " +
+                 $"{totalEmbedsWrapped} embed(s) wrapped ({totalButtonsWrapped} button(s))");
+
+        if (failed > 0) {
+            Log.Error($"{failed} value(s) failed in the embed pass — aborting so nothing is left half-migrated.");
+
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private bool MigrateNestedContent(SqlConnection cn, SqlTransaction tx) {
@@ -332,27 +437,25 @@ public sealed class Migrator {
             return true;
         }
 
-        var values = QueryIn(cn, tx,
-            "SELECT pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, n.text " +
-            "FROM umbracoPropertyData pd " +
-            "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
-            "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
-            "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
-            "WHERE pd.propertyTypeId IN ({0}) AND pd.textValue IS NOT NULL AND pd.textValue <> ''",
-            "p",
-            propertyTypeIds,
-            r => new PropertyDataRow {
-                Id = r.GetInt32(0),
-                PropertyTypeId = r.GetInt32(1),
-                TextValue = r.GetString(2),
-                PropertyAlias = r.IsDBNull(3) ? null : r.GetString(3),
-                NodeId = r.IsDBNull(4) ? (int?) null : r.GetInt32(4),
-                NodeName = r.IsDBNull(5) ? null : r.GetString(5)
-            });
+        var values = QueryIn(cn,
+                             tx,
+                             "SELECT pd.id, pd.propertyTypeId, pd.textValue, pt.Alias, cv.nodeId, n.text, " +
+                             "pd.versionId, dt.propertyEditorAlias " +
+                             "FROM umbracoPropertyData pd " +
+                             "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
+                             "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
+                             "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
+                             "LEFT JOIN umbracoNode n ON n.id = cv.nodeId " +
+                             "WHERE pd.propertyTypeId IN ({0}) AND pd.textValue IS NOT NULL AND pd.textValue <> ''",
+                             "p",
+                             propertyTypeIds,
+                             ReadPropertyDataRow);
 
         Log.Info($"Found {values.Count} Perplex property value(s) to inspect.");
 
         var converted = 0;
+        var richTextOnly = 0;
+        var flagged = 0;
         var unchanged = 0;
         var failed = 0;
         var totalBlocks = 0;
@@ -363,21 +466,72 @@ public sealed class Migrator {
         var totalNestedConvertedInBlocks = 0;
         var totalNestedBlocks = 0;
         var totalNestedVerbatim = 0;
+        var totalEmbedsWrapped = 0;
+        var totalButtonsWrapped = 0;
+        var totalLinksConverted = 0;
+        var totalLinksUnconverted = 0;
+        var nodeTargets = new Dictionary<int, LocalLinkTarget>();
+
+        LocalLinkTarget FindNodeTarget(int nodeId) {
+            if (!nodeTargets.TryGetValue(nodeId, out var target)) {
+                target = Query(cn,
+                               tx,
+                               "SELECT uniqueId, nodeObjectType FROM umbracoNode " +
+                               "WHERE id = @id AND nodeObjectType IN (@document, @media)",
+                               ReadLocalLinkTarget,
+                               ("@id", nodeId),
+                               ("@document", DocumentObjectType),
+                               ("@media", MediaObjectType)).SingleOrDefault();
+
+                nodeTargets[nodeId] = target;
+            }
+
+            return target;
+        }
 
         foreach (var pv in values) {
             var issues = new List<string>();
 
             try {
                 var result = PerplexContentBlocksValueConverter.Convert(pv.TextValue, contentTypeKeys, editorAliases);
+                var richText = new RichTextFixResult();
+                var fixedJson = RichTextValueFixer.Fix(result.Json ?? pv.TextValue,
+                                                       editorAliases,
+                                                       html => RichTextMarkupFixer.Fix(html, FindNodeTarget, richText),
+                                                       richText);
+                var newJson = fixedJson ?? result.Json;
 
-                if (result.Json == null) {
+                if (newJson != null) {
+                    Execute(cn, tx, "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
+                            ("@value", newJson), ("@id", pv.Id));
+                }
+
+                totalEmbedsWrapped += richText.EmbedsWrapped.Count;
+                totalButtonsWrapped += richText.ButtonsWrapped.Count;
+                totalLinksConverted += richText.LinksConverted;
+                totalLinksUnconverted += richText.UnconvertedLinks.Count;
+
+                if (fixedJson != null) {
+                    Log.Info($"Changed     : perplex value id {pv.Id}, version {pv.VersionId} | node " +
+                             $"{pv.NodeDescription} | property '{pv.PropertyAlias}' — " +
+                             DescribeRichTextChanges(richText));
+                }
+
+                AddRichTextIssues(issues, richText);
+
+                if (result.Json == null && fixedJson == null && richText.Problems.Count > 0) {
+                    flagged++;
+                    issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4, empty or an unrecognised " +
+                               "shape); left untouched");
+                } else if (result.Json == null && fixedJson == null) {
                     unchanged++;
                     issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4, empty or an unrecognised " +
                                "shape); left untouched");
+                } else if (result.Json == null) {
+                    richTextOnly++;
+                    issues.Add("NOT CONVERTED — not a Perplex v3 value (already v4 or an unrecognised shape); left " +
+                               "untouched apart from its rich text");
                 } else {
-                    Execute(cn, tx, "UPDATE umbracoPropertyData SET textValue = @value WHERE id = @id",
-                            ("@value", result.Json), ("@id", pv.Id));
-
                     converted++;
                     totalBlocks += result.Blocks;
                     totalDropped += result.SkippedAliases.Count;
@@ -423,10 +577,14 @@ public sealed class Migrator {
             }
         }
 
-        Log.Info($"Perplex     : {converted} value(s) converted, {unchanged} unchanged, {failed} failed; " +
+        Log.Info($"Perplex     : {converted} value(s) converted, {richTextOnly} rewritten for their rich text " +
+                 $"only, {flagged} flagged and left as they were, {unchanged} unchanged, {failed} failed; " +
                  $"{totalBlocks} block(s)");
         Log.Info($"Nested NC   : {totalNestedConvertedInBlocks} propertie(s) in {totalNestedBlocks} block(s)" +
                  (totalNestedVerbatim > 0 ? $", {totalNestedVerbatim} left verbatim — convert by hand" : ""));
+        Log.Info($"Rich text   : {totalEmbedsWrapped} embed(s) wrapped ({totalButtonsWrapped} button(s)), " +
+                 $"{totalLinksConverted} local link(s) converted" +
+                 (totalLinksUnconverted > 0 ? $", {totalLinksUnconverted} left as they were" : ""));
 
         if (totalDropped + totalOrphaned + variantValues + totalGeneratedKeys > 0) {
             Log.Info($"Dropped     : {totalDropped} block(s) (unmatched element type), {totalOrphaned} orphaned " +
@@ -535,6 +693,58 @@ public sealed class Migrator {
         }
 
         return byKey;
+    }
+
+    private static void AddRichTextIssues(List<string> issues, RichTextFixResult richText) {
+        if (richText.ButtonsWrapped.Count > 0) {
+            issues.Add($"{richText.ButtonsWrapped.Count} <button>(s) kept as embeds, so their labels can only be " +
+                       $"edited in the source view: {string.Join(" | ", richText.ButtonsWrapped)}");
+        }
+
+        if (richText.UnconvertedLinks.Count > 0) {
+            issues.Add($"{richText.UnconvertedLinks.Count} local link(s) NOT converted, the editor cannot resolve " +
+                       $"them: {string.Join(", ", richText.UnconvertedLinks.Distinct())}");
+        }
+
+        issues.AddRange(richText.Problems);
+    }
+
+    private static string DescribeRichTextChanges(RichTextFixResult richText) {
+        var changes = new List<string>();
+
+        if (richText.EmbedsWrapped.Count > 0) {
+            var tags = richText.EmbedsWrapped.GroupBy(x => x).Select(x => $"<{x.Key}> × {x.Count()}");
+
+            changes.Add($"wrapped {string.Join(", ", tags)}");
+        }
+
+        if (richText.LinksConverted > 0) {
+            changes.Add($"converted {richText.LinksConverted} local link(s)");
+        }
+
+        return string.Join("; ", changes);
+    }
+
+    private static LocalLinkTarget ReadLocalLinkTarget(SqlDataReader reader) {
+        var entityType = reader.GetGuid(1) == DocumentObjectType ?
+                         LocalLinkTarget.DocumentEntityType :
+                         LocalLinkTarget.MediaEntityType;
+
+        return new LocalLinkTarget(reader.GetGuid(0), entityType);
+    }
+
+    private static PropertyDataRow ReadPropertyDataRow(SqlDataReader reader) {
+        var row = new PropertyDataRow();
+        row.Id = reader.GetInt32(0);
+        row.PropertyTypeId = reader.GetInt32(1);
+        row.TextValue = reader.GetString(2);
+        row.PropertyAlias = reader.IsDBNull(3) ? null : reader.GetString(3);
+        row.NodeId = reader.IsDBNull(4) ? (int?) null : reader.GetInt32(4);
+        row.NodeName = reader.IsDBNull(5) ? null : reader.GetString(5);
+        row.VersionId = reader.GetInt32(6);
+        row.EditorAlias = reader.GetString(7);
+
+        return row;
     }
 
     private static List<string> ParseElementAliases(string config, int dataTypeId) {
@@ -761,6 +971,8 @@ public sealed class Migrator {
         public int? NodeId { get; set; }
         public string NodeName { get; set; }
         public string PropertyAlias { get; set; }
+        public string EditorAlias { get; set; }
+        public int VersionId { get; set; }
 
         public string NodeDescription => NodeId.HasValue ? $"{NodeId} \"{NodeName}\"" : "(unknown)";
     }

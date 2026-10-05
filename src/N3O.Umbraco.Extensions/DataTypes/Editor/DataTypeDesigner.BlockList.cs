@@ -71,6 +71,8 @@ public class BlockListDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.BlockList;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.BlockList";
 }
 
 public class BlockListBlockBuilder {

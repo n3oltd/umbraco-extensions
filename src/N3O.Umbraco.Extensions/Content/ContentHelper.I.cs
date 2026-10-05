@@ -26,12 +26,14 @@ public interface IContentHelper {
                                            string contentTypeAlias,
                                            string propertyTypeAlias,
                                            object propertyValue,
-                                           IPublishedElement owner = null);
+                                           IPublishedElement owner = null,
+                                           bool preview = false);
     
     TProperty GetConvertedValue<TConverter, TProperty>(string contentTypeAlias,
                                                        string propertyTypeAlias,
                                                        object propertyValue,
-                                                       IPublishedElement owner = null)
+                                                       IPublishedElement owner = null,
+                                                       bool preview = false)
         where TConverter : class, IPropertyValueConverter;
     
     IReadOnlyList<IContent> GetDescendants(IContent content, IQuery<IContent> query = null);

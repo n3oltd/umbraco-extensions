@@ -56,4 +56,6 @@ public class NumericDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override string EditorAlias => UmbracoPropertyEditors.Aliases.Integer;
+
+    protected override string EditorUiAlias => "Umb.PropertyEditorUi.Integer";
 }
