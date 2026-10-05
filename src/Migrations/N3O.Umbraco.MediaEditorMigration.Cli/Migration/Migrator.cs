@@ -73,12 +73,27 @@ public sealed class Migrator {
 
         var nestedTargets = BuildNestedTargets(connection, transaction);
 
+        var altTextIds = new Dictionary<int, int>();
+
         if (_options.Editor is EditorScope.Both or EditorScope.Cropper) {
-            MigrateEditor(connection, transaction, factory, totals, CropperAlias, isCropper: true);
+            var altTextProperties = new AltTextProperties(connection, transaction, _options.Verbose);
+
+            try {
+                altTextIds = altTextProperties.CreateFor(CropperAlias);
+            } catch (Exception ex) {
+                Log.Error(ex.Message);
+                transaction.Rollback();
+
+                return false;
+            }
+
+            totals.AltTextPropertiesCreated = altTextProperties.Created;
+
+            MigrateEditor(connection, transaction, factory, totals, CropperAlias, isCropper: true, altTextIds);
         }
 
         if (_options.Editor is EditorScope.Both or EditorScope.Uploader) {
-            MigrateEditor(connection, transaction, factory, totals, UploaderAlias, isCropper: false);
+            MigrateEditor(connection, transaction, factory, totals, UploaderAlias, isCropper: false, altTextIds);
         }
 
         var nested = new NestedMediaMigrator(connection,
@@ -183,7 +198,7 @@ public sealed class Migrator {
     }
 
     private void MigrateEditor(SqlConnection cn, SqlTransaction tx, MediaNodeFactory factory, RunTotals totals,
-                               string editorAlias, bool isCropper) {
+                               string editorAlias, bool isCropper, IReadOnlyDictionary<int, int> altTextIds) {
         var dataTypes = Db.Query(cn, tx,
             "SELECT nodeId, [config] FROM umbracoDataType WHERE propertyEditorAlias = @alias",
             r => new DataTypeRow { Id = r.GetInt32(0), Config = r.IsDBNull(1) ? null : r.GetString(1) },
@@ -198,12 +213,12 @@ public sealed class Migrator {
         Log.Info($"Found {dataTypes.Count} '{editorAlias}' data type(s).");
 
         foreach (var dataType in dataTypes) {
-            MigrateDataType(cn, tx, factory, totals, dataType, isCropper);
+            MigrateDataType(cn, tx, factory, totals, dataType, isCropper, altTextIds);
         }
     }
 
     private void MigrateDataType(SqlConnection cn, SqlTransaction tx, MediaNodeFactory factory, RunTotals totals,
-                                 DataTypeRow dataType, bool isCropper) {
+                                 DataTypeRow dataType, bool isCropper, IReadOnlyDictionary<int, int> altTextIds) {
         var cropDefinitions = isCropper ? ParseCropDefinitions(dataType.Config, dataType.Id) : new List<CropDefinition>();
 
         var propertyTypeIds = Db.Query(cn, tx,
@@ -213,7 +228,8 @@ public sealed class Migrator {
 
         if (propertyTypeIds.Count > 0) {
             var values = Db.QueryIn(cn, tx,
-                "SELECT pd.id, pd.textValue, pt.Alias, cv.nodeId, n.text " +
+                "SELECT pd.id, pd.textValue, pt.Alias, cv.nodeId, n.text, pd.propertyTypeId, pd.versionId, " +
+                "pd.languageId, pd.segment " +
                 "FROM umbracoPropertyData pd " +
                 "INNER JOIN cmsPropertyType pt ON pt.id = pd.propertyTypeId " +
                 "LEFT JOIN umbracoContentVersion cv ON cv.id = pd.versionId " +
@@ -226,11 +242,15 @@ public sealed class Migrator {
                     TextValue = r.GetString(1),
                     PropertyAlias = r.IsDBNull(2) ? null : r.GetString(2),
                     NodeId = r.IsDBNull(3) ? (int?) null : r.GetInt32(3),
-                    NodeName = r.IsDBNull(4) ? null : r.GetString(4)
+                    NodeName = r.IsDBNull(4) ? null : r.GetString(4),
+                    PropertyTypeId = r.GetInt32(5),
+                    VersionId = r.GetInt32(6),
+                    LanguageId = r.IsDBNull(7) ? (int?) null : r.GetInt32(7),
+                    Segment = r.IsDBNull(8) ? null : r.GetString(8)
                 });
 
             foreach (var value in values) {
-                ConvertValue(cn, tx, factory, totals, value, cropDefinitions, isCropper);
+                ConvertValue(cn, tx, factory, totals, value, cropDefinitions, isCropper, altTextIds);
             }
         }
 
@@ -263,7 +283,8 @@ public sealed class Migrator {
     }
 
     private void ConvertValue(SqlConnection cn, SqlTransaction tx, MediaNodeFactory factory, RunTotals totals,
-                              PropertyDataRow value, List<CropDefinition> cropDefinitions, bool isCropper) {
+                              PropertyDataRow value, List<CropDefinition> cropDefinitions, bool isCropper,
+                              IReadOnlyDictionary<int, int> altTextIds) {
         var header = $"value id {value.Id} | node {value.NodeDescription} | property '{value.PropertyAlias}'";
         var issues = new List<string>();
 
@@ -318,8 +339,11 @@ public sealed class Migrator {
                            $"the data type defines crops for ({cropDefinitions.Count})");
             }
 
-            if (file.AltText != null) {
-                if (Inline && !isCropper) {
+            if (!string.IsNullOrWhiteSpace(file.AltText)) {
+                if (isCropper && altTextIds.TryGetValue(value.PropertyTypeId, out var altTextId)) {
+                    WriteAltText(cn, tx, value, altTextId, file.AltText, issues);
+                    totals.AltTextPreserved++;
+                } else if (Inline && !isCropper) {
                     totals.AltTextDropped++;
                     issues.Add($"alt text '{file.AltText}' DROPPED — Umbraco.UploadField stores a bare path");
                 } else {
@@ -337,6 +361,28 @@ public sealed class Migrator {
         if (issues.Count > 0) {
             Log.Item(header, issues);
         }
+    }
+
+    private static void WriteAltText(SqlConnection cn, SqlTransaction tx, PropertyDataRow value, int altTextId,
+                                     string altText, List<string> issues) {
+        if (altText.Length > AltTextProperties.MaxLength) {
+            issues.Add($"alt text TRUNCATED to {AltTextProperties.MaxLength} characters (was {altText.Length})");
+            altText = altText.Substring(0, AltTextProperties.MaxLength);
+        }
+
+        Db.Execute(cn, tx,
+            "UPDATE umbracoPropertyData SET varcharValue = @value " +
+            "WHERE versionId = @versionId AND propertyTypeId = @propertyTypeId " +
+            "AND (languageId = @languageId OR (@languageId IS NULL AND languageId IS NULL)) " +
+            "AND (segment = @segment OR (@segment IS NULL AND segment IS NULL)); " +
+            "IF @@ROWCOUNT = 0 INSERT INTO umbracoPropertyData " +
+            "(versionId, propertyTypeId, languageId, segment, varcharValue) " +
+            "VALUES (@versionId, @propertyTypeId, @languageId, @segment, @value)",
+            ("@value", altText),
+            ("@versionId", value.VersionId),
+            ("@propertyTypeId", altTextId),
+            ("@languageId", value.LanguageId),
+            ("@segment", value.Segment));
     }
 
     private static List<CropDefinition> ParseCropDefinitions(string config, int dataTypeId) {
@@ -405,7 +451,8 @@ public sealed class Migrator {
         }
 
         Log.Info($"Alt text    : {totals.AltTextPreserved} kept" +
-                 (totals.AltTextDropped > 0 ? $", {totals.AltTextDropped} DROPPED" : ""));
+                 (totals.AltTextDropped > 0 ? $", {totals.AltTextDropped} DROPPED" : "") +
+                 $"; {totals.AltTextPropertiesCreated} '*{AltTextProperties.AliasSuffix}' properties created");
 
         if (totals.CropsWithoutCoordinates > 0 || totals.CropRectanglesDropped > 0) {
             Log.Info($"Crops       : {totals.CropsWithoutCoordinates} without coordinates, " +
@@ -435,6 +482,10 @@ public sealed class Migrator {
         public string PropertyAlias { get; set; }
         public int? NodeId { get; set; }
         public string NodeName { get; set; }
+        public int PropertyTypeId { get; set; }
+        public int VersionId { get; set; }
+        public int? LanguageId { get; set; }
+        public string Segment { get; set; }
 
         public string NodeDescription => NodeId.HasValue ? $"{NodeId} \"{NodeName}\"" : "(unknown)";
     }
