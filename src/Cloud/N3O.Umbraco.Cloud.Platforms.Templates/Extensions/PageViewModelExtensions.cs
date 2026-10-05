@@ -45,8 +45,8 @@ public static class PageViewModelExtensions {
         var kind = CrowdfundingPublishedFileKind.CrowdfundingCampaignPage;
 
         return PublishedFile<PublishedCrowdfundingCampaignPage, CrowdfundingPublishedFileKind>(pageViewModel,
-                                                                                              jsonProvider,
-                                                                                              kind);
+                                                                                               jsonProvider,
+                                                                                               kind);
     }
 
     public static NisabMergeModel Nisab(this IPageViewModel pageViewModel, IJsonProvider jsonProvider) {
