@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace N3O.Umbraco.GeoIP.Cloudflare;
 
-// Reads headers already on the request, so it is asked before any provider that calls a lookup service.
 [Order(0)]
 public class CloudflareIPGeoLocationProvider : IIPGeoLocationProvider {
     private static readonly string CityHeader = "CF-IPCity";
@@ -32,15 +31,15 @@ public class CloudflareIPGeoLocationProvider : IIPGeoLocationProvider {
         }
 
         var headers = httpContext.Request.Headers;
-        var city = headers[CityHeader].FirstOrDefault();
         var countryCode = headers[CountryHeader].FirstOrDefault();
-        var region = headers[RegionHeader].FirstOrDefault();
+        var country = _lookups.GetAll<Country>().FindByCode(countryCode);
 
-        if (!city.HasValue() && !countryCode.HasValue() && !region.HasValue()) {
+        if (country == null) {
             return Task.FromResult(GeoLookupResult.ForFailure());
         }
 
-        var country = countryCode.HasValue() ? _lookups.GetAll<Country>().FindByCode(countryCode) : null;
+        var city = headers[CityHeader].FirstOrDefault();
+        var region = headers[RegionHeader].FirstOrDefault();
 
         return Task.FromResult(GeoLookupResult.ForSuccess(country, city, region));
     }

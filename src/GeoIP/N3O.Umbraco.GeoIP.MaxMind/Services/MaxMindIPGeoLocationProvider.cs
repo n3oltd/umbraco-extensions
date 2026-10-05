@@ -51,7 +51,6 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
 
             return result;
         } catch (AddressNotFoundException) {
-            // The address is reserved, private or absent from the database, which does not change between lookups.
             var result = GeoLookupResult.ForFailure();
 
             CacheResult(ipAddress, result);
@@ -61,8 +60,6 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
                                            HttpException or
                                            HttpRequestException or
                                            TaskCanceledException) {
-            // A rejected key, an exhausted quota, an error response, a timeout or an unreachable service says nothing
-            // about the address, so it is not cached.
             return GeoLookupResult.ForFailure();
         }
     }
@@ -71,6 +68,10 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
         var cityResponse = await _webServiceClient.CityAsync(ipAddress);
 
         var country = _lookups.GetAll<Country>().FindByCode(cityResponse.Country.IsoCode);
+
+        if (country == null) {
+            return GeoLookupResult.ForFailure();
+        }
 
         return GeoLookupResult.ForSuccess(country,
                                           cityResponse.City?.Name,
@@ -87,8 +88,6 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
 
     private static MemoryCache CreateResultsCache() {
         var options = new MemoryCacheOptions();
-
-        // Without a size limit every unique visitor address accumulates for the process lifetime.
         options.SizeLimit = ResultsCacheSizeLimit;
 
         return new MemoryCache(options);
