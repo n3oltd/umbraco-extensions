@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace N3O.Umbraco.MediaEditorMigration.Cli;
 
-public sealed class AltTextProperties {
+public class AltTextProperties {
     public const string AliasSuffix = "AltText";
     public const string EditorAlias = "Umbraco.TextBox";
     public const int MaxLength = 512;
@@ -48,15 +48,7 @@ public sealed class AltTextProperties {
                                        "INNER JOIN umbracoDataType dt ON dt.nodeId = pt.dataTypeId " +
                                        "WHERE dt.propertyEditorAlias = @alias " +
                                        "ORDER BY pt.contentTypeId, pt.sortOrder DESC",
-                                       r => new ImageProperty {
-                                           Id = r.GetInt32(0),
-                                           ContentTypeId = r.GetInt32(1),
-                                           GroupId = r.IsDBNull(2) ? null : r.GetInt32(2),
-                                           Alias = r.GetString(3),
-                                           Name = r.IsDBNull(4) ? r.GetString(3) : r.GetString(4),
-                                           SortOrder = r.GetInt32(5),
-                                           Variations = r.GetInt32(6)
-                                       },
+                                       ReadImageProperty,
                                        ("@alias", editorAlias));
 
         var altTextIds = new Dictionary<int, int>();
@@ -113,7 +105,20 @@ public sealed class AltTextProperties {
         return id;
     }
 
-    private sealed class ImageProperty {
+    private static ImageProperty ReadImageProperty(SqlDataReader reader) {
+        var image = new ImageProperty();
+        image.Id = reader.GetInt32(0);
+        image.ContentTypeId = reader.GetInt32(1);
+        image.GroupId = reader.IsDBNull(2) ? null : reader.GetInt32(2);
+        image.Alias = reader.GetString(3);
+        image.Name = reader.IsDBNull(4) ? reader.GetString(3) : reader.GetString(4);
+        image.SortOrder = reader.GetInt32(5);
+        image.Variations = reader.GetInt32(6);
+
+        return image;
+    }
+
+    private class ImageProperty {
         public int Id { get; set; }
         public int ContentTypeId { get; set; }
         public int? GroupId { get; set; }

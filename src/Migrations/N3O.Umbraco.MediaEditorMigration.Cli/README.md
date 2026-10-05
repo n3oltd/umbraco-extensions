@@ -48,8 +48,9 @@ property gets a Textstring property directly below it, in the same tab or group,
 
 A property that already has that alias is reused. Each Cropper value's alt text is then written to the
 matching culture and segment of that property. In block values it is written as a sibling entry in the block's
-`values` (or as a sibling key in the older udi shape). The value is cut at 512 characters, the Textstring column
-limit, and anything cut is logged as `[REVIEW]`.
+`values` (or as a sibling key in the older udi shape). Top-level values are cut at 512 characters, the Textstring
+column limit, and anything cut is logged as `[REVIEW]`; block values are stored in the block's JSON, which has
+no such limit, so they are written in full.
 
 ### `--target inline`
 

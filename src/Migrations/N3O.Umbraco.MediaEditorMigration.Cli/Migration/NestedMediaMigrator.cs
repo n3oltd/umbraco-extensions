@@ -370,7 +370,7 @@ public sealed class NestedMediaMigrator {
         public PendingAltText PendingAltText { get; set; }
     }
 
-    private sealed class PendingAltText {
+    private class PendingAltText {
         public PendingAltText(JObject entry, string alias, string value) {
             Entry = entry;
             Alias = alias;
