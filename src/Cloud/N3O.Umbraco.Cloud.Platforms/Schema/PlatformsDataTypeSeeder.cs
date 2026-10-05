@@ -31,7 +31,6 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
     }
 
     public void Seed() {
-        Seed(DataTypeNames.AnalyticsTagsList, SeedAnalyticsTagsList);
         Seed(DataTypeNames.CampaignsMultiple, SeedCampaigns);
         Seed(DataTypeNames.CampaignsSingle, SeedCampaign);
         Seed(DataTypeNames.DonateButtonAction, SeedDonateButtonAction);
@@ -64,15 +63,6 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         } catch (Exception ex) {
             _logger.LogError(ex, "Could not create platforms data type {Name}", name);
         }
-    }
-
-    private void SeedAnalyticsTagsList() {
-        var designer = _dataTypeEditor.NewContentmentListItems(DataTypeNames.AnalyticsTagsList);
-
-        designer.InFolder(Folders.Platforms);
-        designer.WithDeterministicId(DataTypeNames.AnalyticsTagsList);
-
-        designer.Save();
     }
 
     private void SeedCampaign() {
