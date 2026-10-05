@@ -119,8 +119,9 @@ a trimmed build fails at `Open()` rather than at publish time. The target needs 
 7. Regenerate ModelsBuilder models + fix any site code still referencing the removed `CroppedImage`/`FileUpload`
    types, then `uSync export` and commit. Under `--target inline` they become `ImageCropperValue` and `string`;
    under `--target mediapicker` both become `MediaWithCrops`. Watch for the members the N3O types had that no
-   native type does: `.AltText` (a Cropper's alt text is now the `<alias>AltText` property, which the export
-   carries into the uSync content type files), `.Crop`/the alias indexer, and `GetUncroppedImage().Width/Height`
+   native type does: `.AltText` (a Cropper's alt text is now the `<alias>AltText` property, which
+   `N3O.Umbraco.Extensions`' `content.AltText(alias)` reads, and which the export carries into the uSync content
+   type files), `.Crop`/the alias indexer, and `GetUncroppedImage().Width/Height`
    (there is no source-dimension slot on `ImageCropperValue`).
 8. The old SHA1-named pre-generated Cropper crop files under `/media/{ticks}/` are now dead — safe to delete.
 

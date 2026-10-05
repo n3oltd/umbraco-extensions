@@ -149,11 +149,18 @@ public sealed class NestedMediaMigrator {
 
         if (token is JArray array) {
             for (var i = 0; i < array.Count; i++) {
-                array[i] = Walk(array[i], contentTypeKey, context);
+                var element = array[i];
+                var walked = Walk(element, contentTypeKey, context);
 
-                if (context.PendingAltText != null && ReferenceEquals(context.PendingAltText.Entry, array[i])) {
+                // Assigning a token that already belongs to the array inserts a clone of it.
+                if (!ReferenceEquals(walked, element)) {
+                    array[i] = walked;
+                }
+
+                if (context.PendingAltText != null && ReferenceEquals(context.PendingAltText.Entry, element)) {
                     WriteAltTextEntry(array, i, context.PendingAltText);
                     context.PendingAltText = null;
+                    context.Totals.AltTextPreserved++;
                     i++;
                 }
             }
@@ -214,6 +221,7 @@ public sealed class NestedMediaMigrator {
         if (context.PendingAltText != null) {
             entry[context.PendingAltText.Alias] = context.PendingAltText.Value;
             context.PendingAltText = null;
+            context.Totals.AltTextPreserved++;
         }
     }
 
@@ -303,7 +311,6 @@ public sealed class NestedMediaMigrator {
         if (!string.IsNullOrWhiteSpace(file.AltText)) {
             if (isCropper && target != null) {
                 context.PendingAltText = new PendingAltText(entry, AltTextProperties.AliasFor(alias), file.AltText);
-                context.Totals.AltTextPreserved++;
             } else if (isCropper) {
                 context.Totals.AltTextDropped++;
                 context.Issues.Add($"'{alias}': alt text '{file.AltText}' DROPPED — no data type match, so no " +
