@@ -29,7 +29,6 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
     ];
 
     private static readonly string[] CampaignAliases = [
-        GivingMigrationConstants.Properties.AnalyticsTags,
         GivingMigrationConstants.Properties.HeroImage
     ];
 
@@ -140,9 +139,6 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
             SetContentPlaceholders(publisher, plan.CampaignName, placeholders, null);
 
-            Set(publisher,
-                GivingMigrationConstants.Properties.AnalyticsTags,
-                BuildAnalyticsTagsJson(plan.CampaignName));
             Set(publisher,
                 GivingMigrationConstants.Properties.HeroImage,
                 BuildHeroImageJson(plan.CampaignContentTypeAlias, placeholders.HeroImage));
@@ -553,17 +549,6 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
             ex = ex.InnerException;
         }
-    }
-
-    private static string BuildAnalyticsTagsJson(string campaignName) {
-        var tag = new {
-            icon = "icon-stop",
-            name = GivingMigrationConstants.Placeholders.AnalyticsTagName,
-            value = campaignName,
-            description = ""
-        };
-
-        return JsonConvert.SerializeObject(new[] { tag });
     }
 
     private static string MapGiftType(string givingTypeId) {

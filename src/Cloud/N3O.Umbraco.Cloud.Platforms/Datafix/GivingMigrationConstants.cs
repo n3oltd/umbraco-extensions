@@ -73,7 +73,6 @@ public static class GivingMigrationConstants {
     }
 
     public static class Placeholders {
-        public const string AnalyticsTagName = "campaign";
         public const string IconFilename = "giving-migration-icon.svg";
 
         // The icon picker only accepts vector graphics, and placehold.co serves image/svg+xml by default
@@ -92,7 +91,6 @@ public static class GivingMigrationConstants {
 
     public static class Properties {
         public const string Amount = "amount";
-        public const string AnalyticsTags = "analyticsTags";
         public const string DefaultGivingType = "defaultGivingType";
         public const string Description = "description";
         public const string Dimension1 = "dimension1";
