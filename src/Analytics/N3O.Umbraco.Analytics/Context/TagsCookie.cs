@@ -13,8 +13,6 @@ public class TagsCookie : Cookie {
     public JObject GetTags() {
         var value = GetValue();
 
-        // The cookie is absent on a first visit, and GetValue answers null for it, which Parse rejects with an
-        // ArgumentNullException rather than a JsonException.
         if (!value.HasValue()) {
             return null;
         }
@@ -22,7 +20,6 @@ public class TagsCookie : Cookie {
         try {
             return JObject.Parse(value);
         } catch (JsonException) {
-            // Written from the browser, so the value is whatever the client put there.
             return null;
         }
     }
