@@ -1,18 +1,25 @@
 using MaxMind.GeoIP2;
+using MaxMind.GeoIP2.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
+using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.GeoIP.Models;
 using N3O.Umbraco.Lookups;
 using System;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace N3O.Umbraco.GeoIP.MaxMind;
 
+[Order(1)]
 public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
-    // SizeLimit caps cache growth — without it, every unique visitor IP accumulates forever
-    private static readonly MemoryCache ResultsCache = new(new MemoryCacheOptions { SizeLimit = 10_000 });
+    private const int ResultsCacheSizeLimit = 10_000;
+
+    private static readonly TimeSpan ResultsCacheLifetime = TimeSpan.FromHours(12);
+    private static readonly MemoryCache ResultsCache = CreateResultsCache();
 
     private readonly ILookups _lookups;
     private readonly IRemoteIpAddressAccessor _remoteIpAddressAccessor;
@@ -33,21 +40,56 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
             return GeoLookupResult.ForFailure();
         }
 
-        return await ResultsCache.GetOrCreateAsync(ipAddress, async c => {
-            c.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12);
-            c.Size = 1;
+        if (ResultsCache.TryGetValue<GeoLookupResult>(ipAddress, out var cachedResult)) {
+            return cachedResult;
+        }
 
-            try {
-                var cityResponse = await _webServiceClient.CityAsync(ipAddress);
+        try {
+            var result = await LookupAsync(ipAddress);
 
-                var country = _lookups.GetAll<Country>().FindByCode(cityResponse.Country.IsoCode);
+            CacheResult(ipAddress, result);
 
-                return GeoLookupResult.ForSuccess(country,
-                                                  cityResponse.City?.Name,
-                                                  cityResponse.MostSpecificSubdivision?.Name);
-            } catch { }
+            return result;
+        } catch (AddressNotFoundException) {
+            var result = GeoLookupResult.ForFailure();
 
+            CacheResult(ipAddress, result);
+
+            return result;
+        } catch (Exception ex) when (ex is GeoIP2Exception or
+                                           HttpException or
+                                           HttpRequestException or
+                                           TaskCanceledException) {
             return GeoLookupResult.ForFailure();
-        });
+        }
+    }
+
+    private async Task<GeoLookupResult> LookupAsync(IPAddress ipAddress) {
+        var cityResponse = await _webServiceClient.CityAsync(ipAddress);
+
+        var country = _lookups.GetAll<Country>().FindByCode(cityResponse.Country.IsoCode);
+
+        if (country == null) {
+            return GeoLookupResult.ForFailure();
+        }
+
+        return GeoLookupResult.ForSuccess(country,
+                                          cityResponse.City?.Name,
+                                          cityResponse.MostSpecificSubdivision?.Name);
+    }
+
+    private static void CacheResult(IPAddress ipAddress, GeoLookupResult result) {
+        var options = new MemoryCacheEntryOptions();
+        options.AbsoluteExpirationRelativeToNow = ResultsCacheLifetime;
+        options.Size = 1;
+
+        ResultsCache.Set(ipAddress, result, options);
+    }
+
+    private static MemoryCache CreateResultsCache() {
+        var options = new MemoryCacheOptions();
+        options.SizeLimit = ResultsCacheSizeLimit;
+
+        return new MemoryCache(options);
     }
 }

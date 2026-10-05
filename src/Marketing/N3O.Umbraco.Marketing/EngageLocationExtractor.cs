@@ -8,14 +8,14 @@ namespace N3O.Umbraco.Marketing;
 public class EngageLocationExtractor : IRawPageviewLocationExtractor {
     private static readonly int MaxColumnWidth = 100;
 
-    private readonly IIPGeoLocationProvider _ipGeoLocationProvider;
+    private readonly IIPGeoLocationAccessor _ipGeoLocationAccessor;
 
-    public EngageLocationExtractor(IIPGeoLocationProvider ipGeoLocationProvider) {
-        _ipGeoLocationProvider = ipGeoLocationProvider;
+    public EngageLocationExtractor(IIPGeoLocationAccessor ipGeoLocationAccessor) {
+        _ipGeoLocationAccessor = ipGeoLocationAccessor;
     }
 
     public ILocation Extract(IRawPageview rawPageview) {
-        var geoLookupResult = _ipGeoLocationProvider.GeoLocateAsync().GetAwaiter().GetResult();
+        var geoLookupResult = _ipGeoLocationAccessor.GeoLocateAsync().GetAwaiter().GetResult();
 
         if (!geoLookupResult.Success) {
             return null;
