@@ -149,7 +149,20 @@ public sealed class NestedMediaMigrator {
 
         if (token is JArray array) {
             for (var i = 0; i < array.Count; i++) {
-                array[i] = Walk(array[i], contentTypeKey, context);
+                var element = array[i];
+                var walked = Walk(element, contentTypeKey, context);
+
+                // Assigning a token that already belongs to the array inserts a clone of it.
+                if (!ReferenceEquals(walked, element)) {
+                    array[i] = walked;
+                }
+
+                if (context.PendingAltText != null && ReferenceEquals(context.PendingAltText.Entry, element)) {
+                    WriteAltTextEntry(array, i, context.PendingAltText);
+                    context.PendingAltText = null;
+                    context.Totals.AltTextPreserved++;
+                    i++;
+                }
             }
 
             return array;
@@ -204,6 +217,12 @@ public sealed class NestedMediaMigrator {
         if (context.Converted > before) {
             property.Value = shim["value"];
         }
+
+        if (context.PendingAltText != null) {
+            entry[context.PendingAltText.Alias] = context.PendingAltText.Value;
+            context.PendingAltText = null;
+            context.Totals.AltTextPreserved++;
+        }
     }
 
     private void ConvertEntry(JObject entry,
@@ -244,8 +263,9 @@ public sealed class NestedMediaMigrator {
         }
 
         var cropDefinitions = new List<CropDefinition>();
+        NestedMediaTarget target = null;
 
-        if (contentTypeKey.HasValue && _targets.TryGetValue((contentTypeKey.Value, alias), out var target)) {
+        if (contentTypeKey.HasValue && _targets.TryGetValue((contentTypeKey.Value, alias), out target)) {
             cropDefinitions = target.CropDefinitions;
         } else if (isCropper) {
             context.Issues.Add($"'{alias}': no data type match (element key missing or property removed), so " +
@@ -289,7 +309,13 @@ public sealed class NestedMediaMigrator {
         }
 
         if (!string.IsNullOrWhiteSpace(file.AltText)) {
-            if (_factory == null && !isCropper) {
+            if (isCropper && target != null) {
+                context.PendingAltText = new PendingAltText(entry, AltTextProperties.AliasFor(alias), file.AltText);
+            } else if (isCropper) {
+                context.Totals.AltTextDropped++;
+                context.Issues.Add($"'{alias}': alt text '{file.AltText}' DROPPED — no data type match, so no " +
+                                   $"'{AltTextProperties.AliasFor(alias)}' property was created for it");
+            } else if (_factory == null) {
                 context.Totals.AltTextDropped++;
                 context.Issues.Add($"'{alias}': alt text '{file.AltText}' DROPPED — Umbraco.UploadField stores " +
                                    "a bare path");
@@ -297,6 +323,30 @@ public sealed class NestedMediaMigrator {
                 context.Totals.AltTextPreserved++;
             }
         }
+    }
+
+    private static void WriteAltTextEntry(JArray values, int index, PendingAltText pending) {
+        var culture = pending.Entry["culture"]?.DeepClone() ?? JValue.CreateNull();
+        var segment = pending.Entry["segment"]?.DeepClone() ?? JValue.CreateNull();
+
+        var existing = values.OfType<JObject>()
+                             .FirstOrDefault(x => (string) x["alias"] == pending.Alias
+                                                  && JToken.DeepEquals(x["culture"] ?? JValue.CreateNull(), culture)
+                                                  && JToken.DeepEquals(x["segment"] ?? JValue.CreateNull(), segment));
+
+        if (existing != null) {
+            existing["value"] = pending.Value;
+
+            return;
+        }
+
+        values.Insert(index + 1, new JObject {
+            ["editorAlias"] = AltTextProperties.EditorAlias,
+            ["culture"] = culture,
+            ["segment"] = segment,
+            ["alias"] = pending.Alias,
+            ["value"] = pending.Value
+        });
     }
 
     private static Guid? TryGetGuid(JToken token) {
@@ -317,6 +367,19 @@ public sealed class NestedMediaMigrator {
         public List<string> Issues { get; }
         public int Converted { get; set; }
         public int AliasesFixed { get; set; }
+        public PendingAltText PendingAltText { get; set; }
+    }
+
+    private class PendingAltText {
+        public PendingAltText(JObject entry, string alias, string value) {
+            Entry = entry;
+            Alias = alias;
+            Value = value;
+        }
+
+        public JObject Entry { get; }
+        public string Alias { get; }
+        public string Value { get; }
     }
 
     private sealed class NestedRow {

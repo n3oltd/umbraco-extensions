@@ -13,15 +13,16 @@ There are **two targets**, chosen with `--target`:
 | Where the file lives | **on the property**, same as the N3O editors | media library node (created by this tool) |
 | Media nodes created | **none** | one per distinct file |
 | `/media/...` paths | unchanged, verbatim | unchanged, verbatim (no file is moved) |
-| Alt text | **lost** — no slot on either editor | kept as the media node's name |
+| Cropper alt text | in a new `<alias>AltText` Textstring property below the image | same, and as the media node's name |
+| Uploader alt text | **lost** — `Umbraco.UploadField` stores a bare path | kept as the media node's name |
 | Source image width/height | **lost** — `ImageCropperValue` has no slot | on the media node (`umbracoWidth/Height`) |
 | Files reusable/manageable in the Media section | no | yes |
 | Read type in models | `ImageCropperValue` / `string` | `MediaWithCrops` |
 
 `inline` is the closer structural match — the retired N3O editors also kept the path on the property with no
 media node, so nothing is invented and the whole "media node has no published-cache row" failure class does not
-arise. Its cost is the two columns of data loss above. `mediapicker` costs a media node per file but keeps alt
-text and dimensions, and is what `N3O.Umbraco.Extensions`' own `IMediaUrl`/`InlineSvg` abstraction is typed
+arise. Its cost is the data loss above. `mediapicker` costs a media node per file but keeps Uploader alt text
+and dimensions, and is what `N3O.Umbraco.Extensions`' own `IMediaUrl`/`InlineSvg` abstraction is typed
 against.
 
 It is the data-migration half of the Cropper/Uploader → native switch; the other half is the removal of the
@@ -37,6 +38,19 @@ media node**. Whichever target is chosen, that path is reused verbatim and **no 
 Crop rectangles are converted from **absolute pixels to relative edge insets** for both targets: `x1/y1/x2/y2`
 are the fractions cropped off the left/top/right/bottom, which is what Umbraco passes straight to ImageSharp as
 `cc=left,top,right,bottom`. The crop aliases and sizes come from the old data type's `cropDefinitions`.
+
+**Cropper alt text** gets a property of its own on both targets, because no native image value has an alt-text
+slot that survives an editor save. Before any value is converted, every content and element type with a Cropper
+property gets a Textstring property directly below it, in the same tab or group, with the same variation:
+
+- alias: the image alias + `AltText` (`image` → `imageAltText`);
+- name: the image name + ` Alt Text`.
+
+A property that already has that alias is reused. Each Cropper value's alt text is then written to the
+matching culture and segment of that property. In block values it is written as a sibling entry in the block's
+`values` (or as a sibling key in the older udi shape). Top-level values are cut at 512 characters, the Textstring
+column limit, and anything cut is logged as `[REVIEW]`; block values are stored in the block's JSON, which has
+no such limit, so they are written in full.
 
 ### `--target inline`
 
@@ -106,7 +120,9 @@ a trimmed build fails at `Open()` rather than at publish time. The target needs 
 7. Regenerate ModelsBuilder models + fix any site code still referencing the removed `CroppedImage`/`FileUpload`
    types, then `uSync export` and commit. Under `--target inline` they become `ImageCropperValue` and `string`;
    under `--target mediapicker` both become `MediaWithCrops`. Watch for the members the N3O types had that no
-   native type does: `.AltText` (both targets), `.Crop`/the alias indexer, and `GetUncroppedImage().Width/Height`
+   native type does: `.AltText` (a Cropper's alt text is now the `<alias>AltText` property, which
+   `N3O.Umbraco.Extensions`' `content.AltText(alias)` reads, and which the export carries into the uSync content
+   type files), `.Crop`/the alias indexer, and `GetUncroppedImage().Width/Height`
    (there is no source-dimension slot on `ImageCropperValue`).
 8. The old SHA1-named pre-generated Cropper crop files under `/media/{ticks}/` are now dead — safe to delete.
 
@@ -186,8 +202,8 @@ shape, which is correct).
   **Do not try `DELETE FROM cmsContentNu` instead** — neither Umbraco 13 nor 17 rebuilds an empty cache: v13
   throws the same `No data for media`, and v17 only starts with cache seeding disabled, after which every request
   fails with `There is no PublishedContent`.
-- **Alt text** has no native media-picker slot; it is used as the new media node's name and logged as `[REVIEW]`
-  so you can re-apply it manually where it matters.
+- **Alt text** has no native media-picker slot. It is also used as the new media node's name, and a Cropper's alt
+  text is written to its `<alias>AltText` property as well (see above).
 - **Image metadata** (`umbracoWidth/Height/Bytes/Extension`) is set best-effort from the stored value; Umbraco
   recomputes it if the media item is re-saved.
 - Files that no longer exist on disk/blob are not detected here — they surface as broken media after the rebuild.

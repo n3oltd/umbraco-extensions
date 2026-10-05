@@ -18,10 +18,6 @@ public static class NativeValueBuilder {
             ["focalPoint"] = null
         };
 
-        if (!string.IsNullOrWhiteSpace(file.AltText)) {
-            value["altText"] = file.AltText;
-        }
-
         return (JsonConvert.SerializeObject(value), outcome);
     }
 
