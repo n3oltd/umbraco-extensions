@@ -1,4 +1,3 @@
-using N3O.Umbraco.Extensions;
 using N3O.Umbraco.GeoIP;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +12,10 @@ public class EngageLocationExtractor : IRawPageviewLocationExtractor {
 
     private readonly IIPGeoLocationProvider _ipGeoLocationProvider;
 
+    // The last registration is the one a single IIPGeoLocationProvider dependency resolves to, so location and the
+    // geo IP default currency come from the same provider.
     public EngageLocationExtractor(IEnumerable<IIPGeoLocationProvider> ipGeoLocationProviders) {
-        _ipGeoLocationProvider = ipGeoLocationProviders.ApplyAttributeOrdering().FirstOrDefault();
+        _ipGeoLocationProvider = ipGeoLocationProviders.LastOrDefault();
     }
 
     public ILocation Extract(IRawPageview rawPageview) {

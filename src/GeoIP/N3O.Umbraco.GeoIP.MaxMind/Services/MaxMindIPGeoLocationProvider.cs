@@ -7,6 +7,7 @@ using N3O.Umbraco.GeoIP.Models;
 using N3O.Umbraco.Lookups;
 using System;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,38 +38,49 @@ public class MaxMindIPGeoLocationProvider : IIPGeoLocationProvider {
             return GeoLookupResult.ForFailure();
         }
 
-        var result = await ResultsCache.GetOrCreateAsync(ipAddress, async c => {
-            c.AbsoluteExpirationRelativeToNow = ResultsCacheLifetime;
-            c.Size = 1;
-
-            return await LookupAsync(ipAddress);
-        });
-
-        // A failure says nothing about the address, only that this lookup did not answer, so it is not kept:
-        // caching it would report no location for this address until the entry expired.
-        if (!result.Success) {
-            ResultsCache.Remove(ipAddress);
+        if (ResultsCache.TryGetValue<GeoLookupResult>(ipAddress, out var cachedResult)) {
+            return cachedResult;
         }
 
-        return result;
+        try {
+            var result = await LookupAsync(ipAddress);
+
+            CacheResult(ipAddress, result);
+
+            return result;
+        } catch (AddressNotFoundException) {
+            // The address is reserved, private or absent from the database, which does not change between lookups.
+            var result = GeoLookupResult.ForFailure();
+
+            CacheResult(ipAddress, result);
+
+            return result;
+        } catch (Exception ex) when (ex is GeoIP2Exception or
+                                           HttpException or
+                                           HttpRequestException or
+                                           TaskCanceledException) {
+            // A rejected key, an exhausted quota, an error response, a timeout or an unreachable service says nothing
+            // about the address, so it is not cached.
+            return GeoLookupResult.ForFailure();
+        }
     }
 
     private async Task<GeoLookupResult> LookupAsync(IPAddress ipAddress) {
-        try {
-            var cityResponse = await _webServiceClient.CityAsync(ipAddress);
+        var cityResponse = await _webServiceClient.CityAsync(ipAddress);
 
-            var country = _lookups.GetAll<Country>().FindByCode(cityResponse.Country.IsoCode);
+        var country = _lookups.GetAll<Country>().FindByCode(cityResponse.Country.IsoCode);
 
-            return GeoLookupResult.ForSuccess(country,
-                                              cityResponse.City?.Name,
-                                              cityResponse.MostSpecificSubdivision?.Name);
-        } catch (GeoIP2Exception) {
-            // The service answered but could not locate the address, or rejected the request.
-        } catch (HttpException) {
-            // The service could not be reached. The result is not cached, so the next lookup retries.
-        }
+        return GeoLookupResult.ForSuccess(country,
+                                          cityResponse.City?.Name,
+                                          cityResponse.MostSpecificSubdivision?.Name);
+    }
 
-        return GeoLookupResult.ForFailure();
+    private static void CacheResult(IPAddress ipAddress, GeoLookupResult result) {
+        var options = new MemoryCacheEntryOptions();
+        options.AbsoluteExpirationRelativeToNow = ResultsCacheLifetime;
+        options.Size = 1;
+
+        ResultsCache.Set(ipAddress, result, options);
     }
 
     private static MemoryCache CreateResultsCache() {
