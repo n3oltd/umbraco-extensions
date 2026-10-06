@@ -1,3 +1,4 @@
+using N3O.Umbraco.Constants;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Localization;
@@ -34,7 +35,7 @@ public class ContentSitemapEntriesProvider : ISitemapEntriesProvider {
         using (_umbracoContextFactory.EnsureUmbracoContext()) {
             var localizationSettings = _localizationSettingsAccessor.GetSettings();
 
-            var entries = _contentLocator.All()
+            var entries = _contentLocator.AllInCulture(null, Cultures.All)
                                          .Where(x => _contentVisibility.IsVisible(x))
                                          .SelectMany(x => GetSitemapEntries(x, localizationSettings.DefaultCultureCode))
                                          .ToList();
