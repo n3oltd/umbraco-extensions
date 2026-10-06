@@ -1,4 +1,3 @@
-using FluentEmail.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Composing;
 using Umbraco.Cms.Core.DependencyInjection;

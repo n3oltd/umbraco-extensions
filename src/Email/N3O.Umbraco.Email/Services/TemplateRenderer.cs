@@ -1,4 +1,3 @@
-using FluentEmail.Core.Interfaces;
 using N3O.Umbraco.Templates;
 using System.Threading.Tasks;
 
