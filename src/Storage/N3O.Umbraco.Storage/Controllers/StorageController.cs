@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using N3O.Umbraco.Attributes;
@@ -9,6 +10,7 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Umbraco.Cms.Web.Common.Authorization;
 
 namespace N3O.Umbraco.Storage.Controllers;
 
@@ -26,6 +28,7 @@ public class StorageController : ValidatingApiController {
         _volume = volume;
     }
     
+    [Authorize(Policy = AuthorizationPolicies.BackOfficeAccess)]
     [HttpPost("download/{folderName}/{filename}")]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Download(string folderName, string filename) {
@@ -50,8 +53,7 @@ public class StorageController : ValidatingApiController {
         return await Upload(folderPath, req);
     }
 
-    [HttpPost("upload/{folderPath}")]
-    public async Task<ActionResult<StorageToken>> Upload(string folderPath, [FromForm] UploadReq req) {
+    private async Task<ActionResult<StorageToken>> Upload(string folderPath, [FromForm] UploadReq req) {
         await ValidateAsync(req);
         
         using (var reqStream = req.File.OpenReadStream()) {
