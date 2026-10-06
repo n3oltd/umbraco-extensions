@@ -36,6 +36,10 @@
         <ProjectReference Include="..\N3O.Umbraco.Email\N3O.Umbraco.Email.csproj" />
     </ItemGroup>
     <ItemGroup>
+        <!-- Umbraco 13 brings MailKit 4.8.0, which has a STARTTLS response injection advisory. -->
+        <PackageReference Include="MailKit" Version="4.16.0" />
+    </ItemGroup>
+    <ItemGroup>
         <None Update="README.md">
             <Pack>True</Pack>
         </None>
