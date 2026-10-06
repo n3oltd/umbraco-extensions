@@ -20,6 +20,7 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     private string _subject;
     private string _body;
     private T _model;
+    private readonly List<EmailAttachmentReq> _attachments = [];
 
     public FluentEmailBuilder(IBackgroundJob backgroundJob, IJsonProvider jsonProvider) {
         _backgroundJob = backgroundJob;
@@ -65,6 +66,17 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
         return this;
     }
 
+    public IFluentEmailBuilder<T> Attach(string name, string contentType, byte[] bytes) {
+        var attachment = new EmailAttachmentReq();
+        attachment.Name = name;
+        attachment.ContentType = contentType;
+        attachment.Bytes = bytes;
+
+        _attachments.Add(attachment);
+
+        return this;
+    }
+
     public void Queue() {
         var req = Build();
         var jobName = $"Send {req.Subject} to {_recipientEmails.Join("; ")}";
@@ -80,6 +92,7 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
         req.Bcc = _bcc;
         req.Subject = _subject;
         req.Body = _body;
+        req.Attachments = _attachments;
 
         if (_model.HasValue()) {
             req.ModelType = TypeResolver.PersistedName(typeof(T));
