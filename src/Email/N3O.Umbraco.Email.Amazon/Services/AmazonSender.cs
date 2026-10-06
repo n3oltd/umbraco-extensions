@@ -1,13 +1,11 @@
-﻿using Amazon;
+using Amazon;
 using Amazon.Runtime;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
-using FluentEmail.Core;
-using FluentEmail.Core.Interfaces;
-using FluentEmail.Core.Models;
 using MimeKit;
 using N3O.Umbraco.Email.Extensions;
 using N3O.Umbraco.Email.Lookups;
+using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Linq;
@@ -16,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace N3O.Umbraco.Email.Amazon;
 
-public class AmazonSender : ISender {
+public class AmazonSender : IEmailSender {
     private readonly IMimeMessageBuilder _mimeMessageBuilder;
     private readonly AmazonSimpleEmailServiceClient _sesClient;
 
@@ -30,66 +28,45 @@ public class AmazonSender : ISender {
         _sesClient = new AmazonSimpleEmailServiceClient(credentials, regionEndpoint);
     }
 
-    public SendResponse Send(IFluentEmail email, CancellationToken? cancellationToken = null) {
-        var sendResponse = SendAsync(email, cancellationToken).GetAwaiter().GetResult();
+    public async Task<EmailSendResult> SendAsync(EmailMessage message, CancellationToken cancellationToken) {
+        var mimeMessage = BuildMimeMessage(message);
 
-        return sendResponse;
+        var result = await SendViaAmazonAsync(mimeMessage, cancellationToken);
+
+        return result;
     }
 
-    public async Task<SendResponse> SendAsync(IFluentEmail email, CancellationToken? cancellationToken = null) {
-        var mimeMessage = BuildMimeMessage(email.Data);
+    private MimeMessage BuildMimeMessage(EmailMessage message) {
+        var mimeMessage = _mimeMessageBuilder.BuildMessage(message.From,
+                                                           message.To,
+                                                           message.Cc,
+                                                           message.Bcc,
+                                                           message.Subject,
+                                                           message.HtmlBody,
+                                                           BodyFormats.Html,
+                                                           message.Attachments);
 
-        var sendResponse = await SendViaAmazonAsync(mimeMessage, cancellationToken.GetValueOrDefault());
-
-        return sendResponse;
+        return mimeMessage;
     }
 
-    private MimeMessage BuildMimeMessage(EmailData email) {
-        var message = _mimeMessageBuilder.BuildMessage(email.FromAddress.ToEmailIdentity(),
-                                                       email.OrEmpty(x => x.ToAddresses)
-                                                            .Select(x => x.ToEmailIdentity())
-                                                            .ToList(),
-                                                       email.OrEmpty(x => x.CcAddresses)
-                                                            .Select(x => x.ToEmailIdentity())
-                                                            .ToList(),
-                                                       email.OrEmpty(x => x.BccAddresses)
-                                                            .Select(x => x.ToEmailIdentity())
-                                                            .ToList(),
-                                                       email.Subject,
-                                                       email.Body,
-                                                       email.IsHtml ? BodyFormats.Html : BodyFormats.Text,
-                                                       email.OrEmpty(x => x.Attachments)
-                                                            .Select(x => x.ToEmailAttachment())
-                                                            .ToList());
-
-        return message;
-    }
-
-    private async Task<SendResponse> SendViaAmazonAsync(MimeMessage mimeMessage, CancellationToken cancellationToken) {
-        var sendResponse = new SendResponse();
-
+    private async Task<EmailSendResult> SendViaAmazonAsync(MimeMessage mimeMessage, CancellationToken cancellationToken) {
         try {
             using (var messageStream = mimeMessage.ToStream()) {
                 var req = new SendRawEmailRequest();
                 req.RawMessage = new RawMessage(messageStream);
 
-                var sesResponse = await _sesClient.SendRawEmailAsync(req, cancellationToken);
-
-                sendResponse.MessageId = sesResponse.MessageId;
+                await _sesClient.SendRawEmailAsync(req, cancellationToken);
             }
-        } catch (AccountSendingPausedException ex) {
-            sendResponse.ErrorMessages.Add($"{ex.StatusCode}");
-            sendResponse.ErrorMessages.Add($"{ex.Message}");
-        } catch (MailFromDomainNotVerifiedException ex) {
-            sendResponse.ErrorMessages.Add($"{ex.StatusCode}");
-            sendResponse.ErrorMessages.Add($"{ex.Message}");
-        } catch (MessageRejectedException ex) {
-            sendResponse.ErrorMessages.Add($"{ex.StatusCode}");
-            sendResponse.ErrorMessages.Add($"{ex.Message}");
-        } catch (Exception ex) {
-            sendResponse.ErrorMessages.Add(ex.Message);
-        }
 
-        return sendResponse;
+            return new EmailSendResult([]);
+        } catch (AccountSendingPausedException ex) {
+            return new EmailSendResult([$"{ex.StatusCode}", $"{ex.Message}"]);
+        } catch (MailFromDomainNotVerifiedException ex) {
+            return new EmailSendResult([$"{ex.StatusCode}", $"{ex.Message}"]);
+        } catch (MessageRejectedException ex) {
+            return new EmailSendResult([$"{ex.StatusCode}", $"{ex.Message}"]);
+        } catch (Exception ex) {
+            return new EmailSendResult([ex.Message]);
+        }
     }
 }

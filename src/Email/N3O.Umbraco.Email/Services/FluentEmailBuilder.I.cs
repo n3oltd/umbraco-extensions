@@ -9,6 +9,7 @@ public interface IFluentEmailBuilder<T> {
     IFluentEmailBuilder<T> Subject(string text);
     IFluentEmailBuilder<T> Body(string content);
     IFluentEmailBuilder<T> Model(T model);
-    
+    IFluentEmailBuilder<T> Attach(string name, string contentType, byte[] bytes);
+
     void Queue();
 }

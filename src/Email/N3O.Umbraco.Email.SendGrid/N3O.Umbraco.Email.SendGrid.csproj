@@ -36,9 +36,6 @@
         <ProjectReference Include="..\N3O.Umbraco.Email\N3O.Umbraco.Email.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FluentEmail.SendGrid" Version="3.0.2" />
-        <!-- Unused directly: the SendGrid that FluentEmail.SendGrid resolves on its own brings a starkbank-ecdsa
-             with a critical advisory. -->
         <PackageReference Include="SendGrid" Version="9.29.3" />
     </ItemGroup>
     <ItemGroup>

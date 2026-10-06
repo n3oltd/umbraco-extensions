@@ -1,6 +1,6 @@
 # N3O.Umbraco.Email
 
-Composes and sends email, on top of FluentEmail. `IEmailBuilder.Create<T>` starts a fluent builder
+Composes and sends email. `IEmailBuilder.Create<T>` starts a fluent builder
 for a merge model, so the subject and body are templates merged against that model rather than
 strings assembled by the caller.
 
