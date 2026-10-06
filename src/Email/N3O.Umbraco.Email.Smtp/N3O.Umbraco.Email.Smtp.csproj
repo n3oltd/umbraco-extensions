@@ -36,7 +36,8 @@
         <ProjectReference Include="..\N3O.Umbraco.Email\N3O.Umbraco.Email.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FluentEmail.Smtp" Version="3.0.2" />
+        <!-- Umbraco 13 brings MailKit 4.8.0, which has a STARTTLS response injection advisory. -->
+        <PackageReference Include="MailKit" Version="4.16.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">

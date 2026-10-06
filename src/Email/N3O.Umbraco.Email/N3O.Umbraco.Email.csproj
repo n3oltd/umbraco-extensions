@@ -17,7 +17,7 @@
         <ContentTargetFolders>.</ContentTargetFolders>
         <Authors>N3O Ltd</Authors>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <Description>Composes and sends email, on top of FluentEmail.</Description>
+        <Description>Composes and sends email.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageProjectUrl>https://n3o.ltd</PackageProjectUrl>
         <RepositoryUrl>https://github.com/n3oltd/umbraco-extensions</RepositoryUrl>
@@ -37,9 +37,6 @@
         <ProjectReference Include="..\..\Scheduler\N3O.Umbraco.Scheduler\N3O.Umbraco.Scheduler.csproj" />
         <ProjectReference Include="..\..\Templates\N3O.Umbraco.Templates\N3O.Umbraco.Templates.csproj" />
         <ProjectReference Include="..\..\Validation\N3O.Umbraco.Validation\N3O.Umbraco.Validation.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="FluentEmail.Core" Version="3.0.2" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
