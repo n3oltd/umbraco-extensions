@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
@@ -50,7 +51,7 @@ public class HostingComposer : Composer {
             AddMiddleware<CookiesMiddleware>(opt);
             AddMiddleware<WellKnownFolderMiddleware>(opt);
             
-            ConfigureCors(opt);
+            ConfigureCors(builder, opt);
         });
         
         builder.Services.Configure<MvcOptions>(options => {
@@ -107,11 +108,19 @@ public class HostingComposer : Composer {
         opt.AddFilter(filter);
     }
     
-    private void ConfigureCors(UmbracoPipelineOptions opt) {
+    // Our front end calls its own origin, which CORS never applies to, so cross-origin access is only granted
+    // to the origins a site names.
+    private void ConfigureCors(IUmbracoBuilder builder, UmbracoPipelineOptions opt) {
+        var settings = builder.Config.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ?? new CorsSettings();
+
+        if (!settings.AllowedOrigins.Any()) {
+            return;
+        }
+
         var filter = new UmbracoPipelineFilter("CORS");
         filter.PostPipeline = app => {
             app.UseCors(policy => policy.AllowAnyHeader()
-                                        .AllowAnyOrigin()
+                                        .WithOrigins(settings.AllowedOrigins)
                                         .AllowAnyMethod()
                                         .SetPreflightMaxAge(TimeSpan.FromMinutes(60)));
         };
