@@ -21,7 +21,7 @@ public class CampaignPublishing : INotificationAsyncHandler<ContentPublishingNot
     private const string GenericError = "Something went wrong, please try again. If this keeps happening, contact " +
                                         "support";
 
-    private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(4);
+    private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(10);
 
     private readonly Lazy<ClientFactory<PlatformsUmbracoClient>> _clientFactory;
     private readonly IContentTypeService _contentTypeService;
