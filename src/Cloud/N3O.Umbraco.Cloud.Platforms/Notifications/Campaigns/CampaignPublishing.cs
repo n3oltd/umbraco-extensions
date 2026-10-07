@@ -17,7 +17,7 @@ using Umbraco.Cms.Core.Services;
 
 namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
-public class CampaignSaving : INotificationAsyncHandler<ContentSavingNotification> {
+public class CampaignPublishing : INotificationAsyncHandler<ContentPublishingNotification> {
     private const string GenericError = "Something went wrong, please try again. If this keeps happening, contact " +
                                         "support";
 
@@ -25,22 +25,22 @@ public class CampaignSaving : INotificationAsyncHandler<ContentSavingNotificatio
 
     private readonly Lazy<ClientFactory<PlatformsUmbracoClient>> _clientFactory;
     private readonly IContentTypeService _contentTypeService;
-    private readonly ILogger<CampaignSaving> _logger;
+    private readonly ILogger<CampaignPublishing> _logger;
     private readonly ISlugHelper _slugHelper;
 
-    public CampaignSaving(Lazy<ClientFactory<PlatformsUmbracoClient>> clientFactory,
-                          IContentTypeService contentTypeService,
-                          ILogger<CampaignSaving> logger,
-                          ISlugHelper slugHelper) {
+    public CampaignPublishing(Lazy<ClientFactory<PlatformsUmbracoClient>> clientFactory,
+                              IContentTypeService contentTypeService,
+                              ILogger<CampaignPublishing> logger,
+                              ISlugHelper slugHelper) {
         _clientFactory = clientFactory;
         _contentTypeService = contentTypeService;
         _logger = logger;
         _slugHelper = slugHelper;
     }
 
-    public async Task HandleAsync(ContentSavingNotification notification, CancellationToken cancellationToken) {
-        foreach (var content in notification.SavedEntities) {
-            if (content.PublishedState != PublishedState.Publishing || !content.IsCampaign(_contentTypeService)) {
+    public async Task HandleAsync(ContentPublishingNotification notification, CancellationToken cancellationToken) {
+        foreach (var content in notification.PublishedEntities) {
+            if (!content.IsCampaign(_contentTypeService)) {
                 continue;
             }
 
