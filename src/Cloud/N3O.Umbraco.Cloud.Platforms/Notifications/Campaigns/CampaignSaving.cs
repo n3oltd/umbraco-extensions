@@ -3,8 +3,11 @@ using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Validation;
 using Slugify;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Events;
@@ -43,23 +46,24 @@ public class CampaignSaving : INotificationAsyncHandler<ContentSavingNotificatio
                 continue;
             }
 
-            var error = await GetNameErrorAsync(content, cancellationToken);
+            var errors = await GetNameErrorsAsync(content, cancellationToken);
 
             // Cancelling stops the whole notification, not the one entity
-            if (error.HasValue()) {
-                notification.CancelWithError(error);
+            if (errors.HasAny()) {
+                foreach (var error in errors) {
+                    notification.CancelWithError(error);
+                }
 
                 return;
             }
         }
     }
 
-    private async Task<string> GetNameErrorAsync(IContent content, CancellationToken cancellationToken) {
+    private async Task<IReadOnlyList<string>> GetNameErrorsAsync(IContent content,
+                                                                 CancellationToken cancellationToken) {
         var req = new CampaignNameAvailableReq();
         req.Name = content.Name;
         req.Slug = _slugHelper.GenerateSlug(content.Name);
-
-        bool available;
 
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) {
             timeout.CancelAfter(CheckTimeout);
@@ -67,30 +71,25 @@ public class CampaignSaving : INotificationAsyncHandler<ContentSavingNotificatio
             try {
                 var client = _clientFactory.Value.Create(CloudApiTypes.Engage, bearerToken: null);
 
-                available = await client.InvokeAsync(x => x.CampaignNameAvailableAsync(content.Key.ToString(),
-                                                                                       req,
-                                                                                       timeout.Token));
+                await client.InvokeAsync(x => x.CampaignNameAvailableAsync(content.Key.ToString(), req, timeout.Token));
+
+                return [];
+            } catch (ValidationException ex) {
+                return ex.Failures.Select(x => x.Error).ToList();
             } catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested) {
                 _logger.LogError(ex,
                                  "Timed out checking whether campaign {CampaignKey} name is available",
                                  content.Key);
 
-                return CheckTimedOut;
+                return [CheckTimedOut];
             } catch (Exception ex) {
                 _logger.LogError(ex,
                                  "Error checking whether campaign {CampaignKey} name is available: {Error}",
                                  content.Key,
                                  ex.Message);
 
-                return CheckUnavailable;
+                return [CheckUnavailable];
             }
         }
-
-        if (available) {
-            return null;
-        }
-
-        return $"A campaign named {content.Name.Quote()} already exists in Engage, even if it is unpublished or " +
-               "deleted here. Choose another name, or publish the other campaign under a new name first";
     }
 }
