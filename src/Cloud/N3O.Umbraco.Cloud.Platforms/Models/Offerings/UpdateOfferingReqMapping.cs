@@ -35,7 +35,7 @@ public class UpdateOfferingReqMapping : IMapDefinition {
     private void Map(OfferingContent src, UpdateOfferingReq dest, MapperContext ctx) {
         dest.Name = src.Name;
         dest.Notes = src.Notes;
-        dest.Slug = _slugHelper.GenerateSlug(src.Name);
+        dest.Slug = _slugHelper.GeneratePlatformsSlug(src.Name);
 
         dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);
         
