@@ -10,13 +10,20 @@ namespace N3O.Umbraco.Accounts.Models;
 public class AddressReqValidator : ModelValidator<AddressReq> {
     private const int AddressFieldMaxLength = 80;
 
-    public AddressReqValidator(IFormatter formatter, IContentCache contentCache) : base(formatter) {
+    private readonly IStringLocalizer _stringLocalizer;
+
+    public AddressReqValidator(IFormatter formatter,
+                               IContentCache contentCache,
+                               IStringLocalizer stringLocalizer)
+        : base(formatter) {
+        _stringLocalizer = stringLocalizer;
+
         var settings = contentCache.Single<AddressDataEntrySettingsContent>();
         
         RuleFor(x => x.Line1)
             .NotEmpty()
             .When(_ => settings?.Line1.Required == true)
-            .WithMessage(Get<Strings>(x => x.Specify_1, settings?.Line1.Label));
+            .WithMessage(Get<Strings>(x => x.Specify_1, LocalizeLabel(settings?.Line1.Label)));
 
         RuleFor(x => x.Line1)
             .Length(0, AddressFieldMaxLength)
@@ -26,7 +33,7 @@ public class AddressReqValidator : ModelValidator<AddressReq> {
         RuleFor(x => x.Line2)
             .NotEmpty()
             .When(_ => settings?.Line2.Required == true)
-            .WithMessage(Get<Strings>(x => x.Specify_1, settings?.Line2.Label));
+            .WithMessage(Get<Strings>(x => x.Specify_1, LocalizeLabel(settings?.Line2.Label)));
         
         RuleFor(x => x.Line2)
             .Length(0, AddressFieldMaxLength)
@@ -35,7 +42,7 @@ public class AddressReqValidator : ModelValidator<AddressReq> {
         RuleFor(x => x.Line3)
             .NotEmpty()
             .When(_ => settings?.Line3.Required == true)
-            .WithMessage(Get<Strings>(x => x.Specify_1, settings?.Line3.Label));
+            .WithMessage(Get<Strings>(x => x.Specify_1, LocalizeLabel(settings?.Line3.Label)));
         
         RuleFor(x => x.Line3)
             .Length(0, AddressFieldMaxLength)
@@ -46,7 +53,7 @@ public class AddressReqValidator : ModelValidator<AddressReq> {
             .When(x => settings?.Locality.Required == true &&
                        x.Country.HasValue() &&
                        !x.Country.LocalityOptional)
-            .WithMessage(Get<Strings>(x => x.Specify_1, settings?.Locality.Label));
+            .WithMessage(Get<Strings>(x => x.Specify_1, LocalizeLabel(settings?.Locality.Label)));
 
         RuleFor(x => x.Locality)
             .Length(0, AddressFieldMaxLength)
@@ -55,7 +62,7 @@ public class AddressReqValidator : ModelValidator<AddressReq> {
         RuleFor(x => x.AdministrativeArea)
             .NotEmpty()
             .When(_ => settings?.AdministrativeArea.Required == true)
-            .WithMessage(Get<Strings>(x => x.Specify_1, settings?.AdministrativeArea.Label));
+            .WithMessage(Get<Strings>(x => x.Specify_1, LocalizeLabel(settings?.AdministrativeArea.Label)));
         
         RuleFor(x => x.AdministrativeArea)
             .Length(0, AddressFieldMaxLength)
@@ -66,7 +73,7 @@ public class AddressReqValidator : ModelValidator<AddressReq> {
             .When(x => settings?.PostalCode.Required == true &&
                        x.Country.HasValue() &&
                        !x.Country.PostalCodeOptional)
-            .WithMessage(Get<Strings>(x => x.Specify_1, settings?.PostalCode.Label));
+            .WithMessage(Get<Strings>(x => x.Specify_1, LocalizeLabel(settings?.PostalCode.Label)));
 
         RuleFor(x => x.PostalCode)
             .Length(0, AddressFieldMaxLength)
@@ -75,6 +82,16 @@ public class AddressReqValidator : ModelValidator<AddressReq> {
         RuleFor(x => x.Country)
             .NotEmpty()
             .WithMessage(Get<Strings>(x => x.SpecifyCountry));
+    }
+
+    private string LocalizeLabel(string label) {
+        if (!label.HasValue()) {
+            return label;
+        }
+
+        var strings = new Strings();
+
+        return _stringLocalizer.Get(strings.Folder, strings.Name, label);
     }
 
     public class Strings : ValidationStrings {
