@@ -19,7 +19,7 @@ public class PlatformsJsPreloadTagHelper : TagHelper {
 
         var linkTag = new TagBuilder("link");
         linkTag.Attributes.Add("rel", "modulepreload");
-        linkTag.Attributes.Add("href", _cloudUrl.ForCdn(CdnRoots.Connect, "platforms-js/platforms.js"));
+        linkTag.Attributes.Add("href", _cloudUrl.ForCdn(CdnRoots.Connect, PlatformsConstants.PlatformsJs.Path));
 
         linkTag.TagRenderMode = TagRenderMode.SelfClosing;
 
