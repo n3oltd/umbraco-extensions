@@ -18,8 +18,10 @@ using Umbraco.Cms.Core.Services;
 namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
 public class CampaignPublishing : INotificationAsyncHandler<ContentPublishingNotification> {
-    private const string GenericError = "Something went wrong, please try again. If this keeps happening, contact " +
-                                        "support";
+    private const string CheckTimedOut = "Timed out checking whether this campaign's name is available, please try " +
+                                         "again. If this keeps happening, contact support";
+    private const string CheckUnavailable = "Could not check whether this campaign's name is available, please try " +
+                                            "again. If this keeps happening, contact support";
 
     private static readonly TimeSpan CheckTimeout = TimeSpan.FromSeconds(10);
 
@@ -61,7 +63,7 @@ public class CampaignPublishing : INotificationAsyncHandler<ContentPublishingNot
                                                                  CancellationToken cancellationToken) {
         var req = new CampaignNameAvailableReq();
         req.Name = content.Name;
-        req.Slug = _slugHelper.GenerateSlug(content.Name);
+        req.Slug = _slugHelper.GeneratePlatformsSlug(content.Name);
 
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)) {
             timeout.CancelAfter(CheckTimeout);
@@ -74,13 +76,19 @@ public class CampaignPublishing : INotificationAsyncHandler<ContentPublishingNot
                 return [];
             } catch (ValidationException ex) {
                 return ex.Failures.Select(x => x.Error).ToList();
+            } catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested) {
+                _logger.LogError(ex,
+                                 "Timed out checking whether campaign {CampaignKey} name is available",
+                                 content.Key);
+
+                return [CheckTimedOut];
             } catch (Exception ex) {
                 _logger.LogError(ex,
                                  "Error checking whether campaign {CampaignKey} name is available: {Error}",
                                  content.Key,
                                  ex.Message);
 
-                return [GenericError];
+                return [CheckUnavailable];
             }
         }
     }
