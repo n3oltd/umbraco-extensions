@@ -98,6 +98,10 @@ public static class PlatformsConstants {
         public const string Alias = "platforms";
     }
 
+    public static class PlatformsJs {
+        public const string Path = "platforms-js/platforms.js";
+    }
+
     public static class Qurbani {
         public static class Season {
             public const string Alias = "platformsQurbaniSeason";
