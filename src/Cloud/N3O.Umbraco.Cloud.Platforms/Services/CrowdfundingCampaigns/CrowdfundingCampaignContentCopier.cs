@@ -130,7 +130,7 @@ public class CrowdfundingCampaignContentCopier : ICrowdfundingCampaignContentCop
         return source.PropertyType.PropertyEditorAlias.EqualsInvariant(editorAlias) ? editorAlias : null;
     }
 
-    private IReadOnlyList<(string Source, string[] Destinations)> GetMappings() {
+    protected virtual IReadOnlyList<(string Source, string[] Destinations)> GetMappings() {
         return [
             (CampaignProperties.HeroImage,
              [CrowdfundingCampaignProperties.PageHeroImage,
