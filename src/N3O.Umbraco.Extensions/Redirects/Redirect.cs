@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using N3O.Umbraco.Extensions;
 using System;
 using System.Linq;
 
@@ -35,7 +36,7 @@ public class Redirect : Value {
                                 .Where(x => !targetKeys.Contains(GetKey(x), StringComparer.OrdinalIgnoreCase))
                                 .ToList();
 
-        if (!forwarded.Any()) {
+        if (forwarded.None()) {
             return urlOrPath;
         }
 
@@ -45,12 +46,7 @@ public class Redirect : Value {
     }
 
     private static bool CanForwardQuery(string urlOrPath) {
-        if (urlOrPath.StartsWith('/')) {
-            return true;
-        }
-
-        return Uri.TryCreate(urlOrPath, UriKind.Absolute, out var uri) &&
-               (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+        return urlOrPath.StartsWith('/') || urlOrPath.IsValidUrl();
     }
 
     private static string GetKey(string pair) {
