@@ -78,8 +78,10 @@ public partial class DynamicPager<T> {
 
                 var pageNumber = 1;
 
-                if (queryParams.Contains(Pager.QueryString)) {
-                    pageNumber = int.Parse((string) queryParams.Single(x => x.Name == Pager.QueryString).Value);
+                var pageParam = queryParams.FirstOrDefault(x => x.Name == Pager.QueryString).Value?.ToString();
+
+                if (int.TryParse(pageParam, out var requestedPageNumber)) {
+                    pageNumber = requestedPageNumber;
                 }
 
                 _currentPageNumber = Math.Min(Math.Max(pageNumber, 1), TotalPages);
