@@ -7,7 +7,7 @@ namespace N3O.Umbraco.Hosting;
 [Order(1)]
 public class StaticRedirectsRule : IRule {
     public void ApplyRule(RewriteContext context) {
-        var redirect = StaticRedirects.Find(context.HttpContext.Request.Path);
+        var redirect = StaticRedirects.Find(context.HttpContext.Request.Path.Value ?? string.Empty);
 
         if (redirect != null) {
             context.HttpContext.Response.Redirect(redirect.UrlOrPath, !redirect.Temporary);
