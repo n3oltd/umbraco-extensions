@@ -49,7 +49,8 @@ public class AmazonSender : IEmailSender {
         return mimeMessage;
     }
 
-    private async Task<EmailSendResult> SendViaAmazonAsync(MimeMessage mimeMessage, CancellationToken cancellationToken) {
+    private async Task<EmailSendResult> SendViaAmazonAsync(MimeMessage mimeMessage,
+                                                           CancellationToken cancellationToken) {
         try {
             using (var messageStream = mimeMessage.ToStream()) {
                 var req = new SendRawEmailRequest();
@@ -58,15 +59,15 @@ public class AmazonSender : IEmailSender {
                 await _sesClient.SendRawEmailAsync(req, cancellationToken);
             }
 
-            return new EmailSendResult([]);
+            return EmailSendResult.ForSuccess();
         } catch (AccountSendingPausedException ex) {
-            return new EmailSendResult([$"{ex.StatusCode}", $"{ex.Message}"]);
+            return EmailSendResult.ForFailure([$"{ex.StatusCode}", $"{ex.Message}"]);
         } catch (MailFromDomainNotVerifiedException ex) {
-            return new EmailSendResult([$"{ex.StatusCode}", $"{ex.Message}"]);
+            return EmailSendResult.ForFailure([$"{ex.StatusCode}", $"{ex.Message}"]);
         } catch (MessageRejectedException ex) {
-            return new EmailSendResult([$"{ex.StatusCode}", $"{ex.Message}"]);
+            return EmailSendResult.ForFailure([$"{ex.StatusCode}", $"{ex.Message}"]);
         } catch (Exception ex) {
-            return new EmailSendResult([ex.Message]);
+            return EmailSendResult.ForFailure([ex.Message]);
         }
     }
 }

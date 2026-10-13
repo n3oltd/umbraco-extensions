@@ -24,12 +24,12 @@ public class SendGridSender : IEmailSender {
         var response = await _sendGridClient.SendEmailAsync(sendGridMessage, cancellationToken);
 
         if (response.IsSuccessStatusCode) {
-            return new EmailSendResult([]);
+            return EmailSendResult.ForSuccess();
         }
 
-        var errors = await GetErrorsAsync(response);
+        var errors = await GetErrorsAsync(response, cancellationToken);
 
-        return new EmailSendResult(errors);
+        return EmailSendResult.ForFailure(errors);
     }
 
     private SendGridMessage BuildSendGridMessage(EmailMessage message) {
@@ -54,23 +54,20 @@ public class SendGridSender : IEmailSender {
         sendGridMessage.AddCategory(message.Tag);
 
         foreach (var attachment in message.Attachments) {
-            sendGridMessage.AddAttachment(attachment.Name, Convert.ToBase64String(attachment.Bytes), attachment.ContentType);
+            var base64Content = Convert.ToBase64String(attachment.Bytes);
+
+            sendGridMessage.AddAttachment(attachment.Name, base64Content, attachment.ContentType);
         }
 
         return sendGridMessage;
     }
 
-    private async Task<IReadOnlyList<string>> GetErrorsAsync(Response response) {
+    private async Task<IReadOnlyList<string>> GetErrorsAsync(Response response, CancellationToken cancellationToken) {
+        var body = await response.Body.ReadAsStringAsync(cancellationToken);
+
         var errors = new List<string>();
         errors.Add($"{response.StatusCode}");
-
-        var body = await response.DeserializeResponseBodyAsync();
-
-        if (body.TryGetValue("errors", out var bodyErrors)) {
-            foreach (var bodyError in bodyErrors) {
-                errors.Add($"{bodyError}");
-            }
-        }
+        errors.Add(body);
 
         return errors;
     }
