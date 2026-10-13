@@ -40,7 +40,8 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, SendEmailReq, 
         var result = await _sender.SendAsync(message, cancellationToken);
 
         if (!result.Success) {
-            var errorMessage = $"Error occured while sending email to {message.To.First().Name}";
+            var recipient = message.To.Concat(message.Cc).Concat(message.Bcc).First();
+            var errorMessage = $"Error occured while sending email to {recipient}";
 
             foreach (var error in result.Errors) {
                 errorMessage += $"\n{error}";
