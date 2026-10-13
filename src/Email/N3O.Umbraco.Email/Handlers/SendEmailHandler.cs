@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Email.Commands;
 using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
@@ -14,11 +15,16 @@ namespace N3O.Umbraco.Email.Handlers;
 
 public class SendEmailHandler : IRequestHandler<SendEmailCommand, SendEmailReq, None> {
     private readonly IJsonProvider _jsonProvider;
+    private readonly ILogger<SendEmailHandler> _logger;
     private readonly ITemplateRenderer _renderer;
     private readonly IEmailSender _sender;
 
-    public SendEmailHandler(IJsonProvider jsonProvider, ITemplateRenderer renderer, IEmailSender sender) {
+    public SendEmailHandler(IJsonProvider jsonProvider,
+                            ILogger<SendEmailHandler> logger,
+                            ITemplateRenderer renderer,
+                            IEmailSender sender) {
         _jsonProvider = jsonProvider;
+        _logger = logger;
         _renderer = renderer;
         _sender = sender;
     }
@@ -38,9 +44,9 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, SendEmailReq, 
                                        "website");
 
         var result = await _sender.SendAsync(message, cancellationToken);
+        var recipient = message.To.Concat(message.Cc).Concat(message.Bcc).First();
 
         if (!result.Success) {
-            var recipient = message.To.Concat(message.Cc).Concat(message.Bcc).First();
             var errorMessage = $"Error occured while sending email to {recipient}";
 
             foreach (var error in result.Errors) {
@@ -49,6 +55,10 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, SendEmailReq, 
 
             throw new Exception(errorMessage);
         }
+
+        _logger.LogInformation("Sent email to {Recipient} with provider message ID {MessageId}",
+                               recipient,
+                               result.MessageId);
 
         return None.Empty;
     }

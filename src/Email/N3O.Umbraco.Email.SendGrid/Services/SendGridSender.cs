@@ -24,7 +24,11 @@ public class SendGridSender : IEmailSender {
         var response = await _sendGridClient.SendEmailAsync(sendGridMessage, cancellationToken);
 
         if (response.IsSuccessStatusCode) {
-            return EmailSendResult.ForSuccess();
+            var messageId = response.Headers.TryGetValues("X-Message-ID", out var messageIds)
+                                ? messageIds.First()
+                                : null;
+
+            return EmailSendResult.ForSuccess(messageId);
         }
 
         var errors = await GetErrorsAsync(response, cancellationToken);
