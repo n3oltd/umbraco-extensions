@@ -56,10 +56,10 @@ public class AmazonSender : IEmailSender {
                 var req = new SendRawEmailRequest();
                 req.RawMessage = new RawMessage(messageStream);
 
-                await _sesClient.SendRawEmailAsync(req, cancellationToken);
-            }
+                var response = await _sesClient.SendRawEmailAsync(req, cancellationToken);
 
-            return EmailSendResult.ForSuccess();
+                return EmailSendResult.ForSuccess(response.MessageId);
+            }
         } catch (AccountSendingPausedException ex) {
             return EmailSendResult.ForFailure([$"{ex.StatusCode}", $"{ex.Message}"]);
         } catch (MailFromDomainNotVerifiedException ex) {

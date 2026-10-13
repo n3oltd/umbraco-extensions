@@ -44,6 +44,6 @@ public class SmtpSender : IEmailSender {
             await smtpClient.DisconnectAsync(true, cancellationToken);
         }
 
-        return EmailSendResult.ForSuccess();
+        return EmailSendResult.ForSuccess(null);
     }
 }

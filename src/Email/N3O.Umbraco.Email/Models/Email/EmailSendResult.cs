@@ -4,12 +4,16 @@ using System.Collections.Generic;
 namespace N3O.Umbraco.Email.Models;
 
 public class EmailSendResult : Value {
-    public EmailSendResult(IEnumerable<string> errors) {
+    public EmailSendResult(string messageId, IEnumerable<string> errors) {
+        MessageId = messageId;
         Errors = errors;
     }
 
-    public EmailSendResult() : this([]) { }
+    public EmailSendResult(string messageId) : this(messageId, []) { }
 
+    public EmailSendResult(IEnumerable<string> errors) : this(null, errors) { }
+
+    public string MessageId { get; }
     public IEnumerable<string> Errors { get; }
 
     public bool Success => Errors.None();
@@ -18,7 +22,7 @@ public class EmailSendResult : Value {
         return new EmailSendResult(errors);
     }
 
-    public static EmailSendResult ForSuccess() {
-        return new EmailSendResult();
+    public static EmailSendResult ForSuccess(string messageId) {
+        return new EmailSendResult(messageId);
     }
 }
