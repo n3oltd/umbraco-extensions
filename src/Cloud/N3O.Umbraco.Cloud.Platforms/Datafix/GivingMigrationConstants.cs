@@ -87,6 +87,7 @@ public static class GivingMigrationConstants {
     // not, because the seeder does not create it.
     public static class Platforms {
         public const string CampaignsAlias = "platformsCampaigns";
+        public const string LegacySuggestedAmountAlias = "platformsSuggestedAmount";
     }
 
     public static class Properties {
