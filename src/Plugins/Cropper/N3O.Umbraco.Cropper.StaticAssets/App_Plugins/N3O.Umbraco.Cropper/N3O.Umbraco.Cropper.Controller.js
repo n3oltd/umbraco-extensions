@@ -47,7 +47,16 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                         return;
                     }
 
-                    $scope.model.value.crops[cropIndex] = this.cropper.getData(true);
+                    // The browser's naturalWidth can be density-corrected from EXIF, so map back to the stored pixel size
+                    var crop = this.cropper.getData(true);
+                    var scale = $scope.model.value.width / this.cropper.getImageData().naturalWidth;
+
+                    crop.x = Math.floor(crop.x * scale);
+                    crop.y = Math.floor(crop.y * scale);
+                    crop.width = Math.floor(crop.width * scale);
+                    crop.height = Math.floor(crop.height * scale);
+
+                    $scope.model.value.crops[cropIndex] = crop;
                     $scope.model.value.cropBoxes[cropIndex] = this.cropper.getCropBoxData();
 
                     var cropDefinition = $scope.model.config.cropDefinitions[cropIndex];

@@ -63,7 +63,7 @@ n3o-tool clients --url "https://localhost:6001/swagger/Uploader/swagger.json" --
 
 n3o-tool clients --url "https://beta.n3o.cloud/eu1/api/content/docs/openapi/umbraco-v1.0.json" --language "CSharp" --output-path "../src/Cloud/N3O.Umbraco.Cloud.Platforms/Clients" --name "ContentClient" --namespace "N3O.Umbraco.Cloud.Content.Clients" --connect-api
 
-n3o-tool clients --url "https://beta.n3o.cloud/eu1/api/platforms/docs/openapi/umbraco-v1.0.json" --language "CSharp" --output-path "../src/Cloud/N3O.Umbraco.Cloud.Platforms/Clients" --name "PlatformsUmbracoClient" --namespace "N3O.Umbraco.Cloud.Platforms.Clients" --connect-api
+n3o-tool clients --url "https://beta.n3o.cloud/eu1/api/platforms/docs/openapi/umbraco-v1.0.json" --language "CSharp" --output-path "../src/Cloud/N3O.Umbraco.Cloud.Platforms/Clients" --name "PlatformsUmbracoClient" --namespace "N3O.Umbraco.Cloud.Platforms.Clients" --connect-api --exclude-models "ApiException"
 
 n3o-tool clients --url "https://beta.n3o.cloud/eu1/api/platforms/docs/openapi/connect-v1.0.json" --language "CSharp" --output-path "../src/Cloud/N3O.Umbraco.Cloud.Platforms/Clients" --name "PlatformsConnectClient" --namespace "N3O.Umbraco.Cloud.Platforms.Clients" --connect-api --exclude-models-from "https://beta.n3o.cloud/eu1/api/platforms/docs/openapi/umbraco-v1.0.json"
 

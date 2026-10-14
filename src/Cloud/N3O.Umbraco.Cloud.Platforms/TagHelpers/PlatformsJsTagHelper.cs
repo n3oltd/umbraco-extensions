@@ -20,7 +20,7 @@ public class PlatformsJsTagHelper : TagHelper {
 
         var scriptTag = new TagBuilder("script");
         scriptTag.Attributes.Add("type", "module");
-        scriptTag.Attributes.Add("src", _cloudUrl.ForCdn(CdnRoots.Connect, "platforms-js/platforms.js"));
+        scriptTag.Attributes.Add("src", _cloudUrl.ForCdn(CdnRoots.Connect, PlatformsConstants.PlatformsJs.Path));
 
         output.Content.AppendHtmlLine("<!-- N3O Platforms JS (https://n3o.ltd) -->");
         output.Content.AppendHtml(scriptTag.ToHtmlString());

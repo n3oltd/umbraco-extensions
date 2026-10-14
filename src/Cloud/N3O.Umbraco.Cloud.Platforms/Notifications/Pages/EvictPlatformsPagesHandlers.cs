@@ -59,6 +59,6 @@ public class EvictPlatformsPagesHandlers :
     }
 
     private string GetSlug(IContent content) {
-        return _slugHelper.Value.GenerateSlug(content.Name);
+        return _slugHelper.Value.GeneratePlatformsSlug(content.Name);
     }
 }
