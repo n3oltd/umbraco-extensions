@@ -11,7 +11,6 @@ namespace N3O.Umbraco.Email.Models;
 public class SendEmailReqValidator : ModelValidator<SendEmailReq> {
     private const int MaximumSubjectLength = 150;
     private const int MaximumBodyLength = 150_000;
-    private static readonly ByteSize MaximumAttachmentsSize = ByteSize.FromMegabytes(10);
 
     public SendEmailReqValidator(IFormatter formatter) : base(formatter) {
         RuleFor(x => x.Subject)
@@ -37,11 +36,11 @@ public class SendEmailReqValidator : ModelValidator<SendEmailReq> {
             .WithMessage(Get<Strings>(s => s.NoRecipients));
 
         RuleFor(x => x)
-            .Must(m => GetAttachmentsSize(m) <= MaximumAttachmentsSize)
+            .Must(m => GetAttachmentsSize(m) <= EmailConstants.MaximumAttachmentsSize)
             .When(x => x.Attachments.HasAny())
             .WithMessage(x => Get<Strings>(s => s.AttachmentsTooLarge_2,
                                            Math.Round(GetAttachmentsSize(x).Megabytes, 2),
-                                           Math.Round(MaximumAttachmentsSize.Megabytes, 2)));
+                                           Math.Round(EmailConstants.MaximumAttachmentsSize.Megabytes, 2)));
     }
 
     private static ByteSize GetAttachmentsSize(SendEmailReq req) {

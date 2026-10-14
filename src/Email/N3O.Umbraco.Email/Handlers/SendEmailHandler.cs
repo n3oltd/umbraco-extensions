@@ -60,7 +60,8 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, SendEmailReq, 
 
         try {
             messageId = await _sender.SendAsync(mimeMessage, cancellationToken);
-        } catch (Exception ex) when (ex is not OperationCanceledException) {
+        } catch (Exception ex) when (ex is not OperationCanceledException ||
+                                     !cancellationToken.IsCancellationRequested) {
             throw new Exception($"Error occurred while sending email to {recipient}", ex);
         }
 
