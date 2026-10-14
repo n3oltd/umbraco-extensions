@@ -1,4 +1,5 @@
 using Humanizer.Bytes;
+using MimeKit;
 using N3O.Umbraco.Email.Commands;
 using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
@@ -9,6 +10,7 @@ using N3O.Umbraco.Types;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace N3O.Umbraco.Email;
 
@@ -75,6 +77,18 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     }
 
     public IFluentEmailBuilder<T> Attach(string name, string contentType, byte[] bytes) {
+        if (!name.HasValue()) {
+            throw new ArgumentException("An attachment needs a name", nameof(name));
+        }
+
+        if (!ContentType.TryParse(contentType, out _)) {
+            throw new ArgumentException($"{contentType} is not a valid content type", nameof(contentType));
+        }
+
+        if (bytes.OrEmpty().None()) {
+            throw new ArgumentException("An attachment needs contents", nameof(bytes));
+        }
+
         var filename = Guid.NewGuid().ToString();
         var storageFolder = _volume.GetStorageFolderAsync(_storageFolderName).GetAwaiter().GetResult();
         storageFolder.AddFileAsync(filename, bytes).GetAwaiter().GetResult();
@@ -92,6 +106,13 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     }
 
     public void Queue() {
+        var attachmentsSize = ByteSize.FromBytes(_attachments.Sum(x => x.Size.Bytes));
+
+        if (attachmentsSize > EmailConstants.MaximumAttachmentsSize) {
+            throw new InvalidOperationException($"The attachments total {attachmentsSize.Megabytes:0.##}MB, " +
+                                                $"over the {EmailConstants.MaximumAttachmentsSize.Megabytes}MB limit");
+        }
+
         var req = Build();
         var jobName = $"Send {req.Subject} to {_recipientEmails.Join("; ")}";
         
