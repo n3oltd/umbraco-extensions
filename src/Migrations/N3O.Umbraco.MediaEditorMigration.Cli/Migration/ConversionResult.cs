@@ -10,6 +10,8 @@ public sealed class RunTotals {
 
     public int AltTextPreserved { get; set; }
 
+    public int AltTextPropertiesCreated { get; set; }
+
     public int AltTextDropped { get; set; }
 
     public int CropsWithoutCoordinates { get; set; }

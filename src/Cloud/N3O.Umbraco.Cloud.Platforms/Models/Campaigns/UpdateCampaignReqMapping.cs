@@ -48,7 +48,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
         
         dest.Name = src.Name;
         dest.Notes = src.Notes;
-        dest.Slug = _slugHelper.GenerateSlug(src.Name);
+        dest.Slug = _slugHelper.GeneratePlatformsSlug(src.Name);
         dest.Target = target == 0 ? null : target;
 
         dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);

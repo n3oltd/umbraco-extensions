@@ -1,5 +1,3 @@
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
@@ -25,17 +23,6 @@ public static class ImageCropperExtensions {
     }
 
     public static string AltText(this IPublishedElement content, string propertyAlias) {
-        var sourceValue = content?.GetProperty(propertyAlias)?.GetSourceValue().ToSourceValueJson();
-
-        if (!sourceValue.HasValue() || !sourceValue.TrimStart().StartsWith('{')) {
-            return null;
-        }
-
-        var settings = new JsonSerializerSettings();
-        settings.DateParseHandling = DateParseHandling.None;
-
-        var cropperValue = JsonConvert.DeserializeObject<JObject>(sourceValue, settings);
-
-        return (string) cropperValue["altText"];
+        return content?.Value<string>(propertyAlias + "AltText").TrimOrNull();
     }
 }
