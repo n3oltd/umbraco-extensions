@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Content;
@@ -32,10 +33,10 @@ public class SmtpEmailComposer : Composer {
                 username = appSettings.Username;
                 password = appSettings.Password;
             }
-            
-            var mimeMessageBuilder = serviceProvider.GetRequiredService<IMimeMessageBuilder>();
 
-            return new SmtpSender(mimeMessageBuilder, host, port, username, password);
+            var logger = serviceProvider.GetRequiredService<ILogger<SmtpSender>>();
+
+            return new SmtpSender(logger, host, port, username, password);
         });
     }
 }

@@ -1,18 +1,24 @@
+using Humanizer.Bytes;
 using N3O.Umbraco.Email.Commands;
 using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Json;
 using N3O.Umbraco.Scheduler;
+using N3O.Umbraco.Storage;
 using N3O.Umbraco.Types;
+using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace N3O.Umbraco.Email;
 
 public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     private readonly IBackgroundJob _backgroundJob;
     private readonly IJsonProvider _jsonProvider;
+    private readonly IVolume _volume;
     private readonly List<string> _recipientEmails = [];
-    
+    private readonly string _storageFolderName;
+
     private EmailIdentityReq _from;
     private readonly List<EmailIdentityReq> _to = [];
     private readonly List<EmailIdentityReq> _cc = [];
@@ -22,9 +28,11 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     private T _model;
     private readonly List<EmailAttachmentReq> _attachments = [];
 
-    public FluentEmailBuilder(IBackgroundJob backgroundJob, IJsonProvider jsonProvider) {
+    public FluentEmailBuilder(IBackgroundJob backgroundJob, IJsonProvider jsonProvider, IVolume volume) {
         _backgroundJob = backgroundJob;
         _jsonProvider = jsonProvider;
+        _volume = volume;
+        _storageFolderName = Path.Join(EmailConstants.StorageFolders.Attachments, Guid.NewGuid().ToString());
     }
 
     public IFluentEmailBuilder<T> From(string email, string name = null) {
@@ -67,10 +75,16 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     }
 
     public IFluentEmailBuilder<T> Attach(string name, string contentType, byte[] bytes) {
+        var filename = Guid.NewGuid().ToString();
+        var storageFolder = _volume.GetStorageFolderAsync(_storageFolderName).GetAwaiter().GetResult();
+        storageFolder.AddFileAsync(filename, bytes).GetAwaiter().GetResult();
+
         var attachment = new EmailAttachmentReq();
         attachment.Name = name;
         attachment.ContentType = contentType;
-        attachment.Bytes = bytes;
+        attachment.Size = ByteSize.FromBytes(bytes.Length);
+        attachment.StorageFolderName = _storageFolderName;
+        attachment.Filename = filename;
 
         _attachments.Add(attachment);
 
