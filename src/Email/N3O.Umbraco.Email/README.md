@@ -12,5 +12,5 @@ Sending is a command handled in the background, so a request does not wait on th
 package does not talk to a provider itself: it defines the message and leaves the transport to a
 sender package, and without one no email is sent.
 
-Attachments travel inside the queued command, encoded in its stored arguments, so they suit small
-files such as a receipt rather than large documents.
+Attachments are written to storage when the email is queued and removed once it has been sent, so
+the queued command carries only references to them. Together they may not exceed 10 MB.

@@ -11,9 +11,8 @@ public class AmazonEmailComposer : Composer {
         builder.Services.AddSingleton<IEmailSender>(serviceProvider => {
             var contentCache = serviceProvider.GetRequiredService<IContentCache>();
             var settings = contentCache.Single<AmazonSettingsContent>();
-            var mimeMessageBuilder = serviceProvider.GetRequiredService<IMimeMessageBuilder>();
 
-            return new AmazonSender(mimeMessageBuilder, settings.AccessKey, settings.SecretKey, settings.RegionCode);
+            return new AmazonSender(settings.AccessKey, settings.SecretKey, settings.RegionCode);
         });
     }
 }

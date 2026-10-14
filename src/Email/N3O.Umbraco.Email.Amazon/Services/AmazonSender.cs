@@ -4,10 +4,7 @@ using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 using MimeKit;
 using N3O.Umbraco.Email.Extensions;
-using N3O.Umbraco.Email.Lookups;
-using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,12 +12,9 @@ using System.Threading.Tasks;
 namespace N3O.Umbraco.Email.Amazon;
 
 public class AmazonSender : IEmailSender {
-    private readonly IMimeMessageBuilder _mimeMessageBuilder;
     private readonly AmazonSimpleEmailServiceClient _sesClient;
 
-    public AmazonSender(IMimeMessageBuilder mimeMessageBuilder, string accessKey, string secretKey, string regionCode) {
-        _mimeMessageBuilder = mimeMessageBuilder;
-
+    public AmazonSender(string accessKey, string secretKey, string regionCode) {
         var credentials = new BasicAWSCredentials(accessKey, secretKey);
         var regionEndpoint = typeof(RegionEndpoint).GetConstantOrStaticValues<RegionEndpoint>()
                                                    .SingleOrDefault(x => x.SystemName.EqualsInvariant(regionCode));
@@ -28,46 +22,14 @@ public class AmazonSender : IEmailSender {
         _sesClient = new AmazonSimpleEmailServiceClient(credentials, regionEndpoint);
     }
 
-    public async Task<EmailSendResult> SendAsync(EmailMessage message, CancellationToken cancellationToken) {
-        var mimeMessage = BuildMimeMessage(message);
+    public async Task<string> SendAsync(MimeMessage message, CancellationToken cancellationToken = default) {
+        using (var messageStream = message.ToStream()) {
+            var req = new SendRawEmailRequest();
+            req.RawMessage = new RawMessage(messageStream);
 
-        var result = await SendViaAmazonAsync(mimeMessage, cancellationToken);
+            var response = await _sesClient.SendRawEmailAsync(req, cancellationToken);
 
-        return result;
-    }
-
-    private MimeMessage BuildMimeMessage(EmailMessage message) {
-        var mimeMessage = _mimeMessageBuilder.BuildMessage(message.From,
-                                                           message.To,
-                                                           message.Cc,
-                                                           message.Bcc,
-                                                           message.Subject,
-                                                           message.HtmlBody,
-                                                           BodyFormats.Html,
-                                                           message.Attachments);
-
-        return mimeMessage;
-    }
-
-    private async Task<EmailSendResult> SendViaAmazonAsync(MimeMessage mimeMessage,
-                                                           CancellationToken cancellationToken) {
-        try {
-            using (var messageStream = mimeMessage.ToStream()) {
-                var req = new SendRawEmailRequest();
-                req.RawMessage = new RawMessage(messageStream);
-
-                var response = await _sesClient.SendRawEmailAsync(req, cancellationToken);
-
-                return EmailSendResult.ForSuccess(response.MessageId);
-            }
-        } catch (AccountSendingPausedException ex) {
-            return EmailSendResult.ForFailure([$"{ex.StatusCode}", $"{ex.Message}"]);
-        } catch (MailFromDomainNotVerifiedException ex) {
-            return EmailSendResult.ForFailure([$"{ex.StatusCode}", $"{ex.Message}"]);
-        } catch (MessageRejectedException ex) {
-            return EmailSendResult.ForFailure([$"{ex.StatusCode}", $"{ex.Message}"]);
-        } catch (Exception ex) {
-            return EmailSendResult.ForFailure([ex.Message]);
+            return response.MessageId;
         }
     }
 }

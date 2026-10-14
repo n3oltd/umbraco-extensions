@@ -35,6 +35,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
         <ProjectReference Include="..\..\Scheduler\N3O.Umbraco.Scheduler\N3O.Umbraco.Scheduler.csproj" />
+        <ProjectReference Include="..\..\Storage\N3O.Umbraco.Storage\N3O.Umbraco.Storage.csproj" />
         <ProjectReference Include="..\..\Templates\N3O.Umbraco.Templates\N3O.Umbraco.Templates.csproj" />
         <ProjectReference Include="..\..\Validation\N3O.Umbraco.Validation\N3O.Umbraco.Validation.csproj" />
     </ItemGroup>
