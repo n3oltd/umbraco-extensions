@@ -1,18 +1,26 @@
+using Humanizer.Bytes;
+using MimeKit;
 using N3O.Umbraco.Email.Commands;
 using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Json;
 using N3O.Umbraco.Scheduler;
+using N3O.Umbraco.Storage;
 using N3O.Umbraco.Types;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace N3O.Umbraco.Email;
 
 public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     private readonly IBackgroundJob _backgroundJob;
     private readonly IJsonProvider _jsonProvider;
+    private readonly IVolume _volume;
     private readonly List<string> _recipientEmails = [];
-    
+    private readonly string _storageFolderName;
+
     private EmailIdentityReq _from;
     private readonly List<EmailIdentityReq> _to = [];
     private readonly List<EmailIdentityReq> _cc = [];
@@ -20,10 +28,13 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
     private string _subject;
     private string _body;
     private T _model;
+    private readonly List<EmailAttachmentReq> _attachments = [];
 
-    public FluentEmailBuilder(IBackgroundJob backgroundJob, IJsonProvider jsonProvider) {
+    public FluentEmailBuilder(IBackgroundJob backgroundJob, IJsonProvider jsonProvider, IVolume volume) {
         _backgroundJob = backgroundJob;
         _jsonProvider = jsonProvider;
+        _volume = volume;
+        _storageFolderName = Path.Join(EmailConstants.StorageFolders.Attachments, Guid.NewGuid().ToString());
     }
 
     public IFluentEmailBuilder<T> From(string email, string name = null) {
@@ -65,7 +76,43 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
         return this;
     }
 
+    public IFluentEmailBuilder<T> Attach(string name, string contentType, byte[] bytes) {
+        if (!name.HasValue()) {
+            throw new ArgumentException("An attachment needs a name", nameof(name));
+        }
+
+        if (!ContentType.TryParse(contentType, out _)) {
+            throw new ArgumentException($"{contentType} is not a valid content type", nameof(contentType));
+        }
+
+        if (bytes.OrEmpty().None()) {
+            throw new ArgumentException("An attachment needs contents", nameof(bytes));
+        }
+
+        var filename = Guid.NewGuid().ToString();
+        var storageFolder = _volume.GetStorageFolderAsync(_storageFolderName).GetAwaiter().GetResult();
+        storageFolder.AddFileAsync(filename, bytes).GetAwaiter().GetResult();
+
+        var attachment = new EmailAttachmentReq();
+        attachment.Name = name;
+        attachment.ContentType = contentType;
+        attachment.Size = ByteSize.FromBytes(bytes.Length);
+        attachment.StorageFolderName = _storageFolderName;
+        attachment.Filename = filename;
+
+        _attachments.Add(attachment);
+
+        return this;
+    }
+
     public void Queue() {
+        var attachmentsSize = ByteSize.FromBytes(_attachments.Sum(x => x.Size.Bytes));
+
+        if (attachmentsSize > EmailConstants.MaximumAttachmentsSize) {
+            throw new InvalidOperationException($"The attachments total {attachmentsSize.Megabytes:0.##}MB, " +
+                                                $"over the {EmailConstants.MaximumAttachmentsSize.Megabytes}MB limit");
+        }
+
         var req = Build();
         var jobName = $"Send {req.Subject} to {_recipientEmails.Join("; ")}";
         
@@ -80,6 +127,7 @@ public class FluentEmailBuilder<T> : IFluentEmailBuilder<T> {
         req.Bcc = _bcc;
         req.Subject = _subject;
         req.Body = _body;
+        req.Attachments = _attachments;
 
         if (_model.HasValue()) {
             req.ModelType = TypeResolver.PersistedName(typeof(T));

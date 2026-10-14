@@ -1,21 +1,29 @@
 using MimeKit;
 using N3O.Umbraco.Email.Extensions;
-using N3O.Umbraco.Email.Lookups;
 using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Storage;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace N3O.Umbraco.Email;
 
 public class MimeMessageBuilder : IMimeMessageBuilder {
-    public MimeMessage BuildMessage(EmailIdentity from,
-                                    IEnumerable<EmailIdentity> to,
-                                    IEnumerable<EmailIdentity> cc,
-                                    IEnumerable<EmailIdentity> bcc,
-                                    string subject,
-                                    string body,
-                                    BodyFormat bodyFormat,
-                                    IEnumerable<EmailAttachment> attachments) {
+    private readonly IVolume _volume;
+
+    public MimeMessageBuilder(IVolume volume) {
+        _volume = volume;
+    }
+
+    public async Task<MimeMessage> BuildMessageAsync(EmailIdentity from,
+                                                     IEnumerable<EmailIdentity> to,
+                                                     IEnumerable<EmailIdentity> cc,
+                                                     IEnumerable<EmailIdentity> bcc,
+                                                     string subject,
+                                                     string htmlBody,
+                                                     IEnumerable<EmailAttachmentReq> attachments,
+                                                     CancellationToken cancellationToken = default) {
         var message = new MimeMessage();
 
         message.From.Add(from.ToMailboxAddress());
@@ -28,15 +36,18 @@ public class MimeMessageBuilder : IMimeMessageBuilder {
 
         message.Subject = subject;
 
-        var bodyBuilder = new BodyBuilder {
-            HtmlBody = bodyFormat == BodyFormats.Html ? body : null,
-            TextBody = bodyFormat == BodyFormats.Text ? body : null
-        };
+        var bodyBuilder = new BodyBuilder();
+        bodyBuilder.HtmlBody = htmlBody;
 
         foreach (var attachment in attachments.OrEmpty()) {
-            var contentType = attachment.ContentType.ToContentType();
+            var storageFolder = await _volume.GetStorageFolderAsync(attachment.StorageFolderName);
+            var blob = await storageFolder.GetFileAsync(attachment.Filename, cancellationToken);
 
-            bodyBuilder.Attachments.Add(attachment.Name, attachment.Bytes, contentType);
+            using (blob.Stream) {
+                var contentType = ContentType.Parse(attachment.ContentType);
+
+                await bodyBuilder.Attachments.AddAsync(attachment.Name, blob.Stream, contentType, cancellationToken);
+            }
         }
 
         message.Body = bodyBuilder.ToMessageBody();
