@@ -36,9 +36,6 @@
         <ProjectReference Include="..\N3O.Umbraco.Email\N3O.Umbraco.Email.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FluentEmail.Smtp" Version="3.0.2" />
-    </ItemGroup>
-    <ItemGroup>
         <None Update="README.md">
             <Pack>True</Pack>
         </None>
