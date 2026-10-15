@@ -37,6 +37,10 @@ public class ImageCropper : IImageCropper {
             using (var destStream = new MemoryStream()) {
                 using (var image = await Image.LoadAsync(srcStream, cancellationToken)) {
                     var clone = image.Clone(i => {
+                        if (IsMeasuredOnDisplayedImage(crop)) {
+                            i.AutoOrient();
+                        }
+
                         i.Crop(new Rectangle(crop.X, crop.Y, crop.Width, crop.Height));
 
                         i.Resize(definition.Width, definition.Height);
@@ -53,5 +57,9 @@ public class ImageCropper : IImageCropper {
                 _mediaFileManager.FileSystem.AddFile(destPath, destStream, true);
             }
         }
+    }
+
+    private static bool IsMeasuredOnDisplayedImage(CropperSource.Crop crop) {
+        return crop.Rotate % 180 == 0;
     }
 }
