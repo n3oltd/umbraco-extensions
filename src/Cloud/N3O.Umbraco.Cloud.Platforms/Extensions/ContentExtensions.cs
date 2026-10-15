@@ -89,6 +89,12 @@ public static class ContentExtensions {
         }
     }
 
+    public static void SetEmbedCode(this IContent content, string alias, string embedCode) {
+        if (content.HasProperty(alias)) {
+            content.SetValue(alias, embedCode);
+        }
+    }
+
     private static string GetDataListItem(string value) {
         if (value.DetectIsJson()) {
             return (JToken.Parse(value) as JArray)?.FirstOrDefault()?.ToString();
