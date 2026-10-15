@@ -35,7 +35,10 @@ public class OfferingEmbedCodes :
             if (content.IsOffering(_contentTypeService)) {
                 content.SetValue(DonationButtonEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationButton.ToEnumString(), content.Key, ElementKind.DonationButtonOffering));
                 content.SetValue(DonationFormEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationForm.ToEnumString(), content.Key, ElementKind.DonationFormOffering));
-                content.SetValue(DonationPopupEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationPopup.ToEnumString(), content.Key, ElementKind.DonationPopupOffering));
+
+                if (content.HasProperty(DonationPopupEmbedCodeAlias)) {
+                    content.SetValue(DonationPopupEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationPopup.ToEnumString(), content.Key, ElementKind.DonationPopupOffering));
+                }
             }
         }
 
@@ -47,7 +50,10 @@ public class OfferingEmbedCodes :
             if (content.IsOffering(_contentTypeService)) {
                 content.SetValue(DonationButtonEmbedCodeAlias, null);
                 content.SetValue(DonationFormEmbedCodeAlias, null);
-                content.SetValue(DonationPopupEmbedCodeAlias, null);
+
+                if (content.HasProperty(DonationPopupEmbedCodeAlias)) {
+                    content.SetValue(DonationPopupEmbedCodeAlias, null);
+                }
 
                 _contentService.Save(content);
             }
