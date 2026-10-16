@@ -33,9 +33,9 @@ public class CampaignEmbedCodes :
     public Task HandleAsync(ContentPublishingNotification notification, CancellationToken cancellationToken) {
         foreach (var content in notification.PublishedEntities) {
             if (content.IsCampaign(_contentTypeService)) {
-                content.SetValue(DonationButtonEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationButton.ToEnumString(), content.Key, ElementKind.DonationButtonCampaign));
-                content.SetValue(DonationFormEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationForm.ToEnumString(), content.Key, ElementKind.DonationFormCampaign));
-                content.SetValue(DonationPopupEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationPopup.ToEnumString(), content.Key, ElementKind.DonationPopupCampaign));
+                content.SetEmbedCode(DonationButtonEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationButton.ToEnumString(), content.Key, ElementKind.DonationButtonCampaign));
+                content.SetEmbedCode(DonationFormEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationForm.ToEnumString(), content.Key, ElementKind.DonationFormCampaign));
+                content.SetEmbedCode(DonationPopupEmbedCodeAlias, EmbedCode(PlatformsElementTagName.DonationPopup.ToEnumString(), content.Key, ElementKind.DonationPopupCampaign));
             }
         }
 
@@ -45,9 +45,9 @@ public class CampaignEmbedCodes :
     public Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken) {
         foreach (var content in notification.UnpublishedEntities) {
             if (content.IsCampaign(_contentTypeService)) {
-                content.SetValue(DonationButtonEmbedCodeAlias, null);
-                content.SetValue(DonationFormEmbedCodeAlias, null);
-                content.SetValue(DonationPopupEmbedCodeAlias, null);
+                content.SetEmbedCode(DonationButtonEmbedCodeAlias, null);
+                content.SetEmbedCode(DonationFormEmbedCodeAlias, null);
+                content.SetEmbedCode(DonationPopupEmbedCodeAlias, null);
 
                 _contentService.Save(content);
             }
