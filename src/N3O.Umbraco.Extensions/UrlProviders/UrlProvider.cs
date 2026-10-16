@@ -65,10 +65,16 @@ public abstract class UrlProvider : IUrlProvider {
                 throw new Exception($"Found multiple pages for {pageTypeAlias}: {pages.Select(x => x.Id).ToCsv(true)}");
             }
 
+            var urlSegment = GetUrlSegment(content, culture);
+
+            if (!urlSegment.HasValue()) {
+                return null;
+            }
+
             var defaultUrl = _defaultUrlProvider.GetUrl(pages.Single(), mode, culture, current);
             var url = new Url(defaultUrl.Text);
 
-            url.AppendPathSegment(content.UrlSegment);
+            url.AppendPathSegment(urlSegment);
 
             return UrlInfo.Url(url, culture);
         }
@@ -97,5 +103,13 @@ public abstract class UrlProvider : IUrlProvider {
         }
 
         return null;
+    }
+
+    private static string GetUrlSegment(IPublishedContent content, string culture) {
+        if (culture.HasValue() && content.Cultures.TryGetValue(culture, out var cultureInfo)) {
+            return cultureInfo.UrlSegment;
+        }
+
+        return content.UrlSegment;
     }
 }
