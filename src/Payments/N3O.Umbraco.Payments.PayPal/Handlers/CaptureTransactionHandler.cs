@@ -34,7 +34,9 @@ public class CaptureTransactionHandler :
 
         var request = GetApiAuthorizePaymentReq(req.Model, parameters, settings);
 
-        var res = await _payPalClient.AuthorizePaymentAsync(request.AuthorizationId, request);
+        var res = await _payPalClient.AuthorizePaymentAsync(request.AuthorizationId,
+                                                            request.AuthorizationId,
+                                                            request);
 
         if (res.IsAuthorised()) {
             payment.Paid(req.Model.Email, res.Id);
@@ -63,6 +65,8 @@ public class CaptureTransactionHandler :
             return null;
         }
 
-        return value.RemoveNonAscii().Trim().Left(maxLength);
+        var text = value.RemoveNonAscii().Trim().Left(maxLength);
+
+        return text.HasValue() ? text : null;
     }
 }

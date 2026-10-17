@@ -23,71 +23,35 @@ public class PayPalComposer : Composer {
             
             return apiSettings;
         });
-        
-        builder.Services.AddTransient<IPayPalClient>(serviceProvider => {
+
+        builder.Services.AddTransient<OAuthTokenAccessor>();
+
+        AddClient<IPayPalClient>(builder);
+        AddClient<IPlansClient>(builder);
+        AddClient<IProductsClient>(builder);
+        AddClient<ISubscriptionsClient>(builder);
+    }
+
+    private void AddClient<TClient>(IUmbracoBuilder builder) where TClient : class {
+        builder.Services.AddTransient<TClient>(serviceProvider => {
             var apiSettings = serviceProvider.GetRequiredService<PayPalApiSettings>();
-            IPayPalClient client = null;
+            TClient client = null;
 
             if (apiSettings != null) {
+                var oAuthTokenAccessor = serviceProvider.GetRequiredService<OAuthTokenAccessor>();
+
                 var refitSettings = new RefitSettings();
                 refitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer();
-                refitSettings.HttpMessageHandlerFactory = () => new AuthorizationHandler(apiSettings.ClientId,
-                                                                                         apiSettings.AccessToken);
+                refitSettings.HttpMessageHandlerFactory = () => new AuthorizationHandler(oAuthTokenAccessor,
+                                                                                         apiSettings);
 
-                client = RestService.For<IPayPalClient>(apiSettings.BaseUrl, refitSettings);
+                client = RestService.For<TClient>(apiSettings.BaseUrl, refitSettings);
             }
-            
-            return client;
-        });
-        
-        builder.Services.AddTransient<IPlansClient>(serviceProvider => {
-            var apiSettings = serviceProvider.GetRequiredService<PayPalApiSettings>();
-            IPlansClient client = null;
 
-            if (apiSettings != null) {
-                var refitSettings = new RefitSettings();
-                refitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer();
-                refitSettings.HttpMessageHandlerFactory = () => new AuthorizationHandler(apiSettings.ClientId,
-                                                                                         apiSettings.AccessToken);
-
-                client = RestService.For<IPlansClient>(apiSettings.BaseUrl, refitSettings);
-            }
-            
-            return client;
-        });
-        
-        builder.Services.AddTransient<IProductsClient>(serviceProvider => {
-            var apiSettings = serviceProvider.GetRequiredService<PayPalApiSettings>();
-            IProductsClient client = null;
-
-            if (apiSettings != null) {
-                var refitSettings = new RefitSettings();
-                refitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer();
-                refitSettings.HttpMessageHandlerFactory = () => new AuthorizationHandler(apiSettings.ClientId,
-                                                                                         apiSettings.AccessToken);
-
-                client = RestService.For<IProductsClient>(apiSettings.BaseUrl, refitSettings);
-            }
-            
-            return client;
-        });
-        
-        builder.Services.AddTransient<ISubscriptionsClient>(serviceProvider => {
-            var apiSettings = serviceProvider.GetRequiredService<PayPalApiSettings>();
-            ISubscriptionsClient client = null;
-
-            if (apiSettings != null) {
-                var refitSettings = new RefitSettings();
-                refitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer();
-                refitSettings.HttpMessageHandlerFactory = () => new AuthorizationHandler(apiSettings.ClientId, apiSettings.AccessToken);
-
-                client = RestService.For<ISubscriptionsClient>(apiSettings.BaseUrl, refitSettings);
-            }
-            
             return client;
         });
     }
-    
+
     private PayPalApiSettings GetApiSettings(IContentCache contentCache, IWebHostEnvironment webHostEnvironment) {
         var settings = contentCache.Single<PayPalSettingsContent>();
         
