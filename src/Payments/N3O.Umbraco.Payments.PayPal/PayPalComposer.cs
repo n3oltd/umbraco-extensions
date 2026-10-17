@@ -35,18 +35,13 @@ public class PayPalComposer : Composer {
     private void AddClient<TClient>(IUmbracoBuilder builder) where TClient : class {
         builder.Services.AddTransient<TClient>(serviceProvider => {
             var apiSettings = serviceProvider.GetRequiredService<PayPalApiSettings>();
-            TClient client = null;
+            var oAuthTokenAccessor = serviceProvider.GetRequiredService<OAuthTokenAccessor>();
 
-            if (apiSettings != null) {
-                var oAuthTokenAccessor = serviceProvider.GetRequiredService<OAuthTokenAccessor>();
+            var refitSettings = new RefitSettings();
+            refitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer();
+            refitSettings.HttpMessageHandlerFactory = () => new AuthorizationHandler(oAuthTokenAccessor, apiSettings);
 
-                var refitSettings = new RefitSettings();
-                refitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer();
-                refitSettings.HttpMessageHandlerFactory = () => new AuthorizationHandler(oAuthTokenAccessor,
-                                                                                         apiSettings);
-
-                client = RestService.For<TClient>(apiSettings.BaseUrl, refitSettings);
-            }
+            var client = RestService.For<TClient>(apiSettings.BaseUrl, refitSettings);
 
             return client;
         });

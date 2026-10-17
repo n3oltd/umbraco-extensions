@@ -12,8 +12,8 @@ public class AuthorizationHandler : DelegatingHandler {
     private readonly OAuthTokenAccessor _oAuthTokenAccessor;
 
     public AuthorizationHandler(OAuthTokenAccessor oAuthTokenAccessor, PayPalApiSettings apiSettings) {
-        _oAuthTokenAccessor = oAuthTokenAccessor;
         _apiSettings = apiSettings;
+        _oAuthTokenAccessor = oAuthTokenAccessor;
 
         InnerHandler = new HttpClientHandler();
     }

@@ -11,7 +11,6 @@ namespace N3O.Umbraco.Payments.PayPal.Clients;
 
 public class OAuthTokenAccessor {
     private const int ExpiryMarginSeconds = 30;
-    private const int MinimumCacheSeconds = 30;
 
     private static readonly MemoryCache Tokens = new(new MemoryCacheOptions());
 
@@ -23,9 +22,7 @@ public class OAuthTokenAccessor {
         var token = await Tokens.GetOrCreateAsync(GetCacheKey(apiSettings), async cacheEntry => {
             var res = await RequestAccessTokenAsync(apiSettings);
 
-            var seconds = Math.Max(res.ExpiresIn - ExpiryMarginSeconds, MinimumCacheSeconds);
-
-            cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(seconds);
+            cacheEntry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(res.ExpiresIn - ExpiryMarginSeconds);
 
             return res.AccessToken;
         });
