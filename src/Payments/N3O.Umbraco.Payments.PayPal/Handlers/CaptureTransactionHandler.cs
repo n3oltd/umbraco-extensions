@@ -64,8 +64,6 @@ public class CaptureTransactionHandler :
             return null;
         }
 
-        var text = value.RemoveNonAscii().Trim().Left(maxLength);
-
-        return text.HasValue() ? text : null;
+        return value.RemoveNonAscii().Trim().Left(maxLength).TrimOrNull();
     }
 }
