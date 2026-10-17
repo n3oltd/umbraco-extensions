@@ -123,7 +123,8 @@ public class GetOrCreatePlanHandler : IRequestHandler<GetOrCreatePlanCommand, Mo
             var res = await _plansClient.CreatePlanAsync(apiReq);
             
             return res.Id;
-        } catch (ApiException) {
+        } catch (ApiExceptionBase apiException) when (apiException is ApiException ||
+                                                      apiException.InnerException is ApiException) {
             return "";
         }
     }
