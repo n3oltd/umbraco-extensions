@@ -1,18 +1,15 @@
-using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace N3O.Umbraco.Payments.Opayo.Clients;
+namespace N3O.Umbraco.Utilities;
 
-public class AuthorizationHandler : DelegatingHandler {
+public class AddBasicAuthorizationHandler : DelegatingHandler {
     private readonly string _base64Credentials;
 
-    public AuthorizationHandler(string integrationKey, string integrationPassword) {
-        var bytes = Encoding.UTF8.GetBytes($"{integrationKey}:{integrationPassword}");
-        _base64Credentials = Convert.ToBase64String(bytes);
+    public AddBasicAuthorizationHandler(string username, string password) {
+        _base64Credentials = Base64.Encode($"{username}:{password}");
 
         InnerHandler = new HttpClientHandler();
     }
