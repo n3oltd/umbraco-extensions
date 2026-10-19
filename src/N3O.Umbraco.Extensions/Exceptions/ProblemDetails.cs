@@ -15,6 +15,8 @@ public class ProblemDetails {
     public string Title { get; }
     public int Status { get; }
     public string Detail { get; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string Instance { get; set; }
 
     [JsonExtensionData]
