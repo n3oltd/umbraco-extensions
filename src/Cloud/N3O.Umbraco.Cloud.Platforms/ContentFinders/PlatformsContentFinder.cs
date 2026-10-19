@@ -10,13 +10,16 @@ using Umbraco.Cms.Core.Routing;
 namespace N3O.Umbraco.Cloud.Platforms.ContentFinders;
 
 public class PlatformsContentFinder : IContentFinder {
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IPlatformsPageAccessor _platformsPageAccessor;
     private readonly IContentCache _contentCache;
     private readonly ILogger<PlatformsContentFinder> _logger;
 
-    public PlatformsContentFinder(IPlatformsPageAccessor platformsPageAccessor,
+    public PlatformsContentFinder(IHttpContextAccessor httpContextAccessor,
+                                  IPlatformsPageAccessor platformsPageAccessor,
                                   IContentCache contentCache,
                                   ILogger<PlatformsContentFinder> logger) {
+        _httpContextAccessor = httpContextAccessor;
         _platformsPageAccessor = platformsPageAccessor;
         _contentCache = contentCache;
         _logger = logger;
@@ -28,10 +31,12 @@ public class PlatformsContentFinder : IContentFinder {
         var getPageResult = await _platformsPageAccessor.GetAsync();
 
         if (getPageResult.HasValue(x => x.Redirect)) {
+            var url = getPageResult.Redirect.GetUrl(_httpContextAccessor.HttpContext.Request.QueryString);
+
             if (getPageResult.Redirect.Temporary) {
-                request.SetRedirect(getPageResult.Redirect.UrlOrPath);
+                request.SetRedirect(url);
             } else {
-                request.SetRedirectPermanent(getPageResult.Redirect.UrlOrPath);
+                request.SetRedirectPermanent(url);
             }
         } else if (getPageResult.HasValue(x => x.Page)) {
             var specialPage = GetSpecialPage(getPageResult.Page.Kind);
