@@ -1,14 +1,19 @@
+using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Composing;
+using N3O.Umbraco.Extensions;
 using Umbraco.AI.Extensions;
 using Umbraco.AI.Startup.Configuration;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 
-namespace N3O.Umbraco.AI.Anthropic;
+namespace N3O.Umbraco.AI;
 
 [ComposeAfter(typeof(UmbracoAIComposer))]
-public class AnthropicAIComposer : Composer {
+public class AIComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.AIChatMiddleware().Append<BudgetExceededChatMiddleware>();
+
+        RegisterAll(t => t.ImplementsInterface<IBudgetExceededMatcher>(),
+                    t => builder.Services.AddTransient(typeof(IBudgetExceededMatcher), t));
     }
 }

@@ -1,25 +1,30 @@
 using Microsoft.Extensions.AI;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.AI.Core.Providers.Errors;
 
-namespace N3O.Umbraco.AI.Anthropic;
+namespace N3O.Umbraco.AI;
 
 public class BudgetExceededChatClient : DelegatingChatClient {
-    private const string BudgetExceeded = "budget_exceeded";
     private const string UserMessage = "This site has used this month's AI allowance. It starts again on the 1st, " +
                                        "or IT can add more.";
 
-    public BudgetExceededChatClient(IChatClient innerClient) : base(innerClient) { }
+    private readonly IEnumerable<IBudgetExceededMatcher> _matchers;
+
+    public BudgetExceededChatClient(IChatClient innerClient, IEnumerable<IBudgetExceededMatcher> matchers)
+        : base(innerClient) {
+        _matchers = matchers;
+    }
 
     public override async Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages,
                                                               ChatOptions options = null,
                                                               CancellationToken cancellationToken = default) {
         try {
             return await base.GetResponseAsync(messages, options, cancellationToken);
-        } catch (AIProviderException ex) when (ex.ProviderCode == BudgetExceeded) {
+        } catch (AIProviderException ex) when (_matchers.Any(x => x.IsMatch(ex))) {
             throw Rewrite(ex);
         }
     }
@@ -37,10 +42,10 @@ public class BudgetExceededChatClient : DelegatingChatClient {
         }
     }
 
-    private static async Task<bool> MoveNextAsync(IAsyncEnumerator<ChatResponseUpdate> enumerator) {
+    private async Task<bool> MoveNextAsync(IAsyncEnumerator<ChatResponseUpdate> enumerator) {
         try {
             return await enumerator.MoveNextAsync();
-        } catch (AIProviderException ex) when (ex.ProviderCode == BudgetExceeded) {
+        } catch (AIProviderException ex) when (_matchers.Any(x => x.IsMatch(ex))) {
             throw Rewrite(ex);
         }
     }
