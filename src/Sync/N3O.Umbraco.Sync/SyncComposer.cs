@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Composing;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Cms.Core.DependencyInjection;
 using uSync.BackOffice;
@@ -17,6 +17,8 @@ public class SyncComposer : Composer {
 
         builder.Services.PostConfigure<uSyncHandlerSetSettings>(uSyncPublisher.PublisherHandlerSet,
                                                                 IncludeSharedValues);
+
+        builder.Services.Configure<MvcOptions>(options => options.Filters.Add<CaptureSyncCultures>());
     }
 
     private static void IncludeSharedValues(uSyncHandlerSetSettings handlerSet) {
