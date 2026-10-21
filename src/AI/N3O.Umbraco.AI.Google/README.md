@@ -8,3 +8,6 @@ when the site starts:
 | Setting | Configuration key                 | Required |
 |---------|-----------------------------------|----------|
 | API key | `Umbraco:AI:Secrets:GoogleApiKey` | Yes      |
+
+`GoogleOutOfCreditMatcher` tells `N3O.Umbraco.AI` that the account has run out of credit when Google
+refuses a request with HTTP 402 because the billing account's Prepay credit is used up.
