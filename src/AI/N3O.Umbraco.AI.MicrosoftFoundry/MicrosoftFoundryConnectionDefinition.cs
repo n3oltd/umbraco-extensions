@@ -9,6 +9,10 @@ public class MicrosoftFoundryConnectionDefinition : AIConnectionDefinition {
                "Microsoft AI Foundry",
                "microsoft-foundry",
                "MicrosoftFoundry",
-               [new AIConnectionSetting(nameof(MicrosoftFoundryProviderSettings.ApiKey), true, true),
-                new AIConnectionSetting(nameof(MicrosoftFoundryProviderSettings.Endpoint), false, true)]) { }
+               [new AIConnectionSetting(nameof(MicrosoftFoundryProviderSettings.ApiKey),
+                                        isSecret: true,
+                                        isRequired: true),
+                new AIConnectionSetting(nameof(MicrosoftFoundryProviderSettings.Endpoint),
+                                        isSecret: false,
+                                        isRequired: true)]) { }
 }
