@@ -57,7 +57,7 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
             return null;
         }
 
-        var currency = _baseCurrencyAccessor.GetBaseCurrency().Code.ToEnum<PlatformsCurrency>();
+        var currency = _baseCurrencyAccessor.GetPlatformsBaseCurrency();
 
         var relativeValue = new CrossSellRelativeValueReq();
         relativeValue.Percentage = (double) src.Percentage.ToFraction();

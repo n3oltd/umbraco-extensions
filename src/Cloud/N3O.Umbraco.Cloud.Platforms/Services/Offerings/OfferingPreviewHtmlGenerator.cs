@@ -55,7 +55,7 @@ public abstract class OfferingPreviewHtmlGenerator : PreviewHtmlGenerator {
         var icon = GetMediaWithCrops(content, AliasHelper<DonationFormContentContent>.PropertyAlias(x => x.Icon));
         var shortDescription = content[AliasHelper<DonationFormContentContent>.PropertyAlias(x => x.Description)]?.ToString();
         
-        var currency = BaseCurrencyAccessor.GetBaseCurrency().Code.ToEnum<Currency>();
+        var currency = BaseCurrencyAccessor.GetPlatformsBaseCurrency();
         
         var publishedOffering = new PublishedOffering();
         publishedOffering.Id = content[AliasHelper<OfferingContent>.PropertyAlias(x => x.Key)].ToString();
