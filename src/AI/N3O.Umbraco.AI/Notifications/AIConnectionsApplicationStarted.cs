@@ -79,22 +79,38 @@ public class AIConnectionsApplicationStarted : INotificationAsyncHandler<Umbraco
         var settings = GetSettings(connectionDefinition);
 
         if (connection == null) {
-            var alias = connectionDefinition.Alias;
-            var name = connectionDefinition.Name;
-            var providerId = connectionDefinition.ProviderId;
-
-            connection = new AIConnection { Alias = alias, Name = name, ProviderId = providerId };
-            connection.Settings = settings;
-
-            await _connectionService.SaveConnectionAsync(connection, cancellationToken);
-
-            _logger.LogInformation("Created the Umbraco AI connection {Alias}", alias);
+            await CreateAsync(connectionDefinition, settings, cancellationToken);
         } else if (!SettingsMatch(connection.Settings, settings)) {
             connection.Settings = settings;
 
             await _connectionService.SaveConnectionAsync(connection, cancellationToken);
 
             _logger.LogInformation("Reset the settings of the Umbraco AI connection {Alias}", connection.Alias);
+        }
+    }
+
+    private async Task CreateAsync(AIConnectionDefinition connectionDefinition,
+                                   Dictionary<string, string> settings,
+                                   CancellationToken cancellationToken) {
+        var alias = connectionDefinition.Alias;
+        var name = connectionDefinition.Name;
+        var providerId = connectionDefinition.ProviderId;
+
+        var connection = new AIConnection { Alias = alias, Name = name, ProviderId = providerId };
+        connection.Settings = settings;
+
+        try {
+            await _connectionService.SaveConnectionAsync(connection, cancellationToken);
+
+            _logger.LogInformation("Created the Umbraco AI connection {Alias}", alias);
+        } catch (Exception) {
+            var existingConnection = await _connectionService.GetConnectionByAliasAsync(alias, cancellationToken);
+
+            if (existingConnection != null) {
+                _logger.LogInformation("Umbraco AI connection {Alias} was created by another instance", alias);
+            } else {
+                throw;
+            }
         }
     }
 
@@ -105,6 +121,15 @@ public class AIConnectionsApplicationStarted : INotificationAsyncHandler<Umbraco
             _logger.LogInformation("Deleted the Umbraco AI connection {Alias} as its settings are not configured",
                                    connection.Alias);
         } catch (InvalidOperationException) {
+            var existingConnection = await _connectionService.GetConnectionAsync(connection.Id, cancellationToken);
+
+            if (existingConnection == null) {
+                _logger.LogInformation("Umbraco AI connection {Alias} was deleted by another instance",
+                                       connection.Alias);
+
+                return;
+            }
+
             var profileNames = await GetProfileNamesAsync(connection, cancellationToken);
 
             if (profileNames.Any()) {
@@ -142,9 +167,18 @@ public class AIConnectionsApplicationStarted : INotificationAsyncHandler<Umbraco
     private bool IsConfigured(AIConnectionDefinition connectionDefinition) {
         var requiredKeys = connectionDefinition.Settings
                                                .Where(x => x.IsRequired)
-                                               .Select(x => x.GetConfigurationKey(connectionDefinition.KeyPrefix));
+                                               .Select(x => x.GetConfigurationKey(connectionDefinition.KeyPrefix))
+                                               .ToList();
+        var missingKeys = requiredKeys.Where(x => !_configuration[x].HasValue()).ToList();
 
-        return requiredKeys.All(x => _configuration[x].HasValue());
+        if (missingKeys.Any() && missingKeys.Count < requiredKeys.Count) {
+            _logger.LogWarning("Umbraco AI connection {Alias} is treated as unconfigured because the required " +
+                               "settings {MissingKeys} are missing",
+                               connectionDefinition.Alias,
+                               string.Join(", ", missingKeys));
+        }
+
+        return !missingKeys.Any();
     }
 
     private bool SettingsMatch(object currentSettings, Dictionary<string, string> settings) {
