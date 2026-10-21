@@ -57,22 +57,23 @@ public abstract class CrossSellValidator : ContentValidator {
     }
     
     private void ValidateAmount(ContentProperties content) {
-        var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias);
+        var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias).GetValueOrDefault();
         var maximum = content.GetPropertyValueByAlias<decimal?>(MaximumAlias).GetValueOrDefault();
         var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
         var percentage = content.GetPropertyValueByAlias<decimal?>(PercentageAlias).GetValueOrDefault();
         var threshold = content.GetPropertyValueByAlias<decimal?>(ThresholdAlias).GetValueOrDefault();
+        var hasAmount = amount != 0;
         var hasRelativeValue = maximum != 0 || minimum != 0 || percentage != 0 || threshold != 0;
 
-        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (amount.HasValue() || hasRelativeValue)) {
+        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (hasAmount || hasRelativeValue)) {
             ErrorResult("Sponsorship item cannot have an amount or relative value");
         }
 
-        if (HasLockedPrice(content) && (amount.HasValue() || hasRelativeValue)) {
+        if (HasLockedPrice(content) && (hasAmount || hasRelativeValue)) {
             ErrorResult("Amount or relative value cannot be specified");
         }
 
-        if (amount.HasValue() && hasRelativeValue) {
+        if (hasAmount && hasRelativeValue) {
             ErrorResult(content.GetPropertyByAlias(AmountAlias), "cannot be specified with a relative value");
         }
 
