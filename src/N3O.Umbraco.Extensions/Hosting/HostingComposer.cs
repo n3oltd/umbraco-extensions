@@ -20,7 +20,6 @@ using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using Umbraco.Cms.Web.Website.Controllers;
 using static OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandlerFilters;
 using static OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandlers;
-using static OpenIddict.Server.OpenIddictServerEvents;
 
 namespace N3O.Umbraco.Hosting;
 
@@ -41,7 +40,7 @@ public class HostingComposer : Composer {
         RegisterHostedServices(builder);
 
         if (WebHostEnvironment.IsStaging()) {
-            RegisterStagingCredentialsRemover(builder);
+            RegisterStaging(builder);
         }
 
         builder.Services.AddSingleton<IApplicationReadiness>(sp => sp.GetRequiredService<HomepageWarmup>());
@@ -51,10 +50,6 @@ public class HostingComposer : Composer {
         builder.Services.Configure<ApiBehaviorOptions>(c => c.SuppressModelStateInvalidFilter = true);
         builder.Services.Configure<UmbracoRenderingDefaultsOptions>(c => c.DefaultControllerType = typeof(PageController));
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {
-            if (WebHostEnvironment.IsStaging()) {
-                AddMiddleware<StagingMiddleware>(opt);
-            }
-
             AddMiddleware<CookiesMiddleware>(opt);
             AddMiddleware<WellKnownFolderMiddleware>(opt);
             
@@ -102,22 +97,26 @@ public class HostingComposer : Composer {
         }
     }
 
-    private void RegisterStagingCredentialsRemover(IUmbracoBuilder builder) {
+    private void RegisterStaging(IUmbracoBuilder builder) {
         builder.Services.AddSingleton<BackOfficeStagingCredentialsRemover>();
 
+        builder.Services.Configure<UmbracoPipelineOptions>(opt => AddMiddleware<StagingMiddleware>(opt));
+
         builder.Services.Configure<OpenIddictServerOptions>(opt => {
-            var tokenOrder = ExtractPostRequest<ExtractTokenRequestContext>.Descriptor.Order;
-            var revocationOrder = ExtractPostRequest<ExtractRevocationRequestContext>.Descriptor.Order;
+            // Must run after the form supplies the client ID and before anything reads the Authorization header
+            var tokenOrder = ExtractPostRequest<OpenIddictServerEvents.ExtractTokenRequestContext>.Descriptor.Order;
+            var revocationOrder =
+                ExtractPostRequest<OpenIddictServerEvents.ExtractRevocationRequestContext>.Descriptor.Order;
 
             opt.Handlers.Add(OpenIddictServerHandlerDescriptor
-                             .CreateBuilder<ExtractTokenRequestContext>()
+                             .CreateBuilder<OpenIddictServerEvents.ExtractTokenRequestContext>()
                              .AddFilter<RequireHttpRequest>()
                              .UseSingletonHandler<BackOfficeStagingCredentialsRemover>()
                              .SetOrder(tokenOrder + 1)
                              .Build());
 
             opt.Handlers.Add(OpenIddictServerHandlerDescriptor
-                             .CreateBuilder<ExtractRevocationRequestContext>()
+                             .CreateBuilder<OpenIddictServerEvents.ExtractRevocationRequestContext>()
                              .AddFilter<RequireHttpRequest>()
                              .UseSingletonHandler<BackOfficeStagingCredentialsRemover>()
                              .SetOrder(revocationOrder + 1)

@@ -6,8 +6,8 @@ using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace N3O.Umbraco.Hosting;
 
-// The back office is a public client, so a Basic header on its requests is the browser replaying the staging
-// login, which OpenIddict would otherwise read as the client's credentials and reject.
+// Acts only on the back office, a public client, so its Basic header can only be the browser replaying the staging
+// login. Other clients may legitimately send their credentials that way.
 public class BackOfficeStagingCredentialsRemover :
     IOpenIddictServerHandler<OpenIddictServerEvents.ExtractTokenRequestContext>,
     IOpenIddictServerHandler<OpenIddictServerEvents.ExtractRevocationRequestContext> {
