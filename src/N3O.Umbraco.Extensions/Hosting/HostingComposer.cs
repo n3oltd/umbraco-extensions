@@ -9,6 +9,7 @@ using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Utilities;
+using OpenIddict.Server;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -17,6 +18,9 @@ using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using Umbraco.Cms.Web.Website.Controllers;
+using static OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandlerFilters;
+using static OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandlers;
+using static OpenIddict.Server.OpenIddictServerEvents;
 
 namespace N3O.Umbraco.Hosting;
 
@@ -35,6 +39,10 @@ public class HostingComposer : Composer {
 
         RegisterHealthChecks(builder);
         RegisterHostedServices(builder);
+
+        if (WebHostEnvironment.IsStaging()) {
+            RegisterStagingCredentialsRemover(builder);
+        }
 
         builder.Services.AddSingleton<IApplicationReadiness>(sp => sp.GetRequiredService<HomepageWarmup>());
 
@@ -92,6 +100,29 @@ public class HostingComposer : Composer {
             builder.Services.AddSingleton(type);
             builder.Services.AddSingleton(typeof(IHostedService), sp => sp.GetRequiredService(type));
         }
+    }
+
+    private void RegisterStagingCredentialsRemover(IUmbracoBuilder builder) {
+        builder.Services.AddSingleton<BackOfficeStagingCredentialsRemover>();
+
+        builder.Services.Configure<OpenIddictServerOptions>(opt => {
+            var tokenOrder = ExtractPostRequest<ExtractTokenRequestContext>.Descriptor.Order;
+            var revocationOrder = ExtractPostRequest<ExtractRevocationRequestContext>.Descriptor.Order;
+
+            opt.Handlers.Add(OpenIddictServerHandlerDescriptor
+                             .CreateBuilder<ExtractTokenRequestContext>()
+                             .AddFilter<RequireHttpRequest>()
+                             .UseSingletonHandler<BackOfficeStagingCredentialsRemover>()
+                             .SetOrder(tokenOrder + 1)
+                             .Build());
+
+            opt.Handlers.Add(OpenIddictServerHandlerDescriptor
+                             .CreateBuilder<ExtractRevocationRequestContext>()
+                             .AddFilter<RequireHttpRequest>()
+                             .UseSingletonHandler<BackOfficeStagingCredentialsRemover>()
+                             .SetOrder(revocationOrder + 1)
+                             .Build());
+        });
     }
 
     private void AddMiddleware<T>(UmbracoPipelineOptions opt) where T : class {
