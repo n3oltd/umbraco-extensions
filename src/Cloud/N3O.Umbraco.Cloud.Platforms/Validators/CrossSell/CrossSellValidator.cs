@@ -10,7 +10,11 @@ namespace N3O.Umbraco.Cloud.Platforms.Validators;
 
 public abstract class CrossSellValidator : ContentValidator {
     private static readonly string AmountAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Amount);
-    
+    private static readonly string MaximumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Maximum);
+    private static readonly string MinimumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Minimum);
+    private static readonly string PercentageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Percentage);
+    private static readonly string ThresholdAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Threshold);
+
     private readonly ILookups _lookups;
     private readonly IFundStructureAccessor _fundStructureAccessor;
 
@@ -54,13 +58,35 @@ public abstract class CrossSellValidator : ContentValidator {
     
     private void ValidateAmount(ContentProperties content) {
         var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias);
-        
-        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship) {
-            ErrorResult("Sponsorship item cannot have an amount");
+        var maximum = content.GetPropertyValueByAlias<decimal?>(MaximumAlias).GetValueOrDefault();
+        var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
+        var percentage = content.GetPropertyValueByAlias<decimal?>(PercentageAlias).GetValueOrDefault();
+        var threshold = content.GetPropertyValueByAlias<decimal?>(ThresholdAlias).GetValueOrDefault();
+        var hasRelativeValue = maximum != 0 || minimum != 0 || percentage != 0 || threshold != 0;
+
+        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (amount.HasValue() || hasRelativeValue)) {
+            ErrorResult("Sponsorship item cannot have an amount or relative value");
         }
 
-        if (HasLockedPrice(content) && amount.HasValue()) {
-            ErrorResult("Amount cannot be specified");
+        if (HasLockedPrice(content) && (amount.HasValue() || hasRelativeValue)) {
+            ErrorResult("Amount or relative value cannot be specified");
+        }
+
+        if (amount.HasValue() && hasRelativeValue) {
+            ErrorResult(content.GetPropertyByAlias(AmountAlias), "cannot be specified with a relative value");
+        }
+
+        if (hasRelativeValue && percentage == 0) {
+            ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be specified for a relative value");
+        }
+
+        if (minimum != 0 && maximum != 0 && minimum > maximum) {
+            ErrorResult(content.GetPropertyByAlias(MinimumAlias), "cannot be greater than the maximum");
+        }
+
+        if (minimum != 0 && threshold != 0 && threshold * percentage / 100 < minimum) {
+            ErrorResult(content.GetPropertyByAlias(ThresholdAlias),
+                        "multiplied by the percentage cannot be below the minimum");
         }
     }
 
