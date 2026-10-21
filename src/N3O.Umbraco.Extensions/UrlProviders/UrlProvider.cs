@@ -106,10 +106,10 @@ public abstract class UrlProvider : IUrlProvider {
     }
 
     private static string GetUrlSegment(IPublishedContent content, string culture) {
-        if (culture.HasValue() && content.Cultures.TryGetValue(culture, out var cultureInfo)) {
-            return cultureInfo.UrlSegment;
+        if (!culture.HasValue() || !content.ContentType.VariesByCulture()) {
+            return content.UrlSegment;
         }
 
-        return content.UrlSegment;
+        return content.Cultures.TryGetValue(culture, out var cultureInfo) ? cultureInfo.UrlSegment : null;
     }
 }
