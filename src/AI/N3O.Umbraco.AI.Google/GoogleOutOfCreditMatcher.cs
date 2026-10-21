@@ -9,8 +9,10 @@ public class GoogleOutOfCreditMatcher : IAIErrorMatcher {
     public AIErrorCondition Condition => AIErrorCondition.OutOfCredit;
 
     public bool IsMatch(AIProviderException ex) {
-        var clientError = ex.InnerException as ClientError;
-
-        return clientError?.StatusCode == (int) HttpStatusCode.PaymentRequired;
+        if (ex.InnerException is ClientError clientError) {
+            return clientError.StatusCode == (int) HttpStatusCode.PaymentRequired;
+        } else {
+            return false;
+        }
     }
 }

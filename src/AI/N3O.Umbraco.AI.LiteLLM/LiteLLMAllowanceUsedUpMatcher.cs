@@ -11,8 +11,10 @@ public class LiteLLMAllowanceUsedUpMatcher : IAIErrorMatcher {
     public AIErrorCondition Condition => AIErrorCondition.AllowanceUsedUp;
 
     public bool IsMatch(AIProviderException ex) {
-        var clientResultException = ex.InnerException as ClientResultException;
-
-        return ex.ProviderCode == BudgetExceeded || clientResultException?.GetErrorType() == BudgetExceeded;
+        if (ex.InnerException is ClientResultException clientResultException) {
+            return ex.ProviderCode == BudgetExceeded || clientResultException.GetErrorType() == BudgetExceeded;
+        } else {
+            return ex.ProviderCode == BudgetExceeded;
+        }
     }
 }

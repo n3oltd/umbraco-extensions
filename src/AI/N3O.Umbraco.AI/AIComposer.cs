@@ -18,12 +18,12 @@ public class AIComposer : Composer {
         RegisterAll(t => t.IsSubclassOfType(typeof(AIConnectionDefinition)),
                     t => builder.Services.AddTransient(typeof(AIConnectionDefinition), t));
 
+        RegisterAll(t => t.ImplementsInterface<IAIErrorMatcher>(),
+                    t => builder.Services.AddTransient(typeof(IAIErrorMatcher), t));
+
         // Must follow Umbraco AI's migration handler, or a site's first start reads tables not yet created
         builder.AddNotificationAsyncHandler<UmbracoApplicationStartedNotification, AIConnectionsApplicationStarted>();
 
         builder.AIChatMiddleware().Append<AIErrorMessageChatMiddleware>();
-
-        RegisterAll(t => t.ImplementsInterface<IAIErrorMatcher>(),
-                    t => builder.Services.AddTransient(typeof(IAIErrorMatcher), t));
     }
 }
