@@ -40,10 +40,6 @@
     <ItemGroup>
         <PackageReference Include="Hangfire" Version="1.8.24" />
         <PackageReference Include="Hangfire.SqlServer" Version="1.8.24" />
-        <!-- Pinned to 7.2.0 to match the OpenIddict version Umbraco 17.3.5 ships. A higher version (7.6.0)
-             pulls OpenIddict.Abstractions ahead of the Umbraco-pinned OpenIddict.Core, crashing backoffice
-             boot with a TypeLoadException (missing method on OpenIddictApplicationManager). -->
-        <PackageReference Include="OpenIddict.Server" Version="7.2.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
