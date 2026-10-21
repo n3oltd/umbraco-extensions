@@ -36,9 +36,9 @@
         <ProjectReference Include="..\..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Umbraco.AI" Version="17.5.2" />
-        <PackageReference Include="Umbraco.AI.Agent.Copilot" Version="17.1.1" />
-        <PackageReference Include="Umbraco.AI.Prompt" Version="17.3.0" />
+        <PackageReference Include="Umbraco.AI" Version="17.6.0" />
+        <PackageReference Include="Umbraco.AI.Agent.Copilot" Version="17.2.0" />
+        <PackageReference Include="Umbraco.AI.Prompt" Version="17.4.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
