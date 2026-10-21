@@ -28,11 +28,11 @@ public class Redirect : Value {
         var url = fragmentIndex >= 0 ? urlOrPath.Substring(0, fragmentIndex) : urlOrPath;
         var queryIndex = url.IndexOf('?');
         var path = queryIndex >= 0 ? url.Substring(0, queryIndex) : url;
-        var targetQuery = queryIndex >= 0 ? new QueryString(url.Substring(queryIndex)) : QueryString.Empty;
+        var targetQuery = queryIndex >= 0 ? new QueryString(url.Substring(queryIndex).TrimEnd('&')) : QueryString.Empty;
         var targetKeys = QueryHelpers.ParseQuery(targetQuery.Value).Keys;
 
         var forwarded = incoming.Substring(1)
-                                .Split('&')
+                                .Split('&', StringSplitOptions.RemoveEmptyEntries)
                                 .Where(x => !targetKeys.Contains(GetKey(x), StringComparer.OrdinalIgnoreCase))
                                 .ToList();
 
