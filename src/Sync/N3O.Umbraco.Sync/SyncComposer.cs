@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Composing;
+using N3O.Umbraco.Extensions;
 using System;
 using System.Linq;
 using Umbraco.Cms.Core.DependencyInjection;
@@ -24,7 +25,7 @@ public class SyncComposer : Composer {
     private static void IncludeSharedValues(uSyncHandlerSetSettings handlerSet) {
         IncludeSharedValues(handlerSet.HandlerDefaults);
 
-        foreach (var settings in handlerSet.Handlers?.Values ?? Enumerable.Empty<HandlerSettings>()) {
+        foreach (var settings in handlerSet.Handlers.OrEmpty(x => x.Values)) {
             IncludeSharedValues(settings);
         }
     }

@@ -21,15 +21,15 @@ public class KeepExistingSharedValues : INotificationAsyncHandler<uSyncImporting
     private static readonly string[] EmptyCollections = ["[]", "{}"];
 
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ISyncItemFactory _syncItemFactory;
     private readonly ILogger<KeepExistingSharedValues> _logger;
+    private readonly ISyncItemFactory _syncItemFactory;
 
     public KeepExistingSharedValues(IHttpContextAccessor httpContextAccessor,
-                                    ISyncItemFactory syncItemFactory,
-                                    ILogger<KeepExistingSharedValues> logger) {
+                                    ILogger<KeepExistingSharedValues> logger,
+                                    ISyncItemFactory syncItemFactory) {
         _httpContextAccessor = httpContextAccessor;
-        _syncItemFactory = syncItemFactory;
         _logger = logger;
+        _syncItemFactory = syncItemFactory;
     }
 
     public Task HandleAsync(uSyncImportingItemNotification notification, CancellationToken cancellationToken) {
@@ -82,32 +82,20 @@ public class KeepExistingSharedValues : INotificationAsyncHandler<uSyncImporting
     }
 
     private XElement GetExistingProperties(uSyncImportingItemNotification notification) {
-        var options = new SyncSerializerOptions(new Dictionary<string, string> {
-            [uSyncCoreConstants.DefaultsKey] = bool.TrueString
-        });
+        var settings = new Dictionary<string, string>();
+        settings[uSyncCoreConstants.DefaultsKey] = bool.TrueString;
+
+        var options = new SyncSerializerOptions(settings);
 
         if (notification.Handler is MediaHandler) {
             return Serialize(_syncItemFactory.GetSerializer<IMedia>("MediaSerializer"), notification.Item, options);
-        } else {
-            var serializerName = notification.Handler is PublishedContentHandler
-                                     ? "PublishedContentSerializer"
-                                     : "ContentSerializer";
-
-            return Serialize(_syncItemFactory.GetSerializer<IContent>(serializerName), notification.Item, options);
-        }
-    }
-
-    private XElement Serialize<T>(ISyncSerializer<T> serializer, XElement node, SyncSerializerOptions options)
-        where T : class {
-        var existing = serializer?.FindItem(node);
-
-        if (existing == null) {
-            return null;
         }
 
-        var attempt = serializer.Serialize(existing, options);
+        var serializerName = notification.Handler is PublishedContentHandler
+                                 ? "PublishedContentSerializer"
+                                 : "ContentSerializer";
 
-        return attempt.Success ? attempt.Item?.Element("Properties") : null;
+        return Serialize(_syncItemFactory.GetSerializer<IContent>(serializerName), notification.Item, options);
     }
 
     private bool IsCultureScoped(XElement item) {
@@ -128,5 +116,18 @@ public class KeepExistingSharedValues : INotificationAsyncHandler<uSyncImporting
         var text = value.Value.Trim();
 
         return text.IsNullOrWhiteSpace() || EmptyCollections.Contains(text);
+    }
+
+    private XElement Serialize<T>(ISyncSerializer<T> serializer, XElement node, SyncSerializerOptions options)
+        where T : class {
+        var existing = serializer?.FindItem(node);
+
+        if (existing == null) {
+            return null;
+        }
+
+        var attempt = serializer.Serialize(existing, options);
+
+        return attempt.Success ? attempt.Item?.Element("Properties") : null;
     }
 }
