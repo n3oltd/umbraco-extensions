@@ -35,7 +35,7 @@ they can act on instead of the provider's own:
 
 | Condition                                 | Message                                                                                       |
 |-------------------------------------------|-----------------------------------------------------------------------------------------------|
-| The AI account has run out of credit      | The AI account for this site has run out of credit. Contact IT to top it up.                  |
+| The AI account has reached its limit      | This site's AI account has reached its credit or spending limit. Contact IT.                  |
 | A gateway's monthly allowance is used up  | This site has used this month's AI allowance. It starts again on the 1st, or IT can add more. |
 
 `AIErrorMessageChatMiddleware` wraps every chat client after Umbraco AI's own middlewares, for

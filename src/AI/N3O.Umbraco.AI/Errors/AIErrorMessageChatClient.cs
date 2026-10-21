@@ -76,6 +76,6 @@ public class AIErrorMessageChatClient : DelegatingChatClient {
 
     public class Strings : CodeStrings {
         public string AllowanceUsedUp => "This site has used this month's AI allowance. It starts again on the 1st, or IT can add more.";
-        public string OutOfCredit => "The AI account for this site has run out of credit. Contact IT to top it up.";
+        public string OutOfCredit => "This site's AI account has reached its credit or spending limit. Contact IT.";
     }
 }

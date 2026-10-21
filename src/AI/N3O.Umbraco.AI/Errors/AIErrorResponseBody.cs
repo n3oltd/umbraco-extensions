@@ -10,6 +10,10 @@ public static class AIErrorResponseBody {
         return GetErrorProperty(body, "code");
     }
 
+    public static string GetErrorDetailsCode(string body) {
+        return GetErrorProperty(body, "details.error_code");
+    }
+
     public static string GetErrorMessage(string body) {
         return GetErrorProperty(body, "message");
     }
