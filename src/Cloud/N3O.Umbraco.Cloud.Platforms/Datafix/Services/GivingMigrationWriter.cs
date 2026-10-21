@@ -248,6 +248,10 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
             item.CampaignId = crossSellId;
             item.Outcome = GivingMigrationConstants.Outcomes.Created;
+
+            if (problems.Count > 0) {
+                item.Message = string.Join("; ", problems);
+            }
         } catch (Exception ex) {
             _logger.LogError(ex,
                              "There was an error migrating legacy upsell offer with id {LegacyUpsellId}",
@@ -581,7 +585,8 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
 
         var elementAlias = ResolveNestedElementAlias(targetContentTypeAlias,
                                                      targetAlias,
-                                                     PlatformsConstants.DonationFormState.SuggestedAmount);
+                                                     PlatformsConstants.DonationFormState.SuggestedAmount,
+                                                     GivingMigrationConstants.Platforms.LegacySuggestedAmountAlias);
 
         if (!elementAlias.HasValue()) {
             _logger.LogWarning("Could not resolve the nested element alias for {ContentType}.{Property}",
@@ -628,16 +633,21 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
     // element was renamed still uses the old alias and the seeder never updates an existing type.
     // A nested content data type may legitimately allow more than one element type, so the one being written is
     // asserted to be among them rather than whichever happens to be listed first.
-    private string ResolveNestedElementAlias(string contentTypeAlias, string propertyAlias, string expectedAlias) {
+    private string ResolveNestedElementAlias(string contentTypeAlias,
+                                             string propertyAlias,
+                                             params string[] acceptedAliases) {
         var configuration = GetDataTypeConfiguration(contentTypeAlias, propertyAlias);
 
         if (Find(configuration, "contentTypes") is not JArray contentTypes) {
             return null;
         }
 
-        return contentTypes.OfType<JObject>()
-                           .Select(x => Find(x, "ncAlias")?.ToString() ?? Find(x, "alias")?.ToString())
-                           .FirstOrDefault(x => x.EqualsInvariant(expectedAlias));
+        var allowedAliases = contentTypes.OfType<JObject>()
+                                         .Select(x => Find(x, "ncAlias")?.ToString() ?? Find(x, "alias")?.ToString())
+                                         .ToList();
+
+        return acceptedAliases.Select(x => allowedAliases.FirstOrDefault(y => y.EqualsInvariant(x)))
+                              .FirstOrDefault(x => x.HasValue());
     }
 
     // The data type configuration is a strongly typed object, so JObject.FromObject emits the CLR property names
