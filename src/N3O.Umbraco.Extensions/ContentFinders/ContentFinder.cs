@@ -60,8 +60,8 @@ public abstract class ContentFinder : IContentFinder {
 
         var match = contentCollections.Single()
                                       .Descendants(culture)
-                                     .Where(x => x.ContentType.Alias.EqualsInvariant(contentTypeAlias))
-                                     .FirstOrDefault(x => StrippedPath(x, pagePath, culture).EqualsInvariant(path));
+                                      .Where(x => x.ContentType.Alias.EqualsInvariant(contentTypeAlias))
+                                      .FirstOrDefault(x => StrippedPath(x, pagePath, culture).EqualsInvariant(path));
 
         if (match != null) {
             request.SetPublishedContent(match);
