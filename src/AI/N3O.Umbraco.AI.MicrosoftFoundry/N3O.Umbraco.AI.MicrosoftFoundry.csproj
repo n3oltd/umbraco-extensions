@@ -36,7 +36,7 @@
         <ProjectReference Include="..\N3O.Umbraco.AI\N3O.Umbraco.AI.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Umbraco.AI.MicrosoftFoundry" Version="17.0.3" />
+        <PackageReference Include="Umbraco.AI.MicrosoftFoundry" Version="17.0.4" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
