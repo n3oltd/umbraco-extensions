@@ -9,5 +9,5 @@ public class GoogleConnectionDefinition : AIConnectionDefinition {
                "Google",
                "google",
                "Google",
-               [new AIConnectionSetting(nameof(GoogleProviderSettings.ApiKey), true, true)]) { }
+               [new AIConnectionSetting(nameof(GoogleProviderSettings.ApiKey), isSecret: true, isRequired: true)]) { }
 }

@@ -9,6 +9,8 @@ public class AnthropicConnectionDefinition : AIConnectionDefinition {
                "Anthropic",
                "anthropic",
                "Anthropic",
-               [new AIConnectionSetting(nameof(AnthropicProviderSettings.ApiKey), true, true),
-                new AIConnectionSetting(nameof(AnthropicProviderSettings.Endpoint), false, false)]) { }
+               [new AIConnectionSetting(nameof(AnthropicProviderSettings.ApiKey), isSecret: true, isRequired: true),
+                new AIConnectionSetting(nameof(AnthropicProviderSettings.Endpoint),
+                                        isSecret: false,
+                                        isRequired: false)]) { }
 }

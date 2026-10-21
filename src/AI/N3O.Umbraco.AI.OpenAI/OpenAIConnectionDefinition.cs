@@ -9,6 +9,8 @@ public class OpenAIConnectionDefinition : AIConnectionDefinition {
                "OpenAI",
                "openai",
                "OpenAI",
-               [new AIConnectionSetting(nameof(OpenAIProviderSettings.ApiKey), true, true),
-                new AIConnectionSetting(nameof(OpenAIProviderSettings.Endpoint), false, false)]) { }
+               [new AIConnectionSetting(nameof(OpenAIProviderSettings.ApiKey), isSecret: true, isRequired: true),
+                new AIConnectionSetting(nameof(OpenAIProviderSettings.Endpoint),
+                                        isSecret: false,
+                                        isRequired: false)]) { }
 }
