@@ -91,8 +91,6 @@ public abstract class ContentFinder : IContentFinder {
     protected IContentCache ContentCache { get; }
 
     private string GetRelativePath(IPublishedContent content, string culture) {
-        var url = culture.HasValue() ? content.Url(culture, UrlMode.Relative) : content.RelativeUrl();
-
-        return Uri.UnescapeDataString(url);
+        return Uri.UnescapeDataString(content.RelativeUrl(culture));
     }
 }

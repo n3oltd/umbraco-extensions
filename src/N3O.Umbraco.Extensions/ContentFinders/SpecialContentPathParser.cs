@@ -28,7 +28,7 @@ public static class SpecialContentPathParser {
             return null;
         }
 
-        var path = GetUrl(specialPage, culture).StripTrailingSlash();
+        var path = specialPage.RelativeUrl(culture).StripTrailingSlash();
 
         if (!IsRoutable(path)) {
             return null;
@@ -62,14 +62,6 @@ public static class SpecialContentPathParser {
 
     private static (SpecialContent, string) GetCacheKey(SpecialContent specialContent, string culture) {
         return (specialContent, culture?.ToLowerInvariant());
-    }
-
-    private static string GetUrl(IPublishedContent specialPage, string culture) {
-        if (culture.HasValue()) {
-            return specialPage.Url(culture, UrlMode.Relative);
-        }
-
-        return specialPage.RelativeUrl();
     }
 
     private static bool IsRoutable(string path) {
