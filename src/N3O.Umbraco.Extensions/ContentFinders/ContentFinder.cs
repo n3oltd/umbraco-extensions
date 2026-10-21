@@ -72,10 +72,6 @@ public abstract class ContentFinder : IContentFinder {
         return Task.FromResult(false);
     }
 
-    protected string StrippedPath(IPublishedContent content, string strip, string culture = null) {
-        return GetRelativePath(content, culture).Substring(strip.Length).RemoveLeadingSlashes();
-    }
-
     protected string GetRequestedPath(Uri url, string strip = null) {
         var path = url.GetAbsolutePathDecoded().ToLowerInvariant();
         
@@ -89,6 +85,10 @@ public abstract class ContentFinder : IContentFinder {
     }
 
     protected IContentCache ContentCache { get; }
+
+    private string StrippedPath(IPublishedContent content, string strip, string culture) {
+        return GetRelativePath(content, culture).Substring(strip.Length).RemoveLeadingSlashes();
+    }
 
     private string GetRelativePath(IPublishedContent content, string culture) {
         return Uri.UnescapeDataString(content.RelativeUrl(culture));
