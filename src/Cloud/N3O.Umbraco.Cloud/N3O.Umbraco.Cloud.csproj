@@ -38,7 +38,6 @@
         </None>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\Authentication\N3O.Umbraco.Authentication.Auth0\N3O.Umbraco.Authentication.Auth0.csproj" />
         <ProjectReference Include="..\..\Giving\N3O.Umbraco.Giving.Allocations\N3O.Umbraco.Giving.Allocations.csproj" />
         <ProjectReference Include="..\..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
         <ProjectReference Include="..\..\Scheduler\N3O.Umbraco.Scheduler\N3O.Umbraco.Scheduler.csproj" />
