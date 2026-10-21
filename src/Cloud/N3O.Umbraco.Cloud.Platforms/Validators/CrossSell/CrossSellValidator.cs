@@ -1,4 +1,5 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Giving.Allocations;
@@ -62,8 +63,11 @@ public abstract class CrossSellValidator : ContentValidator {
         var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
         var percentage = content.GetPropertyValueByAlias<decimal?>(PercentageAlias).GetValueOrDefault();
         var threshold = content.GetPropertyValueByAlias<decimal?>(ThresholdAlias).GetValueOrDefault();
-        var hasAmount = amount != 0;
-        var hasRelativeValue = maximum != 0 || minimum != 0 || percentage != 0 || threshold != 0;
+        var hasAmount = amount.IsSpecified();
+        var hasRelativeValue = maximum.IsSpecified() ||
+                               minimum.IsSpecified() ||
+                               percentage.IsSpecified() ||
+                               threshold.IsSpecified();
 
         if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (hasAmount || hasRelativeValue)) {
             ErrorResult("Sponsorship item cannot have an amount or relative value");
@@ -77,15 +81,15 @@ public abstract class CrossSellValidator : ContentValidator {
             ErrorResult(content.GetPropertyByAlias(AmountAlias), "cannot be specified with a relative value");
         }
 
-        if (hasRelativeValue && percentage == 0) {
+        if (hasRelativeValue && !percentage.IsSpecified()) {
             ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be specified for a relative value");
         }
 
-        if (minimum != 0 && maximum != 0 && minimum > maximum) {
+        if (minimum.IsSpecified() && maximum.IsSpecified() && minimum > maximum) {
             ErrorResult(content.GetPropertyByAlias(MinimumAlias), "cannot be greater than the maximum");
         }
 
-        if (minimum != 0 && threshold != 0 && threshold * percentage / 100 < minimum) {
+        if (minimum.IsSpecified() && threshold.IsSpecified() && threshold * percentage.ToFraction() < minimum) {
             ErrorResult(content.GetPropertyByAlias(ThresholdAlias),
                         "multiplied by the percentage cannot be below the minimum");
         }

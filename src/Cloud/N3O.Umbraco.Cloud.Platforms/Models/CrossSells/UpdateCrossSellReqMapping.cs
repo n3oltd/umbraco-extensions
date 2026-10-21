@@ -53,14 +53,14 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
     }
 
     private CrossSellRelativeValueReq GetCrossSellRelativeValueReq(CrossSellContent src) {
-        if (src.Percentage == 0) {
+        if (!src.Percentage.IsSpecified()) {
             return null;
         }
 
         var currency = _baseCurrencyAccessor.GetBaseCurrency().Code.ToEnum<PlatformsCurrency>();
 
         var relativeValue = new CrossSellRelativeValueReq();
-        relativeValue.Percentage = (double) (src.Percentage / 100);
+        relativeValue.Percentage = (double) src.Percentage.ToFraction();
         relativeValue.Minimum = GetMoneyReq(src.Minimum, currency);
         relativeValue.Maximum = GetMoneyReq(src.Maximum, currency);
         relativeValue.Threshold = GetMoneyReq(src.Threshold, currency);
@@ -69,7 +69,7 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
     }
 
     private MoneyReq GetMoneyReq(decimal amount, PlatformsCurrency? currency) {
-        if (amount == 0) {
+        if (!amount.IsSpecified()) {
             return null;
         }
 
