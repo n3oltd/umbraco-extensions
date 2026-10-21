@@ -91,8 +91,8 @@ public static class PublishedContentExtensions {
         return content.TemplateId != null && content.TemplateId > 0;
     }
 
-    public static string RelativeUrl(this IPublishedContent content) {
-        return content.Url(mode: UrlMode.Relative);
+    public static string RelativeUrl(this IPublishedContent content, string culture = null) {
+        return content.Url(culture.HasValue() ? culture : null, UrlMode.Relative);
     }
     
     public static T To<T>(this IPublishedContent publishedContent, VariationContext variationContext = null)
