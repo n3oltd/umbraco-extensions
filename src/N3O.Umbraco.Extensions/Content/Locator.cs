@@ -1,3 +1,4 @@
+using N3O.Umbraco.Constants;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
@@ -69,7 +70,7 @@ public abstract class Locator : ILocator {
                 continue;
             }
 
-            if (culture != null && !rootContent.IsInvariantOrHasCulture(culture)) {
+            if (culture != null && culture != Cultures.All && !rootContent.IsInvariantOrHasCulture(culture)) {
                 continue;
             }
 
