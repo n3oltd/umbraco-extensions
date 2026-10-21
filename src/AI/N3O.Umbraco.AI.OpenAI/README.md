@@ -9,3 +9,7 @@ when the site starts:
 |----------|---------------------------------------|------------------------------------|
 | API key  | `Umbraco:AI:Secrets:OpenAIApiKey`     | Yes                                |
 | Endpoint | `Umbraco:AI:Variables:OpenAIEndpoint` | No; the provider default applies   |
+
+`OpenAIOutOfCreditMatcher` tells `N3O.Umbraco.AI` that the account has run out of credit when OpenAI
+refuses a request with HTTP 429 and the error type `insufficient_quota` or the error code
+`credit_balance_exhausted`.

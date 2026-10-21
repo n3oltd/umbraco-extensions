@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.AI.Connections;
+using N3O.Umbraco.AI.Errors;
 using N3O.Umbraco.AI.Notifications;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
@@ -20,9 +21,9 @@ public class AIComposer : Composer {
         // Must follow Umbraco AI's migration handler, or a site's first start reads tables not yet created
         builder.AddNotificationAsyncHandler<UmbracoApplicationStartedNotification, AIConnectionsApplicationStarted>();
 
-        builder.AIChatMiddleware().Append<BudgetExceededChatMiddleware>();
+        builder.AIChatMiddleware().Append<AIErrorMessageChatMiddleware>();
 
-        RegisterAll(t => t.ImplementsInterface<IBudgetExceededMatcher>(),
-                    t => builder.Services.AddTransient(typeof(IBudgetExceededMatcher), t));
+        RegisterAll(t => t.ImplementsInterface<IAIErrorMatcher>(),
+                    t => builder.Services.AddTransient(typeof(IAIErrorMatcher), t));
     }
 }

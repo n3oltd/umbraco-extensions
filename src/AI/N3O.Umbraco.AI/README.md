@@ -27,3 +27,22 @@ Each time the site starts at runtime level Run, for each installed provider pack
 
 Profiles are never deleted, and connections under any other alias are never touched. Profiles,
 prompts and agents are set up in the back office and stored in the site's database.
+
+## Error messages
+
+When a provider refuses a request for a reason that retrying will not fix, the editor sees a message
+they can act on instead of the provider's own:
+
+| Condition                                 | Message                                                                                       |
+|-------------------------------------------|-----------------------------------------------------------------------------------------------|
+| The AI account has run out of credit      | The AI account for this site has run out of credit. Contact IT to top it up.                  |
+| A gateway's monthly allowance is used up  | This site has used this month's AI allowance. It starts again on the 1st, or IT can add more. |
+
+`AIErrorMessageChatMiddleware` wraps every chat client after Umbraco AI's own middlewares, for
+streaming and non-streaming calls alike. It asks each registered `IAIErrorMatcher` whether an error
+means one of these conditions, and rethrows a matched error with that condition's message, keeping
+its category, its provider code and the original error as its inner exception, so Umbraco AI's
+tracking records the original. Every other error passes through unchanged.
+
+Each provider package registers a matcher for its own provider's errors, and
+`N3O.Umbraco.AI.LiteLLM` registers one for a LiteLLM gateway in front of any provider.

@@ -9,3 +9,6 @@ the site starts:
 |----------|------------------------------------------|------------------------------------|
 | API key  | `Umbraco:AI:Secrets:AnthropicApiKey`     | Yes                                |
 | Endpoint | `Umbraco:AI:Variables:AnthropicEndpoint` | No; the provider default applies   |
+
+`AnthropicOutOfCreditMatcher` tells `N3O.Umbraco.AI` that the account has run out of credit when
+Anthropic refuses a request because its credit balance is too low.
