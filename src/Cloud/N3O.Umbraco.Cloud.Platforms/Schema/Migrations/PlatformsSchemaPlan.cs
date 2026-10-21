@@ -19,6 +19,8 @@ public class PlatformsSchemaPlan : MigrationPlan {
 
     public static IReadOnlyList<string> RequiredDataTypes => [
         DataTypeNames.ElementEmbedCodeLabel,
+        DataTypeNames.GiftTypesMultiple,
+        DataTypeNames.Percentage,
         Shared.Money
     ];
 }
