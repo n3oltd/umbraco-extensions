@@ -44,5 +44,6 @@ means one of these conditions, and rethrows a matched error with that condition'
 its category, its provider code and the original error as its inner exception, so Umbraco AI's
 tracking records the original. Every other error passes through unchanged.
 
-Each provider package registers a matcher for its own provider's errors, and
-`N3O.Umbraco.AI.LiteLLM` registers one for a LiteLLM gateway in front of any provider.
+The Anthropic, Google and OpenAI packages each contain a matcher for their own provider's errors,
+and `N3O.Umbraco.AI.LiteLLM` contains one for a LiteLLM gateway in front of any provider.
+`AIComposer` finds and registers every matcher when the site starts.

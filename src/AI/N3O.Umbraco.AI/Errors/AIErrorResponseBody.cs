@@ -19,19 +19,19 @@ public static class AIErrorResponseBody {
     }
 
     private static string GetErrorProperty(string body, string propertyName) {
-        if (!body.HasValue() || !body.DetectIsJson()) {
-            return null;
-        }
+        if (body.HasValue() && body.DetectIsJson()) {
+            try {
+                var token = JObject.Parse(body).SelectToken($"error.{propertyName}");
 
-        try {
-            var token = JObject.Parse(body).SelectToken($"error.{propertyName}");
-
-            if (token?.Type == JTokenType.String) {
-                return token.Value<string>();
-            } else {
+                if (token?.Type == JTokenType.String) {
+                    return token.Value<string>();
+                } else {
+                    return null;
+                }
+            } catch (JsonException) {
                 return null;
             }
-        } catch (JsonException) {
+        } else {
             return null;
         }
     }
