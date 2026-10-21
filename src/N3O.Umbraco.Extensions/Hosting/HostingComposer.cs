@@ -9,6 +9,7 @@ using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Utilities;
+using OpenIddict.Server;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -17,6 +18,8 @@ using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using Umbraco.Cms.Web.Website.Controllers;
+using static OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandlerFilters;
+using static OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandlers;
 
 namespace N3O.Umbraco.Hosting;
 
@@ -36,6 +39,10 @@ public class HostingComposer : Composer {
         RegisterHealthChecks(builder);
         RegisterHostedServices(builder);
 
+        if (WebHostEnvironment.IsStaging()) {
+            RegisterStaging(builder);
+        }
+
         builder.Services.AddSingleton<IApplicationReadiness>(sp => sp.GetRequiredService<HomepageWarmup>());
 
         builder.Services.AddOpenApiDocument("DevTools");
@@ -43,10 +50,6 @@ public class HostingComposer : Composer {
         builder.Services.Configure<ApiBehaviorOptions>(c => c.SuppressModelStateInvalidFilter = true);
         builder.Services.Configure<UmbracoRenderingDefaultsOptions>(c => c.DefaultControllerType = typeof(PageController));
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {
-            if (WebHostEnvironment.IsStaging()) {
-                AddMiddleware<StagingMiddleware>(opt);
-            }
-
             AddMiddleware<CookiesMiddleware>(opt);
             AddMiddleware<WellKnownFolderMiddleware>(opt);
             
@@ -92,6 +95,33 @@ public class HostingComposer : Composer {
             builder.Services.AddSingleton(type);
             builder.Services.AddSingleton(typeof(IHostedService), sp => sp.GetRequiredService(type));
         }
+    }
+
+    private void RegisterStaging(IUmbracoBuilder builder) {
+        builder.Services.AddSingleton<BackOfficeStagingCredentialsRemover>();
+
+        builder.Services.Configure<UmbracoPipelineOptions>(opt => AddMiddleware<StagingMiddleware>(opt));
+
+        builder.Services.Configure<OpenIddictServerOptions>(opt => {
+            // Must run after the form supplies the client ID and before anything reads the Authorization header
+            var tokenOrder = ExtractPostRequest<OpenIddictServerEvents.ExtractTokenRequestContext>.Descriptor.Order;
+            var revocationOrder =
+                ExtractPostRequest<OpenIddictServerEvents.ExtractRevocationRequestContext>.Descriptor.Order;
+
+            opt.Handlers.Add(OpenIddictServerHandlerDescriptor
+                             .CreateBuilder<OpenIddictServerEvents.ExtractTokenRequestContext>()
+                             .AddFilter<RequireHttpRequest>()
+                             .UseSingletonHandler<BackOfficeStagingCredentialsRemover>()
+                             .SetOrder(tokenOrder + 1)
+                             .Build());
+
+            opt.Handlers.Add(OpenIddictServerHandlerDescriptor
+                             .CreateBuilder<OpenIddictServerEvents.ExtractRevocationRequestContext>()
+                             .AddFilter<RequireHttpRequest>()
+                             .UseSingletonHandler<BackOfficeStagingCredentialsRemover>()
+                             .SetOrder(revocationOrder + 1)
+                             .Build());
+        });
     }
 
     private void AddMiddleware<T>(UmbracoPipelineOptions opt) where T : class {

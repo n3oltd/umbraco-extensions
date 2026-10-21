@@ -1,9 +1,11 @@
 # N3O.Umbraco.AI.OpenAI
 
-Adds OpenAI as a model provider for `N3O.Umbraco.AI`, so a back office connection can use GPT models.
+Adds OpenAI as a model provider for `N3O.Umbraco.AI`, so a connection can use GPT models.
 
-The API key is entered on the connection in the back office.
+It declares the `openai` connection, which `N3O.Umbraco.AI` keeps in step with configuration
+when the site starts:
 
-`OpenAIBudgetExceededMatcher` tells the budget middleware in `N3O.Umbraco.AI` which errors mean an
-AI gateway's spending limit is used up: a provider error whose response body, read from the SDK's
-exception, has the error type `budget_exceeded`.
+| Setting  | Configuration key                     | Required                           |
+|----------|---------------------------------------|------------------------------------|
+| API key  | `Umbraco:AI:Secrets:OpenAIApiKey`     | Yes                                |
+| Endpoint | `Umbraco:AI:Variables:OpenAIEndpoint` | No; the provider default applies   |

@@ -1,9 +1,11 @@
 # N3O.Umbraco.AI.Anthropic
 
-Adds Anthropic as a model provider for `N3O.Umbraco.AI`, so a back office connection can use Claude
-models.
+Adds Anthropic as a model provider for `N3O.Umbraco.AI`, so a connection can use Claude models.
 
-The API key is entered on the connection in the back office.
+It declares the `anthropic` connection, which `N3O.Umbraco.AI` keeps in step with configuration when
+the site starts:
 
-`AnthropicBudgetExceededMatcher` tells the budget middleware in `N3O.Umbraco.AI` which errors mean
-an AI gateway's spending limit is used up: a provider error with the code `budget_exceeded`.
+| Setting  | Configuration key                        | Required                           |
+|----------|------------------------------------------|------------------------------------|
+| API key  | `Umbraco:AI:Secrets:AnthropicApiKey`     | Yes                                |
+| Endpoint | `Umbraco:AI:Variables:AnthropicEndpoint` | No; the provider default applies   |
