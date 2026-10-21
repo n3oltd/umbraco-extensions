@@ -85,6 +85,14 @@ public abstract class CrossSellValidator : ContentValidator {
             ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be specified for a relative value");
         }
 
+        if (percentage < 0 || percentage > 100) {
+            ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be greater than 0 and no more than 100");
+        }
+
+        NotNegative(content, MinimumAlias, minimum);
+        NotNegative(content, MaximumAlias, maximum);
+        NotNegative(content, ThresholdAlias, threshold);
+
         if (minimum.IsSpecified() && maximum.IsSpecified() && minimum > maximum) {
             ErrorResult(content.GetPropertyByAlias(MinimumAlias), "cannot be greater than the maximum");
         }
@@ -105,6 +113,12 @@ public abstract class CrossSellValidator : ContentValidator {
 
         if (isActive && value == null && !allowedValues.IsSingle()) {
             ErrorResult(property, $"{typeof(T).Name} should have a fixed value");
+        }
+    }
+
+    private void NotNegative(ContentProperties content, string alias, decimal value) {
+        if (value < 0) {
+            ErrorResult(content.GetPropertyByAlias(alias), "cannot be negative");
         }
     }
 }
