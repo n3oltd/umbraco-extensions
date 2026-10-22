@@ -1,4 +1,5 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Giving.Allocations;
@@ -10,7 +11,11 @@ namespace N3O.Umbraco.Cloud.Platforms.Validators;
 
 public abstract class CrossSellValidator : ContentValidator {
     private static readonly string AmountAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Amount);
-    
+    private static readonly string MaximumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Maximum);
+    private static readonly string MinimumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Minimum);
+    private static readonly string PercentageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Percentage);
+    private static readonly string ThresholdAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Threshold);
+
     private readonly ILookups _lookups;
     private readonly IFundStructureAccessor _fundStructureAccessor;
 
@@ -53,14 +58,48 @@ public abstract class CrossSellValidator : ContentValidator {
     }
     
     private void ValidateAmount(ContentProperties content) {
-        var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias);
-        
-        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship) {
-            ErrorResult("Sponsorship item cannot have an amount");
+        var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias).GetValueOrDefault();
+        var maximum = content.GetPropertyValueByAlias<decimal?>(MaximumAlias).GetValueOrDefault();
+        var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
+        var percentage = content.GetPropertyValueByAlias<decimal?>(PercentageAlias).GetValueOrDefault();
+        var threshold = content.GetPropertyValueByAlias<decimal?>(ThresholdAlias).GetValueOrDefault();
+        var hasAmount = amount.IsSpecified();
+        var hasRelativeValue = maximum.IsSpecified() ||
+                               minimum.IsSpecified() ||
+                               percentage.IsSpecified() ||
+                               threshold.IsSpecified();
+
+        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (hasAmount || hasRelativeValue)) {
+            ErrorResult("Sponsorship item cannot have an amount or relative value");
         }
 
-        if (HasLockedPrice(content) && amount.HasValue()) {
-            ErrorResult("Amount cannot be specified");
+        if (HasLockedPrice(content) && (hasAmount || hasRelativeValue)) {
+            ErrorResult("Amount or relative value cannot be specified");
+        }
+
+        if (hasAmount && hasRelativeValue) {
+            ErrorResult(content.GetPropertyByAlias(AmountAlias), "cannot be specified with a relative value");
+        }
+
+        if (hasRelativeValue && !percentage.IsSpecified()) {
+            ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be specified for a relative value");
+        }
+
+        if (percentage < 0 || percentage > 100) {
+            ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be greater than 0 and no more than 100");
+        }
+
+        NotNegative(content, MinimumAlias, minimum);
+        NotNegative(content, MaximumAlias, maximum);
+        NotNegative(content, ThresholdAlias, threshold);
+
+        if (minimum.IsSpecified() && maximum.IsSpecified() && minimum > maximum) {
+            ErrorResult(content.GetPropertyByAlias(MinimumAlias), "cannot be greater than the maximum");
+        }
+
+        if (minimum.IsSpecified() && threshold.IsSpecified() && threshold * percentage.ToFraction() < minimum) {
+            ErrorResult(content.GetPropertyByAlias(ThresholdAlias),
+                        "multiplied by the percentage cannot be below the minimum");
         }
     }
 
@@ -74,6 +113,12 @@ public abstract class CrossSellValidator : ContentValidator {
 
         if (isActive && value == null && !allowedValues.IsSingle()) {
             ErrorResult(property, $"{typeof(T).Name} should have a fixed value");
+        }
+    }
+
+    private void NotNegative(ContentProperties content, string alias, decimal value) {
+        if (value < 0) {
+            ErrorResult(content.GetPropertyByAlias(alias), "cannot be negative");
         }
     }
 }

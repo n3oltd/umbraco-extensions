@@ -92,10 +92,15 @@ public partial class PlatformsContentTypeSeeder {
 
         general.ContentmentDataList(x => x.Stage).DataType(DataTypeNames.ECommerceStage).Mandatory();
         general.Decimal(x => x.Amount).DataType(Shared.Money);
+        general.Decimal(x => x.Percentage).DataType(DataTypeNames.Percentage);
+        general.Decimal(x => x.Minimum).DataType(Shared.Money);
+        general.Decimal(x => x.Maximum).DataType(Shared.Money);
+        general.Decimal(x => x.Threshold).DataType(Shared.Money);
 
-        designer.Group(Groups.Options)
-                .ContentmentDataList(x => x.TargetCampaigns)
-                .DataType(DataTypeNames.CampaignsMultiple);
+        var options = designer.Group(Groups.Options);
+
+        options.ContentmentDataList(x => x.TargetCampaigns).DataType(DataTypeNames.CampaignsMultiple);
+        options.ContentmentDataList(x => x.TargetGiftTypes).DataType(DataTypeNames.GiftTypesMultiple);
 
         designer.Save();
     }
