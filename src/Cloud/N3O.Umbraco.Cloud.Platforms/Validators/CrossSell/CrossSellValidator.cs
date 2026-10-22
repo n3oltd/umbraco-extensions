@@ -1,5 +1,6 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
+using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Giving.Allocations;
@@ -14,6 +15,7 @@ public abstract class CrossSellValidator : ContentValidator {
     private static readonly string MaximumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Maximum);
     private static readonly string MinimumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Minimum);
     private static readonly string PercentageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Percentage);
+    private static readonly string StageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Stage);
     private static readonly string ThresholdAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Threshold);
 
     private readonly ILookups _lookups;
@@ -63,6 +65,8 @@ public abstract class CrossSellValidator : ContentValidator {
         var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
         var percentage = content.GetPropertyValueByAlias<decimal?>(PercentageAlias).GetValueOrDefault();
         var threshold = content.GetPropertyValueByAlias<decimal?>(ThresholdAlias).GetValueOrDefault();
+        var stageProperty = content.GetPropertyByAlias(StageAlias);
+        var stage = ContentHelper.GetDataListValue<ECommerceStage>(stageProperty);
         var hasAmount = amount.IsSpecified();
         var hasRelativeValue = maximum.IsSpecified() ||
                                minimum.IsSpecified() ||
@@ -75,6 +79,10 @@ public abstract class CrossSellValidator : ContentValidator {
 
         if (HasLockedPrice(content) && (hasAmount || hasRelativeValue)) {
             ErrorResult("Amount or relative value cannot be specified");
+        }
+
+        if (hasRelativeValue && stage != ECommerceStages.Cart) {
+            ErrorResult(stageProperty, "must be cart for a relative value");
         }
 
         if (hasAmount && hasRelativeValue) {
