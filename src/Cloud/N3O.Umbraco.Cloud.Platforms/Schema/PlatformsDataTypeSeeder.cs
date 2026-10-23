@@ -38,6 +38,8 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         Seed(DataTypeNames.DonationFormOffering, SeedDonationFormOffering);
         Seed(DataTypeNames.ECommerceStage, SeedECommerceStage);
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
+        Seed(DataTypeNames.GiftTypesMultiple, SeedGiftTypes);
+        Seed(DataTypeNames.Percentage, SeedPercentage);
         Seed(DataTypeNames.QurbaniItem, SeedQurbaniItem);
         Seed(DataTypeNames.QurbaniSeasonCategoryPicker, SeedQurbaniSeasonCategoryPicker);
         Seed(DataTypeNames.SuggestedAmounts, SeedSuggestedAmounts);
@@ -161,6 +163,29 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Template(EmbedCodeTemplate);
         designer.InFolder(Folders.Platforms);
         designer.WithDeterministicId(DataTypeNames.ElementEmbedCodeLabel);
+
+        designer.Save();
+    }
+
+    private void SeedGiftTypes() {
+        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.GiftTypesMultiple);
+
+        designer.DataSource<GiftTypeDataSource>();
+        designer.AllowMultiple();
+        designer.InFolder(Folders.Platforms);
+        designer.WithDeterministicId(DataTypeNames.GiftTypesMultiple);
+
+        designer.Save();
+    }
+
+    private void SeedPercentage() {
+        var designer = _dataTypeEditor.NewDecimal(DataTypeNames.Percentage);
+
+        designer.Min(0);
+        designer.Max(100);
+        designer.Step(0.01m);
+        designer.InFolder(Folders.Platforms);
+        designer.WithDeterministicId(DataTypeNames.Percentage);
 
         designer.Save();
     }

@@ -8,7 +8,8 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsSchemaPlan : MigrationPlan {
     public PlatformsSchemaPlan() : base(States.PlanName) {
-        From(string.Empty).To<PlatformsContentTypesMigrationV2>(States.PlatformsContentTypesMigrationV2);
+        From(string.Empty).To<PlatformsContentTypesMigrationV2>(States.PlatformsContentTypesMigrationV2)
+                          .To<PlatformsContentTypesMigrationV3>(States.PlatformsContentTypesMigrationV3);
     }
 
     public static IReadOnlyList<string> RequiredContentTypes => [
@@ -19,6 +20,8 @@ public class PlatformsSchemaPlan : MigrationPlan {
 
     public static IReadOnlyList<string> RequiredDataTypes => [
         DataTypeNames.ElementEmbedCodeLabel,
+        DataTypeNames.GiftTypesMultiple,
+        DataTypeNames.Percentage,
         Shared.Money
     ];
 }
