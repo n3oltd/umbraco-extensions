@@ -74,10 +74,6 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
             return null;
         }
 
-        var money = new MoneyReq();
-        money.Amount = (double) amount;
-        money.Currency = currency;
-
-        return money;
+        return ((double) amount).ToMoneyReq(currency);
     }
 }

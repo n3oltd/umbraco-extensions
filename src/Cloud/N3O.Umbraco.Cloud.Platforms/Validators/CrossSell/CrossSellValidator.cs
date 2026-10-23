@@ -35,7 +35,7 @@ public abstract class CrossSellValidator : ContentValidator {
 
     public override void Validate(ContentProperties content) {
        ValidateFundDimensions(content);
-       ValidateAmount(content);
+       ValidateValue(content);
     }
 
     protected abstract IFundDimensionOptions GetFundDimensionOptions(ContentProperties content);
@@ -59,7 +59,7 @@ public abstract class CrossSellValidator : ContentValidator {
         HasFixedDimension(content, fundDimensionOptions.Dimension4, AliasHelper<DonationFormStateContent>.PropertyAlias(x => x.Dimension4), fundStructure.Dimension4.IsActive);
     }
     
-    private void ValidateAmount(ContentProperties content) {
+    private void ValidateValue(ContentProperties content) {
         var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias).GetValueOrDefault();
         var maximum = content.GetPropertyValueByAlias<decimal?>(MaximumAlias).GetValueOrDefault();
         var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
@@ -97,6 +97,7 @@ public abstract class CrossSellValidator : ContentValidator {
             ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be greater than 0 and no more than 100");
         }
 
+        NotNegative(content, AmountAlias, amount);
         NotNegative(content, MinimumAlias, minimum);
         NotNegative(content, MaximumAlias, maximum);
         NotNegative(content, ThresholdAlias, threshold);
