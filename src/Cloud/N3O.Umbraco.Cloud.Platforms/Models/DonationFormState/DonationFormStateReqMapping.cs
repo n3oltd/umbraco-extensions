@@ -1,18 +1,18 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
-using N3O.Umbraco.Lookups;
 using Newtonsoft.Json;
 using Umbraco.Cms.Core.Mapping;
 
 namespace N3O.Umbraco.Cloud.Platforms.Models;
 
 public partial class DonationFormStateReqMapping : IMapDefinition {
-    private readonly ILookups _lookups;
+    private readonly IBaseCurrencyAccessor _baseCurrencyAccessor;
     private readonly ICdnClient _cdnClient;
 
-    public DonationFormStateReqMapping(ILookups lookups, ICdnClient cdnClient) {
-        _lookups = lookups;
+    public DonationFormStateReqMapping(IBaseCurrencyAccessor baseCurrencyAccessor, ICdnClient cdnClient) {
+        _baseCurrencyAccessor = baseCurrencyAccessor;
         _cdnClient = cdnClient;
     }
 
