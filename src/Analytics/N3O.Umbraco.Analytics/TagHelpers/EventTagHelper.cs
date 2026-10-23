@@ -32,10 +32,10 @@ public abstract class EventTagHelper : TagHelper {
             scriptTag.InnerHtml.AppendHtmlLine("      window.dataLayer.push(arguments);");
             scriptTag.InnerHtml.AppendHtmlLine($"    }})('event', '{EventName}', {parametersJson});");
             scriptTag.InnerHtml.AppendHtmlLine("  }");
-            scriptTag.InnerHtml.AppendHtmlLine("  if (document.readyState === 'loading') {");
-            scriptTag.InnerHtml.AppendHtmlLine("    document.addEventListener('DOMContentLoaded', send);");
-            scriptTag.InnerHtml.AppendHtmlLine("  } else {");
+            scriptTag.InnerHtml.AppendHtmlLine("  if (document.readyState === 'complete') {");
             scriptTag.InnerHtml.AppendHtmlLine("    send();");
+            scriptTag.InnerHtml.AppendHtmlLine("  } else {");
+            scriptTag.InnerHtml.AppendHtmlLine("    window.addEventListener('load', send);");
             scriptTag.InnerHtml.AppendHtmlLine("  }");
             scriptTag.InnerHtml.AppendHtmlLine("})();");
 
