@@ -8,9 +8,6 @@ using Umbraco.Extensions;
 namespace N3O.Umbraco.Analytics.TagHelpers;
 
 public abstract class EventTagHelper : TagHelper {
-    // The event waits for consent restored by deferred scripts, so it never fires before DOMContentLoaded
-    private const int LoadTimeoutMilliseconds = 3000;
-    
     private readonly IJsonProvider _jsonProvider;
 
     protected EventTagHelper(IJsonProvider jsonProvider) {
@@ -29,32 +26,17 @@ public abstract class EventTagHelper : TagHelper {
             var scriptTag = new TagBuilder("script");
 
             scriptTag.InnerHtml.AppendHtmlLine("(function() {");
-            scriptTag.InnerHtml.AppendHtmlLine("  var sent = false;");
             scriptTag.InnerHtml.AppendHtmlLine("  function send() {");
-            scriptTag.InnerHtml.AppendHtmlLine("    if (sent || typeof gtag !== 'function') {");
-            scriptTag.InnerHtml.AppendHtmlLine("      return;");
-            scriptTag.InnerHtml.AppendHtmlLine("    }");
-            scriptTag.InnerHtml.AppendHtmlLine("    sent = true;");
-            scriptTag.InnerHtml.AppendHtmlLine($"    gtag('event', '{EventName}', {parametersJson});");
-            scriptTag.InnerHtml.AppendHtmlLine("  }");
-            scriptTag.InnerHtml.AppendHtmlLine("  function sendLater() {");
-            scriptTag.InnerHtml.AppendHtmlLine($"    setTimeout(send, {LoadTimeoutMilliseconds});");
-            scriptTag.InnerHtml.AppendHtmlLine("  }");
-            scriptTag.InnerHtml.AppendHtmlLine("  if (document.readyState === 'complete') {");
-            scriptTag.InnerHtml.AppendHtmlLine("    send();");
-            scriptTag.InnerHtml.AppendHtmlLine("  } else {");
-            scriptTag.InnerHtml.AppendHtmlLine("    window.addEventListener('load', send);");
+            scriptTag.InnerHtml.AppendHtmlLine("    window.dataLayer = window.dataLayer || [];");
+            scriptTag.InnerHtml.AppendHtmlLine("    (function() {");
+            scriptTag.InnerHtml.AppendHtmlLine("      window.dataLayer.push(arguments);");
+            scriptTag.InnerHtml.AppendHtmlLine($"    }})('event', '{EventName}', {parametersJson});");
             scriptTag.InnerHtml.AppendHtmlLine("  }");
             scriptTag.InnerHtml.AppendHtmlLine("  if (document.readyState === 'loading') {");
-            scriptTag.InnerHtml.AppendHtmlLine("    document.addEventListener('DOMContentLoaded', sendLater);");
+            scriptTag.InnerHtml.AppendHtmlLine("    document.addEventListener('DOMContentLoaded', send);");
             scriptTag.InnerHtml.AppendHtmlLine("  } else {");
-            scriptTag.InnerHtml.AppendHtmlLine("    sendLater();");
+            scriptTag.InnerHtml.AppendHtmlLine("    send();");
             scriptTag.InnerHtml.AppendHtmlLine("  }");
-            scriptTag.InnerHtml.AppendHtmlLine("  document.addEventListener('visibilitychange', function() {");
-            scriptTag.InnerHtml.AppendHtmlLine("    if (document.visibilityState === 'hidden') {");
-            scriptTag.InnerHtml.AppendHtmlLine("      send();");
-            scriptTag.InnerHtml.AppendHtmlLine("    }");
-            scriptTag.InnerHtml.AppendHtmlLine("  });");
             scriptTag.InnerHtml.AppendHtmlLine("})();");
 
             output.Content.SetHtmlContent(scriptTag.ToHtmlString());
