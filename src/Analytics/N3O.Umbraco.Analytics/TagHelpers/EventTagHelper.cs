@@ -25,11 +25,19 @@ public abstract class EventTagHelper : TagHelper {
             
             var scriptTag = new TagBuilder("script");
 
-            scriptTag.InnerHtml.AppendHtmlLine("window.addEventListener('load', function() {");
-            scriptTag.InnerHtml.AppendHtmlLine("  if (typeof gtag === 'function') {");
-            scriptTag.InnerHtml.AppendHtmlLine($"    gtag('event', '{EventName}', {parametersJson})");
+            scriptTag.InnerHtml.AppendHtmlLine("(function() {");
+            scriptTag.InnerHtml.AppendHtmlLine("  function send() {");
+            scriptTag.InnerHtml.AppendHtmlLine("    window.dataLayer = window.dataLayer || [];");
+            scriptTag.InnerHtml.AppendHtmlLine("    (function() {");
+            scriptTag.InnerHtml.AppendHtmlLine("      window.dataLayer.push(arguments);");
+            scriptTag.InnerHtml.AppendHtmlLine($"    }})('event', '{EventName}', {parametersJson});");
             scriptTag.InnerHtml.AppendHtmlLine("  }");
-            scriptTag.InnerHtml.AppendHtmlLine("});");
+            scriptTag.InnerHtml.AppendHtmlLine("  if (document.readyState === 'loading') {");
+            scriptTag.InnerHtml.AppendHtmlLine("    document.addEventListener('DOMContentLoaded', send);");
+            scriptTag.InnerHtml.AppendHtmlLine("  } else {");
+            scriptTag.InnerHtml.AppendHtmlLine("    send();");
+            scriptTag.InnerHtml.AppendHtmlLine("  }");
+            scriptTag.InnerHtml.AppendHtmlLine("})();");
 
             output.Content.SetHtmlContent(scriptTag.ToHtmlString());
         }
