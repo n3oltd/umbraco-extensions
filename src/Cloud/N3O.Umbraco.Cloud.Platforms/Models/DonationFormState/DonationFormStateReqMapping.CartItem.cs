@@ -21,7 +21,7 @@ public partial class DonationFormStateReqMapping {
 
         var amount = 0d;
         
-        if (src is CrossSellContent crossSellContent && crossSellContent.Amount.IsSpecified()) {
+        if (src is CrossSellContent crossSellContent) {
             amount = (double) crossSellContent.Amount;
         }
 
