@@ -57,6 +57,7 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                 resizable: true,
                 zoomable: false,
                 viewMode: 2,
+                checkOrientation: false,
                 minContainerWidth: maxContainerSize,
                 minContainerHeight: maxContainerSize,
                 crop: function (cropData) {
@@ -64,9 +65,10 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                         return;
                     }
 
-                    // The browser's naturalWidth can be density-corrected from EXIF, so map back to the stored pixel size
+                    // The browser's natural size can be density-corrected and rotated from EXIF, so map back to the stored pixel size
                     var crop = this.cropper.getData(true);
-                    var scale = $scope.model.value.width / this.cropper.getImageData().naturalWidth;
+                    var imageData = this.cropper.getImageData();
+                    var scale = Math.max($scope.model.value.width, $scope.model.value.height) / Math.max(imageData.naturalWidth, imageData.naturalHeight);
 
                     crop.x = Math.floor(crop.x * scale);
                     crop.y = Math.floor(crop.y * scale);
