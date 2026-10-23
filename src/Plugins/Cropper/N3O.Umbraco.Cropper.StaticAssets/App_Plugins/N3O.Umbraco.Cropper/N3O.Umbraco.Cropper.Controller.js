@@ -1,7 +1,6 @@
 angular.module("umbraco").controller("N3O.Umbraco.Cropper",
     function ($scope, assetsService, $timeout) {
         const maxContainerSize = 500;
-        const containerRatio = 5;
 
         $scope.copytoClipboard = function (text) {
             var $temp = $("<input>");
@@ -18,13 +17,17 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                 return;
             }
 
-            var scale = $scope.model.value.width / imageData.naturalWidth;
+            $scope.setCrop(cropper, suggestedCrop);
+        };
+
+        $scope.setCrop = function (cropper, crop) {
+            var scale = $scope.model.value.width / cropper.getImageData().naturalWidth;
 
             cropper.setData({
-                x: suggestedCrop.x / scale,
-                y: suggestedCrop.y / scale,
-                width: suggestedCrop.width / scale,
-                height: suggestedCrop.height / scale
+                x: crop.x / scale,
+                y: crop.y / scale,
+                width: crop.width / scale,
+                height: crop.height / scale
             });
         };
 
@@ -92,12 +95,19 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                     }
                 },
                 ready: function () {
+                    var crop = $scope.model.value.crops[cropIndex];
+                    var cropBox = $scope.model.value.cropBoxes[cropIndex];
+
+                    if (restoreCropData && crop && !cropBox) {
+                        $scope.setCrop(this.cropper, crop);
+                    }
+
                     $scope.cropperLoading = false;
 
                     $scope.cropIndex = cropIndex;
 
-                    if (restoreCropData && $scope.model.value.crops[cropIndex]) {
-                        this.cropper.setCropBoxData($scope.model.value.cropBoxes[cropIndex]);
+                    if (restoreCropData && crop && cropBox) {
+                        this.cropper.setCropBoxData(cropBox);
                     } else if (!restoreCropData && $scope.suggestedCrops && $scope.suggestedCrops[cropIndex]) {
                         $scope.applySuggestedCrop(this.cropper, $scope.suggestedCrops[cropIndex]);
                     }
@@ -243,15 +253,6 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
 
                                 for (var i = 0; i < $scope.model.value.crops.length; i++) {
                                     $scope.model.value.cropBoxes[i] = null;
-                                }
-
-                                for (var i = 0; i < $scope.model.value.crops.length; i++) {
-                                    let left = $scope.model.value.crops[i].x / containerRatio;
-                                    let top = $scope.model.value.crops[i].y / containerRatio;
-                                    let width = (maxContainerSize - (($scope.model.value.crops[i].width / containerRatio) / maxContainerSize));
-                                    let height = (maxContainerSize - (($scope.model.value.crops[i].height / containerRatio) / maxContainerSize));
-
-                                    $scope.model.value.cropBoxes[i] = {left, top, width, height};
                                 }
 
                                 $scope.selectCrop(0);
