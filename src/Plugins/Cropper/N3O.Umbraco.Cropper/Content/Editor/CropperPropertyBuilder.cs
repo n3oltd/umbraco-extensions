@@ -20,6 +20,7 @@ public class CropperPropertyBuilder : PropertyBuilder {
     private readonly MediaFileManager _mediaFileManager;
     private readonly ILocalClock _clock;
     private readonly Lazy<IVolume> _volume;
+    private readonly ICropSuggestions _cropSuggestions;
     private readonly List<ICropBuilder> _cropBuilders = [];
     private string _src;
     private string _mediaId;
@@ -31,11 +32,13 @@ public class CropperPropertyBuilder : PropertyBuilder {
     public CropperPropertyBuilder(IContentTypeService contentTypeService,
                                   MediaFileManager mediaFileManager,
                                   ILocalClock clock,
-                                  Lazy<IVolume> volume)
+                                  Lazy<IVolume> volume,
+                                  ICropSuggestions cropSuggestions)
         : base(contentTypeService) {
         _mediaFileManager = mediaFileManager;
         _clock = clock;
         _volume = volume;
+        _cropSuggestions = cropSuggestions;
     }
 
     public ICropBuilder AddCrop() {
@@ -51,8 +54,19 @@ public class CropperPropertyBuilder : PropertyBuilder {
     }
 
     public CropperPropertyBuilder AutoCrop(CropperConfiguration configuration) {
-        foreach (var cropDefinition in configuration.CropDefinitions) {
-            AddCrop().AutoCrop(cropDefinition);
+        var suggestedCrops = _cropSuggestions.Suggest(configuration,
+                                                      _mediaId,
+                                                      _width.GetValueOrThrow(),
+                                                      _height.GetValueOrThrow());
+
+        foreach (var (cropDefinition, index) in configuration.CropDefinitions.SelectWithIndex()) {
+            var suggestedCrop = suggestedCrops[index];
+
+            if (suggestedCrop != null) {
+                AddCrop().CropTo(suggestedCrop.X, suggestedCrop.Y, suggestedCrop.Width, suggestedCrop.Height);
+            } else {
+                AddCrop().AutoCrop(cropDefinition);
+            }
         }
 
         return this;

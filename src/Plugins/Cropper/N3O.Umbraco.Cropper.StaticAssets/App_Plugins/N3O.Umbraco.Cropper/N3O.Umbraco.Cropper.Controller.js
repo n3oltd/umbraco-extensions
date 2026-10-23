@@ -11,6 +11,23 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
             $temp.remove();
         };
 
+        $scope.applySuggestedCrop = function (cropper, suggestedCrop) {
+            var imageData = cropper.getImageData();
+
+            if (imageData.rotate || imageData.scaleX !== 1 || imageData.scaleY !== 1) {
+                return;
+            }
+
+            var scale = $scope.model.value.width / imageData.naturalWidth;
+
+            cropper.setData({
+                x: suggestedCrop.x / scale,
+                y: suggestedCrop.y / scale,
+                width: suggestedCrop.width / scale,
+                height: suggestedCrop.height / scale
+            });
+        };
+
         $scope.createCropTool = function (cropIndex, hidden, restoreCropData) {
             var cropDefinition = $scope.model.config.cropDefinitions[cropIndex];
 
@@ -81,6 +98,8 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
 
                     if (restoreCropData && $scope.model.value.crops[cropIndex]) {
                         this.cropper.setCropBoxData($scope.model.value.cropBoxes[cropIndex]);
+                    } else if (!restoreCropData && $scope.suggestedCrops && $scope.suggestedCrops[cropIndex]) {
+                        $scope.applySuggestedCrop(this.cropper, $scope.suggestedCrops[cropIndex]);
                     }
 
                     if ((cropIndex - 1) >= 0 && $scope.model.value.crops[cropIndex - 1] === null) {
@@ -145,7 +164,18 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                     $scope.model.value.crops[i] = null;
                 }
 
-                $scope.createCropTool($scope.model.value.crops.length - 1, false, false);
+                $scope.suggestedCrops = null;
+
+                if ($scope.model.config.cropSuggester && $scope.model.dataTypeKey) {
+                    $.ajax({
+                        type: "GET",
+                        url: "/umbraco/backoffice/api/cropper/media/" + response.mediaId + "/suggestedCrops/" + $scope.model.dataTypeKey,
+                        success: function (crops) { $scope.suggestedCrops = crops; },
+                        complete: function () { $scope.createCropTool($scope.model.value.crops.length - 1, false, false); }
+                    });
+                } else {
+                    $scope.createCropTool($scope.model.value.crops.length - 1, false, false);
+                }
             } else {
                 $scope.errorMessage = errorMessage;
             }
