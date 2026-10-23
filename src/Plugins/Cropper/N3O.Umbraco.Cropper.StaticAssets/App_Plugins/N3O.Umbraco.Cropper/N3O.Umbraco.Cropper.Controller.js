@@ -167,11 +167,13 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                     filename: response.filename,
                     width: response.width,
                     height: response.height,
-                    crops: new Array($scope.model.config.cropDefinitions.length)
+                    crops: new Array($scope.model.config.cropDefinitions.length),
+                    cropBoxes: new Array($scope.model.config.cropDefinitions.length)
                 };
 
                 for (var i = 0; i < $scope.model.value.crops.length; i++) {
                     $scope.model.value.crops[i] = null;
+                    $scope.model.value.cropBoxes[i] = null;
                 }
 
                 $scope.suggestedCrops = null;
