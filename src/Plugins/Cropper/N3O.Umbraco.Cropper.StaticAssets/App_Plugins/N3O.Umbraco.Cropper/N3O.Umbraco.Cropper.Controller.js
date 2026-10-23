@@ -11,6 +11,30 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
             $temp.remove();
         };
 
+        $scope.applySuggestedCrop = function (cropper, suggestedCrop) {
+            var imageData = cropper.getImageData();
+
+            if (Math.abs(imageData.rotate) % 180 === 90) {
+                return;
+            }
+
+            var scale = $scope.model.value.width / imageData.naturalWidth;
+            var x = suggestedCrop.x / scale;
+            var y = suggestedCrop.y / scale;
+            var width = suggestedCrop.width / scale;
+            var height = suggestedCrop.height / scale;
+            var rotated = Math.abs(imageData.rotate) === 180;
+            var flipX = (imageData.scaleX === -1) !== rotated;
+            var flipY = (imageData.scaleY === -1) !== rotated;
+
+            cropper.setData({
+                x: flipX ? imageData.naturalWidth - x - width : x,
+                y: flipY ? imageData.naturalHeight - y - height : y,
+                width: width,
+                height: height
+            });
+        };
+
         $scope.createCropTool = function (cropIndex, hidden, restoreCropData) {
             var cropDefinition = $scope.model.config.cropDefinitions[cropIndex];
 
@@ -81,6 +105,8 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
 
                     if (restoreCropData && $scope.model.value.crops[cropIndex]) {
                         this.cropper.setCropBoxData($scope.model.value.cropBoxes[cropIndex]);
+                    } else if (!restoreCropData && $scope.suggestedCrops && $scope.suggestedCrops[cropIndex]) {
+                        $scope.applySuggestedCrop(this.cropper, $scope.suggestedCrops[cropIndex]);
                     }
 
                     if ((cropIndex - 1) >= 0 && $scope.model.value.crops[cropIndex - 1] === null) {
@@ -145,7 +171,18 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
                     $scope.model.value.crops[i] = null;
                 }
 
-                $scope.createCropTool($scope.model.value.crops.length - 1, false, false);
+                $scope.suggestedCrops = null;
+
+                if ($scope.model.config.cropSuggester && $scope.model.dataTypeKey) {
+                    $.ajax({
+                        type: "GET",
+                        url: "/umbraco/backoffice/api/cropper/media/" + response.mediaId + "/suggestedCrops/" + $scope.model.dataTypeKey,
+                        success: function (crops) { $scope.suggestedCrops = crops; },
+                        complete: function () { $scope.createCropTool($scope.model.value.crops.length - 1, false, false); }
+                    });
+                } else {
+                    $scope.createCropTool($scope.model.value.crops.length - 1, false, false);
+                }
             } else {
                 $scope.errorMessage = errorMessage;
             }
