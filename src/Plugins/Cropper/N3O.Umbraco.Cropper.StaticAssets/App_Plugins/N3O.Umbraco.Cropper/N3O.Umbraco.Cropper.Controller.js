@@ -14,24 +14,17 @@ angular.module("umbraco").controller("N3O.Umbraco.Cropper",
         $scope.applySuggestedCrop = function (cropper, suggestedCrop) {
             var imageData = cropper.getImageData();
 
-            if (Math.abs(imageData.rotate) % 180 === 90) {
+            if (imageData.rotate || imageData.scaleX !== 1 || imageData.scaleY !== 1) {
                 return;
             }
 
             var scale = $scope.model.value.width / imageData.naturalWidth;
-            var x = suggestedCrop.x / scale;
-            var y = suggestedCrop.y / scale;
-            var width = suggestedCrop.width / scale;
-            var height = suggestedCrop.height / scale;
-            var rotated = Math.abs(imageData.rotate) === 180;
-            var flipX = (imageData.scaleX === -1) !== rotated;
-            var flipY = (imageData.scaleY === -1) !== rotated;
 
             cropper.setData({
-                x: flipX ? imageData.naturalWidth - x - width : x,
-                y: flipY ? imageData.naturalHeight - y - height : y,
-                width: width,
-                height: height
+                x: suggestedCrop.x / scale,
+                y: suggestedCrop.y / scale,
+                width: suggestedCrop.width / scale,
+                height: suggestedCrop.height / scale
             });
         };
 

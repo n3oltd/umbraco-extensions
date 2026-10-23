@@ -8,6 +8,11 @@ using N3O.Umbraco.Plugins.Models;
 using N3O.Umbraco.Validation;
 using N3O.Umbraco.Validation.Hosting.Controllers;
 using NodaTime;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,6 +25,8 @@ namespace N3O.Umbraco.Cropper.Controllers;
 
 [ApiDocument(CropperConstants.ApiName)]
 public class CropperController : ValidatingPluginController {
+    private const int JpegQuality = 95;
+
     private readonly IClock _clock;
     private readonly MediaFileManager _mediaFileManager;
     private readonly IDataTypeService _dataTypeService;
@@ -83,9 +90,36 @@ public class CropperController : ValidatingPluginController {
 
             var storagePath = uploadedImage.Filename.GetStoragePath(instant);
 
-            _mediaFileManager.FileSystem.AddFile(storagePath, uploadedImage.Stream, false);
+            using (var image = await Image.LoadAsync(uploadedImage.Stream)) {
+                if (IsNotUpright(image)) {
+                    image.Mutate(x => x.AutoOrient());
+                    image.Metadata.ExifProfile.RemoveValue(ExifTag.Orientation);
 
-            return Ok(GetResponse(storagePath, uploadedImage.Metadata.Height, uploadedImage.Metadata.Width));
+                    using (var uprightStream = new MemoryStream()) {
+                        await image.SaveAsync(uprightStream, GetEncoder(image));
+
+                        uprightStream.Rewind();
+
+                        _mediaFileManager.FileSystem.AddFile(storagePath, uprightStream, false);
+                    }
+                } else {
+                    uploadedImage.Stream.Rewind();
+
+                    _mediaFileManager.FileSystem.AddFile(storagePath, uploadedImage.Stream, false);
+                }
+
+                return Ok(GetResponse(storagePath, image.Height, image.Width));
+            }
+        }
+    }
+
+    private IImageEncoder GetEncoder(Image image) {
+        var format = image.Metadata.DecodedImageFormat;
+
+        if (format == JpegFormat.Instance) {
+            return new JpegEncoder { Quality = JpegQuality };
+        } else {
+            return image.Configuration.ImageFormatsManager.GetEncoder(format);
         }
     }
 
@@ -100,5 +134,13 @@ public class CropperController : ValidatingPluginController {
             Height = height,
             Width = width
         };
+    }
+
+    private bool IsNotUpright(Image image) {
+        if (image.Metadata.ExifProfile?.TryGetValue(ExifTag.Orientation, out var orientation) == true) {
+            return orientation.Value > ExifOrientationMode.TopLeft;
+        } else {
+            return false;
+        }
     }
 }
