@@ -31,6 +31,9 @@ public class PerplexBlocksComposer : Composer {
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
 
+        // Perplex builds each block's view model, block modules included, while converting the property value, and
+        // Perplex 4 caches that value until any content is published. Blocks that read the request (cart, checkout,
+        // currency) would serve the first visitor's data to everyone, so the value is converted per request instead.
         builder.PropertyValueConverters().Replace<ContentBlocksValueConverter, OurContentBlocksValueConverter>();
 
         foreach (var blockDefinition in BlocksComponent.BlockDefinitions) {
