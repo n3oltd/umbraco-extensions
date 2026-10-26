@@ -57,7 +57,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
         dest.Order.Order = src.Content().Parent().Children().FindIndex(x => x.Id == src.Content().Id);
 
         try {
-            ctx.Map<CampaignContent, IEnumerable<string>>(src);
+            dest.Badges = ctx.Map<CampaignContent, IEnumerable<string>>(src).ToList();
         } catch {
             dest.Badges = [];
         }
