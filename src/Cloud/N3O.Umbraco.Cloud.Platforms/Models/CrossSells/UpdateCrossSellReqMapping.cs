@@ -39,6 +39,7 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
         dest.Targeting = new CrossSellTargetingReq();
         dest.Targeting.Campaigns = src.TargetCampaigns.OrEmpty().Select(x => x.Id).ToList();
 
+        // Null, not [], when none is selected: the platforms API counts [] as a change to stored targeting
         if (src.TargetGiftTypes.HasAny()) {
             dest.Targeting.GiftTypes = src.TargetGiftTypes.Select(x => x.ToEnum<GiftType>().GetValueOrThrow()).ToList();
         }
