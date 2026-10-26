@@ -28,6 +28,8 @@ public class PerplexBlocksComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         BlocksComponent.LoadDefinitions(builder, WebHostEnvironment);
 
+        // TODO Remove this swap and the Our* content blocks editors once an empty Image Cropper is saved as null
+        // (umbraco/Umbraco-CMS#24335).
         builder.DataEditors().Exclude<PerplexContentBlocksPropertyEditor>().Add<OurContentBlocksPropertyEditor>();
 
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();

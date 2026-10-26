@@ -7,14 +7,13 @@ using Umbraco.Cms.Core.Models.Editors;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Strings;
+using UmbracoPropertyEditors = Umbraco.Cms.Core.Constants.PropertyEditors;
 
 namespace N3O.Umbraco.Blocks.Perplex;
 
 public class OurContentBlocksValueEditor : ContentBlocksValueEditor {
     private readonly IJsonSerializer _jsonSerializer;
     private readonly ContentBlocksValueDeserializer _deserializer;
-    private readonly PropertyEditorCollection _propertyEditors;
-    private readonly IDataTypeConfigurationCache _dataTypeConfigCache;
 
     public OurContentBlocksValueEditor(IShortStringHelper shortStringHelper,
                                        IJsonSerializer jsonSerializer,
@@ -29,8 +28,6 @@ public class OurContentBlocksValueEditor : ContentBlocksValueEditor {
                dataTypeConfigCache, referenceFactories) {
         _jsonSerializer = jsonSerializer;
         _deserializer = deserializer;
-        _propertyEditors = propertyEditors;
-        _dataTypeConfigCache = dataTypeConfigCache;
     }
 
     public override object FromEditor(ContentPropertyData editorValue, object currentValue) {
@@ -47,20 +44,13 @@ public class OurContentBlocksValueEditor : ContentBlocksValueEditor {
         return changed ? _jsonSerializer.Serialize(model) : value;
     }
 
-    // TODO Remove this folder and the editor swap in PerplexBlocksComposer once an empty Image Cropper is saved as null
-    // (umbraco/Umbraco-CMS#24335). Publish validation cannot parse the text "null" a JSON editor stores for no value.
+    // Publish validation cannot parse the text "null" that an empty Image Cropper is saved as.
     private bool ClearSerializedNulls(BlockItemData data) {
         var changed = false;
 
         foreach (var prop in data.Values) {
-            if (prop.PropertyType == null || prop.Value is not "null") {
-                continue;
-            }
-
-            var configuration = _dataTypeConfigCache.GetConfiguration(prop.PropertyType.DataTypeKey);
-            var valueEditor = _propertyEditors[prop.PropertyType.PropertyEditorAlias]?.GetValueEditor(configuration);
-
-            if (valueEditor?.ValueType == ValueTypes.Json) {
+            if (prop.PropertyType?.PropertyEditorAlias == UmbracoPropertyEditors.Aliases.ImageCropper &&
+                prop.Value is "null") {
                 prop.Value = null;
                 changed = true;
             }
