@@ -2120,6 +2120,36 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     /// <summary>
+    /// One of '_12', '_18', '_2', '_24', '_3', '_4', '_6'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum DonationPlan
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_12")]
+        _12 = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_18")]
+        _18 = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_2")]
+        _2 = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_24")]
+        _24 = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_3")]
+        _3 = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_4")]
+        _4 = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_6")]
+        _6 = 6,
+
+    }
+
+    /// <summary>
     /// The settings for the custom element
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -3213,6 +3243,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("customFields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public NewFeedbackIntentCustomFieldsReq CustomFields { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("donationPlan", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public DonationPlan? DonationPlan { get; set; }
+
     }
 
     /// <summary>
@@ -3770,6 +3804,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("detail", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Detail { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("subscriptionDetail", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string SubscriptionDetail { get; set; }
 
         [Newtonsoft.Json.JsonProperty("instance", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Instance { get; set; }
@@ -4944,6 +4981,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("customFields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PublishedNewFeedbackIntentCustomFields CustomFields { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("donationPlan", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public DonationPlan? DonationPlan { get; set; }
 
     }
 
@@ -6691,6 +6732,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("error", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Error { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("subscriptionError", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string SubscriptionError { get; set; }
+
         [Newtonsoft.Json.JsonProperty("severity", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Severity { get; set; }
 
@@ -6714,6 +6758,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("detail", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Detail { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("subscriptionDetail", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string SubscriptionDetail { get; set; }
 
         [Newtonsoft.Json.JsonProperty("instance", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Instance { get; set; }
