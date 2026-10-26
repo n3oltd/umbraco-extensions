@@ -629,8 +629,6 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         return items.ToString(Formatting.None);
     }
 
-    // The element alias is read from the target data type rather than assumed, because a site seeded before the
-    // element was renamed still uses the old alias and the seeder never updates an existing type.
     // A nested content data type may legitimately allow more than one element type, so the one being written is
     // asserted to be among them rather than whichever happens to be listed first.
     private string ResolveNestedElementAlias(string contentTypeAlias,

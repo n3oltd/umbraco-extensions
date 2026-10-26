@@ -84,7 +84,7 @@ public static class GivingMigrationConstants {
     }
 
     // Everything else the migration targets is already named in PlatformsConstants. The campaigns container is
-    // not, because the seeder does not create it.
+    // not, because only the migration targets it.
     public static class Platforms {
         public const string CampaignsAlias = "platformsCampaigns";
     }
