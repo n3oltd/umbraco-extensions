@@ -30,6 +30,7 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
         Seed(DataTypeNames.QurbaniItem, SeedQurbaniItem);
         Seed(DataTypeNames.QurbaniSeasonCategoryPicker, SeedQurbaniSeasonCategoryPicker);
+        Seed(DataTypeNames.SuggestedAmountTitle, SeedSuggestedAmountTitle);
         Seed(DataTypeNames.Summary, SeedSummary);
     }
 
@@ -117,6 +118,16 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Limit(0, 0);
         designer.InFolder(Folders.Platforms, Folders.Qurbani);
         designer.WithDeterministicId(DataTypeNames.QurbaniSeasonCategoryPicker);
+
+        designer.Save();
+    }
+
+    private void SeedSuggestedAmountTitle() {
+        var designer = _dataTypeEditor.NewTextBox(DataTypeNames.SuggestedAmountTitle);
+
+        designer.MaxChars(50);
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithDeterministicId(DataTypeNames.SuggestedAmountTitle);
 
         designer.Save();
     }
