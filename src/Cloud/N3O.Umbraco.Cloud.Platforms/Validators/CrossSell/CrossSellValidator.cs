@@ -93,7 +93,7 @@ public abstract class CrossSellValidator : ContentValidator {
             ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be specified for a relative value");
         }
 
-        if (percentage < 0 || percentage > 100) {
+        if (hasRelativeValue && (percentage <= 0 || percentage > 100)) {
             ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be greater than 0 and no more than 100");
         }
 
