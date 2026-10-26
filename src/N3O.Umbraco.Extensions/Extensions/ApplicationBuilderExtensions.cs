@@ -9,8 +9,6 @@ public static class ApplicationBuilderExtensions {
     public static IApplicationBuilder UseMiddlewareWhenRunning<T>(this IApplicationBuilder app) {
         var runtimeState = app.ApplicationServices.GetRequiredService<IRuntimeState>();
 
-        // The pipeline is built before an unattended upgrade or package migration finishes, so the level is read per
-        // request: checking it here would leave the middleware out until the next restart.
         return app.UseWhen(_ => runtimeState.Level == RuntimeLevel.Run, branch => branch.UseMiddleware<T>());
     }
 
