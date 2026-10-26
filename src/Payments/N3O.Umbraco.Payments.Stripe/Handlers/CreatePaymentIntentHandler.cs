@@ -69,7 +69,7 @@ public class CreatePaymentIntentHandler :
         options.Confirm = true;
         options.ConfirmationMethod = "manual";
         options.CaptureMethod = "automatic";
-        options.PaymentMethodTypes = "card".Yield().ToList();
+        options.AllowedPaymentMethodTypes = "card".Yield().ToList();
 
         return options;
     }
