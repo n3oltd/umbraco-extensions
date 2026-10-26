@@ -12,7 +12,7 @@ public class SuggestedAmountReqMapping : IMapDefinition {
     // Umbraco.Code.MapAll
     private void Map(DonationFormStateSuggestedAmountElement src, DonationFormSuggestedAmountReq dest, MapperContext ctx) {
         dest.Amount = (double) src.Amount;
-        dest.Description = src.Description;
         dest.Title = src.Title;
+        dest.Description = src.Description;
     }
 }
