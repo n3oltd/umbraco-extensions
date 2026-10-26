@@ -56,7 +56,7 @@ public class CreateSetupIntentHandler :
         
         var options = new SetupIntentCreateOptions();
         options.Confirm = true;
-        options.PaymentMethodTypes = "card".Yield().ToList();
+        options.AllowedPaymentMethodTypes = "card".Yield().ToList();
         options.Customer = customer.Id;
         options.Usage = "off_session";
         options.Description = parameters.GetTransactionDescription(settings);
