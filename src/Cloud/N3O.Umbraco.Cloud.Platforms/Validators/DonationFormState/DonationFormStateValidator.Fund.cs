@@ -9,6 +9,8 @@ using System.Linq;
 namespace N3O.Umbraco.Cloud.Platforms.Validators;
 
 public class FundDonationFormStateValidator : DonationFormStateValidator<FundDonationFormStateContent> {
+    private const int TitleMaxLength = 50;
+
     private static readonly string OneTimeSuggestedAmountsAlias = AliasHelper<FundDonationFormStateContent>.PropertyAlias(x => x.OneTimeSuggestedAmounts);
     private static readonly string RecurringSuggestedAmountsAlias = AliasHelper<FundDonationFormStateContent>.PropertyAlias(x => x.RecurringSuggestedAmounts);
 
@@ -56,6 +58,10 @@ public class FundDonationFormStateValidator : DonationFormStateValidator<FundDon
 
             if (!donationItem.AllowedGivingTypes.OrEmpty().Contains(givingType)) {
                 ErrorResult(property, $"{donationItem.Name} does not allow {givingType.Name.Quote()} so these price handles are not permitted");
+            }
+
+            if (suggestedAmounts.Any(x => x.Title?.Length > TitleMaxLength)) {
+                ErrorResult(property, $"Price handle titles cannot exceed {TitleMaxLength} characters");
             }
         }
     }
