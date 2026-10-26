@@ -63,6 +63,7 @@ public static class PlatformsConstants {
         public const string CompositionAlias = "platformsDonationFormState";
         public const string Feedback = "platformsFeedbackDonationFormState";
         public const string Fund = "platformsFundDonationFormState";
+        public const string LegacySuggestedAmount = "platformsSuggestedAmount";
         public const string Qurbani = "platformsQurbaniDonationFormState";
         public const string Sponsorship = "platformsSponsorshipDonationFormState";
         public const string SuggestedAmount = "platformsDonationFormStateSuggestedAmount";
