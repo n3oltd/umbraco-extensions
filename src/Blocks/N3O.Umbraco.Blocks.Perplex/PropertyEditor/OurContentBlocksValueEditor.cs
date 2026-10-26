@@ -40,21 +40,17 @@ public class OurContentBlocksValueEditor : ContentBlocksValueEditor {
             return value;
         }
 
-        var cleared = 0;
+        var changed = false;
 
-        ContentBlocksValueUtils.Iterate(model, block => cleared += ClearSerializedNulls(block.Content));
+        ContentBlocksValueUtils.Iterate(model, block => changed |= ClearSerializedNulls(block.Content));
 
-        return cleared > 0 ? _jsonSerializer.Serialize(model) : value;
+        return changed ? _jsonSerializer.Serialize(model) : value;
     }
 
-    // An empty Image Cropper's FromEditor returns its JSON serialisation, the text "null", which the cropper's own
-    // parser rejects when the page is next published.
-    private int ClearSerializedNulls(BlockItemData data) {
-        if (data == null) {
-            return 0;
-        }
-
-        var cleared = 0;
+    // TODO Remove this folder and the editor swap in PerplexBlocksComposer once an empty Image Cropper is saved as null
+    // (umbraco/Umbraco-CMS#24335). Publish validation cannot parse the text "null" a JSON editor stores for no value.
+    private bool ClearSerializedNulls(BlockItemData data) {
+        var changed = false;
 
         foreach (var prop in data.Values) {
             if (prop.PropertyType == null || prop.Value is not "null") {
@@ -66,10 +62,10 @@ public class OurContentBlocksValueEditor : ContentBlocksValueEditor {
 
             if (valueEditor?.ValueType == ValueTypes.Json) {
                 prop.Value = null;
-                cleared++;
+                changed = true;
             }
         }
 
-        return cleared;
+        return changed;
     }
 }
