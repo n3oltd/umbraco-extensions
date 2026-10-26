@@ -173,6 +173,7 @@ public partial class PlatformsContentTypeSeeder {
         var general = designer.Group(Groups.General);
 
         general.Decimal(x => x.Amount).DataType(Shared.Money).Mandatory();
+        general.TextBox(x => x.Title).DataType(Shared.TextBox);
         general.TextBox(x => x.Description).DataType(Shared.TextBox);
 
         designer.Save();
