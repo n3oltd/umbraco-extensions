@@ -586,7 +586,7 @@ public class GivingMigrationWriter : IGivingMigrationWriter {
         var elementAlias = ResolveNestedElementAlias(targetContentTypeAlias,
                                                      targetAlias,
                                                      PlatformsConstants.DonationFormState.SuggestedAmount,
-                                                     GivingMigrationConstants.Platforms.LegacySuggestedAmountAlias);
+                                                     PlatformsConstants.DonationFormState.LegacySuggestedAmount);
 
         if (!elementAlias.HasValue()) {
             _logger.LogWarning("Could not resolve the nested element alias for {ContentType}.{Property}",

@@ -34,6 +34,7 @@ public static class PlatformsSchemaConstants {
         public const string QurbaniItem = "Platforms Qurbani Item Data List (0, 1)";
         public const string QurbaniSeasonCategoryPicker = "Platforms Qurbani Season Category Picker (0, n)";
         public const string SuggestedAmounts = "Nested Platforms Suggested Amount (0, 3)";
+        public const string SuggestedAmountTitle = "Platforms Suggested Amount Title";
         public const string Summary = "Platforms Summary";
     }
 
