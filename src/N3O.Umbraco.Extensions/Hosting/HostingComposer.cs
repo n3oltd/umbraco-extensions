@@ -12,9 +12,7 @@ using N3O.Umbraco.Utilities;
 using System;
 using System.Linq;
 using System.Reflection;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.DependencyInjection;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using Umbraco.Cms.Web.Website.Controllers;
 
@@ -96,13 +94,7 @@ public class HostingComposer : Composer {
 
     private void AddMiddleware<T>(UmbracoPipelineOptions opt) where T : class {
         var filter = new UmbracoPipelineFilter(typeof(T).Name);
-        filter.PostPipeline = app => {
-            var runtimeState = app.ApplicationServices.GetRequiredService<IRuntimeState>();
-
-            if (runtimeState.Level == RuntimeLevel.Run) {
-                app.UseMiddleware<T>();
-            }
-        };
+        filter.PostPipeline = app => app.UseMiddlewareWhenRunning<T>();
 
         opt.AddFilter(filter);
     }
