@@ -25,16 +25,8 @@ public abstract class PlatformsContentTypesMigration : MigrationBase {
         return designer;
     }
 
-    protected IDocumentTypeDesigner<T> ForExisting<T>() where T : IUmbracoContent {
+    protected IDocumentTypeDesigner<T> ForExistingDocument<T>() where T : IUmbracoContent {
         var designer = _contentTypeEditor.NewDocument<T>();
-
-        designer.WithId(GetExistingKey(AliasHelper<T>.ContentTypeAlias()));
-
-        return designer;
-    }
-
-    protected IElementTypeDesigner<T> ForExistingElement<T>() where T : IUmbracoElement {
-        var designer = _contentTypeEditor.NewElement<T>();
 
         designer.WithId(GetExistingKey(AliasHelper<T>.ContentTypeAlias()));
 

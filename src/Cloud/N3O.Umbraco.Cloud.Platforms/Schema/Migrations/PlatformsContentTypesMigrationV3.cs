@@ -9,34 +9,22 @@ using Groups = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Groups;
 namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsContentTypesMigrationV3 : PlatformsContentTypesMigration {
-    private static readonly string TitleAlias = AliasHelper<DonationFormStateSuggestedAmountElement>.PropertyAlias(x => x.Title);
-
     public PlatformsContentTypesMigrationV3(IMigrationContext context, IContentTypeEditor contentTypeEditor)
         : base(context, contentTypeEditor) { }
 
     protected override void Migrate() {
-        AddLegacySuggestedAmountTitle();
-        AddSuggestedAmountTitle();
-    }
-
-    // A site seeded before the element was renamed still lists the old alias in its suggested amounts data type,
-    // because the seeder never updates an existing data type.
-    private void AddLegacySuggestedAmountTitle() {
-        if (!Exists(PlatformsConstants.DonationFormState.LegacySuggestedAmount)) {
-            return;
+        if (Exists(PlatformsConstants.DonationFormState.LegacySuggestedAmount)) {
+            AddSuggestedAmountTitle(PlatformsConstants.DonationFormState.LegacySuggestedAmount);
         }
 
-        var designer = ForExisting(PlatformsConstants.DonationFormState.LegacySuggestedAmount);
-
-        designer.Group(Groups.General).TextBox(TitleAlias).DataType(DataTypeNames.SuggestedAmountTitle);
-
-        designer.Save();
+        AddSuggestedAmountTitle(PlatformsConstants.DonationFormState.SuggestedAmount);
     }
 
-    private void AddSuggestedAmountTitle() {
-        var designer = ForExistingElement<DonationFormStateSuggestedAmountElement>();
+    private void AddSuggestedAmountTitle(string alias) {
+        var designer = ForExisting(alias);
+        var titleAlias = AliasHelper<DonationFormStateSuggestedAmountElement>.PropertyAlias(x => x.Title);
 
-        designer.Group(Groups.General).TextBox(x => x.Title).DataType(DataTypeNames.SuggestedAmountTitle);
+        designer.Group(Groups.General).TextBox(titleAlias).DataType(DataTypeNames.SuggestedAmountTitle);
 
         designer.Save();
     }
