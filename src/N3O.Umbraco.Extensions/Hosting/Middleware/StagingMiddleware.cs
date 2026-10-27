@@ -1,19 +1,16 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
-using NodaTime;
 using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Hosting;
 
@@ -24,21 +21,15 @@ public class StagingMiddleware : IMiddleware {
     private static readonly MemoryCache FailedLogins = new(new MemoryCacheOptions());
 
     private readonly Lazy<IRemoteIpAddressAccessor> _remoteIpAddressAccessor;
-    private readonly Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> _cookieAuthenticationOptions;
     private readonly Lazy<IContentLocator> _contentLocator;
     private readonly IApplicationReadiness _applicationReadiness;
-    private readonly IClock _clock;
 
     public StagingMiddleware(Lazy<IRemoteIpAddressAccessor> remoteIpAddressAccessor,
-                             Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> cookieAuthenticationOptions,
                              Lazy<IContentLocator> contentLocator,
-                             IApplicationReadiness applicationReadiness,
-                             IClock clock) {
+                             IApplicationReadiness applicationReadiness) {
         _remoteIpAddressAccessor = remoteIpAddressAccessor;
-        _cookieAuthenticationOptions = cookieAuthenticationOptions;
         _contentLocator = contentLocator;
         _applicationReadiness = applicationReadiness;
-        _clock = clock;
     }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next) {
@@ -56,7 +47,9 @@ public class StagingMiddleware : IMiddleware {
             if (stagingSettings != null) {
                 var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress();
 
-                if (!IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
+                var allowedWithoutCredentials = await IsAllowedWithoutCredentialsAsync(context, stagingSettings, remoteIp);
+
+                if (!allowedWithoutCredentials) {
                     var lockOutKey = GetLockOutKey(remoteIp);
 
                     if (IsBlocked(lockOutKey)) {
@@ -118,13 +111,13 @@ public class StagingMiddleware : IMiddleware {
         }
     }
 
-    private bool IsAllowedWithoutCredentials(HttpContext context,
-                                             StagingSettingsContent stagingSettings,
-                                             IPAddress remoteIp) {
+    private async Task<bool> IsAllowedWithoutCredentialsAsync(HttpContext context,
+                                                              StagingSettingsContent stagingSettings,
+                                                              IPAddress remoteIp) {
         if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress?.Trim()))) {
             return true;
         } else {
-            return IsSignedIntoBackOffice(context);
+            return await IsSignedIntoBackOfficeAsync(context);
         }
     }
 
@@ -172,19 +165,12 @@ public class StagingMiddleware : IMiddleware {
         return true;
     }
 
-    private bool IsSignedIntoBackOffice(HttpContext context) {
-        var authType = global::Umbraco.Cms.Core.Constants.Security.BackOfficeAuthenticationType;
-        var cookieOptions = _cookieAuthenticationOptions.Value.Get(authType);
+    // The back office cookie is only renewed by a full back office page load, so it expires while an editor is still
+    // working. Umbraco re-issues the exposed cookie on every token refresh and removes it on sign-out.
+    private async Task<bool> IsSignedIntoBackOfficeAsync(HttpContext context) {
+        var authType = global::Umbraco.Cms.Core.Constants.Security.BackOfficeExposedAuthenticationType;
+        var authenticateResult = await context.AuthenticateAsync(authType);
 
-        var backOfficeCookie = context.Request.Cookies[cookieOptions.Cookie.Name];
-        var ticket = backOfficeCookie.IfNotNull(x => cookieOptions.TicketDataFormat.Unprotect(x));
-
-        if (ticket != null &&
-            ticket.Properties.ExpiresUtc > _clock.GetCurrentInstant().ToDateTimeOffset() &&
-            ticket.Principal.GetUmbracoIdentity() != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return authenticateResult.Succeeded;
     }
 }
