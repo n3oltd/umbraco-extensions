@@ -23,7 +23,7 @@ public class CrossSellContent :
     public ECommerceStage Stage => GetValue(x => x.Stage);
     public IEnumerable<Campaign> TargetCampaigns => GetValue(x => x.TargetCampaigns);
     public IEnumerable<GiftType> TargetGiftTypes => GetValue(x => x.TargetGiftTypes);
-    public decimal Threshold => GetValue(x => x.Threshold);
+    public decimal TargetThreshold => GetValue(x => x.TargetThreshold);
 
     public override void SetContent(IPublishedContent content) {
         base.SetContent(content);
