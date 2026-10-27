@@ -22,9 +22,9 @@ public class PlatformsContentTypesMigrationV4 : PlatformsContentTypesMigration {
 
         var general = designer.Group(Groups.General);
 
-        general.Decimal(x => x.Percentage).DataType(DataTypeNames.Percentage);
-        general.Decimal(x => x.Minimum).DataType(Shared.Money);
-        general.Decimal(x => x.Maximum).DataType(Shared.Money);
+        general.Decimal(x => x.Percentage).Name("Percentage of Donation").DataType(DataTypeNames.Percentage);
+        general.Decimal(x => x.Minimum).Name("Minimum Percentage Amount").DataType(Shared.Money);
+        general.Decimal(x => x.Maximum).Name("Maximum Percentage Amount").DataType(Shared.Money);
 
         designer.Save();
     }
@@ -35,7 +35,7 @@ public class PlatformsContentTypesMigrationV4 : PlatformsContentTypesMigration {
         var options = designer.Group(Groups.Options);
 
         options.ContentmentDataList(x => x.TargetGiftTypes).DataType(DataTypeNames.GiftTypesMultiple);
-        options.Decimal(x => x.TargetThreshold).DataType(Shared.Money);
+        options.Decimal(x => x.TargetThreshold).Name("Show When Donation Reaches").DataType(Shared.Money);
 
         designer.Save();
     }

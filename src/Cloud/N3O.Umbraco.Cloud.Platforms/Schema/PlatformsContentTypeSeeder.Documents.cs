@@ -92,15 +92,15 @@ public partial class PlatformsContentTypeSeeder {
 
         general.ContentmentDataList(x => x.Stage).DataType(DataTypeNames.ECommerceStage).Mandatory();
         general.Decimal(x => x.Amount).DataType(Shared.Money);
-        general.Decimal(x => x.Percentage).DataType(DataTypeNames.Percentage);
-        general.Decimal(x => x.Minimum).DataType(Shared.Money);
-        general.Decimal(x => x.Maximum).DataType(Shared.Money);
+        general.Decimal(x => x.Percentage).Name("Percentage of Donation").DataType(DataTypeNames.Percentage);
+        general.Decimal(x => x.Minimum).Name("Minimum Percentage Amount").DataType(Shared.Money);
+        general.Decimal(x => x.Maximum).Name("Maximum Percentage Amount").DataType(Shared.Money);
 
         var options = designer.Group(Groups.Options);
 
         options.ContentmentDataList(x => x.TargetCampaigns).DataType(DataTypeNames.CampaignsMultiple);
         options.ContentmentDataList(x => x.TargetGiftTypes).DataType(DataTypeNames.GiftTypesMultiple);
-        options.Decimal(x => x.TargetThreshold).DataType(Shared.Money);
+        options.Decimal(x => x.TargetThreshold).Name("Show When Donation Reaches").DataType(Shared.Money);
 
         designer.Save();
     }
