@@ -21,7 +21,9 @@ public class TryCatchTagHelper : TagHelper {
 
             output.Content.SetHtmlContent(childContent);
         } catch (Exception ex) {
-            if (_backofficeUser.Value.IsLoggedIn()) {
+            var isBackofficeUser = await _backofficeUser.Value.IsLoggedInAsync();
+
+            if (isBackofficeUser) {
                 output.Content.SetHtmlContent($"<pre>{ex}</pre>");
             } else {
                 output.SuppressOutput();

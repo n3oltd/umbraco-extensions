@@ -1,40 +1,28 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
-using N3O.Umbraco.Extensions;
-using Umbraco.Extensions;
+using System.Threading.Tasks;
 using SecurityConstants = Umbraco.Cms.Core.Constants.Security;
 
 namespace N3O.Umbraco.Security;
 
 public class BackofficeUser : IBackofficeUser {
-    private readonly IOptionsSnapshot<CookieAuthenticationOptions> _cookieOptionsSnapshot;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public BackofficeUser(IOptionsSnapshot<CookieAuthenticationOptions> cookieOptionsSnapshot,
-                          IHttpContextAccessor httpContextAccessor) {
-        _cookieOptionsSnapshot = cookieOptionsSnapshot;
+    public BackofficeUser(IHttpContextAccessor httpContextAccessor) {
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public bool IsLoggedIn() {
-        if (_httpContextAccessor.HttpContext == null) {
+    // The back office cookie is only renewed by a full back office page load, so it expires while an editor is still
+    // working. Umbraco re-issues the exposed cookie on every token refresh and removes it on sign-out.
+    public async Task<bool> IsLoggedInAsync() {
+        var httpContext = _httpContextAccessor.HttpContext;
+
+        if (httpContext == null) {
             return false;
         }
 
-        var cookieOptions = _cookieOptionsSnapshot.Get(SecurityConstants.BackOfficeAuthenticationType);
-        var backOfficeCookie = _httpContextAccessor.HttpContext.Request.Cookies[cookieOptions.Cookie.Name];
+        var authenticateResult = await httpContext.AuthenticateAsync(SecurityConstants.BackOfficeExposedAuthenticationType);
 
-        if (!backOfficeCookie.HasValue()) {
-            return false;
-        }
-
-        var authenticationTicket = cookieOptions.TicketDataFormat.Unprotect(backOfficeCookie);
-        var backOfficeIdentity = authenticationTicket?.Principal.GetUmbracoIdentity();
-
-        var result = backOfficeIdentity.HasValue(x => x.AuthenticationType) &&
-                     backOfficeIdentity.AuthenticationType.EqualsInvariant(SecurityConstants.BackOfficeAuthenticationType);
-
-        return result;
+        return authenticateResult.Succeeded;
     }
 }

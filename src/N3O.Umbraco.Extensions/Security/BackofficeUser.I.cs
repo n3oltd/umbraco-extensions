@@ -1,5 +1,7 @@
-﻿namespace N3O.Umbraco.Security;
+﻿using System.Threading.Tasks;
+
+namespace N3O.Umbraco.Security;
 
 public interface IBackofficeUser {
-    bool IsLoggedIn();
+    Task<bool> IsLoggedInAsync();
 }

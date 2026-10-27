@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Caching.Memory;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Security;
 using System;
 using System.Linq;
 using System.Net;
@@ -21,13 +21,16 @@ public class StagingMiddleware : IMiddleware {
     private static readonly MemoryCache FailedLogins = new(new MemoryCacheOptions());
 
     private readonly Lazy<IRemoteIpAddressAccessor> _remoteIpAddressAccessor;
+    private readonly Lazy<IBackofficeUser> _backofficeUser;
     private readonly Lazy<IContentLocator> _contentLocator;
     private readonly IApplicationReadiness _applicationReadiness;
 
     public StagingMiddleware(Lazy<IRemoteIpAddressAccessor> remoteIpAddressAccessor,
+                             Lazy<IBackofficeUser> backofficeUser,
                              Lazy<IContentLocator> contentLocator,
                              IApplicationReadiness applicationReadiness) {
         _remoteIpAddressAccessor = remoteIpAddressAccessor;
+        _backofficeUser = backofficeUser;
         _contentLocator = contentLocator;
         _applicationReadiness = applicationReadiness;
     }
@@ -47,7 +50,7 @@ public class StagingMiddleware : IMiddleware {
             if (stagingSettings != null) {
                 var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress();
 
-                var allowedWithoutCredentials = await IsAllowedWithoutCredentialsAsync(context, stagingSettings, remoteIp);
+                var allowedWithoutCredentials = await IsAllowedWithoutCredentialsAsync(stagingSettings, remoteIp);
 
                 if (!allowedWithoutCredentials) {
                     var lockOutKey = GetLockOutKey(remoteIp);
@@ -111,13 +114,12 @@ public class StagingMiddleware : IMiddleware {
         }
     }
 
-    private async Task<bool> IsAllowedWithoutCredentialsAsync(HttpContext context,
-                                                              StagingSettingsContent stagingSettings,
+    private async Task<bool> IsAllowedWithoutCredentialsAsync(StagingSettingsContent stagingSettings,
                                                               IPAddress remoteIp) {
         if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress?.Trim()))) {
             return true;
         } else {
-            return await IsSignedIntoBackOfficeAsync(context);
+            return await _backofficeUser.Value.IsLoggedInAsync();
         }
     }
 
@@ -163,14 +165,5 @@ public class StagingMiddleware : IMiddleware {
         password = usernameAndPassword[1];
 
         return true;
-    }
-
-    // The back office cookie is only renewed by a full back office page load, so it expires while an editor is still
-    // working. Umbraco re-issues the exposed cookie on every token refresh and removes it on sign-out.
-    private async Task<bool> IsSignedIntoBackOfficeAsync(HttpContext context) {
-        var authType = global::Umbraco.Cms.Core.Constants.Security.BackOfficeExposedAuthenticationType;
-        var authenticateResult = await context.AuthenticateAsync(authType);
-
-        return authenticateResult.Succeeded;
     }
 }
