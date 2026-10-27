@@ -27,7 +27,9 @@ public static class AllocationIntentReqExtensions {
         allocationIntent.FundDimensions.Dimension3 = fundDimensionValues.Dimension3?.Name;
         allocationIntent.FundDimensions.Dimension4 = fundDimensionValues.Dimension4?.Name;
 
-        allocationIntent.Value = amount.ToMoneyReq(currency);
+        allocationIntent.Value = new MoneyReq();
+        allocationIntent.Value.Amount = amount;
+        allocationIntent.Value.Currency = currency;
 
         if (formState.Type == AllocationTypes.Fund) {
             allocationIntent.Fund = new FundIntentReq();
