@@ -51,12 +51,12 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
     }
 
     private CrossSellRelativeValueReq GetCrossSellRelativeValueReq(CrossSellContent src) {
-        if (!src.Percentage.IsSpecified()) {
+        if (!src.Percentage.IsNonZero()) {
             return null;
         }
 
         var relativeValue = new CrossSellRelativeValueReq();
-        relativeValue.Percentage = (double) src.Percentage.ToFraction();
+        relativeValue.Percentage = (double) (src.Percentage / 100m);
         relativeValue.Minimum = GetAmount(src.Minimum);
         relativeValue.Maximum = GetAmount(src.Maximum);
 
@@ -64,7 +64,7 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
     }
 
     private double? GetAmount(decimal amount) {
-        if (!amount.IsSpecified()) {
+        if (!amount.IsNonZero()) {
             return null;
         }
 

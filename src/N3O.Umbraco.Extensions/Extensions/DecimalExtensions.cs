@@ -12,6 +12,10 @@ public static class DecimalExtensions {
         return true;
     }
 
+    public static bool IsNonZero(this decimal value) {
+        return value != 0;
+    }
+
     public static decimal? RoundMoney(this decimal? amount) {
         if (amount == null) {
             return null;
