@@ -1,6 +1,8 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Exceptions;
 using N3O.Umbraco.Extensions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace N3O.Umbraco.Cloud.Platforms.Extensions;
 
@@ -38,5 +40,21 @@ public static class PropertyContentReqExtensions {
         
         return false;
     }
-    
+
+    public static IReadOnlyList<PropertyContentReq> ToPublishableProperties(this IEnumerable<PropertyContentReq> src,
+                                                                            IPlatformsMediaUrlBuilder mediaUrlBuilder) {
+        return src.OrEmpty()
+                  .Where(x => x.EditorHasValue())
+                  .Select(x => WithAbsoluteUrls(x, mediaUrlBuilder))
+                  .ToList();
+    }
+
+    private static PropertyContentReq WithAbsoluteUrls(PropertyContentReq propertyContent,
+                                                       IPlatformsMediaUrlBuilder mediaUrlBuilder) {
+        if (propertyContent.Editor == PropertyEditor.RichText) {
+            propertyContent.RichText = propertyContent.RichText.Html.ToRichTextContentReq(mediaUrlBuilder);
+        }
+
+        return propertyContent;
+    }
 }

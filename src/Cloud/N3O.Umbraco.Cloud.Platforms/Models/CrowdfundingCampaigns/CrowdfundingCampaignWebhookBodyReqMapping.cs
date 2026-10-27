@@ -16,6 +16,12 @@ public class CrowdfundingCampaignWebhookBodyReqMapping : IMapDefinition {
     public const string CrowdfunderPageContentContext = nameof(CrowdfunderPageContentContext);
     public const string CrowdfundingCampaignPageContentContext = nameof(CrowdfundingCampaignPageContentContext);
 
+    private readonly IPlatformsMediaUrlBuilder _mediaUrlBuilder;
+
+    public CrowdfundingCampaignWebhookBodyReqMapping(IPlatformsMediaUrlBuilder mediaUrlBuilder) {
+        _mediaUrlBuilder = mediaUrlBuilder;
+    }
+
     public void DefineMaps(IUmbracoMapper mapper) {
         mapper.Define<CrowdfundingCampaignContent, CrowdfundingCampaignWebhookBodyReq>(Create, Map);
     }
@@ -66,9 +72,9 @@ public class CrowdfundingCampaignWebhookBodyReqMapping : IMapDefinition {
         content.SchemaAlias = schemaAlias;
 
         if (ctx.Items.TryGetValue(contextKey, out var value)) {
-            var properties = ((IEnumerable<PropertyContentReq>) value).OrEmpty().Where(x => x.EditorHasValue());
+            var properties = (IEnumerable<PropertyContentReq>) value;
 
-            content.Properties = properties.ToList();
+            content.Properties = properties.ToPublishableProperties(_mediaUrlBuilder).ToList();
         }
 
         var req = new StoredContentReq();

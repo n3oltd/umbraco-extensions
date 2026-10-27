@@ -42,6 +42,7 @@ public class PlatformsMediaUrlBuilder : IPlatformsMediaUrlBuilder {
 
         mediaUrl.AppendPathSegment(src.Path);
         mediaUrl.Query = src.Query;
+        mediaUrl.Fragment = src.Fragment;
 
         return mediaUrl;
     }

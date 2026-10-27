@@ -21,17 +21,20 @@ public class ZakatCalculatorSettingsPublished : CloudContentPublished {
     private readonly Lazy<IContentLocator> _contentLocator;
     private readonly IUmbracoMapper _mapper;
     private readonly IBlocksRenderer _blocksRenderer;
+    private readonly IPlatformsMediaUrlBuilder _mediaUrlBuilder;
 
     public ZakatCalculatorSettingsPublished(ICloudUrl cloudUrl,
                                             IBackgroundJob backgroundJob,
                                             Lazy<IContentLocator> contentLocator,
                                             IUmbracoMapper mapper,
                                             ILogger<CloudContentPublished> logger,
-                                            IBlocksRenderer blocksRenderer)
+                                            IBlocksRenderer blocksRenderer,
+                                            IPlatformsMediaUrlBuilder mediaUrlBuilder)
         : base(cloudUrl, backgroundJob, logger) {
         _contentLocator = contentLocator;
         _mapper = mapper;
         _blocksRenderer = blocksRenderer;
+        _mediaUrlBuilder = mediaUrlBuilder;
     }
 
     protected override bool CanProcess(IContent content) {
@@ -66,7 +69,7 @@ public class ZakatCalculatorSettingsPublished : CloudContentPublished {
         var html = await GetRenderedHtml(settingsContent.Content(),
                                          AliasHelper<ZakatCalculatorSettingsContent>.PropertyAlias(x => x.DefaultContent));
 
-        return html.ToHtmlString().ToRichTextContentReq();
+        return html.ToHtmlString().ToRichTextContentReq(_mediaUrlBuilder);
     }
 
     private async Task<ZakatCalculatorSectionReq> GetSectionsAsync(ZakatCalculatorSectionSettingsContent section) {
@@ -79,10 +82,7 @@ public class ZakatCalculatorSettingsPublished : CloudContentPublished {
         if (section.Content.HasValue()) {
             var html = await GetRenderedHtml(section.Content(), AliasHelper<ZakatCalculatorSectionSettingsContent>.PropertyAlias(x => x.Content));
 
-            if (html.HasValue()) {
-                req.Content = new RichTextContentReq();
-                req.Content.Html = html.ToHtmlString();
-            }
+            req.Content = html.ToHtmlString().ToRichTextContentReq(_mediaUrlBuilder);
         }
         
         return req;
@@ -101,7 +101,7 @@ public class ZakatCalculatorSettingsPublished : CloudContentPublished {
             var html = await GetRenderedHtml(field.Content(),
                                              AliasHelper<ZakatCalculatorFieldSettingsContent>.PropertyAlias(x => x.Content));
 
-            req.Content = html.ToHtmlString().ToRichTextContentReq();
+            req.Content = html.ToHtmlString().ToRichTextContentReq(_mediaUrlBuilder);
         }
 
         if (field.Metal.HasValue()) {

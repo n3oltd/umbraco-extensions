@@ -10,7 +10,7 @@ public static class DonationFormContentContentExtensions {
                                                                   IPlatformsMediaUrlBuilder mediaUrlBuilder) {
         var donationFormContentReq = new DonationFormContentReq();
         donationFormContentReq.Summary = src.Summary;
-        donationFormContentReq.Description = src.Description.ToHtmlString().ToRichTextContentReq();
+        donationFormContentReq.Description = src.Description.ToHtmlString().ToRichTextContentReq(mediaUrlBuilder);
         donationFormContentReq.Image = src.Image.ToImageSimpleContentReq(mediaUrl, mediaUrlBuilder);
         donationFormContentReq.Icon = src.Icon.ToSvgContentReq(mediaUrl, mediaUrlBuilder);
 
