@@ -13,4 +13,9 @@ public class CropperConfiguration {
                         "Crop Definitions",
                         "~/App_Plugins/N3O.Umbraco.Cropper/N3O.Umbraco.Cropper.CropDefinitions.html")]
     public IEnumerable<CropDefinition> CropDefinitions { get; set; }
+
+    [ConfigurationField("cropSuggester",
+                        "Crop Suggester",
+                        "dropdown")]
+    public string CropSuggester { get; set; }
 }
