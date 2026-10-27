@@ -12,8 +12,7 @@ public class BackofficeUser : IBackofficeUser {
         _httpContextAccessor = httpContextAccessor;
     }
 
-    // The back office cookie is only renewed by a full back office page load, so it expires while an editor is still
-    // working. Umbraco re-issues the exposed cookie on every token refresh and removes it on sign-out.
+    // The back office cookie expires while the back office is still in use
     public async Task<bool> IsLoggedInAsync() {
         var httpContext = _httpContextAccessor.HttpContext;
 
@@ -21,7 +20,8 @@ public class BackofficeUser : IBackofficeUser {
             return false;
         }
 
-        var authenticateResult = await httpContext.AuthenticateAsync(SecurityConstants.BackOfficeExposedAuthenticationType);
+        var authenticationType = SecurityConstants.BackOfficeExposedAuthenticationType;
+        var authenticateResult = await httpContext.AuthenticateAsync(authenticationType);
 
         return authenticateResult.Succeeded;
     }
