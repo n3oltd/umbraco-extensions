@@ -1,14 +1,11 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Cloud.Hosting;
 using N3O.Umbraco.Cloud.Options;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Localization;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 
 namespace N3O.Umbraco.Cloud;
@@ -36,13 +33,7 @@ public class CloudComposer : Composer {
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {
             var filter = new UmbracoPipelineFilter(nameof(ConnectMiddleware));
 
-            filter.PrePipeline = app => {
-                var runtimeState = app.ApplicationServices.GetRequiredService<IRuntimeState>();
-
-                if (runtimeState.Level == RuntimeLevel.Run) {
-                    app.UseMiddleware<ConnectMiddleware>();
-                }
-            };
+            filter.PrePipeline = app => app.UseMiddlewareWhenRunning<ConnectMiddleware>();
 
             opt.AddFilter(filter);
         });

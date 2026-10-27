@@ -19,7 +19,7 @@ public class PlatformsContentTypesMigrationV2 : PlatformsContentTypesMigration {
     }
 
     private void AddCampaignPopupEmbedCode() {
-        var designer = ForExisting<CampaignContent>();
+        var designer = ForExistingDocument<CampaignContent>();
 
         designer.Group(Groups.Embed)
                 .ContentmentTemplatedLabel(x => x.DonationPopupEmbedCode)
@@ -29,7 +29,7 @@ public class PlatformsContentTypesMigrationV2 : PlatformsContentTypesMigration {
     }
 
     private void AddCrossSellAmount() {
-        var designer = ForExisting<CrossSellContent>();
+        var designer = ForExistingDocument<CrossSellContent>();
 
         designer.Group(Groups.General).Decimal(x => x.Amount).DataType(Shared.Money);
 
@@ -37,7 +37,7 @@ public class PlatformsContentTypesMigrationV2 : PlatformsContentTypesMigration {
     }
 
     private void AddOfferingPopupEmbedCode() {
-        var designer = ForExisting<OfferingContent>();
+        var designer = ForExistingDocument<OfferingContent>();
 
         designer.Group(Groups.Embed)
                 .ContentmentTemplatedLabel(x => x.DonationPopupEmbedCode)

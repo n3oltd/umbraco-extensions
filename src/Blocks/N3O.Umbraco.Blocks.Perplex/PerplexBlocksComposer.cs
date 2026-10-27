@@ -9,6 +9,7 @@ using N3O.Umbraco.Lookups;
 using N3O.Umbraco.Utilities;
 using Perplex.ContentBlocks.Categories;
 using Perplex.ContentBlocks.Definitions;
+using Perplex.ContentBlocks.PropertyEditor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,8 +28,17 @@ public class PerplexBlocksComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         BlocksComponent.LoadDefinitions(builder, WebHostEnvironment);
 
+        // TODO Remove this swap and the Our* content blocks editors once an empty Image Cropper is saved as null
+        // (umbraco/Umbraco-CMS#24335).
+        builder.DataEditors().Exclude<PerplexContentBlocksPropertyEditor>().Add<OurContentBlocksPropertyEditor>();
+
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
+
+        // Perplex builds each block's view model, block modules included, while converting the property value, and
+        // Perplex 4 caches that value until any content is published. Blocks that read the request (cart, checkout,
+        // currency) would serve the first visitor's data to everyone, so the value is converted per request instead.
+        builder.PropertyValueConverters().Replace<ContentBlocksValueConverter, OurContentBlocksValueConverter>();
 
         foreach (var blockDefinition in BlocksComponent.BlockDefinitions) {
             RegisterDefaultViewModel(builder, blockDefinition.Alias);

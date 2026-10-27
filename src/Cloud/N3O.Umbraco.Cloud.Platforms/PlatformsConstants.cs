@@ -63,6 +63,8 @@ public static class PlatformsConstants {
         public const string CompositionAlias = "platformsDonationFormState";
         public const string Feedback = "platformsFeedbackDonationFormState";
         public const string Fund = "platformsFundDonationFormState";
+        // Sites seeded under this alias still list it in their suggested amounts data type.
+        public const string LegacySuggestedAmount = "platformsSuggestedAmount";
         public const string Qurbani = "platformsQurbaniDonationFormState";
         public const string Sponsorship = "platformsSponsorshipDonationFormState";
         public const string SuggestedAmount = "platformsDonationFormStateSuggestedAmount";

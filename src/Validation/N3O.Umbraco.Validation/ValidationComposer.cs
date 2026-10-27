@@ -1,15 +1,12 @@
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Reflection;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.DependencyInjection;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 
 namespace N3O.Umbraco.Validation;
@@ -46,13 +43,7 @@ public class ValidationComposer : Composer {
         builder.Services.Configure<UmbracoPipelineOptions>(opt => {
             var filter = new UmbracoPipelineFilter(nameof(ExceptionMiddleware));
 
-            filter.PrePipeline = app => {
-                var runtimeState = app.ApplicationServices.GetRequiredService<IRuntimeState>();
-
-                if (runtimeState.Level == RuntimeLevel.Run) {
-                    app.UseMiddleware<ExceptionMiddleware>();
-                }
-            };
+            filter.PrePipeline = app => app.UseMiddlewareWhenRunning<ExceptionMiddleware>();
 
             opt.AddFilter(filter);
         });
