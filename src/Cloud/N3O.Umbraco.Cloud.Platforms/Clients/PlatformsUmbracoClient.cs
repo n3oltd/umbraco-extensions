@@ -944,14 +944,17 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("percentage", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public double? Percentage { get; set; }
 
+        /// <summary>
+        /// The minimum value of the cross-sell in the base currency
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("minimum", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public MoneyReq Minimum { get; set; }
+        public double? Minimum { get; set; }
 
+        /// <summary>
+        /// The maximum value of the cross-sell in the base currency
+        /// </summary>
         [Newtonsoft.Json.JsonProperty("maximum", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public MoneyReq Maximum { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public MoneyReq Threshold { get; set; }
+        public double? Maximum { get; set; }
 
     }
 
@@ -985,6 +988,12 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         /// </summary>
         [Newtonsoft.Json.JsonProperty("giftTypes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore, ItemConverterType = typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public System.Collections.Generic.ICollection<GiftType> GiftTypes { get; set; }
+
+        /// <summary>
+        /// The amount in the base currency that the donor's gifts of the cross-sell's frequency must total for the cross-sell to be shown
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double? Threshold { get; set; }
 
     }
 
@@ -4324,13 +4333,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         public double? Percentage { get; set; }
 
         [Newtonsoft.Json.JsonProperty("minimum", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public PublishedMoney Minimum { get; set; }
+        public double? Minimum { get; set; }
 
         [Newtonsoft.Json.JsonProperty("maximum", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public PublishedMoney Maximum { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public PublishedMoney Threshold { get; set; }
+        public double? Maximum { get; set; }
 
     }
 
@@ -4352,6 +4358,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("giftTypes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore, ItemConverterType = typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         public System.Collections.Generic.ICollection<GiftType> GiftTypes { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("threshold", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public double? Threshold { get; set; }
 
     }
 

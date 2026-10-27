@@ -16,7 +16,7 @@ public abstract class CrossSellValidator : ContentValidator {
     private static readonly string MinimumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Minimum);
     private static readonly string PercentageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Percentage);
     private static readonly string StageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Stage);
-    private static readonly string ThresholdAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Threshold);
+    private static readonly string TargetThresholdAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.TargetThreshold);
 
     private readonly ILookups _lookups;
     private readonly IFundStructureAccessor _fundStructureAccessor;
@@ -64,14 +64,13 @@ public abstract class CrossSellValidator : ContentValidator {
         var maximum = content.GetPropertyValueByAlias<decimal?>(MaximumAlias).GetValueOrDefault();
         var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
         var percentage = content.GetPropertyValueByAlias<decimal?>(PercentageAlias).GetValueOrDefault();
-        var threshold = content.GetPropertyValueByAlias<decimal?>(ThresholdAlias).GetValueOrDefault();
+        var threshold = content.GetPropertyValueByAlias<decimal?>(TargetThresholdAlias).GetValueOrDefault();
         var stageProperty = content.GetPropertyByAlias(StageAlias);
         var stage = ContentHelper.GetDataListValue<ECommerceStage>(stageProperty);
         var hasAmount = amount.IsSpecified();
         var hasRelativeValue = maximum.IsSpecified() ||
                                minimum.IsSpecified() ||
-                               percentage.IsSpecified() ||
-                               threshold.IsSpecified();
+                               percentage.IsSpecified();
 
         if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (hasAmount || hasRelativeValue)) {
             ErrorResult("Sponsorship item cannot have an amount or relative value");
@@ -83,6 +82,10 @@ public abstract class CrossSellValidator : ContentValidator {
 
         if (hasRelativeValue && stage != ECommerceStages.Cart) {
             ErrorResult(stageProperty, "must be cart for a relative value");
+        }
+
+        if (threshold.IsSpecified() && stage != ECommerceStages.Cart) {
+            ErrorResult(stageProperty, "must be cart for a threshold");
         }
 
         if (hasAmount && hasRelativeValue) {
@@ -100,15 +103,10 @@ public abstract class CrossSellValidator : ContentValidator {
         NotNegative(content, AmountAlias, amount);
         NotNegative(content, MinimumAlias, minimum);
         NotNegative(content, MaximumAlias, maximum);
-        NotNegative(content, ThresholdAlias, threshold);
+        NotNegative(content, TargetThresholdAlias, threshold);
 
         if (minimum.IsSpecified() && maximum.IsSpecified() && minimum > maximum) {
             ErrorResult(content.GetPropertyByAlias(MinimumAlias), "cannot be greater than the maximum");
-        }
-
-        if (minimum.IsSpecified() && threshold.IsSpecified() && threshold * percentage.ToFraction() < minimum) {
-            ErrorResult(content.GetPropertyByAlias(ThresholdAlias),
-                        "multiplied by the percentage cannot be below the minimum");
         }
     }
 

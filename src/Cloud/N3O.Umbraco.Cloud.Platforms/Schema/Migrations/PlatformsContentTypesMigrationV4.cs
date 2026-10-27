@@ -14,7 +14,7 @@ public class PlatformsContentTypesMigrationV4 : PlatformsContentTypesMigration {
 
     protected override void Migrate() {
         AddCrossSellRelativeValue();
-        AddCrossSellTargetGiftTypes();
+        AddCrossSellTargeting();
     }
 
     private void AddCrossSellRelativeValue() {
@@ -25,17 +25,17 @@ public class PlatformsContentTypesMigrationV4 : PlatformsContentTypesMigration {
         general.Decimal(x => x.Percentage).DataType(DataTypeNames.Percentage);
         general.Decimal(x => x.Minimum).DataType(Shared.Money);
         general.Decimal(x => x.Maximum).DataType(Shared.Money);
-        general.Decimal(x => x.Threshold).DataType(Shared.Money);
 
         designer.Save();
     }
 
-    private void AddCrossSellTargetGiftTypes() {
+    private void AddCrossSellTargeting() {
         var designer = ForExistingDocument<CrossSellContent>();
 
-        designer.Group(Groups.Options)
-                .ContentmentDataList(x => x.TargetGiftTypes)
-                .DataType(DataTypeNames.GiftTypesMultiple);
+        var options = designer.Group(Groups.Options);
+
+        options.ContentmentDataList(x => x.TargetGiftTypes).DataType(DataTypeNames.GiftTypesMultiple);
+        options.Decimal(x => x.TargetThreshold).DataType(Shared.Money);
 
         designer.Save();
     }
