@@ -12,16 +12,10 @@ public class BackofficeUser : IBackofficeUser {
         _httpContextAccessor = httpContextAccessor;
     }
 
-    // The back office cookie expires while the back office is still in use
+    // The BackOfficeAuthenticationType cookie expires while the back office is still in use
     public async Task<bool> IsLoggedInAsync() {
-        var httpContext = _httpContextAccessor.HttpContext;
-
-        if (httpContext == null) {
-            return false;
-        }
-
         var authenticationType = SecurityConstants.BackOfficeExposedAuthenticationType;
-        var authenticateResult = await httpContext.AuthenticateAsync(authenticationType);
+        var authenticateResult = await _httpContextAccessor.HttpContext.AuthenticateAsync(authenticationType);
 
         return authenticateResult.Succeeded;
     }
