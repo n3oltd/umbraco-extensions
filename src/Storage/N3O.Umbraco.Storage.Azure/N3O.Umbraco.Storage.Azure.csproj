@@ -36,9 +36,9 @@
         <ProjectReference Include="..\N3O.Umbraco.Storage\N3O.Umbraco.Storage.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.3" />
-        <PackageReference Include="Umbraco.StorageProviders.AzureBlob" Version="17.0.0" />
-        <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" Version="17.0.0" />
+        <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.5" />
+        <PackageReference Include="Umbraco.StorageProviders.AzureBlob" Version="17.1.0" />
+        <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" Version="17.1.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">

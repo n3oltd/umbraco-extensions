@@ -36,8 +36,8 @@
         <ProjectReference Include="..\N3O.Umbraco.Monitoring\N3O.Umbraco.Monitoring.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Sentry.AspNetCore" Version="6.7.0" />
-        <PackageReference Include="Sentry.Serilog" Version="6.7.0" />
+        <PackageReference Include="Sentry.AspNetCore" Version="6.12.1" />
+        <PackageReference Include="Sentry.Serilog" Version="6.12.1" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">

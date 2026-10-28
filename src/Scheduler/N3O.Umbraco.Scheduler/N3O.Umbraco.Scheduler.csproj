@@ -38,8 +38,8 @@
         <ProjectReference Include="..\..\N3O.Umbraco.ReactRuntime\N3O.Umbraco.ReactRuntime.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Hangfire" Version="1.8.24" />
-        <PackageReference Include="Hangfire.SqlServer" Version="1.8.24" />
+        <PackageReference Include="Hangfire" Version="1.8.25" />
+        <PackageReference Include="Hangfire.SqlServer" Version="1.8.25" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">

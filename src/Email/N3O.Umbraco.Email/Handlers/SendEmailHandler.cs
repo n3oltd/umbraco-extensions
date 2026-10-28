@@ -39,7 +39,7 @@ public class SendEmailHandler : IRequestHandler<SendEmailCommand, SendEmailReq, 
 
     public async Task<None> Handle(SendEmailCommand req, CancellationToken cancellationToken) {
         var templateModel = _jsonProvider.DeserializeObject(req.Model.ModelJson, TypeResolver.Resolve(req.Model.ModelType));
-        var subject = _templateEngine.Render(req.Model.Subject, templateModel);
+        var subject = _templateEngine.RenderText(req.Model.Subject, templateModel);
         var htmlBody = _templateEngine.Render(req.Model.Body, templateModel);
 
         var to = ToEmailIdentities(req.Model.To);

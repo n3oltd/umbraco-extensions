@@ -44,6 +44,6 @@
         </None>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Umbraco.Workflow" Version="17.0.2" />
+        <PackageReference Include="Umbraco.Workflow" Version="17.5.4" />
     </ItemGroup>
 </Project>
