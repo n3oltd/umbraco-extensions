@@ -49,7 +49,7 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
     }
 
     private CrossSellRelativeValueReq GetCrossSellRelativeValueReq(CrossSellContent src) {
-        if (!src.Percentage.IsNonZero()) {
+        if (src.Percentage.IsZero()) {
             return null;
         }
 
@@ -62,7 +62,7 @@ public class UpdateCrossSellReqMapping : IMapDefinition {
     }
 
     private double? GetAmount(decimal amount) {
-        if (!amount.IsNonZero()) {
+        if (amount.IsZero()) {
             return null;
         }
 

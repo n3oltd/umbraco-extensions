@@ -66,10 +66,10 @@ public abstract class CrossSellValidator : ContentValidator {
         var threshold = content.GetPropertyValueByAlias<decimal?>(TargetThresholdAlias).GetValueOrDefault();
         var stageProperty = content.GetPropertyByAlias(StageAlias);
         var stage = ContentHelper.GetDataListValue<ECommerceStage>(stageProperty);
-        var hasAmount = amount.IsNonZero();
-        var hasRelativeValue = maximum.IsNonZero() ||
-                               minimum.IsNonZero() ||
-                               percentage.IsNonZero();
+        var hasAmount = amount.IsGreaterThanZero();
+        var hasRelativeValue = maximum.IsGreaterThanZero() ||
+                               minimum.IsGreaterThanZero() ||
+                               percentage.IsGreaterThanZero();
 
         if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (hasAmount || hasRelativeValue)) {
             ErrorResult("Sponsorship item cannot have an amount or relative value");
@@ -91,7 +91,7 @@ public abstract class CrossSellValidator : ContentValidator {
             ErrorResult(stageProperty, "must be cart for a relative value");
         }
 
-        if (threshold.IsNonZero() && stage != ECommerceStages.Cart) {
+        if (threshold.IsGreaterThanZero() && stage != ECommerceStages.Cart) {
             ErrorResult(stageProperty, "must be cart for a threshold");
         }
 
@@ -99,20 +99,11 @@ public abstract class CrossSellValidator : ContentValidator {
             ErrorResult(content.GetPropertyByAlias(AmountAlias), "cannot be specified with a relative value");
         }
 
-        if (hasRelativeValue && !percentage.IsNonZero()) {
+        if (hasRelativeValue && percentage.IsZero()) {
             ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be specified for a relative value");
         }
 
-        if (hasRelativeValue && (percentage <= 0 || percentage > 100)) {
-            ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be greater than 0 and no more than 100");
-        }
-
-        NotNegative(content, AmountAlias, amount);
-        NotNegative(content, MinimumAlias, minimum);
-        NotNegative(content, MaximumAlias, maximum);
-        NotNegative(content, TargetThresholdAlias, threshold);
-
-        if (minimum.IsNonZero() && maximum.IsNonZero() && minimum > maximum) {
+        if (minimum.IsGreaterThanZero() && maximum.IsGreaterThanZero() && minimum > maximum) {
             ErrorResult(content.GetPropertyByAlias(MinimumAlias), "cannot be greater than the maximum");
         }
     }
@@ -127,12 +118,6 @@ public abstract class CrossSellValidator : ContentValidator {
 
         if (isActive && value == null && !allowedValues.IsSingle()) {
             ErrorResult(property, $"{typeof(T).Name} should have a fixed value");
-        }
-    }
-
-    private void NotNegative(ContentProperties content, string alias, decimal value) {
-        if (value < 0) {
-            ErrorResult(content.GetPropertyByAlias(alias), "cannot be negative");
         }
     }
 }
