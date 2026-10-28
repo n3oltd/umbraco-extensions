@@ -34,10 +34,10 @@ public interface IDateTimeFormatter {
     string FormatTime(ZonedDateTime? zonedDateTime, TimeFormat timeFormat = null);
     string FormatTime(ZonedDateTime? zonedDateTime, string specifier);
 
-    string FormatDateWithTime(DateTime? instant);
+    string FormatDateWithTime(DateTime? dateTime);
     string FormatDateWithTime(Instant? instant);
-    string FormatDateWithTime(LocalDateTime? instant);
-    string FormatDateWithTime(ZonedDateTime? instant);
+    string FormatDateWithTime(LocalDateTime? localDateTime);
+    string FormatDateWithTime(ZonedDateTime? zonedDateTime);
     
     DateFormat DateFormat { get; }
     TimeFormat TimeFormat { get; }
