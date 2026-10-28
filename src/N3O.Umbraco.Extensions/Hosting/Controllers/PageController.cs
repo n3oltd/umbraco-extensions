@@ -97,7 +97,10 @@ public class PageController : RenderController {
     }
     
     private IActionResult Redirect(IPublishedContent publishedContent) {
-        return new RedirectToUmbracoPageResult(publishedContent, _publishedUrlProvider, _umbracoContextAccessor);
+        return new RedirectToUmbracoPageResult(publishedContent,
+                                               Request.QueryString,
+                                               _publishedUrlProvider,
+                                               _umbracoContextAccessor);
     }
     
     private async Task<bool> CanRenderAsync() {
