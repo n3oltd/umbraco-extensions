@@ -23,6 +23,10 @@ public class FeedbackCrossSellValidator : CrossSellValidator {
         return GetFeedbackScheme(content)?.FundDimensionOptions;
     }
 
+    protected override bool HasAnyLockedPrice(ContentProperties content) {
+        return GetFeedbackScheme(content).HasAnyLockedPrice();
+    }
+
     protected override bool HasLockedPrice(ContentProperties content) {
         return GetFeedbackScheme(content).HasLockedPrice();
     }
