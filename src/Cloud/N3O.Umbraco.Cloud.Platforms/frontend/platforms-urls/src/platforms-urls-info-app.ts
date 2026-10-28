@@ -89,7 +89,7 @@ export class N3oPlatformsUrlsInfoAppElement extends UmbAuthFetchMixin(UmbLitElem
             display: flex;
             align-items: baseline;
             gap: var(--uui-size-space-3, 8px);
-            padding: var(--uui-size-space-2, 4px) 0;
+            padding: var(--uui-size-space-4) var(--uui-size-space-5);
             font-size: 0.8125rem;
         }
 
