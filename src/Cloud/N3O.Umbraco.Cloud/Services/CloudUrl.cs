@@ -66,7 +66,7 @@ public class CloudUrl : ICloudUrl {
         return url;
     }
 
-    public string ConnectApiBaseUrl => GetRegionalApiBaseUrl();
+    public string ConnectApiBaseUrl => new Url(GetRegionalApiBaseUrl()).AppendPathSegment("api");
 
     private string ForRegionalApi(string servicePath) {
         var url = new Url(GetRegionalApiBaseUrl());
