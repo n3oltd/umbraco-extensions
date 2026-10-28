@@ -1,4 +1,5 @@
 using N3O.Umbraco.Lookups;
+using System.Globalization;
 
 namespace N3O.Umbraco.Localization;
 
@@ -10,6 +11,10 @@ public class TimeFormat : NamedLookup {
 
     public bool HasMeridiem { get; }
     public string CultureCode { get; }
+
+    public DateTimeFormatInfo GetDateTimeFormatInfo() {
+        return CultureInfo.GetCultureInfo(CultureCode).DateTimeFormat;
+    }
 }
 
 public class TimeFormats : StaticLookupsCollection<TimeFormat> {

@@ -16,8 +16,8 @@ public partial class DateTimeFormatter {
         return Format(localDateTime, timeFormat, FormatTime);
     }
 
-    public string FormatTime(LocalDateTime? zonedDateTime, string specifier) {
-        return Format(zonedDateTime, (DateFormat) null, (dt, _) => FormatDate(dt, specifier));
+    public string FormatTime(LocalDateTime? localDateTime, string specifier) {
+        return Format(localDateTime, (DateFormat) null, (dt, _) => FormatTime(dt, specifier));
     }
 
     public string FormatDateWithTime(LocalDateTime? localDateTime) {
