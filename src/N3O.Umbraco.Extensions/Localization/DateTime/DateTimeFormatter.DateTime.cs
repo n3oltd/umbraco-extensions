@@ -26,13 +26,13 @@ public partial class DateTimeFormatter {
             return null;
         }
 
-        var localFormat = GetDateFormatInfo(null);
+        var localFormat = GetTimeFormatInfo(timeFormat);
 
         return dateTime.Value.ToString("t", localFormat);
     }
 
     public string FormatTime(DateTime? dateTime, string specifier) {
-        var localFormat = GetDateFormatInfo(null);
+        var localFormat = GetTimeFormatInfo(null);
 
         return dateTime?.ToString(specifier, localFormat);
     }
@@ -57,6 +57,16 @@ public partial class DateTimeFormatter {
         }
 
         var dateTimeFormatInfo = dateFormat.GetDateTimeFormatInfo();
+
+        return dateTimeFormatInfo;
+    }
+
+    private DateTimeFormatInfo GetTimeFormatInfo(TimeFormat timeFormat) {
+        if (timeFormat == null) {
+            timeFormat = TimeFormat;
+        }
+
+        var dateTimeFormatInfo = timeFormat.GetDateTimeFormatInfo();
 
         return dateTimeFormatInfo;
     }

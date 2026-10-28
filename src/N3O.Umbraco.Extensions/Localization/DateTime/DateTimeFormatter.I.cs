@@ -28,8 +28,8 @@ public interface IDateTimeFormatter {
     string FormatTime(LocalTime? localTime, TimeFormat timeFormat = null);
     string FormatTime(LocalTime? localTime, string specifier);
     
-    string FormatTime(LocalDateTime? zonedDateTime, TimeFormat timeFormat = null);
-    string FormatTime(LocalDateTime? zonedDateTime, string specifier);
+    string FormatTime(LocalDateTime? localDateTime, TimeFormat timeFormat = null);
+    string FormatTime(LocalDateTime? localDateTime, string specifier);
     
     string FormatTime(ZonedDateTime? zonedDateTime, TimeFormat timeFormat = null);
     string FormatTime(ZonedDateTime? zonedDateTime, string specifier);
