@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
+using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Localization;
 using N3O.Umbraco.Plugins.Lookups;
 using N3O.Umbraco.Validation;
@@ -11,11 +12,17 @@ namespace N3O.Umbraco.Plugins.Models;
 public class FileUploadReqValidator : ModelValidator<FileUploadReq> {
     public FileUploadReqValidator(IFormatter formatter) : base(formatter) {
         RuleFor(x => x.File)
+           .NotNull()
+           .WithMessage(Get<Strings>(s => s.SpecifyFile));
+
+        RuleFor(x => x.File)
            .Must((req, x) => ValidateAllowedExtensions(req.AllowedExtensions, x))
+           .When(x => x.File.HasValue() && x.AllowedExtensions.HasValue())
            .WithMessage(Get<Strings>(s => s.InvalidExtension));
         
         RuleFor(x => x.File)
            .Must((req, x) => ValidateImageOnly(req.ImagesOnly, x))
+           .When(x => x.File.HasValue())
            .WithMessage(Get<Strings>(s => s.InvalidImage));
     }
 
@@ -37,5 +44,6 @@ public class FileUploadReqValidator : ModelValidator<FileUploadReq> {
     public class Strings : ValidationStrings {
         public string InvalidExtension => "The specified file has invalid extension";
         public string InvalidImage => "The specified file is not an image";
+        public string SpecifyFile => "Please specify the file";
     }
 }
