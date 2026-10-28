@@ -20,8 +20,9 @@ public class HandlebarsFactory : IHandlebarsFactory {
         _templateFormatters = templateFormatters;
     }
 
-    public IHandlebars Create(IReadOnlyDictionary<string, string> partials = null) {
+    public IHandlebars Create(IReadOnlyDictionary<string, string> partials = null, bool noEscape = false) {
         var handlebars = HandlebarsDotNet.Handlebars.Create();
+        handlebars.Configuration.NoEscape = noEscape;
     
         _helpers.Do(h => handlebars.RegisterHelper(h.Name, h.Execute));
     

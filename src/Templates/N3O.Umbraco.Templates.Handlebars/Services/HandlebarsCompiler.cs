@@ -16,7 +16,7 @@ public class HandlebarsCompiler : IHandlebarsCompiler {
 
     public bool IsSyntaxValid(string content) {
         try {
-            var handlebars = GetHandlebars(null);
+            var handlebars = GetHandlebars(null, false);
         
             handlebars.Compile(content);
 
@@ -28,34 +28,37 @@ public class HandlebarsCompiler : IHandlebarsCompiler {
 
     public HandlebarsTemplate<object, object> Compile(string markup,
                                                       IReadOnlyDictionary<string, string> partials = null,
-                                                      string cacheKey = null) {
+                                                      string cacheKey = null,
+                                                      bool noEscape = false) {
         HandlebarsTemplate<object, object> compiled;
 
         if (cacheKey != null) {
             compiled = _cache.GetOrCreate(cacheKey, c => {
-                var result = DoCompile(markup, partials);
+                var result = DoCompile(markup, partials, noEscape);
 
                 c.SlidingExpiration = TimeSpan.FromHours(1);
 
                 return result;
             });
         } else {
-            compiled = DoCompile(markup, partials);
+            compiled = DoCompile(markup, partials, noEscape);
         }
 
         return compiled;
     }
 
-    private HandlebarsTemplate<object, object> DoCompile(string markup, IReadOnlyDictionary<string, string> partials) {
-        var handlebars = GetHandlebars(partials);
+    private HandlebarsTemplate<object, object> DoCompile(string markup,
+                                                         IReadOnlyDictionary<string, string> partials,
+                                                         bool noEscape) {
+        var handlebars = GetHandlebars(partials, noEscape);
         
         var compiledTemplate = handlebars.Compile(markup);
 
         return compiledTemplate;
     }
 
-    private IHandlebars GetHandlebars(IReadOnlyDictionary<string, string> partials) {
-        var handlebars = _handlebarsFactory.Create(partials);
+    private IHandlebars GetHandlebars(IReadOnlyDictionary<string, string> partials, bool noEscape) {
+        var handlebars = _handlebarsFactory.Create(partials, noEscape);
 
         return handlebars;
     }
