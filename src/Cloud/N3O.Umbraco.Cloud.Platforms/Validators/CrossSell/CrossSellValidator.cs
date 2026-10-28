@@ -1,4 +1,5 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Giving.Allocations;
@@ -10,7 +11,12 @@ namespace N3O.Umbraco.Cloud.Platforms.Validators;
 
 public abstract class CrossSellValidator : ContentValidator {
     private static readonly string AmountAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Amount);
-    
+    private static readonly string MaximumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Maximum);
+    private static readonly string MinimumAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Minimum);
+    private static readonly string PercentageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Percentage);
+    private static readonly string StageAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.Stage);
+    private static readonly string TargetThresholdAlias = AliasHelper<CrossSellContent>.PropertyAlias(x => x.TargetThreshold);
+
     private readonly ILookups _lookups;
     private readonly IFundStructureAccessor _fundStructureAccessor;
 
@@ -28,10 +34,11 @@ public abstract class CrossSellValidator : ContentValidator {
 
     public override void Validate(ContentProperties content) {
        ValidateFundDimensions(content);
-       ValidateAmount(content);
+       ValidateValue(content);
     }
 
     protected abstract IFundDimensionOptions GetFundDimensionOptions(ContentProperties content);
+    protected abstract bool HasAnyLockedPrice(ContentProperties content);
     protected abstract bool HasLockedPrice(ContentProperties content);
     protected abstract string ContentTypeAlias { get; }
 
@@ -52,15 +59,51 @@ public abstract class CrossSellValidator : ContentValidator {
         HasFixedDimension(content, fundDimensionOptions.Dimension4, AliasHelper<DonationFormStateContent>.PropertyAlias(x => x.Dimension4), fundStructure.Dimension4.IsActive);
     }
     
-    private void ValidateAmount(ContentProperties content) {
-        var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias);
-        
-        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship) {
-            ErrorResult("Sponsorship item cannot have an amount");
+    private void ValidateValue(ContentProperties content) {
+        var amount = content.GetPropertyValueByAlias<decimal?>(AmountAlias).GetValueOrDefault();
+        var maximum = content.GetPropertyValueByAlias<decimal?>(MaximumAlias).GetValueOrDefault();
+        var minimum = content.GetPropertyValueByAlias<decimal?>(MinimumAlias).GetValueOrDefault();
+        var percentage = content.GetPropertyValueByAlias<decimal?>(PercentageAlias).GetValueOrDefault();
+        var threshold = content.GetPropertyValueByAlias<decimal?>(TargetThresholdAlias).GetValueOrDefault();
+        var stageProperty = content.GetPropertyByAlias(StageAlias);
+        var stage = ContentHelper.GetDataListValue<ECommerceStage>(stageProperty);
+        var hasAmount = amount.IsGreaterThanZero();
+        var hasRelativeValue = maximum.IsGreaterThanZero() ||
+                               minimum.IsGreaterThanZero() ||
+                               percentage.IsGreaterThanZero();
+
+        if (ContentTypeAlias == PlatformsConstants.CrossSells.Sponsorship && (hasAmount || hasRelativeValue)) {
+            ErrorResult("Sponsorship item cannot have an amount or relative value");
         }
 
-        if (HasLockedPrice(content) && amount.HasValue()) {
-            ErrorResult("Amount cannot be specified");
+        if (hasAmount && HasLockedPrice(content)) {
+            ErrorResult(content.GetPropertyByAlias(AmountAlias),
+                        "cannot be specified for an item with a locked price");
+        }
+
+        if (hasRelativeValue && HasAnyLockedPrice(content)) {
+            ErrorResult(content.GetPropertyByAlias(PercentageAlias),
+                        "cannot be specified for an item with a locked price");
+        }
+
+        if (hasRelativeValue && stage != ECommerceStages.Cart) {
+            ErrorResult(stageProperty, "must be cart for a relative value");
+        }
+
+        if (threshold.IsGreaterThanZero() && stage != ECommerceStages.Cart) {
+            ErrorResult(stageProperty, "must be cart for a threshold");
+        }
+
+        if (hasAmount && hasRelativeValue) {
+            ErrorResult(content.GetPropertyByAlias(AmountAlias), "cannot be specified with a relative value");
+        }
+
+        if (hasRelativeValue && percentage.IsZero()) {
+            ErrorResult(content.GetPropertyByAlias(PercentageAlias), "must be specified for a relative value");
+        }
+
+        if (minimum.IsGreaterThanZero() && maximum.IsGreaterThanZero() && minimum > maximum) {
+            ErrorResult(content.GetPropertyByAlias(MinimumAlias), "cannot be greater than the maximum");
         }
     }
 

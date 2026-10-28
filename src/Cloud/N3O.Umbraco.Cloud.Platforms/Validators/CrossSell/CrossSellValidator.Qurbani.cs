@@ -22,6 +22,10 @@ public class QurbaniCrossSellValidator : CrossSellValidator {
         return GetQurbaniItem(content)?.FundDimensionOptions;
     }
     
+    protected override bool HasAnyLockedPrice(ContentProperties content) {
+        return GetQurbaniItem(content)?.Price?.Locked == true;
+    }
+
     protected override bool HasLockedPrice(ContentProperties content) {
         return false;
     }
