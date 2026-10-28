@@ -7,6 +7,7 @@ public static class PlatformsSchemaConstants {
         public const string PlanName = "N3O.Platforms.Schema";
         public const string PlatformsContentTypesMigrationV2 = "2026.08.31";
         public const string PlatformsContentTypesMigrationV3 = "2026.10.26";
+        public const string PlatformsContentTypesMigrationV4 = "2026.10.27";
     }
 
     public static class Folders {
@@ -31,6 +32,8 @@ public static class PlatformsSchemaConstants {
         public const string DonationFormOffering = "Platforms Donation Form Offering Data List (0, 1)";
         public const string ECommerceStage = "Platforms Ecommerce Stage Data List (0, 1)";
         public const string ElementEmbedCodeLabel = "Platforms Element Embed Code Label";
+        public const string GiftTypesMultiple = "Platforms Gift Types Data List (0, n)";
+        public const string Percentage = "Platforms Percentage";
         public const string QurbaniItem = "Platforms Qurbani Item Data List (0, 1)";
         public const string QurbaniSeasonCategoryPicker = "Platforms Qurbani Season Category Picker (0, n)";
         public const string SuggestedAmounts = "Nested Platforms Suggested Amount (0, 3)";
