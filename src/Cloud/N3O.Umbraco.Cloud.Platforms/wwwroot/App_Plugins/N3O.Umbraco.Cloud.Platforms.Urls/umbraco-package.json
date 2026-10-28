@@ -5,16 +5,26 @@
     "version": "17.0.0",
     "extensions": [
         {
+            "type": "backofficeEntryPoint",
+            "alias": "N3O.EntryPoint.PlatformsUrls",
+            "name": "N3O Platforms URLs Entry Point",
+            "js": "/App_Plugins/N3O.Umbraco.Cloud.Platforms.Urls/entry-point.js"
+        },
+        {
             "type": "workspaceInfoApp",
             "alias": "N3O.WorkspaceInfoApp.PlatformsUrls",
             "name": "N3O Platforms URLs",
             "element": "/App_Plugins/N3O.Umbraco.Cloud.Platforms.Urls/platforms-urls-info-app.js",
-            "weight": 50,
+            "weight": 200,
             "meta": {},
             "conditions": [
                 {
                     "alias": "Umb.Condition.WorkspaceAlias",
                     "match": "Umb.Workspace.Document"
+                },
+                {
+                    "alias": "N3O.Condition.WorkspaceVisibility",
+                    "endpoint": "/umbraco/backoffice/api/PlatformsUrlsVisibility"
                 }
             ]
         }

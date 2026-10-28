@@ -33,6 +33,12 @@ public static class ContentExtensions {
         }
     }
 
+    public static bool HasPlatformsUrl(this IContent content, IContentTypeService contentTypeService) {
+        return content.IsCampaign(contentTypeService) ||
+               content.IsCrowdfundingCampaign() ||
+               content.IsOffering(contentTypeService);
+    }
+
     public static bool IsCampaign(this IContent content, IContentTypeService contentTypeService) {
         return HasComposition(contentTypeService, content, AliasHelper<CampaignContent>.ContentTypeAlias());
     }
