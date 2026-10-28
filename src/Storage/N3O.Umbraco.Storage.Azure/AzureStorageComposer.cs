@@ -60,7 +60,10 @@ public class AzureStorageComposer : Composer {
             return new AzureBlobFileSystem(requestRootPath,
                                            container,
                                            provider.GetRequiredService<IIOHelper>(),
-                                           provider.GetRequiredService<IContentTypeProvider>());
+                                           provider.GetRequiredService<IContentTypeProvider>(),
+                                           containerRootPath: null,
+                                           hybridCache: null,
+                                           cacheOptions: null);
         });
 
         builder.Services.AddUnique<IImageCache>(_ => new AzureBlobFileSystemImageCache(container,

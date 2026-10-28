@@ -1,4 +1,5 @@
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Humanizer.Bytes;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Utilities;
@@ -30,7 +31,10 @@ public class AzureStorageFolder : IStorageFolder {
     }
 
     public async Task DeleteAllFilesAsync() {
-        var result = _container.GetBlobsAsync(prefix: _folderPath);
+        var options = new GetBlobsOptions();
+        options.Prefix = _folderPath;
+
+        var result = _container.GetBlobsAsync(options);
 
         await foreach (var page in result.AsPages()) {
             foreach (var blob in page.Values) {

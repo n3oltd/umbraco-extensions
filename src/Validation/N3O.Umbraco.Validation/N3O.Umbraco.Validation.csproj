@@ -37,9 +37,9 @@
         <ProjectReference Include="..\..\N3O.Umbraco.Extensions\N3O.Umbraco.Extensions.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FluentValidation" Version="12.1.1" />
+        <PackageReference Include="FluentValidation" Version="12.2.0" />
         <PackageReference Include="ISO3166" Version="1.0.4" />
-        <PackageReference Include="libphonenumber-csharp" Version="9.0.35" />
+        <PackageReference Include="libphonenumber-csharp" Version="9.0.42" />
         <PackageReference Include="Profanity.Detector" Version="0.1.8" />
     </ItemGroup>
     <ItemGroup>

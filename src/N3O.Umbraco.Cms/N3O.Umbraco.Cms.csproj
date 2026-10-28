@@ -37,10 +37,10 @@
         <ProjectReference Include="..\N3O.Umbraco.ReactRuntime\N3O.Umbraco.ReactRuntime.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Diplo.GodMode" Version="17.1.5" />
-        <PackageReference Include="Umbraco.Community.Contentment" Version="6.1.4" />
-        <PackageReference Include="Umbraco.Cms" Version="17.7.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.10" />
+        <PackageReference Include="Diplo.GodMode" Version="17.3.0" />
+        <PackageReference Include="Umbraco.Community.Contentment" Version="6.3.3" />
+        <PackageReference Include="Umbraco.Cms" Version="17.7.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.14" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
