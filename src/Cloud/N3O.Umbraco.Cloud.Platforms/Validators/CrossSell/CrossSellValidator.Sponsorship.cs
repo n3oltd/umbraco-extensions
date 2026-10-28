@@ -22,6 +22,10 @@ public class SponsorshipCrossSellValidator : CrossSellValidator {
         return GetSponsorshipScheme(content)?.FundDimensionOptions;
     }
     
+    protected override bool HasAnyLockedPrice(ContentProperties content) {
+        return false;
+    }
+
     protected override bool HasLockedPrice(ContentProperties content) {
         return false;
     }

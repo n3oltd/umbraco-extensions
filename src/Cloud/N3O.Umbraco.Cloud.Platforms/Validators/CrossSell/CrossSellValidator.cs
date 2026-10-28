@@ -38,6 +38,7 @@ public abstract class CrossSellValidator : ContentValidator {
     }
 
     protected abstract IFundDimensionOptions GetFundDimensionOptions(ContentProperties content);
+    protected abstract bool HasAnyLockedPrice(ContentProperties content);
     protected abstract bool HasLockedPrice(ContentProperties content);
     protected abstract string ContentTypeAlias { get; }
 
@@ -75,16 +76,14 @@ public abstract class CrossSellValidator : ContentValidator {
             ErrorResult("Sponsorship item cannot have an amount or relative value");
         }
 
-        if (HasLockedPrice(content)) {
-            if (hasAmount) {
-                ErrorResult(content.GetPropertyByAlias(AmountAlias),
-                            "cannot be specified for an item with a locked price");
-            }
+        if (hasAmount && HasLockedPrice(content)) {
+            ErrorResult(content.GetPropertyByAlias(AmountAlias),
+                        "cannot be specified for an item with a locked price");
+        }
 
-            if (hasRelativeValue) {
-                ErrorResult(content.GetPropertyByAlias(PercentageAlias),
-                            "cannot be specified for an item with a locked price");
-            }
+        if (hasRelativeValue && HasAnyLockedPrice(content)) {
+            ErrorResult(content.GetPropertyByAlias(PercentageAlias),
+                        "cannot be specified for an item with a locked price");
         }
 
         if (hasRelativeValue && stage != ECommerceStages.Cart) {
