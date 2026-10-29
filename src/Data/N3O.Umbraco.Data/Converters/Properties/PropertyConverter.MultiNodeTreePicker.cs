@@ -10,6 +10,7 @@ using Umbraco.Cms.Core.DynamicRoot;
 using Umbraco.Cms.Core.DynamicRoot.QuerySteps;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Extensions;
 using OurDataTypes = N3O.Umbraco.Data.Lookups.DataTypes;
 using UmbracoConstants = Umbraco.Cms.Core.Constants;
@@ -22,18 +23,20 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
     // parent document are resolved.
     private static readonly string[] ContextFreeOriginAliases = ["ByKey", "ContentRoot"];
     private static readonly string EditorAlias = UmbracoPropertyEditors.Aliases.MultiNodeTreePicker; 
-    // Matches no published content, so name and path cells fail while key cells, which are never scoped to a start
-    // node, still resolve.
+    // Matches no published content, so a name or path cell fails rather than searching the whole tree.
     private static readonly Guid NoStartNodeId = Guid.Empty;
     private readonly IContentHelper _contentHelper;
     private readonly IDynamicRootService _dynamicRootService;
+    private readonly IPublishedContentCache _publishedContentCache;
 
     public MultiNodeTreePickerPropertyConverter(IColumnRangeBuilder columnRangeBuilder,
                                                 IContentHelper contentHelper,
-                                                IDynamicRootService dynamicRootService)
+                                                IDynamicRootService dynamicRootService,
+                                                IPublishedContentCache publishedContentCache)
         : base(columnRangeBuilder) {
         _contentHelper = contentHelper;
         _dynamicRootService = dynamicRootService;
+        _publishedContentCache = publishedContentCache;
     }
     
     public override bool IsConverter(UmbracoPropertyInfo propertyInfo) {
@@ -99,7 +102,8 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
 
         var rootIds = _dynamicRootService.GetDynamicRootsAsync(query).GetAwaiter().GetResult();
 
-        return rootIds.Select(x => (Guid?) x).FirstOrDefault();
+        // The query also returns trashed and unpublished nodes.
+        return rootIds.Where(IsSearchable).Select(x => (Guid?) x).FirstOrDefault();
     }
 
     private Guid? GetParentId(UmbracoPropertyInfo propertyInfo) {
@@ -113,7 +117,7 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
 
         var rootId = GetDynamicRootId(dynamicRoot);
 
-        // The system root is not published content; with no start node the parser searches the whole tree.
+        // The system root is not published content, so it cannot be passed as a start node.
         if (rootId == UmbracoConstants.System.RootSystemKey) {
             return null;
         } else {
@@ -131,5 +135,9 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
 
     private bool IsContextFree(DynamicRoot dynamicRoot) {
         return dynamicRoot.HasValue() && ContextFreeOriginAliases.Any(x => x.EqualsInvariant(dynamicRoot.OriginAlias));
+    }
+
+    private bool IsSearchable(Guid rootId) {
+        return rootId == UmbracoConstants.System.RootSystemKey || _publishedContentCache.GetById(rootId).HasValue();
     }
 }
