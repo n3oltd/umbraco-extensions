@@ -28,7 +28,7 @@ public class CaptureSubscriptionHandler :
             apiReq.Id = req.Model.SubscriptionId;
             apiReq.Reason = req.Model.Reason;
             
-            await _subscriptionsClient.ActivateSubscriptionAsync(apiReq);
+            await _subscriptionsClient.ActivateSubscriptionAsync(apiReq.Id, apiReq);
 
             credential.SubscriptionCreated(req.Model.SubscriptionId, req.Model.Reason);
         } catch (ApiException apiException) {

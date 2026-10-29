@@ -28,6 +28,10 @@ public class ContentCurrencies : LookupsCollection<Currency> {
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
     
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<Currency>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
         
@@ -38,7 +42,7 @@ public class ContentCurrencies : LookupsCollection<Currency> {
         List<CurrencyContent> content;
         
         if (_umbracoContextAccessor.TryGetUmbracoContext(out _)) {
-            content = _contentCache.All<CurrencyContent>().OrderBy(x => x.Content().SortOrder).ToList();
+            content = _contentCache.AllInDefaultCulture<CurrencyContent>().OrderBy(x => x.Content().SortOrder).ToList();
         } else {
             content = [];
         }
@@ -59,8 +63,6 @@ public class ContentCurrencies : LookupsCollection<Currency> {
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }

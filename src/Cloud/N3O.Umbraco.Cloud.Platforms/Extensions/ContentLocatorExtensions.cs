@@ -11,7 +11,7 @@ public static class ContentLocatorExtensions {
         var campaignPage = contentCache.Special(PlatformsSpecialPages.Campaign);
 
         if (campaignPage.HasValue()) {
-            var campaignSlug = slugHelper.GenerateSlug(name);
+            var campaignSlug = slugHelper.GeneratePlatformsSlug(name);
             var campaignUrl = new Url(campaignPage.RelativeUrl());
 
             campaignUrl.RemovePathSegment();
@@ -29,7 +29,7 @@ public static class ContentLocatorExtensions {
         var crowdfundingCampaignPage = contentCache.Special(PlatformsSpecialPages.CrowdfundingCampaign);
 
         if (crowdfundingCampaignPage.HasValue()) {
-            var crowdfundingCampaignSlug = slugHelper.GenerateSlug(name);
+            var crowdfundingCampaignSlug = slugHelper.GeneratePlatformsSlug(name);
             var crowdfundingCampaignUrl = new Url(crowdfundingCampaignPage.RelativeUrl());
 
             crowdfundingCampaignUrl.RemovePathSegment();
@@ -48,7 +48,7 @@ public static class ContentLocatorExtensions {
         var campaignUrl = GetCampaignPath(contentCache, slugHelper, campaignName);
 
         if (campaignUrl.HasValue()) {
-            var offeringSlug = slugHelper.GenerateSlug(offeringName);
+            var offeringSlug = slugHelper.GeneratePlatformsSlug(offeringName);
             var offeringUrl = new Url(campaignUrl);
 
             offeringUrl.AppendPathSegment(offeringSlug);

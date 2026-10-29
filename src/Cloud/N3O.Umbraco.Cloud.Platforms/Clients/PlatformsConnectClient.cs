@@ -1275,7 +1275,37 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     /// <summary>
-    /// One of 'n3o-campaign-id', 'n3o-offering-id', 'n3o-page-id'
+    /// One of 'n3o-content-feed', 'n3o-create-crowdfunder-button', 'n3o-donation-button', 'n3o-donation-form', 'n3o-donation-popup', 'n3o-featured-campaigns', 'n3o-featured-crowdfunders'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PlatformsElementTagName
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-content-feed")]
+        ContentFeed = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-create-crowdfunder-button")]
+        CreateCrowdfunderButton = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-donation-button")]
+        DonationButton = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-donation-form")]
+        DonationForm = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-donation-popup")]
+        DonationPopup = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-featured-campaigns")]
+        FeaturedCampaigns = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-featured-crowdfunders")]
+        FeaturedCrowdfunders = 6,
+
+    }
+
+    /// <summary>
+    /// One of 'n3o-campaign-id', 'n3o-checkout-same-site', 'n3o-language', 'n3o-offering-id', 'n3o-page-id', 'n3o-page-kind', 'n3o-page-published-path', 'n3o-page-title', 'n3o-page-url'
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum PlatformsMetaTagName
@@ -1284,11 +1314,29 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [System.Runtime.Serialization.EnumMember(Value = @"n3o-campaign-id")]
         CampaignId = 0,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-checkout-same-site")]
+        CheckoutSameSite = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-language")]
+        Language = 2,
+
         [System.Runtime.Serialization.EnumMember(Value = @"n3o-offering-id")]
-        OfferingId = 1,
+        OfferingId = 3,
 
         [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-id")]
-        PageId = 2,
+        PageId = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-kind")]
+        PageKind = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-published-path")]
+        PagePublishedPath = 6,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-title")]
+        PageTitle = 7,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"n3o-page-url")]
+        PageUrl = 8,
 
     }
 
@@ -1407,27 +1455,6 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ProblemDetails
-    {
-
-        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Type { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("title", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Title { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Status { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("detail", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Detail { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("instance", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Instance { get; set; }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class TaxReliefDeclarationModel
     {
 
@@ -1493,48 +1520,6 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("forms", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.IDictionary<string, FormDataModel> Forms { get; set; }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ValidationProblem
-    {
-
-        [Newtonsoft.Json.JsonProperty("property", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Property { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("error", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Error { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("severity", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Severity { get; set; }
-
-    }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class ValidationProblemDetails
-    {
-
-        [Newtonsoft.Json.JsonProperty("errors", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<ValidationProblem> Errors { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("type", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Type { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("title", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Title { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Status { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("detail", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Detail { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("instance", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Instance { get; set; }
-
-        [Newtonsoft.Json.JsonProperty("extensions", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public object Extensions { get; set; }
 
     }
 

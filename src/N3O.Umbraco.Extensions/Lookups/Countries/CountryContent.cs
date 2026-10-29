@@ -30,6 +30,10 @@ public class ContentCountries : LookupsCollection<Country> {
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
     
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<Country>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
         
@@ -40,7 +44,7 @@ public class ContentCountries : LookupsCollection<Country> {
         List<CountryContent> content;
         
         if (_umbracoContextAccessor.TryGetUmbracoContext(out _)) {
-            content = _contentCache.All<CountryContent>().OrderBy(x => x.Content().Name).ToList();
+            content = _contentCache.AllInDefaultCulture<CountryContent>().OrderBy(x => x.Content().Name).ToList();
         } else {
             content = [];
         }
@@ -62,8 +66,6 @@ public class ContentCountries : LookupsCollection<Country> {
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }

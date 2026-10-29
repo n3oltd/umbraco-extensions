@@ -1,0 +1,25 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+        <N3OUmbracoBlocksPerplexContentFilesPath>$(MSBuildThisFileDirectory)..\App_Plugins\N3O.Umbraco.Blocks.Perplex\**\*.*</N3OUmbracoBlocksPerplexContentFilesPath>
+    </PropertyGroup>
+
+    <Target Name="CopyN3OUmbracoBlocksPerplexAssets" BeforeTargets="Build">
+        <ItemGroup>
+            <N3OUmbracoBlocksPerplexContentFiles Include="$(N3OUmbracoBlocksPerplexContentFilesPath)"/>
+        </ItemGroup>
+        <Message Text="Copying N3O Blocks Perplex files: $(N3OUmbracoBlocksPerplexContentFilesPath) - #@(N3OUmbracoBlocksPerplexContentFiles->Count()) files" Importance="high"/>
+        <Copy SourceFiles="@(N3OUmbracoBlocksPerplexContentFiles)"
+              DestinationFiles="@(N3OUmbracoBlocksPerplexContentFiles->'$(MSBuildProjectDirectory)\App_Plugins\N3O.Umbraco.Blocks.Perplex\%(RecursiveDir)%(Filename)%(Extension)')"
+              SkipUnchangedFiles="true"/>
+    </Target>
+
+    <Target Name="ClearN3OUmbracoBlocksPerplexAssets" BeforeTargets="Clean">
+        <ItemGroup>
+            <N3OUmbracoBlocksPerplexDir Include="$(MSBuildProjectDirectory)\App_Plugins\N3O.Umbraco.Blocks.Perplex\"/>
+        </ItemGroup>
+        <Message Text="Clear old N3O Blocks Perplex files" Importance="high"/>
+        <RemoveDir Directories="@(N3OUmbracoBlocksPerplexDir)"/>
+    </Target>
+
+</Project>

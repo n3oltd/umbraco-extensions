@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.GeoIP.Models;
 using N3O.Umbraco.Lookups;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace N3O.Umbraco.GeoIP.Cloudflare;
 
+[Order(0)]
 public class CloudflareIPGeoLocationProvider : IIPGeoLocationProvider {
     private static readonly string CityHeader = "CF-IPCity";
     private static readonly string CountryHeader = "CF-IPCountry";
@@ -29,15 +31,15 @@ public class CloudflareIPGeoLocationProvider : IIPGeoLocationProvider {
         }
 
         var headers = httpContext.Request.Headers;
-        var city = headers[CityHeader].FirstOrDefault();
         var countryCode = headers[CountryHeader].FirstOrDefault();
-        var region = headers[RegionHeader].FirstOrDefault();
+        var country = _lookups.GetAll<Country>().FindByCode(countryCode);
 
-        if (!city.HasValue() && !countryCode.HasValue() && !region.HasValue()) {
+        if (country == null) {
             return Task.FromResult(GeoLookupResult.ForFailure());
         }
 
-        var country = countryCode.HasValue() ? _lookups.GetAll<Country>().FindByCode(countryCode) : null;
+        var city = headers[CityHeader].FirstOrDefault();
+        var region = headers[RegionHeader].FirstOrDefault();
 
         return Task.FromResult(GeoLookupResult.ForSuccess(country, city, region));
     }

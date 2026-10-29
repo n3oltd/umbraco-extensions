@@ -73,7 +73,6 @@ public static class GivingMigrationConstants {
     }
 
     public static class Placeholders {
-        public const string AnalyticsTagName = "campaign";
         public const string IconFilename = "giving-migration-icon.svg";
 
         // The icon picker only accepts vector graphics, and placehold.co serves image/svg+xml by default
@@ -85,14 +84,13 @@ public static class GivingMigrationConstants {
     }
 
     // Everything else the migration targets is already named in PlatformsConstants. The campaigns container is
-    // not, because the seeder does not create it.
+    // not, because only the migration targets it.
     public static class Platforms {
         public const string CampaignsAlias = "platformsCampaigns";
     }
 
     public static class Properties {
         public const string Amount = "amount";
-        public const string AnalyticsTags = "analyticsTags";
         public const string DefaultGivingType = "defaultGivingType";
         public const string Description = "description";
         public const string Dimension1 = "dimension1";

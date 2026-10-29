@@ -6,6 +6,8 @@ public static class PlatformsSchemaConstants {
     public static class Migrations {
         public const string PlanName = "N3O.Platforms.Schema";
         public const string PlatformsContentTypesMigrationV2 = "2026.08.31";
+        public const string PlatformsContentTypesMigrationV3 = "2026.10.26";
+        public const string PlatformsContentTypesMigrationV4 = "2026.10.27";
     }
 
     public static class Folders {
@@ -22,7 +24,6 @@ public static class PlatformsSchemaConstants {
 
     // Data type names are the adoption key on every existing site, so they must match what is deployed
     public static class DataTypes {
-        public const string AnalyticsTagsList = "Platforms Analytics Tags List";
         public const string CampaignsMultiple = "Platforms Campaigns Data List (0, n)";
         public const string CampaignsSingle = "Platforms Campaigns Data List (0, 1)";
         public const string DonateButtonAction = "Platforms Donate Button Action Data List (0, 1)";
@@ -31,14 +32,17 @@ public static class PlatformsSchemaConstants {
         public const string DonationFormOffering = "Platforms Donation Form Offering Data List (0, 1)";
         public const string ECommerceStage = "Platforms Ecommerce Stage Data List (0, 1)";
         public const string ElementEmbedCodeLabel = "Platforms Element Embed Code Label";
+        public const string GiftTypesMultiple = "Platforms Gift Types Data List (0, n)";
+        public const string Percentage = "Platforms Percentage";
         public const string QurbaniItem = "Platforms Qurbani Item Data List (0, 1)";
         public const string QurbaniSeasonCategoryPicker = "Platforms Qurbani Season Category Picker (0, n)";
         public const string SuggestedAmounts = "Nested Platforms Suggested Amount (0, 3)";
+        public const string SuggestedAmountTitle = "Platforms Suggested Amount Title";
         public const string Summary = "Platforms Summary";
     }
 
     public static class DataTypeKeys {
-        // The key the sites' uSync exports hold for the type, save Muslim Hands, whose own key is matched by name
+        // The key most sites' uSync exports hold for this type; a site holding another is matched by name.
         public static readonly Guid CampaignsSingle = new("d51913ab-a36d-4d15-9c5c-7876319e967e");
 
         // The donation form types are referenced by key from the sites' own block definitions, so seeding them
@@ -84,7 +88,6 @@ public static class PlatformsSchemaConstants {
     }
 
     public static class Groups {
-        public const string Analytics = "Analytics";
         public const string Defaults = "Defaults";
         public const string Embed = "Embed";
         public const string Filters = "Filters";

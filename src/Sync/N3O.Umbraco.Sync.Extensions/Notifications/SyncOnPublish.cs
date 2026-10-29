@@ -41,7 +41,6 @@ public class SyncOnPublish : INotificationAsyncHandler<ContentPublishedNotificat
         foreach (var content in notification.PublishedEntities) {
             if (ContentTypeServerMap.ContainsKey(content.ContentType.Alias)) {
                 var req = new SyncContentReq();
-                req.RequestId = Guid.NewGuid();
                 req.ContentId = content.Key;
                 req.ServerAlias = ContentTypeServerMap[content.ContentType.Alias];
                 

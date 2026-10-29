@@ -19,10 +19,6 @@ public class SyncContentReqValidator : ModelValidator<SyncContentReq> {
         _serverService = serverService;
         _contentLocator = contentLocator;
 
-        RuleFor(x => x.RequestId)
-           .NotNull()
-           .WithMessage(Get<Strings>(s => s.RequestIdMustBeSpecified));
-        
         RuleFor(x => x.ContentId)
            .NotNull()
            .WithMessage(Get<Strings>(s => s.ContentIdMustBeSpecified));
@@ -51,7 +47,6 @@ public class SyncContentReqValidator : ModelValidator<SyncContentReq> {
     }
 
     public class Strings : ValidationStrings {
-        public string RequestIdMustBeSpecified => "Request id must be specified";
         public string ContentIdMustBeSpecified => "Content id must be specified";
         public string ContentNotFound => "No content can be found with specified id";
         public string ServerAliasBeSpecified => "Server alias must be specified";

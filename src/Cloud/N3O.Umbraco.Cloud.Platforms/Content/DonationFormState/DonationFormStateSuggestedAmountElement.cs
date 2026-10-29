@@ -6,5 +6,6 @@ namespace N3O.Umbraco.Cloud.Platforms.Content;
 [UmbracoContent(PlatformsConstants.DonationFormState.SuggestedAmount)]
 public class DonationFormStateSuggestedAmountElement : UmbracoElement<DonationFormStateSuggestedAmountElement> {
     public decimal Amount => GetValue(x => x.Amount);
+    public string Title => GetValue(x => x.Title);
     public string Description => GetValue(x => x.Description);
 }

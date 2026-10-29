@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 namespace N3O.Umbraco.GeoIP;
 
 public class GeoIPDefaultCurrencyProvider : LookupsDefaultCurrencyProvider {
-    private readonly IIPGeoLocationProvider _ipGeoLocationProvider;
+    private readonly IIPGeoLocationAccessor _ipGeoLocationAccessor;
 
-    public GeoIPDefaultCurrencyProvider(ILookups lookups, IIPGeoLocationProvider ipGeoLocationProvider)
+    public GeoIPDefaultCurrencyProvider(ILookups lookups, IIPGeoLocationAccessor ipGeoLocationAccessor)
         : base(lookups) {
-        _ipGeoLocationProvider = ipGeoLocationProvider;
+        _ipGeoLocationAccessor = ipGeoLocationAccessor;
     }
 
     public override async Task<Currency> GetDefaultCurrencyAsync(CancellationToken cancellationToken = default) {
-        var geoLookupResult = await _ipGeoLocationProvider.GeoLocateAsync(cancellationToken);
+        var geoLookupResult = await _ipGeoLocationAccessor.GeoLocateAsync(cancellationToken);
 
         var currency = default(Currency);
         

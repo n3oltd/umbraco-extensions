@@ -42,7 +42,7 @@ jobs:
             exit 0
           fi
 
-          LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          LATEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | sed -n 1p)
           if [[ -z "$LATEST" ]]; then
             echo "No prior v*.*.* tag found; aborting" >&2
             exit 1
@@ -61,12 +61,7 @@ jobs:
             fi
           fi
 
-          # Create + push tag with the default Actions token (github.token). This
-          # push will not retrigger the `push: tags:` branch of this workflow
-          # (GitHub blocks default-token-authored events from triggering workflows),
-          # which is
-          # fine — downstream jobs in this same run consume the version via
-          # needs.prepare.outputs.version.
+          # Pushed with the default token so the tag does not trigger this workflow again.
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git tag "$NEXT_TAG"

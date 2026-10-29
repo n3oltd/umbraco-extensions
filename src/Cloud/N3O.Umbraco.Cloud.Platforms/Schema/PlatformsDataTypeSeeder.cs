@@ -31,7 +31,6 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
     }
 
     public void Seed() {
-        Seed(DataTypeNames.AnalyticsTagsList, SeedAnalyticsTagsList);
         Seed(DataTypeNames.CampaignsMultiple, SeedCampaigns);
         Seed(DataTypeNames.CampaignsSingle, SeedCampaign);
         Seed(DataTypeNames.DonateButtonAction, SeedDonateButtonAction);
@@ -39,9 +38,12 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         Seed(DataTypeNames.DonationFormOffering, SeedDonationFormOffering);
         Seed(DataTypeNames.ECommerceStage, SeedECommerceStage);
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
+        Seed(DataTypeNames.GiftTypesMultiple, SeedGiftTypes);
+        Seed(DataTypeNames.Percentage, SeedPercentage);
         Seed(DataTypeNames.QurbaniItem, SeedQurbaniItem);
         Seed(DataTypeNames.QurbaniSeasonCategoryPicker, SeedQurbaniSeasonCategoryPicker);
         Seed(DataTypeNames.SuggestedAmounts, SeedSuggestedAmounts);
+        Seed(DataTypeNames.SuggestedAmountTitle, SeedSuggestedAmountTitle);
         Seed(DataTypeNames.Summary, SeedSummary);
     }
 
@@ -64,15 +66,6 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         } catch (Exception ex) {
             _logger.LogError(ex, "Could not create platforms data type {Name}", name);
         }
-    }
-
-    private void SeedAnalyticsTagsList() {
-        var designer = _dataTypeEditor.NewContentmentListItems(DataTypeNames.AnalyticsTagsList);
-
-        designer.InFolder(Folders.Platforms);
-        designer.WithDeterministicId(DataTypeNames.AnalyticsTagsList);
-
-        designer.Save();
     }
 
     private void SeedCampaign() {
@@ -175,6 +168,29 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Save();
     }
 
+    private void SeedGiftTypes() {
+        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.GiftTypesMultiple);
+
+        designer.DataSource<GiftTypeDataSource>();
+        designer.AllowMultiple();
+        designer.InFolder(Folders.Platforms);
+        designer.WithDeterministicId(DataTypeNames.GiftTypesMultiple);
+
+        designer.Save();
+    }
+
+    private void SeedPercentage() {
+        var designer = _dataTypeEditor.NewDecimal(DataTypeNames.Percentage);
+
+        designer.Min(0);
+        designer.Max(100);
+        designer.Step(0.01m);
+        designer.InFolder(Folders.Platforms);
+        designer.WithDeterministicId(DataTypeNames.Percentage);
+
+        designer.Save();
+    }
+
     private void SeedQurbaniItem() {
         var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.QurbaniItem);
 
@@ -205,6 +221,16 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.NameTemplate("{{amount}} {{description}}");
         designer.InFolder(Folders.Platforms, Folders.DonationForms);
         designer.WithDeterministicId(DataTypeNames.SuggestedAmounts);
+
+        designer.Save();
+    }
+
+    private void SeedSuggestedAmountTitle() {
+        var designer = _dataTypeEditor.NewTextBox(DataTypeNames.SuggestedAmountTitle);
+
+        designer.MaxChars(50);
+        designer.InFolder(Folders.Platforms, Folders.DonationForms);
+        designer.WithDeterministicId(DataTypeNames.SuggestedAmountTitle);
 
         designer.Save();
     }

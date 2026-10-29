@@ -25,7 +25,7 @@ public class MemberSaving : INotificationAsyncHandler<MemberSavingNotification> 
     }
 
     public async Task HandleAsync(MemberSavingNotification notification, CancellationToken cancellationToken) {
-        if (_auth0MemberOptions.Auth0.Login.AutoCreateDirectoryUser) {
+        if (_auth0MemberOptions.Auth0?.Login.AutoCreateDirectoryUser == true) {
             foreach (var member in notification.SavedEntities) {
                 var firstName = member.GetValue<string>(MemberConstants.Member.Properties.FirstName) ?? member.Name;
                 var lastName = member.GetValue<string>(MemberConstants.Member.Properties.LastName);

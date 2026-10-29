@@ -19,6 +19,10 @@ public class UmbracoLookupsCollection<T> : LookupsCollection<T> where T : Lookup
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
     
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<T>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
         
@@ -27,7 +31,7 @@ public class UmbracoLookupsCollection<T> : LookupsCollection<T> where T : Lookup
 
     private IReadOnlyList<T> GetFromCache() {
         if (_umbracoContextAccessor.TryGetUmbracoContext(out _)) {
-            var items = _contentCache.All<T>().OrderBy(x => x.Content().SortOrder).ToList();
+            var items = _contentCache.AllInDefaultCulture<T>().OrderBy(x => x.Content().SortOrder).ToList();
 
             return items;
         } else {
@@ -36,8 +40,6 @@ public class UmbracoLookupsCollection<T> : LookupsCollection<T> where T : Lookup
     }
     
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }

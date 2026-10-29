@@ -34,7 +34,7 @@ public class CaptureTransactionHandler :
 
         var request = GetApiAuthorizePaymentReq(req.Model, parameters, settings);
 
-        var res = await _payPalClient.AuthorizePaymentAsync(request);
+        var res = await _payPalClient.AuthorizePaymentAsync(request.AuthorizationId, request);
 
         if (res.IsAuthorised()) {
             payment.Paid(req.Model.Email, res.Id);

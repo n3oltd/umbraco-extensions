@@ -27,4 +27,7 @@ public class SendEmailReq {
     
     [Name("Model JSON")]
     public string ModelJson { get; set; }
+
+    [Name("Attachments")]
+    public IEnumerable<EmailAttachmentReq> Attachments { get; set; }
 }

@@ -54,7 +54,8 @@ public class PerplexContentBlocksPropertyEditor : ContentBlocksPropertyEditor, I
                                                               _shortStringHelper,
                                                               _jsonSerializer);
 
-        valueEditor.View = perplexEditor.View;
+        // The Perplex editor deletes its property's error message on init, so this view wraps it with its own.
+        valueEditor.View = "/App_Plugins/N3O.Umbraco.Blocks.Perplex/N3O.Umbraco.Blocks.Perplex.html";
         valueEditor.Configuration = perplexEditor.Configuration;
         valueEditor.HideLabel = perplexEditor.HideLabel;
         valueEditor.ValueType = perplexEditor.ValueType;

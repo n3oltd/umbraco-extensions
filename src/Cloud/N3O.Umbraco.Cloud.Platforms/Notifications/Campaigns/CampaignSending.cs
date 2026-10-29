@@ -3,7 +3,6 @@ using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
-using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using Slugify;
@@ -57,9 +56,9 @@ public class CampaignSending : INotificationAsyncHandler<SendingContentNotificat
     }
 
     private void SetEmbedCode(ContentVariantDisplay variant, Guid contentId) {
-        var donationButtonTag = new TagBuilder(ElementTypes.DonationButton.TagName);
-        var donationFormTag = new TagBuilder(ElementTypes.DonationForm.TagName);
-        var donationPopupTag = new TagBuilder(ElementTypes.DonationPopup.TagName);
+        var donationButtonTag = new TagBuilder(PlatformsElementTagName.DonationButton.ToEnumString());
+        var donationFormTag = new TagBuilder(PlatformsElementTagName.DonationForm.ToEnumString());
+        var donationPopupTag = new TagBuilder(PlatformsElementTagName.DonationPopup.ToEnumString());
 
         donationButtonTag.Attributes.Add("element-id", $"{contentId.ToString()}");
         donationFormTag.Attributes.Add("element-id", $"{contentId.ToString()}");

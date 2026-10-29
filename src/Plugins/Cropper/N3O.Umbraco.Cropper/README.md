@@ -8,5 +8,12 @@ Crops are generated on the server when the content is saved and stored as media,
 applied by URL parameters at request time, so what is served is a real file at the exact dimensions.
 That also means changing a crop definition does not retrospectively change images already cropped.
 
+A data type can name a crop suggester, a registered `ICropSuggester` chosen by alias. After an
+upload the editor places each crop box where the suggester proposes, and data import uses the
+suggestion in place of the default crop; with no suggestion the default applies, and whatever is in
+the crop box when the content is saved is what gets stored. Uploads are stored upright: an image
+with an EXIF orientation is rotated to match it and saved without the orientation tag, so stored
+pixels, crops and suggestions share one frame.
+
 Alt text is optional per data type. Where a cropper image is used as the Open Graph image, a handler
 picks the appropriate crop, so social previews are not served the full-size original.

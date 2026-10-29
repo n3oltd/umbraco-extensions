@@ -10,7 +10,9 @@ public class UmbracoRedirectsRule : IRule {
         var redirect = UmbracoRedirects.Find(context.HttpContext.Request.Path);
 
         if (redirect != null) {
-            context.HttpContext.Response.Redirect(redirect.UrlOrPath, !redirect.Temporary);
+            var url = redirect.GetUrl(context.HttpContext.Request.QueryString);
+            
+            context.HttpContext.Response.Redirect(url, !redirect.Temporary);
             
             context.Result = RuleResult.EndResponse;
         }

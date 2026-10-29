@@ -1,64 +1,95 @@
-using FluentEmail.Core;
-using FluentEmail.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Email.Commands;
 using N3O.Umbraco.Email.Models;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Json;
 using N3O.Umbraco.Mediator;
+using N3O.Umbraco.Storage;
+using N3O.Umbraco.Templates;
 using N3O.Umbraco.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using NewEmail = FluentEmail.Core.Email;
 
 namespace N3O.Umbraco.Email.Handlers;
 
 public class SendEmailHandler : IRequestHandler<SendEmailCommand, SendEmailReq, None> {
     private readonly IJsonProvider _jsonProvider;
-    private readonly ITemplateRenderer _renderer;
-    private readonly ISender _sender;
+    private readonly ILogger<SendEmailHandler> _logger;
+    private readonly IMimeMessageBuilder _mimeMessageBuilder;
+    private readonly IEmailSender _sender;
+    private readonly ITemplateEngine _templateEngine;
+    private readonly IVolume _volume;
 
-    public SendEmailHandler(IJsonProvider jsonProvider, ITemplateRenderer renderer, ISender sender) {
+    public SendEmailHandler(IJsonProvider jsonProvider,
+                            ILogger<SendEmailHandler> logger,
+                            IMimeMessageBuilder mimeMessageBuilder,
+                            IEmailSender sender,
+                            ITemplateEngine templateEngine,
+                            IVolume volume) {
         _jsonProvider = jsonProvider;
-        _renderer = renderer;
+        _logger = logger;
+        _mimeMessageBuilder = mimeMessageBuilder;
         _sender = sender;
+        _templateEngine = templateEngine;
+        _volume = volume;
     }
 
     public async Task<None> Handle(SendEmailCommand req, CancellationToken cancellationToken) {
         var templateModel = _jsonProvider.DeserializeObject(req.Model.ModelJson, TypeResolver.Resolve(req.Model.ModelType));
-        var email = NewEmail.From(req.Model.From.Email, req.Model.From.Name);
+        var subject = _templateEngine.Render(req.Model.Subject, templateModel);
+        var htmlBody = _templateEngine.Render(req.Model.Body, templateModel);
 
-        email.Renderer = _renderer;
-        email.Sender = _sender;
+        var to = ToEmailIdentities(req.Model.To);
+        var cc = ToEmailIdentities(req.Model.Cc);
+        var bcc = ToEmailIdentities(req.Model.Bcc);
+        var recipient = to.Concat(cc).Concat(bcc).First();
 
-        AddRecipients(req.Model.To, email.To);
-        AddRecipients(req.Model.Cc, email.CC);
-        AddRecipients(req.Model.Bcc, email.BCC);
+        var mimeMessage = await _mimeMessageBuilder.BuildMessageAsync(new EmailIdentity(req.Model.From),
+                                                                      to,
+                                                                      cc,
+                                                                      bcc,
+                                                                      subject,
+                                                                      htmlBody,
+                                                                      req.Model.Attachments,
+                                                                      cancellationToken);
 
-        email.Subject(await _renderer.ParseAsync(req.Model.Subject, templateModel, false));
-        email.UsingTemplate(req.Model.Body, templateModel);
-        email.Tag("website");
+        string messageId;
 
-        var response = await email.SendAsync(cancellationToken);
-
-        if (!response.Successful) {
-            var message = $"Error occured while sending email to {email.Data.ToAddresses.First().Name}";
-            
-            foreach (var errorMessage in response.ErrorMessages) {
-                message += $"\n{errorMessage}";
-            }
-            
-            throw new Exception(message);
+        try {
+            messageId = await _sender.SendAsync(mimeMessage, cancellationToken);
+        } catch (Exception ex) when (ex is not OperationCanceledException ||
+                                     !cancellationToken.IsCancellationRequested) {
+            throw new Exception($"Error occurred while sending email to {recipient}", ex);
         }
+
+        _logger.LogInformation("Sent email to {Recipient} with provider message ID {MessageId}",
+                               recipient,
+                               messageId);
+
+        await DeleteAttachmentsAsync(req.Model.Attachments);
 
         return None.Empty;
     }
 
-    private void AddRecipients(IEnumerable<IEmailIdentity> recipients, Func<string, string, IFluentEmail> add) {
-        foreach (var recipient in recipients.OrEmpty()) {
-            add(recipient.Email, recipient.Name);
+    private async Task DeleteAttachmentsAsync(IEnumerable<EmailAttachmentReq> attachments) {
+        foreach (var storageFolderName in attachments.OrEmpty().Select(x => x.StorageFolderName).Distinct()) {
+            try {
+                var storageFolder = await _volume.GetStorageFolderAsync(storageFolderName);
+
+                await storageFolder.DeleteAllFilesAsync();
+            } catch (Exception ex) {
+                // A retry would send the email again, so a failed delete must not fail the job.
+                _logger.LogWarning(ex,
+                                   "Failed to delete the attachments in {StorageFolderName} after sending",
+                                   storageFolderName);
+            }
         }
+    }
+
+    private IReadOnlyList<EmailIdentity> ToEmailIdentities(IEnumerable<IEmailIdentity> recipients) {
+        return recipients.OrEmpty().Select(x => new EmailIdentity(x)).ToList();
     }
 }

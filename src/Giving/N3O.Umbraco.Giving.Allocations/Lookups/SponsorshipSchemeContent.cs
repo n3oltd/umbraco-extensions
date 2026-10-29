@@ -51,6 +51,10 @@ public class ContentSponsorshipSchemes : LookupsCollection<SponsorshipScheme> {
         _contentCache.Flushed += ContentCacheOnFlushed;
     }
     
+    protected override bool CanReload() {
+        return _contentCache.CanCache();
+    }
+
     protected override Task<IReadOnlyList<SponsorshipScheme>> LoadAllAsync(CancellationToken cancellationToken) {
         var all = GetFromCache();
         
@@ -61,7 +65,7 @@ public class ContentSponsorshipSchemes : LookupsCollection<SponsorshipScheme> {
         List<SponsorshipSchemeContent> content;
         
         if (_umbracoContextAccessor.TryGetUmbracoContext(out _)) {
-            content = _contentCache.All<SponsorshipSchemeContent>().OrderBy(x => x.Content().Name).ToList();
+            content = _contentCache.AllInDefaultCulture<SponsorshipSchemeContent>().OrderBy(x => x.Content().Name).ToList();
         } else {
             content = [];
         }
@@ -83,8 +87,6 @@ public class ContentSponsorshipSchemes : LookupsCollection<SponsorshipScheme> {
     }
 
     private void ContentCacheOnFlushed(object sender, EventArgs e) {
-        var all = GetFromCache();
-        
-        Reload(all);
+        MarkStale();
     }
 }

@@ -23,6 +23,10 @@ public class FundCrossSellValidator : CrossSellValidator {
         return GetDonationItem(content)?.FundDimensionOptions;
     }
     
+    protected override bool HasAnyLockedPrice(ContentProperties content) {
+        return GetDonationItem(content).HasAnyLockedPrice();
+    }
+
     protected override bool HasLockedPrice(ContentProperties content) {
         return GetDonationItem(content).HasLockedPrice();
     }

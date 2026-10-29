@@ -43,17 +43,11 @@ public class CloudUrl : ICloudUrl {
     }
 
     public string ForConnectApi(string servicePath) {
-        var url = new Url(GetConnectApiBaseUrl());
-        url.AppendPathSegment(servicePath.Replace("eu1/api", _subscription.DataRegion.Slug));
-
-        return url;
+        return ForRegionalApi(servicePath);
     }
 
     public string ForEngageApi(string servicePath) {
-        var url = GetEngageApiBaseUrl();
-        url.AppendPathSegment(servicePath.Replace("eu1/api", $"{_subscription.DataRegion.Slug}/api"));
-
-        return url;
+        return ForRegionalApi(servicePath);
     }
 
     public string ForLinkBuilder(string path) {
@@ -65,34 +59,35 @@ public class CloudUrl : ICloudUrl {
     }
 
     public string ForWebhook(string webhookId) {
-        var url = GetEngageApiBaseUrl();
-        url.AppendPathSegment($"{_subscription.DataRegion.Slug}/hooks");
+        var url = new Url(GetRegionalApiBaseUrl());
+        url.AppendPathSegment("hooks");
         url.AppendPathSegment($"{webhookId}/{_subscription.Id.Code}");
 
         return url;
     }
 
-    public string ConnectApiBaseUrl => GetConnectApiBaseUrl();
+    public string ConnectApiBaseUrl => new Url(GetRegionalApiBaseUrl()).AppendPathSegment("api");
 
-    private string GetConnectApiBaseUrl() {
-        if (_webHostEnvironment.IsDevelopment() && !DevFlags.IsSet(DevFlags.EnableLiveTesting)) {
-            return "https://api-beta.n3o.cloud";
-        } else {
-            return "https://api.n3o.cloud";
-        }
+    private string ForRegionalApi(string servicePath) {
+        var url = new Url(GetRegionalApiBaseUrl());
+        // Clients generated against the legacy hosts carry "/eu1/api/<alias>" as their base URL, those
+        // generated against the regional host carry "/api/<alias>"
+        url.AppendPathSegment(servicePath.Replace("eu1/api", "api"));
+
+        return url;
     }
-    
-    private Url GetEngageApiBaseUrl() {
+
+    private string GetRegionalApiBaseUrl() {
         if (_webHostEnvironment.IsDevelopment() && !DevFlags.IsSet(DevFlags.EnableLiveTesting)) {
-            return new Url("https://beta.n3o.cloud");
+            return $"https://{_subscription.DataRegion.Slug}.qa.n3o.cloud";
         } else {
-            return new Url("https://n3o.cloud");
+            return $"https://{_subscription.DataRegion.Slug}.n3o.cloud";
         }
     }
 
     private Url GetCdnBaseUrl() {
         if (_webHostEnvironment.IsDevelopment() && !DevFlags.IsSet(DevFlags.EnableLiveTesting)) {
-            return new Url("https://cdn-beta.n3o.cloud");
+            return new Url("https://cdn.qa.n3o.cloud");
         } else {
             return new Url("https://cdn.n3o.cloud");
         }
