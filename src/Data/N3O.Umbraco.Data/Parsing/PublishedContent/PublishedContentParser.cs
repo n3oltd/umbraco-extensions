@@ -43,7 +43,11 @@ public class PublishedContentParser : DataTypeParser<IPublishedContent>, IPublis
                 var searchRoots = new List<IPublishedContent>();
 
                 if (parentId != null) {
-                    searchRoots.Add(_publishedContentCache.GetById(parentId.Value));
+                    var parent = _publishedContentCache.GetById(parentId.Value);
+
+                    if (parent != null) {
+                        searchRoots.Add(parent);
+                    }
                 } else {
                     var rootContents = _navigationQueryService.GetPublishedRootContents(_publishedContentCache);
                     

@@ -18,6 +18,9 @@ namespace N3O.Umbraco.Data.Converters;
 
 public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublishedContent> {
     private static readonly string EditorAlias = UmbracoPropertyEditors.Aliases.MultiNodeTreePicker; 
+    // A converter is not given the document being imported, so only dynamic root origins that need no current or
+    // parent document are resolved.
+    private static readonly string[] ContextFreeOriginAliases = ["ByKey", "ContentRoot"];
     private readonly IContentHelper _contentHelper;
     private readonly IDynamicRootService _dynamicRootService;
 
@@ -83,8 +86,6 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
     }
     
     private Guid? GetDynamicRootId(DynamicRoot dynamicRoot) {
-        // An import has no current or parent document, so origins relative to one (Parent, Current, Root, Site)
-        // resolve to nothing.
         var context = new DynamicRootContext { CurrentKey = null, ParentKey = Guid.Empty };
         var query = new DynamicRootNodeQuery { OriginAlias = dynamicRoot.OriginAlias, Context = context };
         query.OriginKey = dynamicRoot.OriginKey;
@@ -103,13 +104,18 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
         return dynamicRootQueryStep;
     }
 
+    private bool IsContextFree(DynamicRoot dynamicRoot) {
+        return dynamicRoot != null && ContextFreeOriginAliases.Any(x => x.EqualsInvariant(dynamicRoot.OriginAlias));
+    }
+
     private ParseResult<IPublishedContent> Parse(IParser parser, UmbracoPropertyInfo propertyInfo, string source) {
         var configuration = propertyInfo.DataType.ConfigurationAs<MultiNodePickerConfiguration>();
         var treeSource = configuration.TreeSource;
         var parentId = treeSource?.StartNodeId;
+        var dynamicRoot = treeSource?.DynamicRoot;
 
-        if (source.HasValue() && parentId == null && treeSource?.DynamicRoot != null) {
-            parentId = GetDynamicRootId(treeSource.DynamicRoot);
+        if (source.HasValue() && parentId == null && IsContextFree(dynamicRoot)) {
+            parentId = GetDynamicRootId(dynamicRoot);
 
             if (parentId == null) {
                 return ParseResult.Fail<IPublishedContent>();
