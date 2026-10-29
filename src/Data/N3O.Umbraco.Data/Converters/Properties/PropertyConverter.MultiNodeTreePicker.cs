@@ -3,8 +3,11 @@ using N3O.Umbraco.Data.Builders;
 using N3O.Umbraco.Data.Models;
 using N3O.Umbraco.Data.Parsing;
 using N3O.Umbraco.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Umbraco.Cms.Core.DynamicRoot;
+using Umbraco.Cms.Core.DynamicRoot.QuerySteps;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Extensions;
@@ -16,11 +19,14 @@ namespace N3O.Umbraco.Data.Converters;
 public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublishedContent> {
     private static readonly string EditorAlias = UmbracoPropertyEditors.Aliases.MultiNodeTreePicker; 
     private readonly IContentHelper _contentHelper;
+    private readonly IDynamicRootService _dynamicRootService;
 
     public MultiNodeTreePickerPropertyConverter(IColumnRangeBuilder columnRangeBuilder,
-                                                IContentHelper contentHelper)
+                                                IContentHelper contentHelper,
+                                                IDynamicRootService dynamicRootService)
         : base(columnRangeBuilder) {
         _contentHelper = contentHelper;
+        _dynamicRootService = dynamicRootService;
     }
     
     public override bool IsConverter(UmbracoPropertyInfo propertyInfo) {
@@ -76,9 +82,39 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
         }
     }
     
+    private Guid? GetDynamicRootId(DynamicRoot dynamicRoot) {
+        // An import has no current or parent document, so origins relative to one (Parent, Current, Root, Site)
+        // resolve to nothing.
+        var context = new DynamicRootContext { CurrentKey = null, ParentKey = Guid.Empty };
+        var query = new DynamicRootNodeQuery { OriginAlias = dynamicRoot.OriginAlias, Context = context };
+        query.OriginKey = dynamicRoot.OriginKey;
+        query.QuerySteps = dynamicRoot.QuerySteps.Select(GetQueryStep).ToList();
+
+        var rootIds = _dynamicRootService.GetDynamicRootsAsync(query).GetAwaiter().GetResult();
+
+        return rootIds.Select(x => (Guid?) x).FirstOrDefault();
+    }
+
+    private DynamicRootQueryStep GetQueryStep(QueryStep queryStep) {
+        var dynamicRootQueryStep = new DynamicRootQueryStep();
+        dynamicRootQueryStep.Alias = queryStep.Alias;
+        dynamicRootQueryStep.AnyOfDocTypeKeys = queryStep.AnyOfDocTypeKeys;
+
+        return dynamicRootQueryStep;
+    }
+
     private ParseResult<IPublishedContent> Parse(IParser parser, UmbracoPropertyInfo propertyInfo, string source) {
         var configuration = propertyInfo.DataType.ConfigurationAs<MultiNodePickerConfiguration>();
-        var parentId = configuration.TreeSource?.StartNodeId;
+        var treeSource = configuration.TreeSource;
+        var parentId = treeSource?.StartNodeId;
+
+        if (source.HasValue() && parentId == null && treeSource?.DynamicRoot != null) {
+            parentId = GetDynamicRootId(treeSource.DynamicRoot);
+
+            if (parentId == null) {
+                return ParseResult.Fail<IPublishedContent>();
+            }
+        }
 
         return parser.PublishedContent.Parse(source, OurDataTypes.PublishedContent.GetClrType(), parentId);
     }
