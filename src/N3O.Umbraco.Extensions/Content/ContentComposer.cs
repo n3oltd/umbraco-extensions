@@ -34,5 +34,7 @@ public class ContentComposer : Composer {
         
         RegisterAll(t => t.ImplementsInterface<IPropertyBuilder>(),
                     t => builder.Services.AddTransient(t));
+
+        builder.Components().Append<CultureSeedingMigrationsComponent>();
     }
 }

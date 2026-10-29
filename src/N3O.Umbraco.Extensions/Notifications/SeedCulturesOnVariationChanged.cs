@@ -1,4 +1,5 @@
 using N3O.Umbraco.Content;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,9 +10,8 @@ using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Notifications;
 
-// Umbraco moves an existing type's values into the default culture with SQL when the type starts varying by
-// culture, which raises no content save. The change is detected in Saving, which shares its state with Saved,
-// because a second save of the same type before Saved is raised clears what it remembers as changed.
+// Umbraco moves existing values into the default culture with SQL when a type or one of its properties starts varying
+// by culture, which raises no content save. The change is read in Saving, while the type still records it.
 public class SeedCulturesOnVariationChanged :
     INotificationAsyncHandler<ContentTypeSavedNotification>,
     INotificationAsyncHandler<ContentTypeSavingNotification> {
@@ -24,24 +24,37 @@ public class SeedCulturesOnVariationChanged :
     }
 
     public Task HandleAsync(ContentTypeSavedNotification notification, CancellationToken cancellationToken) {
-        if (notification.State.ContainsKey(VariationChangedKey)) {
-            _cultureSeeder.SeedAll();
+        if (notification.State.TryGetValue(VariationChangedKey, out var newlyVaryingPropertyTypeIds)) {
+            _cultureSeeder.SeedAll((IReadOnlyCollection<int>) newlyVaryingPropertyTypeIds);
         }
 
         return Task.CompletedTask;
     }
 
     public Task HandleAsync(ContentTypeSavingNotification notification, CancellationToken cancellationToken) {
-        if (notification.SavedEntities.Any(IsNowVaryingByCulture)) {
-            notification.State[VariationChangedKey] = true;
+        var contentTypes = notification.SavedEntities.Where(IsNowVaryingByCulture).ToList();
+
+        if (contentTypes.Any()) {
+            notification.State[VariationChangedKey] = contentTypes.SelectMany(GetNewlyVaryingPropertyTypes)
+                                                                  .Select(x => x.Id)
+                                                                  .ToList();
         }
 
         return Task.CompletedTask;
     }
 
+    private IEnumerable<IPropertyType> GetNewlyVaryingPropertyTypes(IContentType contentType) {
+        return contentType.PropertyTypes.Where(x => x.HasIdentity &&
+                                                    x.IsPropertyDirty(nameof(IPropertyType.Variations)) &&
+                                                    x.VariesByCulture());
+    }
+
     private bool IsNowVaryingByCulture(IContentType contentType) {
-        return contentType.HasIdentity &&
-               contentType.IsPropertyDirty(nameof(IContentType.Variations)) &&
-               contentType.VariesByCulture();
+        if (!contentType.HasIdentity || !contentType.VariesByCulture()) {
+            return false;
+        }
+
+        return contentType.IsPropertyDirty(nameof(IContentType.Variations)) ||
+               GetNewlyVaryingPropertyTypes(contentType).Any();
     }
 }
