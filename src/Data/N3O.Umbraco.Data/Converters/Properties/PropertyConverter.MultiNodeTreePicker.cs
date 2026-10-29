@@ -12,15 +12,19 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Extensions;
 using OurDataTypes = N3O.Umbraco.Data.Lookups.DataTypes;
+using UmbracoConstants = Umbraco.Cms.Core.Constants;
 using UmbracoPropertyEditors = Umbraco.Cms.Core.Constants.PropertyEditors;
 
 namespace N3O.Umbraco.Data.Converters;
 
 public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublishedContent> {
-    private static readonly string EditorAlias = UmbracoPropertyEditors.Aliases.MultiNodeTreePicker; 
     // A converter is not given the document being imported, so only dynamic root origins that need no current or
     // parent document are resolved.
     private static readonly string[] ContextFreeOriginAliases = ["ByKey", "ContentRoot"];
+    private static readonly string EditorAlias = UmbracoPropertyEditors.Aliases.MultiNodeTreePicker; 
+    // Matches no published content, so name and path cells fail while key cells, which are never scoped to a start
+    // node, still resolve.
+    private static readonly Guid NoStartNodeId = Guid.Empty;
     private readonly IContentHelper _contentHelper;
     private readonly IDynamicRootService _dynamicRootService;
 
@@ -68,10 +72,12 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
                                 string columnTitlePrefix,
                                 UmbracoPropertyInfo propertyInfo,
                                 IEnumerable<ImportField> fields) {
+        var parentId = GetParentId(propertyInfo);
+
         ImportAll(errorLog,
                   propertyInfo,
                   fields,
-                  s => Parse(parser, propertyInfo, s),
+                  s => parser.PublishedContent.Parse(s, OurDataTypes.PublishedContent.GetClrType(), parentId),
                   (alias, values) => contentBuilder.ContentPicker(alias).SetContent(values));
     }
 
@@ -96,6 +102,25 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
         return rootIds.Select(x => (Guid?) x).FirstOrDefault();
     }
 
+    private Guid? GetParentId(UmbracoPropertyInfo propertyInfo) {
+        var configuration = propertyInfo.DataType.ConfigurationAs<MultiNodePickerConfiguration>();
+        var treeSource = configuration.TreeSource;
+        var dynamicRoot = treeSource?.DynamicRoot;
+
+        if (treeSource?.StartNodeId != null || !IsContextFree(dynamicRoot)) {
+            return treeSource?.StartNodeId;
+        }
+
+        var rootId = GetDynamicRootId(dynamicRoot);
+
+        // The system root is not published content; with no start node the parser searches the whole tree.
+        if (rootId == UmbracoConstants.System.RootSystemKey) {
+            return null;
+        } else {
+            return rootId ?? NoStartNodeId;
+        }
+    }
+
     private DynamicRootQueryStep GetQueryStep(QueryStep queryStep) {
         var dynamicRootQueryStep = new DynamicRootQueryStep();
         dynamicRootQueryStep.Alias = queryStep.Alias;
@@ -105,23 +130,6 @@ public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublished
     }
 
     private bool IsContextFree(DynamicRoot dynamicRoot) {
-        return dynamicRoot != null && ContextFreeOriginAliases.Any(x => x.EqualsInvariant(dynamicRoot.OriginAlias));
-    }
-
-    private ParseResult<IPublishedContent> Parse(IParser parser, UmbracoPropertyInfo propertyInfo, string source) {
-        var configuration = propertyInfo.DataType.ConfigurationAs<MultiNodePickerConfiguration>();
-        var treeSource = configuration.TreeSource;
-        var parentId = treeSource?.StartNodeId;
-        var dynamicRoot = treeSource?.DynamicRoot;
-
-        if (source.HasValue() && parentId == null && IsContextFree(dynamicRoot)) {
-            parentId = GetDynamicRootId(dynamicRoot);
-
-            if (parentId == null) {
-                return ParseResult.Fail<IPublishedContent>();
-            }
-        }
-
-        return parser.PublishedContent.Parse(source, OurDataTypes.PublishedContent.GetClrType(), parentId);
+        return dynamicRoot.HasValue() && ContextFreeOriginAliases.Any(x => x.EqualsInvariant(dynamicRoot.OriginAlias));
     }
 }

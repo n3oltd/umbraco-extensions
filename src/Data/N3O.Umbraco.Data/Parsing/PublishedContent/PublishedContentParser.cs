@@ -45,7 +45,7 @@ public class PublishedContentParser : DataTypeParser<IPublishedContent>, IPublis
                 if (parentId != null) {
                     var parent = _publishedContentCache.GetById(parentId.Value);
 
-                    if (parent != null) {
+                    if (parent.HasValue()) {
                         searchRoots.Add(parent);
                     }
                 } else {
