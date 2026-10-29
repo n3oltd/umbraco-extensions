@@ -19,8 +19,7 @@ using UmbracoPropertyEditors = Umbraco.Cms.Core.Constants.PropertyEditors;
 namespace N3O.Umbraco.Data.Converters;
 
 public class MultiNodeTreePickerPropertyConverter : PropertyConverter<IPublishedContent> {
-    // A converter is not given the document being imported, so only dynamic root origins that need no current or
-    // parent document are resolved.
+    // A converter is not given the document being imported, so origins relative to it cannot be resolved.
     private static readonly string[] ContextFreeOriginAliases = ["ByKey", "ContentRoot"];
     private static readonly string EditorAlias = UmbracoPropertyEditors.Aliases.MultiNodeTreePicker; 
     // Matches no published content, so a name or path cell fails rather than searching the whole tree.
