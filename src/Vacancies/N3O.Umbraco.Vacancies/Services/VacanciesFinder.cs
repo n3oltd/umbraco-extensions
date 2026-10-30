@@ -1,4 +1,5 @@
 using N3O.Umbraco.Content;
+using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Localization;
 using N3O.Umbraco.Vacancies.Criteria;
@@ -8,22 +9,29 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Vacancies;
 
 public class VacanciesFinder : IVacanciesFinder {
     private readonly IContentCache _contentCache;
+    private readonly ICultureAccessor _cultureAccessor;
     private readonly ILocalClock _localClock;
     private readonly VacancyQueryFilter _queryFilter;
 
-    public VacanciesFinder(IContentCache contentCache, ILocalClock localClock, VacancyQueryFilter queryFilter) {
+    public VacanciesFinder(IContentCache contentCache,
+                           ICultureAccessor cultureAccessor,
+                           ILocalClock localClock,
+                           VacancyQueryFilter queryFilter) {
         _contentCache = contentCache;
+        _cultureAccessor = cultureAccessor;
         _localClock = localClock;
         _queryFilter = queryFilter;
     }
 
     public IReadOnlyList<T> FindVacancies<T>(VacancyCriteria criteria = null) where T : IPublishedContent {
-        var all = _contentCache.All<T>();
+        var culture = _cultureAccessor.GetCulture();
+        var all = _contentCache.All<T>().Where(x => x.IsInvariantOrHasCulture(culture)).ToList();
         var results = criteria == null ? all : _queryFilter.Apply(all, criteria).ToList();
 
         return results;
