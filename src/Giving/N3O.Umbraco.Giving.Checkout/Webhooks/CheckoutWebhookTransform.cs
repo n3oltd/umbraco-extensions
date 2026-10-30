@@ -23,7 +23,7 @@ using System.Linq;
 
 namespace N3O.Umbraco.Giving.Checkout.Webhooks;
 
-[Order(0)]
+[Order(int.MinValue)]
 public class CheckoutWebhookTransform : WebhookTransform {
     private static readonly string RestrictCollectionDaysToAlias =
         AliasHelper<PaymentMethodSettingsContent<IPaymentMethodSettings>>.PropertyAlias(x => x.RestrictCollectionDaysTo);
