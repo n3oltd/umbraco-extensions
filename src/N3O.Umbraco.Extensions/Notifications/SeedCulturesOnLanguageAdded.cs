@@ -1,4 +1,5 @@
 using N3O.Umbraco.Content;
+using N3O.Umbraco.Extensions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,9 +9,8 @@ using Umbraco.Cms.Core.Services;
 
 namespace N3O.Umbraco.Notifications;
 
-// Umbraco hands a save's Saving and Saved notifications the same state. Whether a language is new is decided in
-// Saving, because a second save of the same language before Saved is raised clears what it remembers as changed. The
-// default language is read there too, because a new default language has no content to seed from.
+// Read in Saving: a second save of the language before Saved forgets that it is new, and a new default language has
+// no content to seed from.
 public class SeedCulturesOnLanguageAdded :
     INotificationAsyncHandler<LanguageSavedNotification>,
     INotificationAsyncHandler<LanguageSavingNotification> {
@@ -34,7 +34,7 @@ public class SeedCulturesOnLanguageAdded :
 
     public Task HandleAsync(LanguageSavingNotification notification, CancellationToken cancellationToken) {
         if (notification.SavedEntities.Any(x => !x.HasIdentity)) {
-            notification.State[SourceCultureKey] = _localizationService.GetDefaultLanguageIsoCode();
+            notification.State[SourceCultureKey] = _localizationService.GetDefaultCultureCode();
         }
 
         return Task.CompletedTask;

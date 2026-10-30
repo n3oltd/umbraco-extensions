@@ -6,8 +6,8 @@ using uSync.BackOffice;
 
 namespace N3O.Umbraco.Sync;
 
-// A content import unpublishes every culture missing from its files and seeding is skipped while it runs, so the
-// seeded cultures are restored once it completes.
+// A content import unpublishes every culture missing from its files, and the content it saves is not seeded while it
+// runs.
 public class SeedCulturesOnImport : INotificationAsyncHandler<uSyncImportCompletedNotification> {
     private readonly ICultureSeeder _cultureSeeder;
 
@@ -16,7 +16,7 @@ public class SeedCulturesOnImport : INotificationAsyncHandler<uSyncImportComplet
     }
 
     public Task HandleAsync(uSyncImportCompletedNotification notification, CancellationToken cancellationToken) {
-        _cultureSeeder.SeedAll();
+        _cultureSeeder.SeedAllAndRepublish();
 
         return Task.CompletedTask;
     }

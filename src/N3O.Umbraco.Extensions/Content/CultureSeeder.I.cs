@@ -7,5 +7,6 @@ public interface ICultureSeeder {
     bool Seed(IContent content, int userId);
     void SeedAll();
     void SeedAll(string sourceCulture);
-    void SeedAll(IReadOnlyCollection<int> newlyVaryingPropertyTypeIds);
+    void SeedAll(IEnumerable<int> newlyVaryingPropertyTypeIds);
+    void SeedAllAndRepublish();
 }
