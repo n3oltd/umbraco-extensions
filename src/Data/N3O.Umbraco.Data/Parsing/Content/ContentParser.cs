@@ -42,7 +42,11 @@ public class ContentParser : DataTypeParser<IContent>, IContentParser {
                     var searchRoots = new List<IContent>();
 
                     if (parentId != null) {
-                        searchRoots.Add(_contentService.GetById(parentId.Value));
+                        var parent = _contentService.GetById(parentId.Value);
+
+                        if (parent.HasValue()) {
+                            searchRoots.Add(parent);
+                        }
                     } else {
                         searchRoots.AddRange(_contentService.GetRootContent());
                     }
