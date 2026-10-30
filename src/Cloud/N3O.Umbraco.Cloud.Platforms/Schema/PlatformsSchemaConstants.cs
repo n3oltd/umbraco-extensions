@@ -8,6 +8,7 @@ public static class PlatformsSchemaConstants {
         public const string PlatformsContentTypesMigrationV2 = "2026.08.31";
         public const string PlatformsContentTypesMigrationV3 = "2026.10.26";
         public const string PlatformsContentTypesMigrationV4 = "2026.10.27";
+        public const string PlatformsDataTypesMigrationV5 = "2026.10.30";
     }
 
     public static class Folders {

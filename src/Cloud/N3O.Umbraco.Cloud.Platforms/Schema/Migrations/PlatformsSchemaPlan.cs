@@ -10,7 +10,8 @@ public class PlatformsSchemaPlan : MigrationPlan {
     public PlatformsSchemaPlan() : base(States.PlanName) {
         From(string.Empty).To<PlatformsContentTypesMigrationV2>(States.PlatformsContentTypesMigrationV2)
                           .To<PlatformsContentTypesMigrationV3>(States.PlatformsContentTypesMigrationV3)
-                          .To<PlatformsContentTypesMigrationV4>(States.PlatformsContentTypesMigrationV4);
+                          .To<PlatformsContentTypesMigrationV4>(States.PlatformsContentTypesMigrationV4)
+                          .To<PlatformsDataTypesMigrationV5>(States.PlatformsDataTypesMigrationV5);
     }
 
     public static IReadOnlyList<string> RequiredContentTypes => [
