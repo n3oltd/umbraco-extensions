@@ -16,6 +16,8 @@ public class SyncComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.AdduSync();
 
+        // TODO Remove this, CaptureSyncCultures, KeepExistingSharedValues and SyncConstants once all sites
+        // are on Umbraco 17
         builder.Services.PostConfigure<uSyncHandlerSetSettings>(uSyncPublisher.PublisherHandlerSet,
                                                                 IncludeSharedValues);
 

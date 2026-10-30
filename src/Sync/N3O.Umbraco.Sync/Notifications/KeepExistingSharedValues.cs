@@ -17,6 +17,7 @@ using uSyncCoreConstants = uSync.Core.uSyncConstants;
 
 namespace N3O.Umbraco.Sync;
 
+// TODO Remove once all sites are on Umbraco 17
 public class KeepExistingSharedValues : INotificationAsyncHandler<uSyncImportingItemNotification> {
     private static readonly string[] EmptyCollections = ["[]", "{}"];
 
