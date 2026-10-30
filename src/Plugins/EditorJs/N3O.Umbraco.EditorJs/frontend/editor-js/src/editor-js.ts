@@ -206,6 +206,8 @@ export class N3oEditorJsElement
 
         const modal = modalManager.open(this, UMB_LINK_PICKER_MODAL, {
             data: { config: {}, index: null, isNew: true },
+            // The link picker has no default value and renders blank without one.
+            value: { link: {} },
         });
 
         try {
