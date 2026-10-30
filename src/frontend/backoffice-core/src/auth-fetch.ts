@@ -35,5 +35,3 @@ export const UmbAuthFetchMixin = <T extends Constructor<UmbElement>>(superClass:
     };
 
 export { UmbElementMixin };
-
-export { downloadResponse } from './download.js';
