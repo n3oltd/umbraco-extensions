@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { AuthFetch } from '@n3oltd/backoffice-core';
+import { downloadResponse, type AuthFetch } from '@n3oltd/backoffice-core';
 import { useImportLookups } from './use-import-lookups';
 import { ImportForm } from './import-form';
 import { ImportSuccess } from './import-success';
@@ -109,20 +109,7 @@ export function DataImportApp({ contentKey, authFetch, notify }: DataImportAppPr
             body: JSON.stringify(req),
         });
 
-        const blob = await getTemplateRes.blob();
-        const header = getTemplateRes.headers.get('Content-Disposition') ?? '';
-        const parts = header.split(';');
-        const filename = (parts[1] ?? '').split('=')[1]?.replaceAll('"', '') ?? 'template.csv';
-
-        const newBlob = new Blob([blob]);
-        const blobUrl = window.URL.createObjectURL(newBlob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.setAttribute('download', filename);
-        document.body.appendChild(link);
-        link.dispatchEvent(new MouseEvent('click', { bubbles: false, cancelable: false }));
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
+        await downloadResponse(getTemplateRes, 'template.csv');
     };
 
     const getStorageToken = async (file: File | null, signal: AbortSignal): Promise<unknown> => {
