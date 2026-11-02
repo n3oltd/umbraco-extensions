@@ -8,8 +8,7 @@ namespace N3O.Umbraco.Cloud.Platforms;
 public class PlatformsDataTypesMigrationV5 : MigrationBase {
     private readonly IDataTypeEditor _dataTypeEditor;
 
-    public PlatformsDataTypesMigrationV5(IMigrationContext context, IDataTypeEditor dataTypeEditor)
-        : base(context) {
+    public PlatformsDataTypesMigrationV5(IMigrationContext context, IDataTypeEditor dataTypeEditor) : base(context) {
         _dataTypeEditor = dataTypeEditor;
     }
 
