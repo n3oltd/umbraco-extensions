@@ -8,6 +8,8 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsSchemaPlan : MigrationPlan {
     public PlatformsSchemaPlan() : base(States.PlanName) {
+        // V5 is v17-only. A step ported from main after it needs a path from that step's main
+        // state that still runs V5, or a site upgrading from v13 at that state skips it.
         From(string.Empty).To<PlatformsContentTypesMigrationV2>(States.PlatformsContentTypesMigrationV2)
                           .To<PlatformsContentTypesMigrationV3>(States.PlatformsContentTypesMigrationV3)
                           .To<PlatformsContentTypesMigrationV4>(States.PlatformsContentTypesMigrationV4)
