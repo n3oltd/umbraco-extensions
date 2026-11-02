@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { AuthFetch } from '@n3oltd/backoffice-core';
+import { downloadResponse, type AuthFetch } from '@n3oltd/backoffice-core';
 import type { ContentType, ContentMetadata, ExportProgressResponse, CreateExportResponse, Notify } from './types';
 
 export interface ExportServerData {
@@ -182,19 +182,7 @@ export function useExportRun(authFetch: AuthFetch | null, notify: Notify): Expor
                     return;
                 }
 
-                const blob = await exportFile.blob();
-                const header = exportFile.headers.get('Content-Disposition') ?? '';
-                const parts = header.split(';');
-                const filename = (parts[1] ?? '').split('=')[1]?.replaceAll('"', '') ?? 'export';
-                const newBlob = new Blob([blob]);
-                const blobUrl = window.URL.createObjectURL(newBlob);
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.setAttribute('download', filename);
-                document.body.appendChild(link);
-                link.click();
-                link.parentNode?.removeChild(link);
-                window.URL.revokeObjectURL(blobUrl);
+                await downloadResponse(exportFile, 'export');
 
                 setProcessing(false);
                 setProgress('');

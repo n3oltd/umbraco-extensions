@@ -13,7 +13,7 @@
     ],
     "importmap": {
         "imports": {
-            "@n3oltd/backoffice-core": "/App_Plugins/N3O.Umbraco.BackofficeCore/auth-fetch.js"
+            "@n3oltd/backoffice-core": "/App_Plugins/N3O.Umbraco.BackofficeCore/index.js"
         }
     }
 }
