@@ -12,7 +12,7 @@ using QurbaniItemDataSource = N3O.Umbraco.Giving.Allocations.Lookups.QurbaniItem
 namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
-    private const string EmbedCodeTemplate = "<label>{{model.value}}</label>";
+    private const string EmbedCodeTemplate = "<label>{{ model.value | escape }}</label>";
 
     private readonly IDataTypeEditor _dataTypeEditor;
     private readonly ILogger<PlatformsDataTypeSeeder> _logger;
