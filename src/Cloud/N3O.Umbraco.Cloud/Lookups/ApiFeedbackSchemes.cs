@@ -29,11 +29,16 @@ public class ApiFeedbackSchemes : ApiLookupsCollection<FeedbackScheme> {
         var feedbackSchemes = new List<FeedbackScheme>();
 
         foreach (var publishedFeedbackScheme in publishedFeedbackSchemes.OrEmpty(x => x.FeedbackSchemes)) {
+            var allowedDonationPlans = publishedFeedbackScheme.AllowedDonationPlans
+                                                              .OrEmpty()
+                                                              .Select(x => StaticLookups.FindById<DonationPlan>(x.Id))
+                                                              .ExceptNull();
+
             var feedbackScheme = new FeedbackScheme(publishedFeedbackScheme.Id,
                                                     publishedFeedbackScheme.Name,
                                                     null,
                                                     publishedFeedbackScheme.AllowedGivingTypes,
-                                                    publishedFeedbackScheme.AllowedDonationPlans.OrEmpty().Select(x => StaticLookups.FindById<DonationPlan>(x.Id)).ExceptNull(),
+                                                    allowedDonationPlans,
                                                     publishedFeedbackScheme.FundDimensionOptions.IfNotNull(x => new FundDimensionOptions(x)),
                                                     publishedFeedbackScheme.Pricing.IfNotNull(x => new Pricing(x)),
                                                     publishedFeedbackScheme.CustomFieldDefinitions.OrEmpty().Select(ToFeedbackCustomFieldDefinition));
