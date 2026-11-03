@@ -1502,6 +1502,10 @@ namespace N3O.Umbraco.Clients.Giving.Checkout
         [Newtonsoft.Json.JsonProperty("scheme", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Scheme { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("donationPlan", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public DonationPlan? DonationPlan { get; set; }
+
         [Newtonsoft.Json.JsonProperty("customFields", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<FeedbackCustomFieldRes> CustomFields { get; set; }
 
@@ -1519,6 +1523,36 @@ namespace N3O.Umbraco.Clients.Giving.Checkout
 
         [System.Runtime.Serialization.EnumMember(Value = @"regularGiving")]
         RegularGiving = 1,
+
+    }
+
+    /// <summary>
+    /// One of '_2', '_3', '_4', '_6', '_12', '_18', '_24'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.0.3.0 (NJsonSchema v11.0.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum DonationPlan
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_2")]
+        _2 = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_3")]
+        _3 = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_4")]
+        _4 = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_6")]
+        _6 = 3,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_12")]
+        _12 = 4,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_18")]
+        _18 = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"_24")]
+        _24 = 6,
 
     }
 

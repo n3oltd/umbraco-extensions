@@ -303,6 +303,61 @@ var GivingClient = /** @class */ (function () {
         }
         return Promise.resolve(null);
     };
+    GivingClient.prototype.getLookupDonationPlans = function () {
+        var _this = this;
+        var url_ = this.baseUrl + "/umbraco/api/Giving/lookups/donationPlans";
+        url_ = url_.replace(/[?&]$/, "");
+        var options_ = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+        return this.http.fetch(url_, options_).then(function (_response) {
+            return _this.processGetLookupDonationPlans(_response);
+        });
+    };
+    GivingClient.prototype.processGetLookupDonationPlans = function (response) {
+        var _this = this;
+        var status = response.status;
+        var _headers = {};
+        if (response.headers && response.headers.forEach) {
+            response.headers.forEach(function (v, k) { return _headers[k] = v; });
+        }
+        ;
+        if (status === 200) {
+            return response.text().then(function (_responseText) {
+                var result200 = null;
+                result200 = _responseText === "" ? null : JSON.parse(_responseText, _this.jsonParseReviver);
+                return result200;
+            });
+        }
+        else if (status === 400) {
+            return response.text().then(function (_responseText) {
+                var result400 = null;
+                result400 = _responseText === "" ? null : JSON.parse(_responseText, _this.jsonParseReviver);
+                return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        }
+        else if (status === 500) {
+            return response.text().then(function (_responseText) {
+                return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        }
+        else if (status === 404) {
+            return response.text().then(function (_responseText) {
+                var result404 = null;
+                result404 = _responseText === "" ? null : JSON.parse(_responseText, _this.jsonParseReviver);
+                return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        }
+        else if (status !== 200 && status !== 204) {
+            return response.text().then(function (_responseText) {
+                return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve(null);
+    };
     GivingClient.prototype.getLookupFeedbackSchemes = function () {
         var _this = this;
         var url_ = this.baseUrl + "/umbraco/api/Giving/lookups/feedbackSchemes";
@@ -951,6 +1006,17 @@ export var SponsorshipDuration;
     SponsorshipDuration["_48"] = "_48";
     SponsorshipDuration["_60"] = "_60";
 })(SponsorshipDuration || (SponsorshipDuration = {}));
+/** One of '_2', '_3', '_4', '_6', '_12', '_18', '_24' */
+export var DonationPlan;
+(function (DonationPlan) {
+    DonationPlan["_2"] = "_2";
+    DonationPlan["_3"] = "_3";
+    DonationPlan["_4"] = "_4";
+    DonationPlan["_6"] = "_6";
+    DonationPlan["_12"] = "_12";
+    DonationPlan["_18"] = "_18";
+    DonationPlan["_24"] = "_24";
+})(DonationPlan || (DonationPlan = {}));
 /** One of 'bool', 'date', 'text' */
 export var FeedbackCustomFieldType;
 (function (FeedbackCustomFieldType) {
