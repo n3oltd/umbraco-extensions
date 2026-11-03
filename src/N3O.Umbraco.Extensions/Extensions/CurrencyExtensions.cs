@@ -1,5 +1,4 @@
 using N3O.Umbraco.Financial;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,11 +14,7 @@ public static class CurrencyExtensions {
     public static ForexMoney ForexZero(this Currency currency) {
         return new ForexMoney(Zero(currency), Zero(currency), 1);
     }
-
-    public static decimal GetLowestDenominationFactor(this Currency currency) {
-        return (decimal) Math.Pow(10, currency.DecimalDigits);
-    }
-
+    
     public static Money Zero(this Currency currency) {
         return new Money(0, currency);
     }

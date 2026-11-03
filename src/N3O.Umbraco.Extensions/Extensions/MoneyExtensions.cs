@@ -7,7 +7,7 @@ namespace N3O.Umbraco.Extensions;
 
 public static class MoneyExtensions {
     public static int GetAmountInLowestDenomination(this Money money) {
-        var factor = money.Currency.GetLowestDenominationFactor();
+        var factor = (decimal) Math.Pow(10, money.Currency.DecimalDigits);
 
         var amount = (int) (money.Amount * factor);
 

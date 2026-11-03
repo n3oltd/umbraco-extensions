@@ -82,6 +82,11 @@ public class CartValidator : ICartValidator {
             if (!feedback.HasValue(x => x.Scheme)) {
                 return false;
             }
+
+            if (feedback.HasValue(x => x.DonationPlan) &&
+                !feedback.Scheme.AllowedDonationPlans.Contains(feedback.DonationPlan)) {
+                return false;
+            }
         }
         else {
             throw UnrecognisedValueException.For(allocation.Type);

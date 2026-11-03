@@ -1,4 +1,5 @@
-﻿using N3O.Umbraco.Attributes;
+﻿using Microsoft.Extensions.Logging;
+using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Extensions;
@@ -16,9 +17,11 @@ namespace N3O.Umbraco.Cloud.Lookups;
 [Order(int.MaxValue)]
 public class ApiFeedbackSchemes : ApiLookupsCollection<FeedbackScheme> {
     private readonly ICdnClient _cdnClient;
+    private readonly ILogger<ApiFeedbackSchemes> _logger;
 
-    public ApiFeedbackSchemes(ICdnClient cdnClient) {
+    public ApiFeedbackSchemes(ICdnClient cdnClient, ILogger<ApiFeedbackSchemes> logger) {
         _cdnClient = cdnClient;
+        _logger = logger;
     }
     
     protected override async Task<IReadOnlyList<FeedbackScheme>> FetchAsync(CancellationToken cancellationToken) {
@@ -31,8 +34,9 @@ public class ApiFeedbackSchemes : ApiLookupsCollection<FeedbackScheme> {
         foreach (var publishedFeedbackScheme in publishedFeedbackSchemes.OrEmpty(x => x.FeedbackSchemes)) {
             var allowedDonationPlans = publishedFeedbackScheme.AllowedDonationPlans
                                                               .OrEmpty()
-                                                              .Select(x => StaticLookups.FindById<DonationPlan>(x.Id))
-                                                              .ExceptNull();
+                                                              .Select(x => ToDonationPlan(publishedFeedbackScheme, x))
+                                                              .ExceptNull()
+                                                              .ToList();
 
             var feedbackScheme = new FeedbackScheme(publishedFeedbackScheme.Id,
                                                     publishedFeedbackScheme.Name,
@@ -47,6 +51,19 @@ public class ApiFeedbackSchemes : ApiLookupsCollection<FeedbackScheme> {
         }
 
         return feedbackSchemes;
+    }
+
+    private DonationPlan ToDonationPlan(PublishedFeedbackScheme publishedFeedbackScheme,
+                                        PublishedDonationPlan publishedDonationPlan) {
+        var donationPlan = StaticLookups.FindById<DonationPlan>(publishedDonationPlan.Id);
+
+        if (!donationPlan.HasValue()) {
+            _logger.LogWarning("Feedback scheme {FeedbackSchemeId} offers unrecognised donation plan {DonationPlanId}",
+                               publishedFeedbackScheme.Id,
+                               publishedDonationPlan.Id);
+        }
+
+        return donationPlan;
     }
 
     private FeedbackCustomFieldDefinition ToFeedbackCustomFieldDefinition(PublishedFeedbackCustomFieldDefinition publishedFeedbackCustomFieldDefinition) {
