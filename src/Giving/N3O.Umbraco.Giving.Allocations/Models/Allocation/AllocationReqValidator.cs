@@ -181,8 +181,9 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
         }
 
         var price = priceCalculator.InCurrency(feedback.Scheme.Pricing, fundDimensions, value.Currency);
+        var donationAmount = feedback.DonationPlan.GetDonationAmount(price.Amount, value.Currency);
 
-        return value.Amount >= feedback.DonationPlan.GetDonationAmount(price.Amount) && value.Amount <= price.Amount;
+        return value.Amount >= donationAmount && value.Amount <= price.Amount;
     }
 
     private bool FundDimensionsAreValid(FundDimensionValuesReq req, IFundDimensionOptions options) {
