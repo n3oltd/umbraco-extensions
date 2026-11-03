@@ -26,6 +26,7 @@ public class PlatformsPageOpenGraphProvider : IOpenGraphProvider {
         var getPageResult = await _platformsPageAccessor.Value.GetAsync();
 
         if (getPageResult.HasValue(x => x.Page)) {
+            builder.WithTitle(getPageResult.Page.Title);
             builder.WithUrl(getPageResult.Page.AbsoluteUrl(_urlBuilder));
         }
     }
