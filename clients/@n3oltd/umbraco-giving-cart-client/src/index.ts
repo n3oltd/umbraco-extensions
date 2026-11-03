@@ -408,6 +408,7 @@ export interface FeedbackAllocationReq {
     customFields?: FeedbackNewCustomFieldsReq | undefined;
 }
 
+/** One of '_2', '_3', '_4', '_6', '_12', '_18', '_24' */
 export enum DonationPlan {
     _2 = "_2",
     _3 = "_3",

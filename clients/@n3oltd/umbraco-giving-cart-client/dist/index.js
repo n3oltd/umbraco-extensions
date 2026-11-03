@@ -404,6 +404,7 @@ export var AllocationType;
     AllocationType["Fund"] = "fund";
     AllocationType["Sponsorship"] = "sponsorship";
 })(AllocationType || (AllocationType = {}));
+/** One of '_2', '_3', '_4', '_6', '_12', '_18', '_24' */
 export var DonationPlan;
 (function (DonationPlan) {
     DonationPlan["_2"] = "_2";
