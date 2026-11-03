@@ -31,7 +31,7 @@ public class VacanciesFinder : IVacanciesFinder {
 
     public IReadOnlyList<T> FindVacancies<T>(VacancyCriteria criteria = null) where T : IPublishedContent {
         var culture = _cultureAccessor.GetCulture();
-        var all = _contentCache.All<T>().Where(x => x.IsInvariantOrHasCulture(culture)).ToList();
+        var all = _contentCache.All<T>(x => x.IsInvariantOrHasCulture(culture));
         var results = criteria == null ? all : _queryFilter.Apply(all, criteria).ToList();
 
         return results;
