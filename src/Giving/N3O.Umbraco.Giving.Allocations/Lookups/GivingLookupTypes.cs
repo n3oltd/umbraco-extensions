@@ -13,7 +13,10 @@ public class GivingLookupTypes : ILookupTypesSet {
     
     [LookupInfo(typeof(DonationItem))]
     public const string DonationItems = "donationItems";
-    
+
+    [LookupInfo(typeof(DonationPlan))]
+    public const string DonationPlans = "donationPlans";
+
     [LookupInfo(typeof(FeedbackScheme))]
     public const string FeedbackSchemes = "feedbackSchemes";
 

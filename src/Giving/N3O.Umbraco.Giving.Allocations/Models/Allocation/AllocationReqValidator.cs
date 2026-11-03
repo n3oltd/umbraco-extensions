@@ -88,12 +88,15 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
 
         RuleFor(x => x.Feedback.DonationPlan)
            .Must((req, x) => req.Feedback.Scheme.AllowedDonationPlans.Contains(x))
-           .When(x => x.Feedback.HasValue(f => f.DonationPlan))
+           .When(x => x.Feedback.HasValue(f => f.Scheme) && x.Feedback.HasValue(f => f.DonationPlan))
            .WithMessage(Get<Strings>(s => s.FeedbackDonationPlanNotAllowed));
 
         RuleFor(x => x.Value)
            .Must((req, x) => DonationPlanValueIsValid(priceCalculator, req.Feedback, req.FundDimensions, x))
-           .When(x => x.Value.HasValue(v => v.Amount) && x.Feedback.HasValue(f => f.DonationPlan))
+           .When(x => x.Value.HasValue(v => v.Amount) &&
+                      x.Value.HasValue(v => v.Currency) &&
+                      x.Feedback.HasValue(f => f.Scheme) &&
+                      x.Feedback.HasValue(f => f.DonationPlan))
            .WithMessage(Get<Strings>(s => s.FeedbackInvalidDonationPlanValue));
 
         RuleFor(x => x.Value)
@@ -176,14 +179,17 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
                                           FeedbackAllocationReq feedback,
                                           IFundDimensionValues fundDimensions,
                                           Money value) {
-        if (!feedback.Scheme.HasPricing()) {
+        var price = priceCalculator.InCurrency(feedback.Scheme.Pricing, fundDimensions, value.Currency);
+
+        if (!price.HasValue()) {
             return false;
         }
 
-        var price = priceCalculator.InCurrency(feedback.Scheme.Pricing, fundDimensions, value.Currency);
-        var donationAmount = feedback.DonationPlan.GetDonationAmount(price.Amount, value.Currency);
+        var priceMoney = new Money(price.Amount, value.Currency);
+        var minimumDonationAmount = feedback.DonationPlan.GetMinimumDonationAmount(priceMoney);
 
-        return value.Amount >= donationAmount && value.Amount <= price.Amount;
+        // Applies to unlocked prices too: the plan stops after its donations, so together they must cover the price
+        return value.Amount >= minimumDonationAmount.Amount && value.Amount <= price.Amount;
     }
 
     private bool FundDimensionsAreValid(FundDimensionValuesReq req, IFundDimensionOptions options) {

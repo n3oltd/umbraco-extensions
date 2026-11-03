@@ -67,6 +67,9 @@ public class CheckoutWebhookTransform : WebhookTransform {
 
         AddConverter<Country>(t => t == typeof(Country),
                               x => new {x.Id, x.Name, x.Iso2Code, x.Iso3Code});
+
+        AddConverter<DonationPlan>(t => t == typeof(DonationPlan),
+                                   x => new {x.Id, x.Name, x.Donations});
     }
         
     private void AddTag(JObject jObject, string key, string value) {
@@ -176,10 +179,6 @@ public class CheckoutWebhookTransform : WebhookTransform {
 
             foreach (var customField in allocation.Feedback.OrEmpty(x => x.CustomFields)) {
                 allocationJObject[$"cf_{customField.Alias}"] = customField.GetJValue();
-            }
-
-            if (allocation.Feedback.HasValue(x => x.DonationPlan)) {
-                allocationJObject["plannedDonations"] = allocation.Feedback.DonationPlan.Donations;
             }
 
             var pricing = ((IHoldPricing) allocation.Feedback.Scheme).Pricing;
