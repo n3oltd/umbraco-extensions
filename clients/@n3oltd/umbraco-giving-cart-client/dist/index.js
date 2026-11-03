@@ -404,6 +404,16 @@ export var AllocationType;
     AllocationType["Fund"] = "fund";
     AllocationType["Sponsorship"] = "sponsorship";
 })(AllocationType || (AllocationType = {}));
+export var DonationPlan;
+(function (DonationPlan) {
+    DonationPlan["_2"] = "_2";
+    DonationPlan["_3"] = "_3";
+    DonationPlan["_4"] = "_4";
+    DonationPlan["_6"] = "_6";
+    DonationPlan["_12"] = "_12";
+    DonationPlan["_18"] = "_18";
+    DonationPlan["_24"] = "_24";
+})(DonationPlan || (DonationPlan = {}));
 /** One of 'bool', 'date', 'text' */
 export var FeedbackCustomFieldType;
 (function (FeedbackCustomFieldType) {
