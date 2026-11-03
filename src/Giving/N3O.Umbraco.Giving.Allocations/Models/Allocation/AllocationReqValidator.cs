@@ -216,7 +216,7 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
         public string CurrencyMismatch => "All currencies must be the same and must match the currently active currency";
         public string FeedbackAllocationNotAllowed => "Feedback cannot be specified for this type of allocation";
         public string FeedbackDonationPlanNotAllowed => "The feedback scheme does not allow this donation plan";
-        public string FeedbackInvalidDonationPlanValue => "The value must be between the price divided by the plan's donations and the price";
+        public string FeedbackInvalidDonationPlanValue => "The value is outside the range the donation plan allows";
         public string FeedbackInvalidFields => "The feedback allocation contains invalid custom fields";
         public string FeedbackInvalidFieldValues => "One or more of the feedback allocation custom fields have invalid values";
         public string FeedbackRequiredFieldsMissing => "Feedback allocation is missing a required field";
