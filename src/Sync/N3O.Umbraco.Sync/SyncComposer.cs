@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using N3O.Umbraco.Composing;
 using N3O.Umbraco.Extensions;
@@ -16,12 +15,8 @@ public class SyncComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.AdduSync();
 
-        // TODO Remove this, CaptureSyncCultures, KeepExistingSharedValues and SyncConstants once all sites
-        // are on Umbraco 17
         builder.Services.PostConfigure<uSyncHandlerSetSettings>(uSyncPublisher.PublisherHandlerSet,
                                                                 IncludeSharedValues);
-
-        builder.Services.Configure<MvcOptions>(options => options.Filters.Add<CaptureSyncCultures>());
     }
 
     private static void IncludeSharedValues(uSyncHandlerSetSettings handlerSet) {
