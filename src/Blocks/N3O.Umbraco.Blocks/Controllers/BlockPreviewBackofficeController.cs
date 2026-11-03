@@ -18,6 +18,7 @@ using Umbraco.Cms.Core.Cache.PropertyEditors;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
@@ -32,6 +33,7 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
     private readonly ILanguageService _languageService;
     private readonly IVariationContextAccessor _variationContextAccessor;
     private readonly IContentLocator _contentLocator;
+    private readonly IPublishedContentCache _publishedContentCache;
     private readonly IUmbracoContextAccessor _umbracoContextAccessor;
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IContentTypeService _contentTypeService;
@@ -44,6 +46,7 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
                                             ILanguageService languageService,
                                             IVariationContextAccessor variationContextAccessor,
                                             IContentLocator contentLocator,
+                                            IPublishedContentCache publishedContentCache,
                                             IUmbracoContextAccessor umbracoContextAccessor,
                                             IJsonSerializer jsonSerializer,
                                             IContentTypeService contentTypeService,
@@ -55,6 +58,7 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
         _languageService = languageService;
         _variationContextAccessor = variationContextAccessor;
         _contentLocator = contentLocator;
+        _publishedContentCache = publishedContentCache;
         _umbracoContextAccessor = umbracoContextAccessor;
         _jsonSerializer = jsonSerializer;
         _contentTypeService = contentTypeService;
@@ -201,7 +205,7 @@ public class BlockPreviewBackofficeController : BackofficeAuthorizedApiControlle
     }
 
     private IPublishedContent GetPublishedContent(Guid? contentId, Guid? contentTypeId) {
-        var content = contentId.IfNotNull(x => _contentLocator.ById(x));
+        var content = contentId.IfNotNull(x => _publishedContentCache.GetById(true, x));
 
         if (content != null) {
             return content;
