@@ -87,7 +87,7 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
            .WithMessage(Get<Strings>(s => s.FeedbackInvalidFields));
 
         RuleFor(x => x.Feedback.DonationPlan)
-           .Must((req, x) => req.Feedback.Scheme.AllowedDonationPlans.Contains(x))
+           .Must((req, x) => req.Feedback.Scheme.AllowsDonationPlan(x))
            .When(x => x.Feedback.HasValue(f => f.Scheme) && x.Feedback.HasValue(f => f.DonationPlan))
            .WithMessage(Get<Strings>(s => s.FeedbackDonationPlanNotAllowed));
 

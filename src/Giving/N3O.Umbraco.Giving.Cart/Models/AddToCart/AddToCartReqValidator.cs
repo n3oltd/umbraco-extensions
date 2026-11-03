@@ -1,5 +1,6 @@
 using FluentValidation;
 using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Giving.Allocations.Extensions;
 using N3O.Umbraco.Giving.Allocations.Lookups;
 using N3O.Umbraco.Localization;
 using N3O.Umbraco.Validation;
@@ -41,10 +42,9 @@ public class AddToCartReqValidator : ModelValidator<AddToCartReq> {
 
         RuleFor(x => x.Allocation.Feedback.DonationPlan)
             .NotNull()
-            .When(x => x.GivingType == GivingTypes.RegularGiving &&
-                       x.Allocation.HasValue(allocation => allocation.Feedback) &&
+            .When(x => x.Allocation.HasValue(allocation => allocation.Feedback) &&
                        x.Allocation.Feedback.HasValue(feedback => feedback.Scheme) &&
-                       x.Allocation.Feedback.Scheme.AllowedDonationPlans.HasAny())
+                       x.Allocation.Feedback.Scheme.RequiresDonationPlan(x.GivingType))
             .WithMessage(Get<Strings>(s => s.SpecifyDonationPlan));
     }
 
