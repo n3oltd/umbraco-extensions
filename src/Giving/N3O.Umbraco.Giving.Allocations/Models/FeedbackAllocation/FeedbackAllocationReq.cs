@@ -11,6 +11,9 @@ public class FeedbackAllocationReq : IFeedbackAllocation {
     [Name("Scheme")]
     public FeedbackScheme Scheme { get; set; }
 
+    [Name("Donation Plan")]
+    public DonationPlan DonationPlan { get; set; }
+
     [Name("Custom Fields")]
     public FeedbackNewCustomFieldsReq CustomFields { get; set; }
 

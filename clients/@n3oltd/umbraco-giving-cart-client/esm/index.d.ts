@@ -68,7 +68,18 @@ export interface FundDimensionValuesReq {
 }
 export interface FeedbackAllocationReq {
     scheme?: string | undefined;
+    donationPlan?: DonationPlan | undefined;
     customFields?: FeedbackNewCustomFieldsReq | undefined;
+}
+/** One of '_2', '_3', '_4', '_6', '_12', '_18', '_24' */
+export declare enum DonationPlan {
+    _2 = "_2",
+    _3 = "_3",
+    _4 = "_4",
+    _6 = "_6",
+    _12 = "_12",
+    _18 = "_18",
+    _24 = "_24"
 }
 export interface FundDimensionOptions {
     dimension1?: string[] | undefined;

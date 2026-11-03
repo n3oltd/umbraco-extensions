@@ -15,6 +15,8 @@ export declare class GivingClient {
     protected processGetLookupCurrencies(response: Response): Promise<CurrencyRes[]>;
     getLookupDonationItems(): Promise<DonationItemRes[]>;
     protected processGetLookupDonationItems(response: Response): Promise<DonationItemRes[]>;
+    getLookupDonationPlans(): Promise<DonationPlanRes[]>;
+    protected processGetLookupDonationPlans(response: Response): Promise<DonationPlanRes[]>;
     getLookupFeedbackSchemes(): Promise<FeedbackSchemeRes[]>;
     protected processGetLookupFeedbackSchemes(response: Response): Promise<FeedbackSchemeRes[]>;
     getLookupFundDimension1Values(): Promise<FundDimensionValueRes[]>;
@@ -137,6 +139,16 @@ export declare enum SponsorshipDuration {
 export interface FeedbackDonationOptionRes {
     scheme?: string | undefined;
 }
+/** One of '_2', '_3', '_4', '_6', '_12', '_18', '_24' */
+export declare enum DonationPlan {
+    _2 = "_2",
+    _3 = "_3",
+    _4 = "_4",
+    _6 = "_6",
+    _12 = "_12",
+    _18 = "_18",
+    _24 = "_24"
+}
 export interface FeedbackCustomFieldDefinition {
     type?: FeedbackCustomFieldType | undefined;
     alias?: string | undefined;
@@ -218,9 +230,15 @@ export interface FundDimensionValuesRes {
     dimension3?: string | undefined;
     dimension4?: string | undefined;
 }
+export interface DonationPlanRes {
+    name?: string | undefined;
+    id?: string | undefined;
+    donations?: number;
+}
 export interface FeedbackSchemeRes {
     name?: string | undefined;
     id?: string | undefined;
+    allowedDonationPlans?: DonationPlan[] | undefined;
     allowedGivingTypes?: GivingType[] | undefined;
     customFields?: FeedbackCustomFieldDefinitionRes[] | undefined;
     fundDimensionOptions?: FundDimensionOptionsRes | undefined;
@@ -268,6 +286,7 @@ export interface GivingLookupsRes {
     allocationTypes?: NamedLookupRes[] | undefined;
     currencies?: CurrencyRes[] | undefined;
     donationItems?: DonationItemRes[] | undefined;
+    donationPlans?: DonationPlanRes[] | undefined;
     givingTypes?: NamedLookupRes[] | undefined;
     fundDimension1Values?: FundDimensionValueRes[] | undefined;
     fundDimension2Values?: FundDimensionValueRes[] | undefined;
