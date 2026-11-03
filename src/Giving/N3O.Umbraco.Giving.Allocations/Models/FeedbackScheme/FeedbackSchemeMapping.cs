@@ -15,6 +15,7 @@ public class FeedbackSchemeMapping : IMapDefinition {
     private void Map(FeedbackScheme src, FeedbackSchemeRes dest, MapperContext ctx) {
         ctx.Map<INamedLookup, NamedLookupRes>(src, dest);
 
+        dest.AllowedDonationPlans = src.AllowedDonationPlans;
         dest.AllowedGivingTypes = src.AllowedGivingTypes;
         dest.CustomFields = src.CustomFields
                                .OrEmpty()

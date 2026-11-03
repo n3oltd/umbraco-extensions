@@ -17,6 +17,8 @@ using AllocationType = N3O.Umbraco.Giving.Allocations.Lookups.AllocationType;
 using CurrencyRes = N3O.Umbraco.Financial.CurrencyRes;
 using DonationFormRes = N3O.Umbraco.Giving.Allocations.Models.DonationFormRes;
 using DonationItemRes = N3O.Umbraco.Giving.Allocations.Models.DonationItemRes;
+using DonationPlan = N3O.Umbraco.Giving.Allocations.Lookups.DonationPlan;
+using DonationPlanRes = N3O.Umbraco.Giving.Allocations.Models.DonationPlanRes;
 using FeedbackSchemeRes = N3O.Umbraco.Giving.Allocations.Models.FeedbackSchemeRes;
 using FundStructureRes = N3O.Umbraco.Giving.Allocations.Models.FundStructureRes;
 using GivingLookupsRes = N3O.Umbraco.Giving.Models.GivingLookupsRes;
@@ -77,7 +79,14 @@ public class GivingController : LookupsController<GivingLookupsRes> {
 
         return Ok(res);
     }
-    
+
+    [HttpGet("lookups/" + GivingLookupTypes.DonationPlans)]
+    public async Task<ActionResult<IEnumerable<DonationPlanRes>>> GetLookupDonationPlans() {
+        var res = await GetLookupsAsync<DonationPlan, DonationPlanRes>();
+
+        return Ok(res);
+    }
+
     [HttpGet("lookups/" + GivingLookupTypes.FeedbackSchemes)]
     public async Task<ActionResult<IEnumerable<FeedbackSchemeRes>>> GetLookupFeedbackSchemes() {
         var res = await GetLookupsAsync<FeedbackScheme, FeedbackSchemeRes>();

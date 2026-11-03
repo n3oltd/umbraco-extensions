@@ -6,6 +6,10 @@ using System.Linq;
 namespace N3O.Umbraco.Giving.Allocations.Extensions; 
 
 public static class FeedbackSchemeExtensions {
+    public static bool AllowsDonationPlan(this FeedbackScheme scheme, DonationPlan donationPlan) {
+        return scheme.AllowedDonationPlans.Contains(donationPlan);
+    }
+
     public static FeedbackCustomFieldDefinition GetFeedbackCustomFieldDefinition(this FeedbackScheme scheme,
                                                                                         string alias) {
         return scheme.CustomFields.SingleOrDefault(x => x.Alias.EqualsInvariant(alias));

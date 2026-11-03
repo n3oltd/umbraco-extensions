@@ -15,7 +15,10 @@ public class GivingLookupsRes : LookupsRes {
     
     [FromLookupType(GivingLookupTypes.DonationItems)]
     public IEnumerable<DonationItemRes> DonationItems { get; set; }
-    
+
+    [FromLookupType(GivingLookupTypes.DonationPlans)]
+    public IEnumerable<DonationPlanRes> DonationPlans { get; set; }
+
     [FromLookupType(GivingLookupTypes.GivingTypes)]
     public IEnumerable<NamedLookupRes> GivingTypes { get; set; }
     

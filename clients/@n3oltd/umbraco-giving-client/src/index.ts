@@ -266,6 +266,55 @@ export class GivingClient {
         return Promise.resolve<DonationItemRes[]>(null as any);
     }
 
+    getLookupDonationPlans(): Promise<DonationPlanRes[]> {
+        let url_ = this.baseUrl + "/umbraco/api/Giving/lookups/donationPlans";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetLookupDonationPlans(_response);
+        });
+    }
+
+    protected processGetLookupDonationPlans(response: Response): Promise<DonationPlanRes[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as DonationPlanRes[];
+            return result200;
+            });
+        } else if (status === 400) {
+            return response.text().then((_responseText) => {
+            let result400: any = null;
+            result400 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result400);
+            });
+        } else if (status === 500) {
+            return response.text().then((_responseText) => {
+            return throwException("A server side error occurred.", status, _responseText, _headers);
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            let result404: any = null;
+            result404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as ProblemDetails;
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<DonationPlanRes[]>(null as any);
+    }
+
     getLookupFeedbackSchemes(): Promise<FeedbackSchemeRes[]> {
         let url_ = this.baseUrl + "/umbraco/api/Giving/lookups/feedbackSchemes";
         url_ = url_.replace(/[?&]$/, "");
@@ -937,6 +986,17 @@ export interface FeedbackDonationOptionRes {
     scheme?: string | undefined;
 }
 
+/** One of '_2', '_3', '_4', '_6', '_12', '_18', '_24' */
+export enum DonationPlan {
+    _2 = "_2",
+    _3 = "_3",
+    _4 = "_4",
+    _6 = "_6",
+    _12 = "_12",
+    _18 = "_18",
+    _24 = "_24",
+}
+
 export interface FeedbackCustomFieldDefinition {
     type?: FeedbackCustomFieldType | undefined;
     alias?: string | undefined;
@@ -1030,9 +1090,16 @@ export interface FundDimensionValuesRes {
     dimension4?: string | undefined;
 }
 
+export interface DonationPlanRes {
+    name?: string | undefined;
+    id?: string | undefined;
+    donations?: number;
+}
+
 export interface FeedbackSchemeRes {
     name?: string | undefined;
     id?: string | undefined;
+    allowedDonationPlans?: DonationPlan[] | undefined;
     allowedGivingTypes?: GivingType[] | undefined;
     customFields?: FeedbackCustomFieldDefinitionRes[] | undefined;
     fundDimensionOptions?: FundDimensionOptionsRes | undefined;
@@ -1087,6 +1154,7 @@ export interface GivingLookupsRes {
     allocationTypes?: NamedLookupRes[] | undefined;
     currencies?: CurrencyRes[] | undefined;
     donationItems?: DonationItemRes[] | undefined;
+    donationPlans?: DonationPlanRes[] | undefined;
     givingTypes?: NamedLookupRes[] | undefined;
     fundDimension1Values?: FundDimensionValueRes[] | undefined;
     fundDimension2Values?: FundDimensionValueRes[] | undefined;

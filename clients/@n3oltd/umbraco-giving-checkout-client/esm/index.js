@@ -541,6 +541,17 @@ export var GivingType;
     GivingType["Donation"] = "donation";
     GivingType["RegularGiving"] = "regularGiving";
 })(GivingType || (GivingType = {}));
+/** One of '_2', '_3', '_4', '_6', '_12', '_18', '_24' */
+export var DonationPlan;
+(function (DonationPlan) {
+    DonationPlan["_2"] = "_2";
+    DonationPlan["_3"] = "_3";
+    DonationPlan["_4"] = "_4";
+    DonationPlan["_6"] = "_6";
+    DonationPlan["_12"] = "_12";
+    DonationPlan["_18"] = "_18";
+    DonationPlan["_24"] = "_24";
+})(DonationPlan || (DonationPlan = {}));
 /** One of 'bool', 'date', 'text' */
 export var FeedbackCustomFieldType;
 (function (FeedbackCustomFieldType) {

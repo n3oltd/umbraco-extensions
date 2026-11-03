@@ -8,15 +8,21 @@ namespace N3O.Umbraco.Giving.Allocations.Models;
 
 public class FeedbackAllocation : Value, IFeedbackAllocation {
     [JsonConstructor]
-    public FeedbackAllocation(FeedbackScheme scheme, IEnumerable<FeedbackCustomField> customFields) {
+    public FeedbackAllocation(FeedbackScheme scheme,
+                              DonationPlan donationPlan,
+                              IEnumerable<FeedbackCustomField> customFields) {
         Scheme = scheme;
+        DonationPlan = donationPlan;
         CustomFields = customFields;
     }
 
     public FeedbackAllocation(IFeedbackAllocation feedback)
-        : this(feedback.Scheme, feedback.CustomFields.OrEmpty().Select(x => new FeedbackCustomField(x))) { }
+        : this(feedback.Scheme,
+               feedback.DonationPlan,
+               feedback.CustomFields.OrEmpty().Select(x => new FeedbackCustomField(x))) { }
 
     public FeedbackScheme Scheme { get; }
+    public DonationPlan DonationPlan { get; }
     public IEnumerable<FeedbackCustomField> CustomFields { get; }
 
     public string Summary => Scheme?.Name;
