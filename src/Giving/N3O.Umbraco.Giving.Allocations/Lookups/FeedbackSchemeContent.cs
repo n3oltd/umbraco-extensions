@@ -100,6 +100,7 @@ public class ContentFeedbackSchemes : LookupsCollection<FeedbackScheme> {
                                   LookupContent.GetName(feedbackSchemeContent.Content()),
                                   feedbackSchemeContent.Content().Key,
                                   feedbackSchemeContent.AllowedGivingTypes,
+                                  [],
                                   feedbackSchemeContent.FundDimensionOptions,
                                   feedbackSchemeContent.Pricing,
                                   feedbackSchemeContent.CustomFields

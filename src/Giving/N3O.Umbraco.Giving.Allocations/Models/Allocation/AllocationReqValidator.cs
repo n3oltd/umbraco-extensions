@@ -18,6 +18,7 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
     
     public AllocationReqValidator(IFormatter formatter,
                                   ICurrencyAccessor currencyAccessor,
+                                  IPriceCalculator priceCalculator,
                                   IPricedAmountValidator pricedAmountValidator,
                                   IEnumerable<IAllocationExtensionRequestValidator> extensionValidators)
         : base(formatter) {
@@ -84,6 +85,16 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
            .Must((req, x) => CustomFieldAliasIsValid(req.Feedback.Scheme, x))
            .When(x => x.Feedback.HasAny(f => f.CustomFields.Entries))
            .WithMessage(Get<Strings>(s => s.FeedbackInvalidFields));
+
+        RuleFor(x => x.Feedback.DonationPlan)
+           .Must((req, x) => req.Feedback.Scheme.AllowedDonationPlans.Contains(x))
+           .When(x => x.Feedback.HasValue(f => f.DonationPlan))
+           .WithMessage(Get<Strings>(s => s.FeedbackDonationPlanNotAllowed));
+
+        RuleFor(x => x.Value)
+           .Must((req, x) => DonationPlanValueIsValid(priceCalculator, req.Feedback, req.FundDimensions, x))
+           .When(x => x.Value.HasValue(v => v.Amount) && x.Feedback.HasValue(f => f.DonationPlan))
+           .WithMessage(Get<Strings>(s => s.FeedbackInvalidDonationPlanValue));
 
         RuleFor(x => x.Value)
             .Must((req, x) => x.Amount.GetValueOrThrow() == req.Sponsorship.Components.Sum(c => c.Value.Amount.GetValueOrThrow()))
@@ -161,6 +172,19 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
         return definition != null;
     }
 
+    private bool DonationPlanValueIsValid(IPriceCalculator priceCalculator,
+                                          FeedbackAllocationReq feedback,
+                                          IFundDimensionValues fundDimensions,
+                                          Money value) {
+        if (!feedback.Scheme.HasPricing()) {
+            return false;
+        }
+
+        var price = priceCalculator.InCurrency(feedback.Scheme.Pricing, fundDimensions, value.Currency);
+
+        return value.Amount >= feedback.DonationPlan.GetDonationAmount(price.Amount) && value.Amount <= price.Amount;
+    }
+
     private bool FundDimensionsAreValid(FundDimensionValuesReq req, IFundDimensionOptions options) {
         if (FundDimensionIsValid(req.Dimension1, options?.Dimension1) &&
             FundDimensionIsValid(req.Dimension2, options?.Dimension2) &&
@@ -191,6 +215,8 @@ public class AllocationReqValidator : ModelValidator<AllocationReq> {
     public class Strings : ValidationStrings {
         public string CurrencyMismatch => "All currencies must be the same and must match the currently active currency";
         public string FeedbackAllocationNotAllowed => "Feedback cannot be specified for this type of allocation";
+        public string FeedbackDonationPlanNotAllowed => "The feedback scheme does not allow this donation plan";
+        public string FeedbackInvalidDonationPlanValue => "The value must be between the price divided by the plan's donations and the price";
         public string FeedbackInvalidFields => "The feedback allocation contains invalid custom fields";
         public string FeedbackInvalidFieldValues => "One or more of the feedback allocation custom fields have invalid values";
         public string FeedbackRequiredFieldsMissing => "Feedback allocation is missing a required field";

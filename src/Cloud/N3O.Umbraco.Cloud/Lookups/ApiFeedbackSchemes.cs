@@ -33,6 +33,7 @@ public class ApiFeedbackSchemes : ApiLookupsCollection<FeedbackScheme> {
                                                     publishedFeedbackScheme.Name,
                                                     null,
                                                     publishedFeedbackScheme.AllowedGivingTypes,
+                                                    publishedFeedbackScheme.AllowedDonationPlans.OrEmpty().Select(x => StaticLookups.FindById<DonationPlan>(x.Id)).ExceptNull(),
                                                     publishedFeedbackScheme.FundDimensionOptions.IfNotNull(x => new FundDimensionOptions(x)),
                                                     publishedFeedbackScheme.Pricing.IfNotNull(x => new Pricing(x)),
                                                     publishedFeedbackScheme.CustomFieldDefinitions.OrEmpty().Select(ToFeedbackCustomFieldDefinition));

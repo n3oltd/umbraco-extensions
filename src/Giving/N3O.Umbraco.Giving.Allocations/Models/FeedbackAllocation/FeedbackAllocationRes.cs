@@ -6,6 +6,7 @@ namespace N3O.Umbraco.Giving.Allocations.Models;
 
 public class FeedbackAllocationRes : IFeedbackAllocation {
     public FeedbackScheme Scheme { get; set; }
+    public DonationPlan DonationPlan { get; set; }
     public IEnumerable<FeedbackCustomFieldRes> CustomFields { get; set; }
 
     [JsonIgnore]

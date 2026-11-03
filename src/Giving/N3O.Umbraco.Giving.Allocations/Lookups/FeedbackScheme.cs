@@ -12,17 +12,20 @@ public class FeedbackScheme :
                           string name,
                           Guid? contentId,
                           IEnumerable<GivingType> allowedGivingTypes,
+                          IEnumerable<DonationPlan> allowedDonationPlans,
                           FundDimensionOptions fundDimensionOptions,
                           Pricing pricing,
                           IEnumerable<FeedbackCustomFieldDefinition> customFields)
         : base(id, name, contentId) {
         AllowedGivingTypes = allowedGivingTypes;
+        AllowedDonationPlans = allowedDonationPlans;
         FundDimensionOptions = fundDimensionOptions;
         Pricing = pricing;
         CustomFields = customFields;
     }
 
     public IEnumerable<GivingType> AllowedGivingTypes { get; }
+    public IEnumerable<DonationPlan> AllowedDonationPlans { get; }
     public FundDimensionOptions FundDimensionOptions { get; }
     public Pricing Pricing { get; }
     public IEnumerable<FeedbackCustomFieldDefinition> CustomFields { get; }

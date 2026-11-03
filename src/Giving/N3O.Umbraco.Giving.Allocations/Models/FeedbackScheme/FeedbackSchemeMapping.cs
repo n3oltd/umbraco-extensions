@@ -16,6 +16,7 @@ public class FeedbackSchemeMapping : IMapDefinition {
         ctx.Map<INamedLookup, NamedLookupRes>(src, dest);
 
         dest.AllowedGivingTypes = src.AllowedGivingTypes;
+        dest.AllowedDonationPlans = src.AllowedDonationPlans;
         dest.CustomFields = src.CustomFields
                                .OrEmpty()
                                .Select(ctx.Map<FeedbackCustomFieldDefinition, FeedbackCustomFieldDefinitionRes>)

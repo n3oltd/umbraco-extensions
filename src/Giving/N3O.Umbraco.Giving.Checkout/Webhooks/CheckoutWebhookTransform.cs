@@ -178,6 +178,10 @@ public class CheckoutWebhookTransform : WebhookTransform {
                 allocationJObject[$"cf_{customField.Alias}"] = customField.GetJValue();
             }
 
+            if (allocation.Feedback.HasValue(x => x.DonationPlan)) {
+                allocationJObject["plannedDonations"] = allocation.Feedback.DonationPlan.Donations;
+            }
+
             var pricing = ((IHoldPricing) allocation.Feedback.Scheme).Pricing;
             var price = _priceCalculator.InCurrency(pricing, allocation.FundDimensions, allocation.Value.Currency);
 

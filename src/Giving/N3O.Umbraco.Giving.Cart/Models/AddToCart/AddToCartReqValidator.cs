@@ -31,9 +31,17 @@ public class AddToCartReqValidator : ModelValidator<AddToCartReq> {
                        x.Allocation.HasValue(allocation => allocation.Sponsorship) && 
                        x.Allocation.Type == AllocationTypes.Sponsorship)
             .WithMessage(Get<Strings>(s => s.CannotSpecifySponsorshipDuration));
+
+        RuleFor(x => x.Allocation.Feedback.DonationPlan)
+            .Null()
+            .When(x => x.GivingType != GivingTypes.RegularGiving &&
+                       x.Allocation.HasValue(allocation => allocation.Feedback) &&
+                       x.Allocation.Type == AllocationTypes.Feedback)
+            .WithMessage(Get<Strings>(s => s.CannotSpecifyDonationPlan));
     }
 
     public class Strings : ValidationStrings {
+        public string CannotSpecifyDonationPlan => "A donation plan can only be specified for regular giving";
         public string CannotSpecifySponsorshipDuration => "Sponsorship duration can only be specified for donations";
         public string SpecifyAllocation => "Please specify the allocation";
         public string SpecifyGivingType => "Please specify the giving type";

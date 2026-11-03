@@ -5,5 +5,6 @@ namespace N3O.Umbraco.Giving.Allocations.Models;
 
 public interface IFeedbackAllocation {
     FeedbackScheme Scheme { get; }
+    DonationPlan DonationPlan { get; }
     IEnumerable<IFeedbackCustomField> CustomFields { get; }
 }

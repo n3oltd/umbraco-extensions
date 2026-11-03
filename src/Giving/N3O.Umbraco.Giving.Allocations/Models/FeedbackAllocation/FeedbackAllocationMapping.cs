@@ -11,6 +11,7 @@ public class FeedbackAllocationMapping : IMapDefinition {
 
     private void Map(FeedbackAllocation src, FeedbackAllocationRes dest, MapperContext ctx) {
         dest.Scheme = src.Scheme;
+        dest.DonationPlan = src.DonationPlan;
         dest.CustomFields = src.CustomFields.OrEmpty().Select(ctx.Map<IFeedbackCustomField, FeedbackCustomFieldRes>);
     }
 }
