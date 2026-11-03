@@ -32,7 +32,7 @@ public class CartValidator : ICartValidator {
 
     private bool ContentsAreValid(CartContents cartContents) {
         foreach (var allocation in cartContents.OrEmpty(x => x.Allocations)) {
-            if (!AllocationIsValid(cartContents.Type, allocation)) {
+            if (!AllocationIsValid(allocation)) {
                 return false;
             }
         }
@@ -40,7 +40,7 @@ public class CartValidator : ICartValidator {
         return true;
     }
 
-    private bool AllocationIsValid(GivingType givingType, Allocation allocation) {
+    private bool AllocationIsValid(Allocation allocation) {
         if (!FundDimensionsAreValid(allocation)) {
             return false;
         }
@@ -84,10 +84,6 @@ public class CartValidator : ICartValidator {
             }
 
             if (feedback.HasValue(x => x.DonationPlan) && !feedback.Scheme.AllowsDonationPlan(feedback.DonationPlan)) {
-                return false;
-            }
-
-            if (!feedback.HasValue(x => x.DonationPlan) && feedback.Scheme.RequiresDonationPlan(givingType)) {
                 return false;
             }
         }
