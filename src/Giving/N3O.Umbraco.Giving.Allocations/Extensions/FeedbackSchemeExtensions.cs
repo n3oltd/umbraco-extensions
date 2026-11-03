@@ -14,8 +14,4 @@ public static class FeedbackSchemeExtensions {
                                                                                         string alias) {
         return scheme.CustomFields.SingleOrDefault(x => x.Alias.EqualsInvariant(alias));
     }
-
-    public static bool RequiresDonationPlan(this FeedbackScheme scheme, GivingType givingType) {
-        return givingType == GivingTypes.RegularGiving && scheme.AllowedDonationPlans.HasAny();
-    }
 }

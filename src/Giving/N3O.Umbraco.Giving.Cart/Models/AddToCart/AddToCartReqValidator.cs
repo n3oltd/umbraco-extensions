@@ -1,6 +1,5 @@
 using FluentValidation;
 using N3O.Umbraco.Extensions;
-using N3O.Umbraco.Giving.Allocations.Extensions;
 using N3O.Umbraco.Giving.Allocations.Lookups;
 using N3O.Umbraco.Localization;
 using N3O.Umbraco.Validation;
@@ -39,20 +38,12 @@ public class AddToCartReqValidator : ModelValidator<AddToCartReq> {
                        x.Allocation.HasValue(allocation => allocation.Feedback) &&
                        x.Allocation.Type == AllocationTypes.Feedback)
             .WithMessage(Get<Strings>(s => s.CannotSpecifyDonationPlan));
-
-        RuleFor(x => x.Allocation.Feedback.DonationPlan)
-            .NotNull()
-            .When(x => x.Allocation.HasValue(allocation => allocation.Feedback) &&
-                       x.Allocation.Feedback.HasValue(feedback => feedback.Scheme) &&
-                       x.Allocation.Feedback.Scheme.RequiresDonationPlan(x.GivingType))
-            .WithMessage(Get<Strings>(s => s.SpecifyDonationPlan));
     }
 
     public class Strings : ValidationStrings {
         public string CannotSpecifyDonationPlan => "A donation plan can only be specified for regular giving";
         public string CannotSpecifySponsorshipDuration => "Sponsorship duration can only be specified for donations";
         public string SpecifyAllocation => "Please specify the allocation";
-        public string SpecifyDonationPlan => "Please specify the donation plan";
         public string SpecifyGivingType => "Please specify the giving type";
         public string SpecifyQuantity => "Please specify the quantity";
         public string SpecifySponsorshipDuration => "Please specify the sponsorship duration";
