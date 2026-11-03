@@ -31,7 +31,7 @@ public class EventsFinder : IEventsFinder {
 
     public IReadOnlyList<T> FindEvents<T>(EventCriteria criteria) where T : IPublishedContent {
         var culture = _cultureAccessor.GetCulture();
-        var all = _contentCache.All<T>().Where(x => x.IsInvariantOrHasCulture(culture)).ToList();
+        var all = _contentCache.All<T>(x => x.IsInvariantOrHasCulture(culture));
         var results = _queryFilter.Apply(all, criteria).ToList();
 
         return results;
