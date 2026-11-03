@@ -9,5 +9,5 @@ item is imported. That is how a property whose value belongs to the environment,
 than authored, survives a sync from another one instead of being overwritten.
 
 A uSync Publisher push sends shared (culture-invariant) values even when only some languages are
-selected, so a shared value set or cleared on the source reaches the target whichever languages are
-pushed. A `DefaultValues` setting on the Publisher handler set overrides this.
+selected, so the source's published shared values, emptied ones included, reach the target whichever
+languages are pushed. A `DefaultValues` setting on the Publisher handler set overrides this.
