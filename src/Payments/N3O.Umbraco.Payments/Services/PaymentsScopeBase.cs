@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Localization;
 using N3O.Umbraco.Payments.Entities;
@@ -13,10 +16,17 @@ namespace N3O.Umbraco.Payments;
 public abstract class PaymentsScopeBase : IPaymentsScope {
     private readonly IClock _clock;
     private readonly IFormatter _formatter;
+    private readonly ILogger<PaymentsScopeBase> _logger;
+    private readonly IWebHostEnvironment _webHostEnvironment;
 
-    protected PaymentsScopeBase(IClock clock, IFormatter formatter) {
+    protected PaymentsScopeBase(IClock clock,
+                                IFormatter formatter,
+                                ILogger<PaymentsScopeBase> logger,
+                                IWebHostEnvironment webHostEnvironment) {
         _clock = clock;
         _formatter = formatter;
+        _logger = logger;
+        _webHostEnvironment = webHostEnvironment;
     }
     
     public async Task<PaymentFlowRes<T>> DoAsync<T>(Func<IPaymentsFlow, T, Task> actionAsync,
@@ -40,9 +50,12 @@ public abstract class PaymentsScopeBase : IPaymentsScope {
             
             flow.EndPaymentFlow();
         } catch (Exception ex) {
+            _logger.LogError(ex, "Unhandled error in payments flow {FlowId}", flow.Id);
+
             var message = _formatter.Text.Format<UnhandledErrorStrings>(s => s.Message_1, flow.Id);
-            
-            paymentObject.UnhandledError(ex, message);
+            var exceptionDetails = _webHostEnvironment.IsProduction() ? null : ex.ToString();
+
+            paymentObject.UnhandledError(exceptionDetails, message);
         }
 
         await UpdateAsync(flow, cancellationToken);
