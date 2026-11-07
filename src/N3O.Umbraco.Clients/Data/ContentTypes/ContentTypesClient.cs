@@ -117,8 +117,8 @@ namespace N3O.Umbraco.Clients.Data.ContentTypes
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "umbraco/api/ContentTypes/find"
-                    urlBuilder_.Append("umbraco/api/ContentTypes/find");
+                    // Operation Path: "umbraco/backoffice/api/ContentTypes/find"
+                    urlBuilder_.Append("umbraco/backoffice/api/ContentTypes/find");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -223,8 +223,8 @@ namespace N3O.Umbraco.Clients.Data.ContentTypes
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "umbraco/api/ContentTypes/{contentType}"
-                    urlBuilder_.Append("umbraco/api/ContentTypes/");
+                    // Operation Path: "umbraco/backoffice/api/ContentTypes/{contentType}"
+                    urlBuilder_.Append("umbraco/backoffice/api/ContentTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(contentType, System.Globalization.CultureInfo.InvariantCulture)));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -329,8 +329,8 @@ namespace N3O.Umbraco.Clients.Data.ContentTypes
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "umbraco/api/ContentTypes/{contentId}/relations"
-                    urlBuilder_.Append("umbraco/api/ContentTypes/");
+                    // Operation Path: "umbraco/backoffice/api/ContentTypes/{contentId}/relations"
+                    urlBuilder_.Append("umbraco/backoffice/api/ContentTypes/");
                     urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(contentId, System.Globalization.CultureInfo.InvariantCulture)));
                     urlBuilder_.Append("/relations");
                     urlBuilder_.Append('?');

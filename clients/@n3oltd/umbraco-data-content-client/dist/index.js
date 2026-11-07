@@ -27,7 +27,7 @@ var ContentClient = /** @class */ (function () {
     }
     ContentClient.prototype.findChildren = function (contentId, req) {
         var _this = this;
-        var url_ = this.baseUrl + "/umbraco/api/Content/{contentId}/children/find";
+        var url_ = this.baseUrl + "/umbraco/backoffice/api/Content/{contentId}/children/find";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));
@@ -95,7 +95,7 @@ var ContentClient = /** @class */ (function () {
     };
     ContentClient.prototype.findDescendants = function (contentId, req) {
         var _this = this;
-        var url_ = this.baseUrl + "/umbraco/api/Content/{contentId}/descendants/find";
+        var url_ = this.baseUrl + "/umbraco/backoffice/api/Content/{contentId}/descendants/find";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));
@@ -163,7 +163,7 @@ var ContentClient = /** @class */ (function () {
     };
     ContentClient.prototype.getById = function (contentId) {
         var _this = this;
-        var url_ = this.baseUrl + "/umbraco/api/Content/{contentId}";
+        var url_ = this.baseUrl + "/umbraco/backoffice/api/Content/{contentId}";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));

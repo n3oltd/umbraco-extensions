@@ -19,7 +19,7 @@ export class ContentTypesClient {
     }
 
     findContentTypes(req: ContentTypeCriteria): Promise<ContentTypeRes[]> {
-        let url_ = this.baseUrl + "/umbraco/api/ContentTypes/find";
+        let url_ = this.baseUrl + "/umbraco/backoffice/api/ContentTypes/find";
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(req);
@@ -72,7 +72,7 @@ export class ContentTypesClient {
     }
 
     getContentTypeByAlias(contentType: string): Promise<ContentTypeRes> {
-        let url_ = this.baseUrl + "/umbraco/api/ContentTypes/{contentType}";
+        let url_ = this.baseUrl + "/umbraco/backoffice/api/ContentTypes/{contentType}";
         if (contentType === undefined || contentType === null)
             throw new Error("The parameter 'contentType' must be defined.");
         url_ = url_.replace("{contentType}", encodeURIComponent("" + contentType));
@@ -124,7 +124,7 @@ export class ContentTypesClient {
     }
 
     getRelationContentTypes(type: string | null | undefined, contentId: string): Promise<ContentTypeRes[]> {
-        let url_ = this.baseUrl + "/umbraco/api/ContentTypes/{contentId}/relations?";
+        let url_ = this.baseUrl + "/umbraco/backoffice/api/ContentTypes/{contentId}/relations?";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));

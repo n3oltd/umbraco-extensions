@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using N3O.Umbraco.Constants;
+using N3O.Umbraco.Exceptions;
 using System.Net.Mime;
 using Umbraco.Cms.Web.Common.Authorization;
 using Umbraco.Cms.Web.Common.Controllers;
@@ -19,4 +20,8 @@ namespace N3O.Umbraco.Hosting;
 [ProducesResponseType(StatusCodes.Status500InternalServerError)]
 [ResponseCache(CacheProfileName = CacheProfiles.NoCache)]
 [Authorize(Policy = AuthorizationPolicies.BackOfficeAccess)]
-public class BackofficeAuthorizedApiController : UmbracoApiController { }
+public class BackofficeAuthorizedApiController : UmbracoApiController {
+    protected NotFoundObjectResult NotFound(ResourceNotFoundException ex) {
+        return NotFound($"{ex.ParameterName}:{ex.ParameterValue}");
+    }
+}

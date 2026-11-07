@@ -19,7 +19,7 @@ export class ContentClient {
     }
 
     findChildren(contentId: string, req: ContentCriteria): Promise<ContentRes[]> {
-        let url_ = this.baseUrl + "/umbraco/api/Content/{contentId}/children/find";
+        let url_ = this.baseUrl + "/umbraco/backoffice/api/Content/{contentId}/children/find";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));
@@ -81,7 +81,7 @@ export class ContentClient {
     }
 
     findDescendants(contentId: string, req: ContentCriteria): Promise<ContentRes[]> {
-        let url_ = this.baseUrl + "/umbraco/api/Content/{contentId}/descendants/find";
+        let url_ = this.baseUrl + "/umbraco/backoffice/api/Content/{contentId}/descendants/find";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));
@@ -143,7 +143,7 @@ export class ContentClient {
     }
 
     getById(contentId: string): Promise<ContentRes> {
-        let url_ = this.baseUrl + "/umbraco/api/Content/{contentId}";
+        let url_ = this.baseUrl + "/umbraco/backoffice/api/Content/{contentId}";
         if (contentId === undefined || contentId === null)
             throw new Error("The parameter 'contentId' must be defined.");
         url_ = url_.replace("{contentId}", encodeURIComponent("" + contentId));
