@@ -25,6 +25,14 @@ public class PerplexBlockViewModelFactory<TBlock, TViewModel> : ContentBlockView
                                                           Guid id,
                                                           Guid definitionId,
                                                           Guid layoutId) {
+        try {
+            return CreateViewModel(content, id, definitionId, layoutId);
+        } catch (Exception ex) {
+            return new FailedPerplexBlockViewModel<TBlock>(content, id, definitionId, layoutId, ex);
+        }
+    }
+
+    private TViewModel CreateViewModel(TBlock content, Guid id, Guid definitionId, Guid layoutId) {
         var serviceProvider = _httpContextAccessor.HttpContext.RequestServices;
         
         var stringLocalizer = serviceProvider.GetRequiredService<IStringLocalizer>();

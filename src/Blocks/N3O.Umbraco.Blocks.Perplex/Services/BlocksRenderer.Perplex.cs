@@ -7,6 +7,7 @@ using Perplex.ContentBlocks.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Configuration.Models;
@@ -61,12 +62,16 @@ public class PerplexBlocksRenderer : BlocksRenderer<ContentBlocks> {
             
             var factory = (IContentBlockViewModelFactory) _serviceProvider.GetService(factoryType);
         
-            var blockModel = (IPerplexBlockViewModel) factory.Create(contentBlockModel.Content,
-                                                                     contentBlockModel.Id,
-                                                                     contentBlockModel.DefinitionId,
-                                                                     contentBlockModel.LayoutId);
+            var blockModel = factory.Create(contentBlockModel.Content,
+                                            contentBlockModel.Id,
+                                            contentBlockModel.DefinitionId,
+                                            contentBlockModel.LayoutId);
 
-            yield return blockModel;
+            if (blockModel is IFailedPerplexBlockViewModel failedBlockModel) {
+                ExceptionDispatchInfo.Throw(failedBlockModel.Exception);
+            }
+
+            yield return (IPerplexBlockViewModel) blockModel;
         }
     }
 
