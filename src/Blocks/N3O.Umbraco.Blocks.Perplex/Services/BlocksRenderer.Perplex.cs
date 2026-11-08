@@ -7,7 +7,6 @@ using Perplex.ContentBlocks.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Configuration.Models;
@@ -61,17 +60,14 @@ public class PerplexBlocksRenderer : BlocksRenderer<ContentBlocks> {
             var factoryType = typeof(IContentBlockViewModelFactory<>).MakeGenericType(blockModelsBuilderType);
             
             var factory = (IContentBlockViewModelFactory) _serviceProvider.GetService(factoryType);
-        
-            var blockModel = factory.Create(contentBlockModel.Content,
-                                            contentBlockModel.Id,
-                                            contentBlockModel.DefinitionId,
-                                            contentBlockModel.LayoutId);
 
-            if (blockModel is IFailedPerplexBlockViewModel failedBlockModel) {
-                ExceptionDispatchInfo.Throw(failedBlockModel.Exception);
-            }
+            // Valid only off a routed page. On one, the factory returns a failed view model for a block that throws.
+            var blockModel = (IPerplexBlockViewModel) factory.Create(contentBlockModel.Content,
+                                                                     contentBlockModel.Id,
+                                                                     contentBlockModel.DefinitionId,
+                                                                     contentBlockModel.LayoutId);
 
-            yield return (IPerplexBlockViewModel) blockModel;
+            yield return blockModel;
         }
     }
 

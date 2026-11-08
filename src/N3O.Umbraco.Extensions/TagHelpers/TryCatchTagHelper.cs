@@ -23,7 +23,7 @@ public class TryCatchTagHelper : TagHelper {
             var childContent = await output.GetChildContentAsync();
 
             output.Content.SetHtmlContent(childContent);
-        } catch (Exception ex) {
+        } catch (Exception ex) when (_renderFailures.CanIsolate(ex)) {
             _logger.LogError(ex, "Failed to render the content of a try-catch tag");
 
             output.Content.SetHtmlContent(_renderFailures.ToHtml(ex));

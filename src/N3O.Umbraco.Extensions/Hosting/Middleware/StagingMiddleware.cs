@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
-using NodaTime;
+using N3O.Umbraco.Security;
 using System;
 using System.Linq;
 using System.Net;
@@ -14,7 +12,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Hosting;
 
@@ -26,20 +23,17 @@ public class StagingMiddleware : IMiddleware {
 
     private readonly IUmbracoContextFactory _umbracoContextFactory;
     private readonly Lazy<IRemoteIpAddressAccessor> _remoteIpAddressAccessor;
-    private readonly Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> _cookieAuthenticationOptions;
+    private readonly Lazy<IBackofficeUser> _backofficeUser;
     private readonly IApplicationReadiness _applicationReadiness;
-    private readonly IClock _clock;
 
     public StagingMiddleware(IUmbracoContextFactory umbracoContextFactory,
                              Lazy<IRemoteIpAddressAccessor> remoteIpAddressAccessor,
-                             Lazy<IOptionsSnapshot<CookieAuthenticationOptions>> cookieAuthenticationOptions,
-                             IApplicationReadiness applicationReadiness,
-                             IClock clock) {
+                             Lazy<IBackofficeUser> backofficeUser,
+                             IApplicationReadiness applicationReadiness) {
         _umbracoContextFactory = umbracoContextFactory;
         _remoteIpAddressAccessor = remoteIpAddressAccessor;
-        _cookieAuthenticationOptions = cookieAuthenticationOptions;
+        _backofficeUser = backofficeUser;
         _applicationReadiness = applicationReadiness;
-        _clock = clock;
     }
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next) {
@@ -62,7 +56,7 @@ public class StagingMiddleware : IMiddleware {
             if (stagingSettings != null) {
                 var remoteIp = _remoteIpAddressAccessor.Value.GetRemoteIpAddress();
 
-                if (!IsAllowedWithoutCredentials(context, stagingSettings, remoteIp)) {
+                if (!IsAllowedWithoutCredentials(stagingSettings, remoteIp)) {
                     var lockOutKey = GetLockOutKey(remoteIp);
 
                     if (IsBlocked(lockOutKey)) {
@@ -125,13 +119,11 @@ public class StagingMiddleware : IMiddleware {
         }
     }
 
-    private bool IsAllowedWithoutCredentials(HttpContext context,
-                                             StagingSettingsContent stagingSettings,
-                                             IPAddress remoteIp) {
+    private bool IsAllowedWithoutCredentials(StagingSettingsContent stagingSettings, IPAddress remoteIp) {
         if (stagingSettings.Rules.OrEmpty().Any(x => IsAllowed(remoteIp, x.RuleIpAddress?.Trim()))) {
             return true;
         } else {
-            return IsSignedIntoBackOffice(context);
+            return _backofficeUser.Value.IsLoggedIn();
         }
     }
 
@@ -177,21 +169,5 @@ public class StagingMiddleware : IMiddleware {
         password = usernameAndPassword[1];
 
         return true;
-    }
-
-    private bool IsSignedIntoBackOffice(HttpContext context) {
-        var authType = global::Umbraco.Cms.Core.Constants.Security.BackOfficeAuthenticationType;
-        var cookieOptions = _cookieAuthenticationOptions.Value.Get(authType);
-
-        var backOfficeCookie = context.Request.Cookies[cookieOptions.Cookie.Name];
-        var ticket = backOfficeCookie.IfNotNull(x => cookieOptions.TicketDataFormat.Unprotect(x));
-
-        if (ticket != null &&
-            ticket.Properties.ExpiresUtc > _clock.GetCurrentInstant().ToDateTimeOffset() &&
-            ticket.Principal.GetUmbracoIdentity() != null) {
-            return true;
-        } else {
-            return false;
-        }
     }
 }

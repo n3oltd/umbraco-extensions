@@ -93,8 +93,7 @@ public static class UmbracoBuilderExtensions {
                                                                      Func<IServiceProvider, PerplexBlockParameters<TBlock>, TViewModel> constructor)
         where TViewModel : IPerplexBlockViewModel<TBlock>
         where TBlock : class, IPublishedElement {
-        builder.Services.AddTransient<IContentBlockViewModelFactory<TBlock>>(s => {
-            return new PerplexBlockViewModelFactory<TBlock, TViewModel>(s, constructor);
-        });
+        builder.Services.AddTransient(typeof(IContentBlockViewModelFactory<TBlock>),
+                                      s => new PerplexBlockViewModelFactory<TBlock, TViewModel>(s, constructor));
     }
 }
