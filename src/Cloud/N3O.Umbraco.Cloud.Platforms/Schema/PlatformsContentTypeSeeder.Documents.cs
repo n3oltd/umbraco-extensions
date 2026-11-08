@@ -1,4 +1,5 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.ContentTypes;
 using N3O.Umbraco.Extensions;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
@@ -77,6 +78,17 @@ public partial class PlatformsContentTypeSeeder {
         embed.ContentmentTemplatedLabel(x => x.DonationFormEmbedCode).DataType(DataTypeNames.ElementEmbedCodeLabel);
         embed.ContentmentTemplatedLabel(x => x.DonationButtonEmbedCode).DataType(DataTypeNames.ElementEmbedCodeLabel);
         embed.ContentmentTemplatedLabel(x => x.DonationPopupEmbedCode).DataType(DataTypeNames.ElementEmbedCodeLabel);
+
+        var tags = designer.Group(Groups.Tags);
+
+        tags.CampaignTags(x => x.Tags)
+            .Name(Names.CampaignTags)
+            .DataType(DataTypeNames.CampaignTags)
+            .Description(Descriptions.CampaignTags);
+
+        tags.ContentmentDataList(x => x.Fundraiser)
+            .DataType(DataTypeNames.FundraisersSingle)
+            .Description(Descriptions.CampaignFundraiser);
 
         designer.Save();
     }

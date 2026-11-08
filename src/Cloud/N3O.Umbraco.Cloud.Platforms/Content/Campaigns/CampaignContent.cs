@@ -2,6 +2,7 @@
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Lookups;
+using N3O.Umbraco.Cloud.Platforms.Models;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Exceptions;
 using N3O.Umbraco.Extensions;
@@ -72,7 +73,9 @@ public class CampaignContent : UmbracoContent<CampaignContent> {
     public string Name => Content().Name;
     public Guid Key => Content().Key;
     
+    public Fundraiser Fundraiser => GetValue(x => x.Fundraiser);
     public string Notes => GetValue(x => x.Notes);
+    public IEnumerable<CampaignTag> Tags => GetValue(x => x.Tags);
     public decimal Target => GetValue(x => x.Target);
     
     public string DonationFormEmbedCode => GetValue(x => x.DonationFormEmbedCode);

@@ -9,6 +9,7 @@ public static class PlatformsSchemaConstants {
         public const string PlatformsContentTypesMigrationV3 = "2026.10.26";
         public const string PlatformsContentTypesMigrationV4 = "2026.10.27";
         public const string PlatformsDataTypesMigrationV5 = "2026.10.30";
+        public const string PlatformsContentTypesMigrationV6 = "2026.11.08";
     }
 
     public static class Folders {
@@ -27,9 +28,11 @@ public static class PlatformsSchemaConstants {
     public static class DataTypes {
         public const string CampaignsMultiple = "Platforms Campaigns Data List (0, n)";
         public const string CampaignsSingle = "Platforms Campaigns Data List (0, 1)";
+        public const string CampaignTags = "Platforms Campaign Tags";
         public const string DonateButtonAction = "Platforms Donate Button Action Data List (0, 1)";
         public const string ECommerceStage = "Platforms Ecommerce Stage Data List (0, 1)";
         public const string ElementEmbedCodeLabel = "Platforms Element Embed Code Label";
+        public const string FundraisersSingle = "Platforms Fundraisers Data List (0, 1)";
         public const string GiftTypesMultiple = "Platforms Gift Types Data List (0, n)";
         public const string Percentage = "Platforms Percentage";
         public const string QurbaniItem = "Platforms Qurbani Item Data List (0, 1)";
@@ -37,6 +40,10 @@ public static class PlatformsSchemaConstants {
         public const string SuggestedAmounts = "Platforms Suggested Amount Block List (0, 3)";
         public const string SuggestedAmountTitle = "Platforms Suggested Amount Title";
         public const string Summary = "Platforms Summary";
+    }
+
+    public static class PropertyEditorAliases {
+        public const string CampaignTags = "N3O.Umbraco.Cloud.Platforms.CampaignTags";
     }
 
     public static class DataTypeKeys {
@@ -83,13 +90,17 @@ public static class PlatformsSchemaConstants {
         public const string Options = "Options";
         public const string Settings = "Settings";
         public const string Suggestions = "Suggestions";
+        public const string Tags = "Tags";
     }
 
     public static class Descriptions {
+        public const string CampaignFundraiser = "The fundraiser this campaign's gifts are attributed to";
+        public const string CampaignTags = "Analytics tags for gifts made through this campaign";
         public const string CrowdfundingCampaignCampaign = "The campaign this crowdfunding campaign belongs to";
     }
 
     public static class Names {
+        public const string CampaignTags = "Campaign Tags";
         public const string CrowdfundingCampaign = "Crowdfunding Campaign";
         public const string CrowdfundingCampaigns = "Crowdfunding Campaigns";
     }

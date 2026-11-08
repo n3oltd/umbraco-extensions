@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.DataTypes;
 using N3O.Umbraco.Extensions;
@@ -25,9 +26,11 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
     public void Seed() {
         Seed(DataTypeNames.CampaignsMultiple, SeedCampaigns);
         Seed(DataTypeNames.CampaignsSingle, SeedCampaign);
+        Seed(DataTypeNames.CampaignTags, SeedCampaignTags);
         Seed(DataTypeNames.DonateButtonAction, SeedDonateButtonAction);
         Seed(DataTypeNames.ECommerceStage, SeedECommerceStage);
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
+        Seed(DataTypeNames.FundraisersSingle, SeedFundraiser);
         Seed(DataTypeNames.GiftTypesMultiple, SeedGiftTypes);
         Seed(DataTypeNames.Percentage, SeedPercentage);
         Seed(DataTypeNames.QurbaniItem, SeedQurbaniItem);
@@ -70,6 +73,15 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Save();
     }
 
+    private void SeedCampaignTags() {
+        var designer = _dataTypeEditor.NewCampaignTags(DataTypeNames.CampaignTags);
+
+        designer.InFolder(Folders.Platforms);
+        designer.WithDeterministicId(DataTypeNames.CampaignTags);
+
+        designer.Save();
+    }
+
     private void SeedDonateButtonAction() {
         var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.DonateButtonAction);
 
@@ -98,6 +110,17 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Template(EmbedCodeTemplate);
         designer.InFolder(Folders.Platforms);
         designer.WithDeterministicId(DataTypeNames.ElementEmbedCodeLabel);
+
+        designer.Save();
+    }
+
+    private void SeedFundraiser() {
+        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.FundraisersSingle);
+
+        designer.DataSource<FundraiserDataSource>();
+        designer.Limit(1);
+        designer.InFolder(Folders.Platforms);
+        designer.WithDeterministicId(DataTypeNames.FundraisersSingle);
 
         designer.Save();
     }
