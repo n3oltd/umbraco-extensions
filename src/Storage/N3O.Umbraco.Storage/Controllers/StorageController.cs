@@ -1,11 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using N3O.Umbraco.Attributes;
+using N3O.Umbraco.Hosting;
 using N3O.Umbraco.Storage.Models;
-using N3O.Umbraco.Validation;
-using N3O.Umbraco.Validation.Controllers;
 using NodaTime;
-using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -13,15 +11,11 @@ using System.Threading.Tasks;
 namespace N3O.Umbraco.Storage.Controllers;
 
 [ApiDocument(StorageConstants.ApiName)]
-public class StorageController : ValidatingApiController {
+public class StorageController : BackofficeAuthorizedApiController {
     private readonly IClock _clock;
     private readonly IVolume _volume;
 
-    public StorageController(IClock clock,
-                             IVolume volume,
-                             IValidation validation,
-                             Lazy<IValidationHandler> validationHandler) 
-        : base(validation, validationHandler) {
+    public StorageController(IClock clock, IVolume volume) {
         _clock = clock;
         _volume = volume;
     }
@@ -42,8 +36,6 @@ public class StorageController : ValidatingApiController {
     [HttpPost("tempUpload")]
     [RequestSizeLimit(1024_000_000)]
     public async Task<ActionResult<StorageToken>> TempUpload([FromForm] UploadReq req) {
-        await ValidateAsync(req);
-        
         var folderPath = Path.Join(StorageConstants.StorageFolders.Temp,
                                    $"_{_clock.GetCurrentInstant().ToUnixTimeTicks()}");
         
@@ -52,8 +44,6 @@ public class StorageController : ValidatingApiController {
 
     [HttpPost("upload/{folderPath}")]
     public async Task<ActionResult<StorageToken>> Upload(string folderPath, [FromForm] UploadReq req) {
-        await ValidateAsync(req);
-        
         using (var reqStream = req.File.OpenReadStream()) {
             var filename = Sanitise(req.File.FileName);
             var storageFolder = await _volume.GetStorageFolderAsync(folderPath);
