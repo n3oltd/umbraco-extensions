@@ -8,6 +8,7 @@ public static class PlatformsSchemaConstants {
         public const string PlatformsContentTypesMigrationV2 = "2026.08.31";
         public const string PlatformsContentTypesMigrationV3 = "2026.10.26";
         public const string PlatformsContentTypesMigrationV4 = "2026.10.27";
+        public const string PlatformsContentTypesMigrationV6 = "2026.11.08";
     }
 
     public static class Folders {
@@ -39,6 +40,8 @@ public static class PlatformsSchemaConstants {
         public const string SuggestedAmounts = "Nested Platforms Suggested Amount (0, 3)";
         public const string SuggestedAmountTitle = "Platforms Suggested Amount Title";
         public const string Summary = "Platforms Summary";
+        public const string ZakatCalculatorAlias = "Platforms Zakat Calculator Alias";
+        public const string ZakatCalculatorTooltip = "Platforms Zakat Calculator Tooltip";
     }
 
     public static class DataTypeKeys {
