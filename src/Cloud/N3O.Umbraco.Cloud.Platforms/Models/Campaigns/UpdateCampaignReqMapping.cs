@@ -42,7 +42,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
         mapper.Define<CampaignContent, UpdateCampaignReq>((_, _) => new UpdateCampaignReq(), Map);
     }
     
-    // Umbraco.Code.MapAll
+    // Umbraco.Code.MapAll -Fundraiser -Tags
     private void Map(CampaignContent src, UpdateCampaignReq dest, MapperContext ctx) {
         var target = (double) src.Target;
         
