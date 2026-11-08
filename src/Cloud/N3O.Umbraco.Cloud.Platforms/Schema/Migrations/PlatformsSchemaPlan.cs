@@ -13,7 +13,11 @@ public class PlatformsSchemaPlan : MigrationPlan {
         From(string.Empty).To<PlatformsContentTypesMigrationV2>(States.PlatformsContentTypesMigrationV2)
                           .To<PlatformsContentTypesMigrationV3>(States.PlatformsContentTypesMigrationV3)
                           .To<PlatformsContentTypesMigrationV4>(States.PlatformsContentTypesMigrationV4)
-                          .To<PlatformsDataTypesMigrationV5>(States.PlatformsDataTypesMigrationV5);
+                          .To<PlatformsDataTypesMigrationV5>(States.PlatformsDataTypesMigrationV5)
+                          .To<PlatformsContentTypesMigrationV6>(States.PlatformsContentTypesMigrationV6V17);
+
+        From(States.PlatformsContentTypesMigrationV6)
+            .To<PlatformsDataTypesMigrationV5>(States.PlatformsContentTypesMigrationV6V17);
     }
 
     public static IReadOnlyList<string> RequiredContentTypes => [
@@ -28,6 +32,8 @@ public class PlatformsSchemaPlan : MigrationPlan {
         DataTypeNames.GiftTypesMultiple,
         DataTypeNames.Percentage,
         Shared.Money,
-        DataTypeNames.SuggestedAmountTitle
+        DataTypeNames.SuggestedAmountTitle,
+        DataTypeNames.ZakatCalculatorAlias,
+        DataTypeNames.ZakatCalculatorTooltip
     ];
 }
