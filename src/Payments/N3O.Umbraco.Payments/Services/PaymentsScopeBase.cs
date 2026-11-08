@@ -43,6 +43,10 @@ public abstract class PaymentsScopeBase : IPaymentsScope {
             throw new NotImplementedException();
         }
 
+        if (_webHostEnvironment.IsProduction()) {
+            paymentObject.ClearExceptionDetails();
+        }
+
         try {
             flow.BeginPaymentFlow(_clock);
 
