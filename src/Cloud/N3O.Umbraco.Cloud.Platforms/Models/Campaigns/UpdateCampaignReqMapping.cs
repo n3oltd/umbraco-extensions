@@ -42,13 +42,15 @@ public class UpdateCampaignReqMapping : IMapDefinition {
         mapper.Define<CampaignContent, UpdateCampaignReq>((_, _) => new UpdateCampaignReq(), Map);
     }
     
-    // Umbraco.Code.MapAll -Fundraiser -Tags
+    // Umbraco.Code.MapAll
     private void Map(CampaignContent src, UpdateCampaignReq dest, MapperContext ctx) {
         var target = (double) src.Target;
         
+        dest.Fundraiser = src.Fundraiser?.Id;
         dest.Name = src.Name;
         dest.Notes = src.Notes;
         dest.Slug = _slugHelper.GeneratePlatformsSlug(src.Name);
+        dest.Tags = src.Tags?.ToDictionary(x => x.Key, x => x.Value).ToTagCollectionReq();
         dest.Target = target == 0 ? null : target;
 
         dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);
