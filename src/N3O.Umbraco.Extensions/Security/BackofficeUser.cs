@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using N3O.Umbraco.Extensions;
+using System;
 using Umbraco.Extensions;
 using SecurityConstants = Umbraco.Cms.Core.Constants.Security;
 
@@ -30,6 +31,11 @@ public class BackofficeUser : IBackofficeUser {
         }
 
         var authenticationTicket = cookieOptions.TicketDataFormat.Unprotect(backOfficeCookie);
+
+        if (authenticationTicket?.Properties.ExpiresUtc < DateTimeOffset.UtcNow) {
+            return false;
+        }
+
         var backOfficeIdentity = authenticationTicket?.Principal.GetUmbracoIdentity();
 
         var result = backOfficeIdentity.HasValue(x => x.AuthenticationType) &&

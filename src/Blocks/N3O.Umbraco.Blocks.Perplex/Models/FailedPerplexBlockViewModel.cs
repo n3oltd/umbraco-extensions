@@ -6,11 +6,7 @@ namespace N3O.Umbraco.Blocks.Perplex;
 
 public class FailedPerplexBlockViewModel<TBlock> : IFailedPerplexBlockViewModel, IContentBlockViewModel<TBlock>
     where TBlock : IPublishedElement {
-    public FailedPerplexBlockViewModel(TBlock content,
-                                       Guid id,
-                                       Guid definitionId,
-                                       Guid layoutId,
-                                       Exception exception) {
+    public FailedPerplexBlockViewModel(TBlock content, Guid id, Guid definitionId, Guid layoutId, Exception exception) {
         Content = content;
         Id = id;
         DefinitionId = definitionId;

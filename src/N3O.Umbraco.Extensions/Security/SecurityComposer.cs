@@ -8,5 +8,6 @@ public class SecurityComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.Services.AddSingleton<IAuthorization, Authorization>();
         builder.Services.AddTransient<IBackofficeUser, BackofficeUser>();
+        builder.Services.AddSingleton<IRenderFailures, RenderFailures>();
     }
 }
