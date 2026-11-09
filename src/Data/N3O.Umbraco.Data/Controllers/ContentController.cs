@@ -12,8 +12,9 @@ using System.Threading.Tasks;
 
 namespace N3O.Umbraco.Data.Controllers;
 
+// TODO Add authentication to this controller
 [ApiDocument(DataConstants.ApiNames.Content)]
-public class ContentController : BackofficeAuthorizedApiController {
+public class ContentController : ApiController {
     private readonly IMediator _mediator;
 
     public ContentController(IMediator mediator) {

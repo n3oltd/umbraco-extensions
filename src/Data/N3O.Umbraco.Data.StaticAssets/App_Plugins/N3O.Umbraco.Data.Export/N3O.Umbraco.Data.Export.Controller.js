@@ -188,7 +188,7 @@ angular.module("umbraco")
         }
 
         async function getContentTypes(contentId) {
-            const getContentType = await fetch(`/umbraco/backoffice/api/ContentTypes/${contentId}/relations?type=descendant`, {
+            const getContentType = await fetch(`/umbraco/api/ContentTypes/${contentId}/relations?type=descendant`, {
                 headers: {
                     "Accept": "application/json"
                 }
