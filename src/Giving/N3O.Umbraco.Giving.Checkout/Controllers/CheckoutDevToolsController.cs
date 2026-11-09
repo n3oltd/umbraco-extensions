@@ -1,13 +1,16 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Giving.Checkout.Commands;
 using N3O.Umbraco.Hosting;
 using N3O.Umbraco.Mediator;
 using System.Threading.Tasks;
+using Umbraco.Cms.Web.Common.Authorization;
 
 namespace N3O.Umbraco.Giving.Checkout.Controllers;
 
 [ApiDocument(CheckoutConstants.DevToolsApiName)]
+[Authorize(Policy = AuthorizationPolicies.SectionAccessSettings)]
 public class CheckoutDevToolsController : BackofficeAuthorizedApiController {
     private readonly IMediator _mediator;
 
