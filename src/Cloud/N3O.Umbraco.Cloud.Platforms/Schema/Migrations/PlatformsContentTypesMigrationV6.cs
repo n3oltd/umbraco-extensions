@@ -12,8 +12,13 @@ public class PlatformsContentTypesMigrationV6 : PlatformsContentTypesMigration {
         : base(context, contentTypeEditor) { }
 
     protected override void Migrate() {
-        LimitZakatCalculatorField();
-        LimitZakatCalculatorSection();
+        if (Exists(PlatformsConstants.Zakat.Settings.Calculator.Field.Alias)) {
+            LimitZakatCalculatorField();
+        }
+
+        if (Exists(PlatformsConstants.Zakat.Settings.Calculator.Section.Alias)) {
+            LimitZakatCalculatorSection();
+        }
     }
 
     private void LimitZakatCalculatorField() {
