@@ -26,8 +26,7 @@ public class BlogPostsFinder : IBlogPostsFinder {
 
     public IReadOnlyList<T> FindPosts<T>(BlogPostCriteria criteria = null) where T : IPublishedContent {
         var culture = _cultureAccessor.GetCulture();
-        var all = _contentCache.All<T>()
-                               .Where(x => x.IsInvariantOrHasCulture(culture))
+        var all = _contentCache.All<T>(x => x.IsInvariantOrHasCulture(culture))
                                .Select(x => x.As<BlogPostContent>())
                                .OrderByDescending(x => x.Date)
                                .Select(x => (T) x.Content())
