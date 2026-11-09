@@ -120,7 +120,7 @@ export function DataImportApp({ contentKey, authFetch, notify }: DataImportAppPr
         const data = new FormData();
         data.append('file', file);
 
-        const res = await authFetch!('/umbraco/api/Storage/tempUpload', {
+        const res = await authFetch!('/umbraco/backoffice/api/Storage/tempUpload', {
             method: 'POST',
             body: data,
             signal,
