@@ -78,6 +78,11 @@ public static class PropertyContainerBuilderExtensions {
         return builder.Property<ContentmentTemplatedLabelPropertyTypeBuilder, TProperty>(expression);
     }
 
+    public static ContentmentTextInputPropertyTypeBuilder ContentmentTextInput(this IPropertyContainerBuilder builder,
+                                                                               string propertyAlias) {
+        return builder.Property<ContentmentTextInputPropertyTypeBuilder>(propertyAlias);
+    }
+
     public static ContentPickerPropertyTypeBuilder ContentPicker(this IPropertyContainerBuilder builder,
                                                                  string propertyAlias) {
         return builder.Property<ContentPickerPropertyTypeBuilder>(propertyAlias);

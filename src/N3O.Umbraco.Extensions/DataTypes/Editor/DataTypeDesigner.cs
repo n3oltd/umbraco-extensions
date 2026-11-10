@@ -92,6 +92,16 @@ public abstract class DataTypeDesigner : IDataTypeDesigner {
 
     protected abstract object BuildConfiguration(IDataType existing);
 
+    protected static IReadOnlyList<object> BuildContentmentDataSource(Type dataSourceType,
+                                                                      IReadOnlyDictionary<string, object> settings) {
+        var dataSource = new Dictionary<string, object>();
+
+        dataSource["key"] = $"{dataSourceType.FullName}, {dataSourceType.Assembly.GetName().Name}";
+        dataSource["value"] = settings;
+
+        return new[] { dataSource };
+    }
+
     protected abstract string EditorAlias { get; }
 
     protected virtual string EditorUiAlias => EditorAlias;
