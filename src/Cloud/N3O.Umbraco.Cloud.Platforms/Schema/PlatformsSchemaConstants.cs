@@ -89,7 +89,7 @@ public static class PlatformsSchemaConstants {
     }
 
     public static class Descriptions {
-        public const string CampaignFundraiser = "The fundraiser tag on gifts made through this campaign's pages";
+        public const string CampaignFundraiser = "The fundraiser tag on gifts made through this campaign";
         public const string CrowdfundingCampaignCampaign = "The campaign this crowdfunding campaign belongs to";
     }
 
