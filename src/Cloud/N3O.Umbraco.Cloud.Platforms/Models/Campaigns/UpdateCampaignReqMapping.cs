@@ -1,6 +1,5 @@
 ﻿using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Lookups;
-using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
@@ -28,15 +27,18 @@ public class UpdateCampaignReqMapping : IMapDefinition {
     private readonly IMediaUrl _mediaUrl;
     private readonly IPlatformsMediaUrlBuilder _mediaUrlBuilder;
     private readonly ISlugHelper _slugHelper;
+    private readonly ITagValuesAccessor _tagValuesAccessor;
 
     public UpdateCampaignReqMapping(ICdnClient cdnClient,
                                     IMediaUrl mediaUrl,
                                     IPlatformsMediaUrlBuilder mediaUrlBuilder,
-                                    ISlugHelper slugHelper) {
+                                    ISlugHelper slugHelper,
+                                    ITagValuesAccessor tagValuesAccessor) {
         _cdnClient = cdnClient;
         _mediaUrl = mediaUrl;
         _mediaUrlBuilder = mediaUrlBuilder;
         _slugHelper = slugHelper;
+        _tagValuesAccessor = tagValuesAccessor;
     }
     
     public void DefineMaps(IUmbracoMapper mapper) {
@@ -119,15 +121,17 @@ public class UpdateCampaignReqMapping : IMapDefinition {
     }
 
     private IReadOnlyDictionary<string, string> GetTags(CampaignContent campaign) {
-        var publishedTagValues =
-            _cdnClient.DownloadSubscriptionContentAsync<PublishedTagValues>(SubscriptionFiles.TagValues,
-                                                                            JsonSerializers.JsonProvider)
-                      .GetAwaiter().GetResult();
+        var publishedTagValues = _tagValuesAccessor.Get();
+
+        if (publishedTagValues == null) {
+            return null;
+        }
 
         var tags = new Dictionary<string, string>();
 
         foreach (var entry in publishedTagValues.OrEmpty(x => x.Entries)) {
-            var value = (string) campaign.Content().GetProperty(CampaignTagAlias.For(entry.Key))?.GetValue();
+            var property = campaign.Content().GetProperty(CampaignTagAlias.For(entry.Key));
+            var value = ((string) property?.GetValue()).TrimOrNull();
 
             if (value.HasValue()) {
                 tags[entry.Key] = value;

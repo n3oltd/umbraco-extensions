@@ -1,6 +1,3 @@
-using N3O.Umbraco.Cloud.Extensions;
-using N3O.Umbraco.Cloud.Lookups;
-using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
@@ -13,10 +10,10 @@ namespace N3O.Umbraco.Cloud.Platforms.Lookups;
 public class TagValuesDataSource : IContentmentDataSource {
     public const string TagKeyField = "tagKey";
 
-    private readonly ICdnClient _cdnClient;
+    private readonly ITagValuesAccessor _tagValuesAccessor;
 
-    public TagValuesDataSource(ICdnClient cdnClient) {
-        _cdnClient = cdnClient;
+    public TagValuesDataSource(ITagValuesAccessor tagValuesAccessor) {
+        _tagValuesAccessor = tagValuesAccessor;
     }
 
     public string Name => "Tag Values";
@@ -29,10 +26,7 @@ public class TagValuesDataSource : IContentmentDataSource {
 
     public IEnumerable<DataListItem> GetItems(Dictionary<string, object> config) {
         var tagKey = config.GetOrDefault(TagKeyField)?.ToString();
-        var publishedTagValues =
-            _cdnClient.DownloadSubscriptionContentAsync<PublishedTagValues>(SubscriptionFiles.TagValues,
-                                                                            JsonSerializers.JsonProvider)
-                      .GetAwaiter().GetResult();
+        var publishedTagValues = _tagValuesAccessor.Get();
 
         var entry = publishedTagValues.OrEmpty(x => x.Entries).SingleOrDefault(x => x.Key.EqualsInvariant(tagKey));
 

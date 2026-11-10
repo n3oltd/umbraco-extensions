@@ -196,10 +196,6 @@ public static class ReflectionExtensions {
         }
     }
 
-    public static string GetContentmentKey(this Type type) {
-        return $"{type.FullName}, {type.Assembly.GetName().Name}";
-    }
-
     public static IEnumerable<Type> GetParameterTypesForGenericInterface(this Type type,
                                                                          Type genericInterfaceType) {
         return _parameterTypesForGenericInterface.GetOrAdd((type, genericInterfaceType), static key => {

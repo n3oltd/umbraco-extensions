@@ -9,8 +9,8 @@ using Umbraco.Cms.Core.Services;
 namespace N3O.Umbraco.DataTypes;
 
 public class ContentmentTextInputDataTypeDesigner : DataTypeDesigner {
-    private string _dataSourceKey;
     private IReadOnlyDictionary<string, object> _dataSourceSettings;
+    private Type _dataSourceType;
 
     public ContentmentTextInputDataTypeDesigner(IDataTypeService dataTypeService,
                                                 IDataTypeContainerService dataTypeContainerService,
@@ -20,26 +20,20 @@ public class ContentmentTextInputDataTypeDesigner : DataTypeDesigner {
 
     public ContentmentTextInputDataTypeDesigner DataSource<TDataSource>(IReadOnlyDictionary<string, object> settings)
         where TDataSource : IContentmentDataSource {
-        _dataSourceKey = typeof(TDataSource).GetContentmentKey();
+        _dataSourceType = typeof(TDataSource);
         _dataSourceSettings = settings;
 
         return this;
     }
 
     protected override object BuildConfiguration(IDataType existing) {
-        if (!_dataSourceKey.HasValue()) {
-            throw new Exception($"Text input {Name.Quote()} has no data source");
-        }
-
-        var dataSource = new Dictionary<string, object>();
-
-        dataSource["key"] = _dataSourceKey;
-        dataSource["value"] = _dataSourceSettings;
-
         var configuration = new Dictionary<string, object>();
 
         configuration["inputType"] = "text";
-        configuration["dataSource"] = new[] { dataSource };
+
+        if (_dataSourceType.HasValue()) {
+            configuration["dataSource"] = BuildContentmentDataSource(_dataSourceType, _dataSourceSettings);
+        }
 
         return configuration;
     }
