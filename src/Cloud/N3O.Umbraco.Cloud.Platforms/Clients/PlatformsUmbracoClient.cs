@@ -480,6 +480,21 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
     }
 
+    /// <summary>
+    /// One of 'monthly', 'weekly'
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum CalendarCadence
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"monthly")]
+        Monthly = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"weekly")]
+        Weekly = 1,
+
+    }
+
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CampaignContributionMetrics
     {
@@ -501,6 +516,15 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("offPage", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public MoneyAndCount OffPage { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("regular", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public MoneyAndCount Regular { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("scheduled", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public MoneyAndCount Scheduled { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("single", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public MoneyAndCount Single { get; set; }
 
     }
 
@@ -2813,25 +2837,25 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     {
 
         /// <summary>
-        /// The value of the first fund dimension
+        /// The value of fund dimension 1
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension1", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension1 { get; set; }
 
         /// <summary>
-        /// The value of the second fund dimension
+        /// The value of fund dimension 2
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension2", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension2 { get; set; }
 
         /// <summary>
-        /// The value of the third fund dimension
+        /// The value of fund dimension 3
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension3", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension3 { get; set; }
 
         /// <summary>
-        /// The value of the fourth fund dimension
+        /// The value of fund dimension 4
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension4", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension4 { get; set; }
@@ -2864,25 +2888,25 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
     {
 
         /// <summary>
-        /// The value of the first fund dimension
+        /// The value of fund dimension 1
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension1", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension1 { get; set; }
 
         /// <summary>
-        /// The value of the second fund dimension
+        /// The value of fund dimension 2
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension2", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension2 { get; set; }
 
         /// <summary>
-        /// The value of the third fund dimension
+        /// The value of fund dimension 3
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension3", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension3 { get; set; }
 
         /// <summary>
-        /// The value of the fourth fund dimension
+        /// The value of fund dimension 4
         /// </summary>
         [Newtonsoft.Json.JsonProperty("dimension4", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Dimension4 { get; set; }
@@ -4097,6 +4121,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
         [Newtonsoft.Json.JsonProperty("badges", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> Badges { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("tags", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public PublishedTagCollection Tags { get; set; }
+
         [Newtonsoft.Json.JsonProperty("formContent", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PublishedDonationFormContent FormContent { get; set; }
 
@@ -4246,6 +4273,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("badges", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<string> Badges { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("tags", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public PublishedTagCollection Tags { get; set; }
 
         [Newtonsoft.Json.JsonProperty("formContent", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PublishedDonationFormContent FormContent { get; set; }
@@ -5182,6 +5212,9 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [Newtonsoft.Json.JsonProperty("order", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Order { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("tags", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public PublishedTagCollection Tags { get; set; }
 
         [Newtonsoft.Json.JsonProperty("formContent", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public PublishedDonationFormContent FormContent { get; set; }
@@ -6183,21 +6216,6 @@ namespace N3O.Umbraco.Cloud.Platforms.Clients
 
         [System.Runtime.Serialization.EnumMember(Value = @"WM")]
         WM = 71,
-
-    }
-
-    /// <summary>
-    /// One of 'monthly', 'weekly'
-    /// </summary>
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public enum RegularGivingCadence
-    {
-
-        [System.Runtime.Serialization.EnumMember(Value = @"monthly")]
-        Monthly = 0,
-
-        [System.Runtime.Serialization.EnumMember(Value = @"weekly")]
-        Weekly = 1,
 
     }
 
