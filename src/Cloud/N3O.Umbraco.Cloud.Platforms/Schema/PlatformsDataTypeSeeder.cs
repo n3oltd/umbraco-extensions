@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.DataTypes;
 using N3O.Umbraco.Extensions;
@@ -9,6 +10,7 @@ using DataTypeKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTy
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
 using Folders = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Folders;
 using QurbaniItemDataSource = N3O.Umbraco.Giving.Allocations.Lookups.QurbaniItemDataSource;
+using TagKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.TagKeys;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -38,6 +40,7 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         Seed(DataTypeNames.DonationFormOffering, SeedDonationFormOffering);
         Seed(DataTypeNames.ECommerceStage, SeedECommerceStage);
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
+        Seed(DataTypeNames.FundraiserTag, SeedFundraiserTag);
         Seed(DataTypeNames.GiftTypesMultiple, SeedGiftTypes);
         Seed(DataTypeNames.Percentage, SeedPercentage);
         Seed(DataTypeNames.QurbaniItem, SeedQurbaniItem);
@@ -166,6 +169,10 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.WithDeterministicId(DataTypeNames.ElementEmbedCodeLabel);
 
         designer.Save();
+    }
+
+    private void SeedFundraiserTag() {
+        _dataTypeEditor.SaveTagTextInput(DataTypeNames.FundraiserTag, TagKeys.Fundraiser);
     }
 
     private void SeedGiftTypes() {

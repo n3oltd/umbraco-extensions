@@ -33,6 +33,11 @@ public static class DataTypeEditorExtensions {
         return editor.New<ContentmentTemplatedLabelDataTypeDesigner>(name);
     }
 
+    public static ContentmentTextInputDataTypeDesigner NewContentmentTextInput(this IDataTypeEditor editor,
+                                                                               string name) {
+        return editor.New<ContentmentTextInputDataTypeDesigner>(name);
+    }
+
     public static ContentPickerDataTypeDesigner NewContentPicker(this IDataTypeEditor editor, string name) {
         return editor.New<ContentPickerDataTypeDesigner>(name);
     }

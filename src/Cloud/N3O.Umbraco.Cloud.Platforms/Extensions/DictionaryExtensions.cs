@@ -15,6 +15,8 @@ public static class DictionaryExtensions {
             var entry = new TagReq();
             entry.Key = tag.Key;
             entry.Value = tag.Value;
+
+            entries.Add(entry);
         }
         
         var req = new TagCollectionReq();

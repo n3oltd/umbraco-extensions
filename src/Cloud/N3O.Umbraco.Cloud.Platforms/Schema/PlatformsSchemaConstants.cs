@@ -8,6 +8,7 @@ public static class PlatformsSchemaConstants {
         public const string PlatformsContentTypesMigrationV2 = "2026.08.31";
         public const string PlatformsContentTypesMigrationV3 = "2026.10.26";
         public const string PlatformsContentTypesMigrationV4 = "2026.10.27";
+        public const string PlatformsContentTypesMigrationV6 = "2026.11.10";
     }
 
     public static class Folders {
@@ -32,6 +33,7 @@ public static class PlatformsSchemaConstants {
         public const string DonationFormOffering = "Platforms Donation Form Offering Data List (0, 1)";
         public const string ECommerceStage = "Platforms Ecommerce Stage Data List (0, 1)";
         public const string ElementEmbedCodeLabel = "Platforms Element Embed Code Label";
+        public const string FundraiserTag = "Platforms Fundraiser Tag Text Input";
         public const string GiftTypesMultiple = "Platforms Gift Types Data List (0, n)";
         public const string Percentage = "Platforms Percentage";
         public const string QurbaniItem = "Platforms Qurbani Item Data List (0, 1)";
@@ -95,18 +97,25 @@ public static class PlatformsSchemaConstants {
         public const string Options = "Options";
         public const string Settings = "Settings";
         public const string Suggestions = "Suggestions";
+        public const string Tags = "Tags";
     }
 
     public static class Descriptions {
+        public const string CampaignFundraiser = "The fundraiser tag on gifts made through this campaign";
         public const string CrowdfundingCampaignCampaign = "The campaign this crowdfunding campaign belongs to";
     }
 
     public static class Names {
         public const string CrowdfundingCampaign = "Crowdfunding Campaign";
         public const string CrowdfundingCampaigns = "Crowdfunding Campaigns";
+        public const string Fundraiser = "Fundraiser";
     }
 
     public static class Tabs {
         public const string CrowdfundingCampaign = "Crowdfunding Campaign";
+    }
+
+    public static class TagKeys {
+        public const string Fundraiser = "people::fundraiser::name";
     }
 }
