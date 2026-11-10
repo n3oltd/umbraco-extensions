@@ -1,10 +1,10 @@
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.DataTypes;
 using N3O.Umbraco.Extensions;
 using System;
-using System.Collections.Generic;
 using DataTypeKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypeKeys;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
 using Folders = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Folders;
@@ -106,16 +106,7 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
     }
 
     private void SeedFundraiserTag() {
-        var designer = _dataTypeEditor.NewContentmentTextInput(DataTypeNames.FundraiserTag);
-
-        var settings = new Dictionary<string, object>();
-        settings[TagValuesDataSource.TagKeyField] = TagKeys.Fundraiser;
-
-        designer.DataSource<TagValuesDataSource>(settings);
-        designer.InFolder(Folders.Platforms);
-        designer.WithDeterministicId(DataTypeNames.FundraiserTag);
-
-        designer.Save();
+        _dataTypeEditor.SaveTagTextInput(DataTypeNames.FundraiserTag, TagKeys.Fundraiser);
     }
 
     private void SeedGiftTypes() {

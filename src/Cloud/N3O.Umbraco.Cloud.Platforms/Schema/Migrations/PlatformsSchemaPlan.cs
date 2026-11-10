@@ -8,13 +8,18 @@ namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsSchemaPlan : MigrationPlan {
     public PlatformsSchemaPlan() : base(States.PlanName) {
-        // V5 and V6 are v17-only. A step ported from main after them needs a path from that step's main
-        // state that still runs V5 and V6, or a site upgrading from v13 at that state skips them.
+        // V5 is v17-only. A step ported from main after it needs a path from that step's main
+        // state that still runs V5, or a site upgrading from v13 at that state skips it.
         From(string.Empty).To<PlatformsContentTypesMigrationV2>(States.PlatformsContentTypesMigrationV2)
                           .To<PlatformsContentTypesMigrationV3>(States.PlatformsContentTypesMigrationV3)
                           .To<PlatformsContentTypesMigrationV4>(States.PlatformsContentTypesMigrationV4)
                           .To<PlatformsDataTypesMigrationV5>(States.PlatformsDataTypesMigrationV5)
                           .To<PlatformsContentTypesMigrationV6>(States.PlatformsContentTypesMigrationV6);
+
+        // V6 runs again so its data type takes the configuration Contentment 6 reads.
+        From(States.MainPlatformsContentTypesMigrationV6)
+            .To<PlatformsDataTypesMigrationV5>(States.MainPlatformsDataTypesMigrationV5)
+            .To<PlatformsContentTypesMigrationV6>(States.PlatformsContentTypesMigrationV6);
     }
 
     public static IReadOnlyList<string> RequiredContentTypes => [
