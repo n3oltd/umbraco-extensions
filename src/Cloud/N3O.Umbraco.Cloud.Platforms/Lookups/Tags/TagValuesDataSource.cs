@@ -56,7 +56,7 @@ public class TagValuesDataSource : IContentmentDataSource {
         dataListItem.Name = value;
         dataListItem.Icon = Icon;
         dataListItem.Value = value;
-        dataListItem.Group = "N3O";
+        dataListItem.Group = Group;
 
         return dataListItem;
     }
