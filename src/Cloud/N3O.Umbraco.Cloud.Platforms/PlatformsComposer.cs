@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.DependencyInjection;
-using N3O.Umbraco.Cloud.Platforms.DataTypes;
 using N3O.Umbraco.Cloud.Platforms.Hosting;
 using N3O.Umbraco.Cloud.Platforms.TagHelpers;
 using N3O.Umbraco.Composing;
@@ -13,7 +12,6 @@ namespace N3O.Umbraco.Cloud.Platforms;
 public class PlatformsComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         builder.Components().Append<PlatformsSchemaComponent>();
-        builder.PropertyValueConverters().Append<CampaignTagsValueConverter>();
 
         builder.Services.AddOpenApiDocument(PlatformsConstants.BackOfficeApiName);
         builder.Services.AddOpenApiDocument(PlatformsConstants.DevToolsApiName);

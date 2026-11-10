@@ -1,5 +1,4 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
-using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.ContentTypes;
 using N3O.Umbraco.Extensions;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
@@ -9,6 +8,7 @@ using Groups = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Groups;
 using Names = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Names;
 using Shared = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.SharedDataTypes;
 using Tabs = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Tabs;
+using TagKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.TagKeys;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -81,13 +81,9 @@ public partial class PlatformsContentTypeSeeder {
 
         var tags = designer.Group(Groups.Tags);
 
-        tags.CampaignTags(x => x.Tags)
-            .Name(Names.CampaignTags)
-            .DataType(DataTypeNames.CampaignTags)
-            .Description(Descriptions.CampaignTags);
-
-        tags.ContentmentDataList(x => x.Fundraiser)
-            .DataType(DataTypeNames.FundraisersSingle)
+        tags.ContentmentTextInput(CampaignTagAlias.For(TagKeys.Fundraiser))
+            .Name(Names.Fundraiser)
+            .DataType(DataTypeNames.FundraiserTag)
             .Description(Descriptions.CampaignFundraiser);
 
         designer.Save();

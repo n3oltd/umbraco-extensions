@@ -40,7 +40,7 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
     }
 
     public ContentmentDataListDataTypeDesigner DataSource(Type dataSourceType) {
-        _dataSourceKey = $"{dataSourceType.FullName}, {dataSourceType.Assembly.GetName().Name}";
+        _dataSourceKey = dataSourceType.GetContentmentKey();
 
         return this;
     }

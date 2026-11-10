@@ -25,9 +25,8 @@ public class PlatformsSchemaPlan : MigrationPlan {
     ];
 
     public static IReadOnlyList<string> RequiredDataTypes => [
-        DataTypeNames.CampaignTags,
         DataTypeNames.ElementEmbedCodeLabel,
-        DataTypeNames.FundraisersSingle,
+        DataTypeNames.FundraiserTag,
         DataTypeNames.GiftTypesMultiple,
         DataTypeNames.Percentage,
         Shared.Money,

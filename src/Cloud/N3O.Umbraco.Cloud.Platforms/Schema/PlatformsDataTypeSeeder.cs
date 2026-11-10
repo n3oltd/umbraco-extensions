@@ -1,14 +1,15 @@
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Cloud.Platforms.Content;
-using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Cloud.Platforms.Lookups;
 using N3O.Umbraco.DataTypes;
 using N3O.Umbraco.Extensions;
 using System;
+using System.Collections.Generic;
 using DataTypeKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypeKeys;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
 using Folders = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Folders;
 using QurbaniItemDataSource = N3O.Umbraco.Giving.Allocations.Lookups.QurbaniItemDataSource;
+using TagKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.TagKeys;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -26,11 +27,10 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
     public void Seed() {
         Seed(DataTypeNames.CampaignsMultiple, SeedCampaigns);
         Seed(DataTypeNames.CampaignsSingle, SeedCampaign);
-        Seed(DataTypeNames.CampaignTags, SeedCampaignTags);
         Seed(DataTypeNames.DonateButtonAction, SeedDonateButtonAction);
         Seed(DataTypeNames.ECommerceStage, SeedECommerceStage);
         Seed(DataTypeNames.ElementEmbedCodeLabel, SeedElementEmbedCodeLabel);
-        Seed(DataTypeNames.FundraisersSingle, SeedFundraiser);
+        Seed(DataTypeNames.FundraiserTag, SeedFundraiserTag);
         Seed(DataTypeNames.GiftTypesMultiple, SeedGiftTypes);
         Seed(DataTypeNames.Percentage, SeedPercentage);
         Seed(DataTypeNames.QurbaniItem, SeedQurbaniItem);
@@ -73,15 +73,6 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Save();
     }
 
-    private void SeedCampaignTags() {
-        var designer = _dataTypeEditor.NewCampaignTags(DataTypeNames.CampaignTags);
-
-        designer.InFolder(Folders.Platforms);
-        designer.WithDeterministicId(DataTypeNames.CampaignTags);
-
-        designer.Save();
-    }
-
     private void SeedDonateButtonAction() {
         var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.DonateButtonAction);
 
@@ -114,13 +105,15 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.Save();
     }
 
-    private void SeedFundraiser() {
-        var designer = _dataTypeEditor.NewContentmentDataList(DataTypeNames.FundraisersSingle);
+    private void SeedFundraiserTag() {
+        var designer = _dataTypeEditor.NewContentmentTextInput(DataTypeNames.FundraiserTag);
 
-        designer.DataSource<FundraiserDataSource>();
-        designer.Limit(1);
+        var settings = new Dictionary<string, object>();
+        settings[TagValuesDataSource.TagKeyField] = TagKeys.Fundraiser;
+
+        designer.DataSource<TagValuesDataSource>(settings);
         designer.InFolder(Folders.Platforms);
-        designer.WithDeterministicId(DataTypeNames.FundraisersSingle);
+        designer.WithDeterministicId(DataTypeNames.FundraiserTag);
 
         designer.Save();
     }

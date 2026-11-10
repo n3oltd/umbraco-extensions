@@ -27,4 +27,5 @@ public class SubscriptionFiles : StaticLookupsCollection<SubscriptionFile> {
     public static readonly SubscriptionFile QurbaniSeason = new("qurbaniSeason");
     public static readonly SubscriptionFile SponsorshipSchemes = new("sponsorshipSchemes");
     public static readonly SubscriptionFile TagDefinitions = new("tagDefinitions");
+    public static readonly SubscriptionFile TagValues = new("tagValues");
 }

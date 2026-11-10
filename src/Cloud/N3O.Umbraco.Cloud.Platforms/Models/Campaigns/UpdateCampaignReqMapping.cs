@@ -1,5 +1,6 @@
 ﻿using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Lookups;
+using N3O.Umbraco.Cloud.Models;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Content;
 using N3O.Umbraco.Cloud.Platforms.Extensions;
@@ -46,11 +47,10 @@ public class UpdateCampaignReqMapping : IMapDefinition {
     private void Map(CampaignContent src, UpdateCampaignReq dest, MapperContext ctx) {
         var target = (double) src.Target;
         
-        dest.Fundraiser = src.Fundraiser?.Id;
         dest.Name = src.Name;
         dest.Notes = src.Notes;
         dest.Slug = _slugHelper.GeneratePlatformsSlug(src.Name);
-        dest.Tags = src.Tags?.ToDictionary(x => x.Key, x => x.Value).ToTagCollectionReq();
+        dest.Tags = GetTags(src).ToTagCollectionReq();
         dest.Target = target == 0 ? null : target;
 
         dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);
@@ -116,5 +116,24 @@ public class UpdateCampaignReqMapping : IMapDefinition {
             dest.Telethon.Begin = src.Telethon.BeginAt.ToLocalDateTime().ToString("o", null);
             dest.Telethon.End = src.Telethon.EndAt.ToLocalDateTime().ToString("o", null);
         }
+    }
+
+    private IReadOnlyDictionary<string, string> GetTags(CampaignContent campaign) {
+        var publishedTagValues =
+            _cdnClient.DownloadSubscriptionContentAsync<PublishedTagValues>(SubscriptionFiles.TagValues,
+                                                                            JsonSerializers.JsonProvider)
+                      .GetAwaiter().GetResult();
+
+        var tags = new Dictionary<string, string>();
+
+        foreach (var entry in publishedTagValues.OrEmpty(x => x.Entries)) {
+            var value = (string) campaign.Content().GetProperty(CampaignTagAlias.For(entry.Key))?.GetValue();
+
+            if (value.HasValue()) {
+                tags[entry.Key] = value;
+            }
+        }
+
+        return tags;
     }
 }
