@@ -1,5 +1,6 @@
 using Flurl;
 using N3O.Umbraco.Constants;
+using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -76,11 +77,7 @@ public partial class DynamicPager<T> {
             if (_currentPageNumber == null) {
                 var queryParams = new QueryParamCollection(_currentUrl.Query);
 
-                var pageNumber = 1;
-
-                if (queryParams.Contains(Pager.QueryString)) {
-                    pageNumber = int.Parse((string) queryParams.Single(x => x.Name == Pager.QueryString).Value);
-                }
+                var pageNumber = queryParams.FirstOrDefault(Pager.QueryString)?.ToString().TryParseAs<int>() ?? 1;
 
                 _currentPageNumber = Math.Min(Math.Max(pageNumber, 1), TotalPages);
             }
