@@ -1,11 +1,12 @@
 # N3O.Umbraco.Cloud.Platforms.Search
 
-Connects a site's sitemap and search to content the cloud platform owns: it puts campaign offerings
-into the sitemap, and resolves the names of the search collections the platform indexes.
+Connects a site's sitemap and search to content the cloud platform owns: it puts campaigns and their
+offerings into the sitemap, and resolves the names of the search collections the platform indexes.
 
 Offerings are not Umbraco pages, so the generic content provider does not see them; this package
-reads the campaigns the cloud has published for the subscription and emits a sitemap entry per
-visible offering.
+reads the campaigns the cloud has published for the subscription and emits a sitemap entry for each
+visible campaign and each visible offering. The offerings of a campaign of the giving type are the
+exception: they have no page of their own and only redirect to the campaign, so they are left out.
 
 Visibility is filtered rather than assumed: an offering its campaign does not currently expose is
 left out. The published campaigns file is expected to exist for every subscription, so a missing or
