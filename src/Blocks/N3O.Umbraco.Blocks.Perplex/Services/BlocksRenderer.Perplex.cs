@@ -60,7 +60,8 @@ public class PerplexBlocksRenderer : BlocksRenderer<ContentBlocks> {
             var factoryType = typeof(IContentBlockViewModelFactory<>).MakeGenericType(blockModelsBuilderType);
             
             var factory = (IContentBlockViewModelFactory) _serviceProvider.GetService(factoryType);
-        
+
+            // Valid only off a routed page. On one, the factory returns a failed view model for a block that throws.
             var blockModel = (IPerplexBlockViewModel) factory.Create(contentBlockModel.Content,
                                                                      contentBlockModel.Id,
                                                                      contentBlockModel.DefinitionId,

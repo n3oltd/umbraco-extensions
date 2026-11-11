@@ -9,6 +9,7 @@ using N3O.Umbraco.Utilities;
 using Perplex.ContentBlocks.Categories;
 using Perplex.ContentBlocks.Definitions;
 using Perplex.ContentBlocks.PropertyEditor;
+using Perplex.ContentBlocks.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,15 +18,18 @@ using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Blocks.Perplex;
 
 [ComposeAfter(typeof(BlocksComposer))]
+[ComposeAfter(typeof(ContentBlocksRenderingComposer))]
 public class PerplexBlocksComposer : Composer {
     public override void Compose(IUmbracoBuilder builder) {
         BlocksComponent.LoadDefinitions(builder, WebHostEnvironment);
 
         builder.Services.AddTransient<IBlocksRenderer, PerplexBlocksRenderer>();
+        builder.Services.AddUnique<IContentBlocksRenderer, PerplexContentBlocksRenderer>();
         builder.Services.AddTransient<IPerplexBlockTypesService, PerplexBlockTypesService>();
 
         // TODO Remove this swap once PerplexDigital/Perplex.ContentBlocks#104 ships: Content Blocks posts a
