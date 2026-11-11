@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using N3O.Umbraco.Attributes;
 using N3O.Umbraco.Cloud.Platforms.Clients;
@@ -15,11 +16,13 @@ using System;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Mapping;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Web.Common.Authorization;
 using Umbraco.Extensions;
 
 namespace N3O.Umbraco.Cloud.Platforms.Controllers;
 
 [ApiDocument(PlatformsConstants.DevToolsApiName)]
+[Authorize(Policy = AuthorizationPolicies.SectionAccessSettings)]
 public class PlatformsDevToolsController : BackofficeAuthorizedApiController {
     private const string CampaignsWebhookId = PlatformsConstants.Webhooks.HookIds.Campaigns;
     private const string OfferingsWebhookId = PlatformsConstants.Webhooks.HookIds.Offerings;
