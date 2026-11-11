@@ -26,7 +26,9 @@ public class ConnectMiddleware : IMiddleware {
             !requestPath.Contains("..") &&
             requestPath.StartsWith(connectPath, StringComparison.InvariantCultureIgnoreCase)) {
             var cdnPath = requestPath.Substring(connectPath.Length);
-            
+
+            context.Response.Headers["X-Robots-Tag"] = "noindex";
+
             var content = await _cdnClient.DownloadAsync(cdnPath);
 
             if (content.HasValue()) {
