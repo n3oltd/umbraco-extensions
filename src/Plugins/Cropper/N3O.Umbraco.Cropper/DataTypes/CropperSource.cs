@@ -37,5 +37,8 @@ public class CropperSource {
     
         [JsonProperty("height")]
         public int Height { get; set; }
+
+        [JsonProperty("rotate", NullValueHandling = NullValueHandling.Ignore)]
+        public int? Rotate { get; set; }
     }
 }
