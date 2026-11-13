@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using N3O.Umbraco.Extensions;
 using System;
 using System.Linq;
+using System.Text;
 
 namespace N3O.Umbraco.Redirects;
 
@@ -16,6 +17,10 @@ public class Redirect : Value {
     public bool Temporary { get; }
 
     public string GetUrl(QueryString queryString) {
+        return EscapeUnsafeCharacters(BuildUrl(queryString));
+    }
+
+    private string BuildUrl(QueryString queryString) {
         var urlOrPath = UrlOrPath.Trim();
         var incoming = queryString.ToUriComponent();
 
@@ -49,9 +54,31 @@ public class Redirect : Value {
         return urlOrPath.StartsWith('/') || urlOrPath.IsValidUrl();
     }
 
+    private static string EscapeUnsafeCharacters(string url) {
+        if (url.All(IsSafe)) {
+            return url;
+        }
+
+        var escaped = new StringBuilder();
+
+        foreach (var rune in url.EnumerateRunes()) {
+            if (rune.IsBmp && IsSafe((char) rune.Value)) {
+                escaped.Append((char) rune.Value);
+            } else {
+                escaped.Append(Uri.EscapeDataString(rune.ToString()));
+            }
+        }
+
+        return escaped.ToString();
+    }
+
     private static string GetKey(string pair) {
         var key = pair.Split('=')[0];
 
         return Uri.UnescapeDataString(key.Replace('+', ' '));
+    }
+
+    private static bool IsSafe(char c) {
+        return c > 0x20 && c < 0x7F;
     }
 }
