@@ -12,6 +12,7 @@ jobs:
     uses: n3oltd/actions/.github/workflows/dotnet-build-pack-push.yml@main
     with:
       dotnet-version: 10.x
+      setup-node: true
       run-pack: true
       version-strategy: date
       version-suffix: beta
