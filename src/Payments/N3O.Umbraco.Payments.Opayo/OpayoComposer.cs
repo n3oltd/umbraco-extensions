@@ -7,6 +7,7 @@ using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Payments.Opayo.Clients;
 using N3O.Umbraco.Payments.Opayo.Content;
 using N3O.Umbraco.Payments.Opayo.Models;
+using N3O.Umbraco.Utilities;
 using Refit;
 using Umbraco.Cms.Core.DependencyInjection;
 
@@ -33,8 +34,8 @@ public class OpayoComposer : Composer {
                 refitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer();
 
                 refitSettings.HttpMessageHandlerFactory =
-                    () => new AuthorizationHandler(apiSettings.IntegrationKey,
-                                                              apiSettings.IntegrationPassword);
+                    () => new AddBasicAuthorizationHandler(apiSettings.IntegrationKey,
+                                                           apiSettings.IntegrationPassword);
 
                 client = RestService.For<IOpayoClient>(apiSettings.BaseUrl, refitSettings);
             }
