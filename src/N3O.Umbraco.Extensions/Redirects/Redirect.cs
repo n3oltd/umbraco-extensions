@@ -59,26 +59,26 @@ public class Redirect : Value {
             return url;
         }
 
-        var sb = new StringBuilder();
+        var escaped = new StringBuilder();
 
         foreach (var rune in url.EnumerateRunes()) {
             if (rune.IsBmp && IsSafe((char) rune.Value)) {
-                sb.Append((char) rune.Value);
+                escaped.Append((char) rune.Value);
             } else {
-                sb.Append(Uri.EscapeDataString(rune.ToString()));
+                escaped.Append(Uri.EscapeDataString(rune.ToString()));
             }
         }
 
-        return sb.ToString();
-    }
-
-    private static bool IsSafe(char c) {
-        return c > 0x20 && c < 0x7F;
+        return escaped.ToString();
     }
 
     private static string GetKey(string pair) {
         var key = pair.Split('=')[0];
 
         return Uri.UnescapeDataString(key.Replace('+', ' '));
+    }
+
+    private static bool IsSafe(char c) {
+        return c > 0x20 && c < 0x7F;
     }
 }
