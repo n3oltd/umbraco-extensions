@@ -33,8 +33,9 @@ public class CaptureTransactionHandler :
         var settings = _contentCache.Single<PayPalSettingsContent>();
 
         var request = GetApiAuthorizePaymentReq(req.Model, parameters, settings);
+        var idempotencyKey = $"{parameters.FlowId}-{request.AuthorizationId}";
 
-        var res = await _payPalClient.AuthorizePaymentAsync(request.AuthorizationId, request);
+        var res = await _payPalClient.AuthorizePaymentAsync(request.AuthorizationId, idempotencyKey, request);
 
         if (res.IsAuthorised()) {
             payment.Paid(req.Model.Email, res.Id);
@@ -63,6 +64,6 @@ public class CaptureTransactionHandler :
             return null;
         }
 
-        return value.RemoveNonAscii().Trim().Left(maxLength);
+        return value.RemoveNonAscii().Trim().Left(maxLength).TrimOrNull();
     }
 }
