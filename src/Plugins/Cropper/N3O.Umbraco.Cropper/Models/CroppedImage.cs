@@ -1,5 +1,5 @@
 using N3O.Umbraco.Cropper.DataTypes;
-using N3O.Umbraco.Extensions;
+using N3O.Umbraco.Cropper.Extensions;
 using N3O.Umbraco.Utilities;
 using System;
 using System.Collections;
@@ -13,16 +13,15 @@ public class CroppedImage : DynamicObject, IEnumerable<ImageCrop> {
     private readonly Dictionary<string, ImageCrop> _crops = new(StringComparer.InvariantCultureIgnoreCase);
     private readonly CropperSource _cropperSource;
 
-    public CroppedImage(IUrlBuilder urlBuilder, CropperConfiguration configuration, CropperSource cropperSource) {
+    public CroppedImage(IUrlBuilder urlBuilder,
+                        CropperConfiguration configuration,
+                        CropperSource cropperSource,
+                        string propertyAlias) {
         _cropperSource = cropperSource;
         AltText = cropperSource.AltText;
 
-        foreach (var (crop, index) in cropperSource.Crops.SelectWithIndex()) {
-            var definition = configuration.CropDefinitions.ElementAtOrDefault(index);
-
-            if (definition != null) {
-                AddImageCrop(urlBuilder, definition, cropperSource.MediaId, cropperSource.Filename, crop);
-            }
+        foreach (var (definition, crop) in cropperSource.GetCropsWithDefinitions(configuration, propertyAlias)) {
+            AddImageCrop(urlBuilder, definition, cropperSource.MediaId, cropperSource.Filename, crop);
         }
     }
 

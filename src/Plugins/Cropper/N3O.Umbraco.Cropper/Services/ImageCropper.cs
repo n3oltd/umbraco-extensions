@@ -1,9 +1,9 @@
 using N3O.Umbraco.Cropper.DataTypes;
+using N3O.Umbraco.Cropper.Extensions;
 using N3O.Umbraco.Extensions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.IO;
@@ -19,13 +19,10 @@ public class ImageCropper : IImageCropper {
 
     public async Task CropAllAsync(CropperConfiguration configuration,
                                    CropperSource source,
+                                   string propertyAlias,
                                    CancellationToken cancellationToken = default) {
-        foreach (var (crop, index) in source.Crops.SelectWithIndex()) {
-            var cropDefinition = configuration.CropDefinitions.ElementAtOrDefault(index);
-
-            if (cropDefinition != null) {
-                await CropAsync(cropDefinition, crop, source, cancellationToken);
-            }
+        foreach (var (cropDefinition, crop) in source.GetCropsWithDefinitions(configuration, propertyAlias)) {
+            await CropAsync(cropDefinition, crop, source, cancellationToken);
         }
     }
 
