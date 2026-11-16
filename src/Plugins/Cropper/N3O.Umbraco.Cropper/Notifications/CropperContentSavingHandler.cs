@@ -66,7 +66,7 @@ public class CropperContentSavingHandler : INotificationAsyncHandler<ContentSavi
         if (json.HasValue()) {
             var cropperSource = JsonConvert.DeserializeObject<CropperSource>(json);
 
-            await _imageCropper.CropAllAsync(configuration, cropperSource, cancellationToken);
+            await _imageCropper.CropAllAsync(configuration, cropperSource, property.Alias, cancellationToken);
         }
     }
     
