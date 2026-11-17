@@ -1,7 +1,4 @@
-﻿using N3O.Umbraco.Cloud.Extensions;
-using N3O.Umbraco.Cloud.Lookups;
-using N3O.Umbraco.Cloud.Platforms.Models;
-using N3O.Umbraco.Cloud.Platforms.Templates.Models;
+﻿using N3O.Umbraco.Cloud.Platforms.Templates.Models;
 using N3O.Umbraco.Context;
 using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Financial;
@@ -16,16 +13,11 @@ namespace N3O.Umbraco.Cloud.Platforms.Templates;
 
 public class NisabMergeModelProvider : MergeModelsProvider {
     private readonly IBaseCurrencyAccessor _baseCurrencyAccessor;
-    private readonly ICdnClient _cdnClient;
     private readonly IFormatter _formatter;
     private readonly INisab _nisab;
 
-    public NisabMergeModelProvider(INisab nisab,
-                                   IBaseCurrencyAccessor baseCurrencyAccessor,
-                                   ICdnClient cdnClient,
-                                   IFormatter formatter) {
+    public NisabMergeModelProvider(INisab nisab, IBaseCurrencyAccessor baseCurrencyAccessor, IFormatter formatter) {
         _baseCurrencyAccessor = baseCurrencyAccessor;
-        _cdnClient = cdnClient;
         _formatter = formatter;
         _nisab = nisab;
     }
@@ -37,15 +29,11 @@ public class NisabMergeModelProvider : MergeModelsProvider {
                                                       CancellationToken cancellationToken = default) {
         var baseCurrency = _baseCurrencyAccessor.GetBaseCurrency();
         
-        var goldNisabAmount = await _nisab.GetGoldNisabAsync(baseCurrency, cancellationToken);
-        var goldNisab = _formatter.Number.FormatMoney(goldNisabAmount);
-        var silverNisabAmount = await _nisab.GetSilverNisabAsync(baseCurrency, cancellationToken);
-        var silverNisab = _formatter.Number.FormatMoney(silverNisabAmount);
-
-        var nisab = await _cdnClient.DownloadSubscriptionContentAsync<PublishedNisab>(SubscriptionFiles.Nisab,
-                                                                                      JsonSerializers.JsonProvider,
-                                                                                      cancellationToken);
+        var nisab = await _nisab.GetAsync(cancellationToken);
         var amount = nisab?.Amounts[baseCurrency.Code];
+
+        var goldNisab = _formatter.Number.FormatMoney(amount?.Gold ?? 0m, baseCurrency);
+        var silverNisab = _formatter.Number.FormatMoney(amount?.Silver ?? 0m, baseCurrency);
 
         var goldGrams = _formatter.Number.Format(nisab?.GoldGrams);
         var goldPriceChange = FormatChange(amount?.GoldPricePerGram, amount?.GoldPricePerGramYesterday);
@@ -67,7 +55,7 @@ public class NisabMergeModelProvider : MergeModelsProvider {
     }
 
     private string FormatChange(decimal? pricePerGram, decimal? pricePerGramYesterday) {
-        if (pricePerGram == null || pricePerGramYesterday == null) {
+        if (pricePerGram == null || pricePerGramYesterday == null || pricePerGramYesterday.Value.IsZero()) {
             return null;
         }
 

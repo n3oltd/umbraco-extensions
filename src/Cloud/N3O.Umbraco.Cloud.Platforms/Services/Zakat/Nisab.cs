@@ -16,7 +16,13 @@ public class Nisab : INisab {
     public Nisab(ICdnClient cdnClient) {
         _cdnClient = cdnClient;
     }
-    
+
+    public async Task<PublishedNisab> GetAsync(CancellationToken cancellationToken = default) {
+        return await _cdnClient.DownloadSubscriptionContentAsync<PublishedNisab>(SubscriptionFiles.Nisab,
+                                                                                 JsonSerializers.JsonProvider,
+                                                                                 cancellationToken);
+    }
+
     public async Task<Money> GetGoldNisabAsync(Currency currency, CancellationToken cancellationToken = default) {
         return await GetNisabAsync(currency, NisabTypes.Gold, cancellationToken);
     }
@@ -24,9 +30,7 @@ public class Nisab : INisab {
     public async Task<Money> GetNisabAsync(Currency currency,
                                            NisabType nisabType,
                                            CancellationToken cancellationToken = default) {
-        var nisab = await _cdnClient.DownloadSubscriptionContentAsync<PublishedNisab>(SubscriptionFiles.Nisab,
-                                                                                      JsonSerializers.JsonProvider,
-                                                                                      cancellationToken);
+        var nisab = await GetAsync(cancellationToken);
 
         if (nisab == null) {
             return currency.Zero();
