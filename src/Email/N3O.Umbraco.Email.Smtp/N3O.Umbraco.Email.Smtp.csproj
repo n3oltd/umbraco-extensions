@@ -37,7 +37,7 @@
     </ItemGroup>
     <ItemGroup>
         <!-- Umbraco 13 brings MailKit 4.8.0, which has a STARTTLS response injection advisory. -->
-        <PackageReference Include="MailKit" Version="4.16.0" />
+        <PackageReference Include="MailKit" Version="4.17.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">

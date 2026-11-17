@@ -36,7 +36,7 @@
         <ProjectReference Include="..\N3O.Umbraco.Search\N3O.Umbraco.Search.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Google.Apis.CustomSearchAPI.v1" Version="1.74.0.3520" />
+        <PackageReference Include="Google.Apis.CustomSearchAPI.v1" Version="1.78.0.3520" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
