@@ -48,12 +48,12 @@
         <PackageReference Include="Our.Umbraco.Community.Contentment.Core" Version="4.7.0" />
         <PackageReference Include="Refit" Version="16.4.0" />
         <PackageReference Include="Refit.Newtonsoft.Json" Version="16.4.0" />
-        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.2.0" />
         <PackageReference Include="Slugify.Core" Version="5.1.1" />
-        <PackageReference Include="Umbraco.Cms.Core" Version="13.16.3" />
-        <PackageReference Include="Umbraco.Cms.Web.Common" Version="13.16.3" />
-        <PackageReference Include="Umbraco.Cms.Web.Website" Version="13.16.3" />
-        <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="13.16.3" />
+        <PackageReference Include="Umbraco.Cms.Core" Version="13.16.5" />
+        <PackageReference Include="Umbraco.Cms.Web.Common" Version="13.16.5" />
+        <PackageReference Include="Umbraco.Cms.Web.Website" Version="13.16.5" />
+        <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="13.16.5" />
         <PackageReference Include="Umbraco.Code" Version="2.4.0" />
     </ItemGroup>
     <ItemGroup>

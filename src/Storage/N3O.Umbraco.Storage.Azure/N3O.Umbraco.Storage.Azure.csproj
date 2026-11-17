@@ -37,7 +37,7 @@
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.5" />
-        <PackageReference Include="SixLabors.ImageSharp.Web.Providers.Azure" Version="3.2.0" />
+        <PackageReference Include="SixLabors.ImageSharp.Web.Providers.Azure" Version="3.3.0" />
         <PackageReference Include="Umbraco.StorageProviders.AzureBlob" Version="13.1.0" />
         <PackageReference Include="Umbraco.StorageProviders.AzureBlob.ImageSharp" Version="13.1.0" />
     </ItemGroup>
