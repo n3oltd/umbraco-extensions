@@ -20,8 +20,19 @@ public class HandlebarsEngine : ITemplateEngine {
     }
 
     public string Render(string markup, object model, IReadOnlyDictionary<string, string> partials = null) {
+        return DoRender(markup, model, partials, false);
+    }
+
+    public string RenderText(string markup, object model, IReadOnlyDictionary<string, string> partials = null) {
+        return DoRender(markup, model, partials, true);
+    }
+
+    private string DoRender(string markup,
+                            object model,
+                            IReadOnlyDictionary<string, string> partials,
+                            bool noEscape) {
         try {
-            var compiledHandlebars = _handlebarsCompiler.Compile(markup, partials);
+            var compiledHandlebars = _handlebarsCompiler.Compile(markup, partials, noEscape: noEscape);
             var rendered = compiledHandlebars(model);
         
             return rendered;
