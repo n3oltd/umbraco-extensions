@@ -38,7 +38,7 @@
         <ProjectReference Include="..\..\Scheduler\N3O.Umbraco.Scheduler\N3O.Umbraco.Scheduler.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="AngleSharp" Version="1.5.1" />
+        <PackageReference Include="AngleSharp" Version="1.10.4" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">
