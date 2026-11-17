@@ -4,7 +4,6 @@ using N3O.Umbraco.Extensions;
 using NodaTime;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading.Tasks;
 
 namespace N3O.Umbraco.Authentication.Auth0;
@@ -61,7 +60,7 @@ internal static class Auth0UserMapping {
                                                   bool? emailVerified,
                                                   bool? blocked,
                                                   IEnumerable<UserIdentitySchema> identities,
-                                                  UserDateSchema lastLogin,
+                                                  DateTime? lastLogin,
                                                   string lastIp,
                                                   UserDirectoryType directoryType) {
         var user = new Auth0User();
@@ -80,17 +79,11 @@ internal static class Auth0UserMapping {
         return user;
     }
     
-    private static Instant? ParseLastLogin(UserDateSchema lastLogin) {
+    private static Instant? ParseLastLogin(DateTime? lastLogin) {
         if (lastLogin == null) {
             return null;
         }
 
-        var value = lastLogin.AsString();
-
-        if (!value.HasValue()) {
-            return null;
-        }
-
-        return Instant.FromDateTimeOffset(DateTimeOffset.Parse(value, CultureInfo.InvariantCulture));
+        return Instant.FromDateTimeOffset(new DateTimeOffset(lastLogin.Value));
     }
 }

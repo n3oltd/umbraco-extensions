@@ -18,3 +18,4 @@ jobs:
       nuget-source: https://www.myget.org/F/n3o/api/v2/package
     secrets:
       nuget-api-key: ${{ secrets.MYGET_API_KEY }}
+      sixlabors-license: ${{ secrets.SIXLABORS_LICENSE }}
