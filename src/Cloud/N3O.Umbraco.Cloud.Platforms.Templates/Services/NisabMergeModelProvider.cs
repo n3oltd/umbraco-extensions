@@ -31,16 +31,16 @@ public class NisabMergeModelProvider : MergeModelsProvider {
         var baseCurrency = _baseCurrencyAccessor.GetBaseCurrency();
         
         var nisab = await _nisab.GetAsync(cancellationToken);
-        var amount = nisab?.Amounts[baseCurrency.Code];
+        var amount = _nisab.GetAmount(nisab, baseCurrency);
 
-        var goldNisab = _formatter.Number.FormatMoney(amount?.Gold ?? 0m, baseCurrency);
-        var silverNisab = _formatter.Number.FormatMoney(amount?.Silver ?? 0m, baseCurrency);
+        var goldNisab = _formatter.Number.FormatMoney(amount.Gold, baseCurrency);
+        var silverNisab = _formatter.Number.FormatMoney(amount.Silver, baseCurrency);
 
         var goldGrams = _formatter.Number.Format(ZakatNisabGrams.Gold);
-        var goldPricePerGram = FormatPricePerGram(amount?.GoldPricePerGram, baseCurrency);
+        var goldPricePerGram = FormatPricePerGram(amount.GoldPricePerGram, baseCurrency);
         var pricedOn = _formatter.DateTime.FormatDate(nisab?.PricedOn);
         var silverGrams = _formatter.Number.Format(ZakatNisabGrams.Silver);
-        var silverPricePerGram = FormatPricePerGram(amount?.SilverPricePerGram, baseCurrency);
+        var silverPricePerGram = FormatPricePerGram(amount.SilverPricePerGram, baseCurrency);
 
         mergeModels[PlatformsTemplateConstants.ModelKeys.Nisab] = new NisabMergeModel(goldNisab,
                                                                                       goldGrams,

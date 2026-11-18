@@ -2,7 +2,6 @@
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Models;
 using N3O.Umbraco.Exceptions;
-using N3O.Umbraco.Extensions;
 using N3O.Umbraco.Financial;
 using System;
 using System.Threading;
@@ -15,6 +14,16 @@ public class Nisab : INisab {
 
     public Nisab(ICdnClient cdnClient) {
         _cdnClient = cdnClient;
+    }
+
+    public PublishedNisabAmount GetAmount(PublishedNisab nisab, Currency currency) {
+        if (nisab == null) {
+            return new PublishedNisabAmount();
+        } else if (nisab.Amounts.TryGetValue(currency.Code, out var amount)) {
+            return amount;
+        } else {
+            throw new Exception($"No nisab value found for currency {currency.Code}");
+        }
     }
 
     public async Task<PublishedNisab> GetAsync(CancellationToken cancellationToken = default) {
@@ -31,21 +40,14 @@ public class Nisab : INisab {
                                            NisabType nisabType,
                                            CancellationToken cancellationToken = default) {
         var nisab = await GetAsync(cancellationToken);
-
-        if (nisab == null) {
-            return currency.Zero();
-        }
-        
-        if (!nisab.Amounts.ContainsKey(currency.Code)) {
-            throw new Exception($"No nisab value found for currency {currency.Code}");
-        }
+        var amount = GetAmount(nisab, currency);
 
         decimal nisabAmount;
 
         if (nisabType == NisabTypes.Gold) {
-            nisabAmount = nisab.Amounts[currency.Code].Gold;
+            nisabAmount = amount.Gold;
         } else if (nisabType == NisabTypes.Silver) {
-            nisabAmount = nisab.Amounts[currency.Code].Silver;
+            nisabAmount = amount.Silver;
         } else {
             throw UnrecognisedValueException.For(nisabType);
         }
