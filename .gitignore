@@ -386,3 +386,6 @@ appsettings.Environment.json
 
 # Site asset bundles emitted by @n3oltd/asset-build
 **/wwwroot/**/bundles/
+
+# Six Labors licence key file
+sixlabors.lic
