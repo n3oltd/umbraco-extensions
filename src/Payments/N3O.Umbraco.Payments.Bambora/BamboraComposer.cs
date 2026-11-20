@@ -35,7 +35,7 @@ public class BamboraComposer : Composer {
                 refitSettings.HttpMessageHandlerFactory =
                     () => new AuthorizationHandler(apiSettings.MerchantId, apiSettings.PaymentPasscode);
 
-                client = RestService.For<IBamboraPaymentsClient>("https://api.na.bambora.com/v1", refitSettings);
+                client = RestService.For<IBamboraPaymentsClient>(BamboraConstants.ApiBaseUrl, refitSettings);
             }
             
             return client;
@@ -52,7 +52,7 @@ public class BamboraComposer : Composer {
                 refitSettings.HttpMessageHandlerFactory =
                     () => new AuthorizationHandler(apiSettings.MerchantId, apiSettings.ProfilePasscode);
 
-                client = RestService.For<IBamboraProfilesClient>("https://api.na.bambora.com/v1", refitSettings);
+                client = RestService.For<IBamboraProfilesClient>(BamboraConstants.ApiBaseUrl, refitSettings);
             }
             
             return client;
