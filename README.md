@@ -38,7 +38,7 @@ A big [#h5yr](https://community.umbraco.com/learn-about-the-community/h5yr/) to:
 
 ## Questions & Support
 
-For questions and support please visit the [N3O Support Centre](https://support.n3o.ltd/).
+For questions and support please visit the [N3O Support Centre](https://help.n3o.cloud/).
 
 ## License
 
