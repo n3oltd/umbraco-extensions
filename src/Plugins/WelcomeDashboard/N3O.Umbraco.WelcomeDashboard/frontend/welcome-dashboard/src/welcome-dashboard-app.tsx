@@ -9,7 +9,7 @@ export function WelcomeDashboardApp() {
             </p>
 
             <p>
-                <a href="https://support.n3o.ltd" target="_blank" rel="noopener">
+                <a href="https://help.n3o.cloud" target="_blank" rel="noopener">
                     Visit Support Centre &rarr;
                 </a>
             </p>
