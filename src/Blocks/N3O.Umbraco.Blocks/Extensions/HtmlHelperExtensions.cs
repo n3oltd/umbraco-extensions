@@ -16,10 +16,10 @@ public static class HtmlHelperExtensions {
         return await html.RenderBlockLayoutAsync(blockAlias, layout, blockViewModel);
     }
 
-    public static async Task<IHtmlContent> RenderBlockLayoutAsync(this IHtmlHelper html,
-                                                                  string blockAlias,
-                                                                  string layout,
-                                                                  object model) {
+    private static async Task<IHtmlContent> RenderBlockLayoutAsync(this IHtmlHelper html,
+                                                                   string blockAlias,
+                                                                   string layout,
+                                                                   object model) {
         var viewPath = html.GetBlockLayoutViewPath(blockAlias, layout);
 
         return await html.PartialAsync(viewPath, model);

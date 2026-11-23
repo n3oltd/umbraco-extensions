@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using Humanizer;
+using N3O.Umbraco.Extensions;
 using System.IO;
 using System.Linq;
 
@@ -36,7 +37,7 @@ public static class StringExtensions {
     }
 
     public static string ToBlockLayoutName(this string layout) {
-        if (string.IsNullOrWhiteSpace(layout)) {
+        if (!layout.HasValue()) {
             return null;
         }
 
