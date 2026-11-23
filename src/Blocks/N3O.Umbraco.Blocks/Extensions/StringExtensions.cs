@@ -1,4 +1,6 @@
 ﻿using HtmlAgilityPack;
+using Humanizer;
+using System.IO;
 using System.Linq;
 
 namespace N3O.Umbraco.Blocks.Extensions;
@@ -31,5 +33,15 @@ public static class StringExtensions {
         }
 
         return content.DocumentNode.OuterHtml;
+    }
+
+    public static string ToBlockLayoutName(this string layout) {
+        if (string.IsNullOrWhiteSpace(layout)) {
+            return null;
+        }
+
+        var fileName = Path.GetFileNameWithoutExtension(layout);
+
+        return fileName.Camelize();
     }
 }
