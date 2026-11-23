@@ -45,4 +45,8 @@ public static class StringExtensions {
 
         return fileName.Camelize();
     }
+
+    public static string ToBlockViewsPath(this string blockAlias) {
+        return $"/Views/Partials/Blocks/{blockAlias}";
+    }
 }

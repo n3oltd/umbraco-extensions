@@ -1,4 +1,3 @@
-using Humanizer;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
@@ -26,7 +25,7 @@ public static class HtmlHelperExtensions {
     }
 
     private static string GetBlockLayoutViewPath(this IHtmlHelper html, string blockAlias, string layout) {
-        var layoutsPath = $"~/Views/Partials/Blocks/{blockAlias.Camelize()}";
+        var layoutsPath = blockAlias.ToBlockViewsPath();
         var layoutName = layout.ToBlockLayoutName();
 
         if (layoutName != null) {
