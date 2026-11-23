@@ -7,37 +7,37 @@ using System.Threading.Tasks;
 namespace N3O.Umbraco.Blocks.Extensions;
 
 public static class HtmlHelperExtensions {
-    public static async Task<IHtmlContent> RenderBlockLayoutAsync(this IHtmlHelper html,
-                                                                  IBlockViewModel blockViewModel,
-                                                                  string layout) {
+    public static async Task<IHtmlContent> RenderBlockVariantAsync(this IHtmlHelper html,
+                                                                   IBlockViewModel blockViewModel,
+                                                                   string variant) {
         var blockAlias = blockViewModel.Content.ContentType.Alias;
 
-        return await html.RenderBlockLayoutAsync(blockAlias, layout, blockViewModel);
+        return await html.RenderBlockVariantAsync(blockAlias, variant, blockViewModel);
     }
 
-    private static async Task<IHtmlContent> RenderBlockLayoutAsync(this IHtmlHelper html,
-                                                                   string blockAlias,
-                                                                   string layout,
-                                                                   object model) {
-        var viewPath = html.GetBlockLayoutViewPath(blockAlias, layout);
+    private static async Task<IHtmlContent> RenderBlockVariantAsync(this IHtmlHelper html,
+                                                                    string blockAlias,
+                                                                    string variant,
+                                                                    object model) {
+        var viewPath = html.GetBlockVariantViewPath(blockAlias, variant);
 
         return await html.PartialAsync(viewPath, model);
     }
 
-    private static string GetBlockLayoutViewPath(this IHtmlHelper html, string blockAlias, string layout) {
-        var layoutsPath = blockAlias.ToBlockViewsPath();
-        var layoutName = layout.ToBlockLayoutName();
+    private static string GetBlockVariantViewPath(this IHtmlHelper html, string blockAlias, string variant) {
+        var viewsPath = blockAlias.ToBlockViewsPath();
+        var variantName = variant.ToBlockVariantName();
 
-        if (layoutName != null) {
-            var layoutViewPath = $"{layoutsPath}/{layoutName}.cshtml";
+        if (variantName != null) {
+            var variantViewPath = $"{viewsPath}/{variantName}.cshtml";
             var viewEngine = html.ViewContext.HttpContext.RequestServices.GetRequiredService<ICompositeViewEngine>();
-            var layoutView = viewEngine.GetView(null, layoutViewPath, false);
+            var variantView = viewEngine.GetView(null, variantViewPath, false);
 
-            if (layoutView.Success) {
-                return layoutViewPath;
+            if (variantView.Success) {
+                return variantViewPath;
             }
         }
 
-        return $"{layoutsPath}/default.cshtml";
+        return $"{viewsPath}/default.cshtml";
     }
 }

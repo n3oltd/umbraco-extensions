@@ -36,12 +36,12 @@ public static class StringExtensions {
         return content.DocumentNode.OuterHtml;
     }
 
-    public static string ToBlockLayoutName(this string layout) {
-        if (!layout.HasValue()) {
+    public static string ToBlockVariantName(this string variant) {
+        if (!variant.HasValue()) {
             return null;
         }
 
-        var fileName = Path.GetFileNameWithoutExtension(layout);
+        var fileName = Path.GetFileNameWithoutExtension(variant);
 
         return fileName.Camelize();
     }
