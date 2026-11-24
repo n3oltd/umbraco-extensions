@@ -1,4 +1,3 @@
-using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Models;
 
@@ -11,9 +10,10 @@ public class TagValuesAccessor : ITagValuesAccessor {
         _cdnClient = cdnClient;
     }
 
-    public PublishedTagValues Get() {
-        return _cdnClient.DownloadSubscriptionContentAsync<PublishedTagValues>(SubscriptionFiles.TagValues,
-                                                                               JsonSerializers.JsonProvider)
+    public PublishedContentResult<PublishedTagValues> Get() {
+        return _cdnClient.DownloadPublishedContentAsync<PublishedTagValues>(PublishedFileKinds.Subscription,
+                                                                            SubscriptionFiles.TagValues.Filename,
+                                                                            JsonSerializers.JsonProvider)
                          .GetAwaiter()
                          .GetResult();
     }

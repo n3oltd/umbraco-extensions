@@ -26,7 +26,7 @@ public class TagValuesDataSource : IContentmentDataSource {
 
     public IEnumerable<DataListItem> GetItems(Dictionary<string, object> config) {
         var tagKey = config.GetOrDefault(TagKeyField)?.ToString();
-        var publishedTagValues = _tagValuesAccessor.Get();
+        var publishedTagValues = _tagValuesAccessor.Get().Content;
 
         var entry = publishedTagValues.OrEmpty(x => x.Entries).SingleOrDefault(x => x.Key.EqualsInvariant(tagKey));
 

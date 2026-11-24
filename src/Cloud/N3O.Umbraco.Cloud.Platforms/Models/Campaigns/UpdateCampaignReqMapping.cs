@@ -1,4 +1,5 @@
-﻿using N3O.Umbraco.Cloud.Extensions;
+﻿using N3O.Umbraco.Cloud.Exceptions;
+using N3O.Umbraco.Cloud.Extensions;
 using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Cloud.Platforms.Clients;
 using N3O.Umbraco.Cloud.Platforms.Content;
@@ -123,13 +124,13 @@ public class UpdateCampaignReqMapping : IMapDefinition {
     private IReadOnlyDictionary<string, string> GetTags(CampaignContent campaign) {
         var publishedTagValues = _tagValuesAccessor.Get();
 
-        if (publishedTagValues == null) {
-            return null;
+        if (publishedTagValues.Error) {
+            throw new PublishedContentUnavailableException(publishedTagValues.Path);
         }
 
         var tags = new Dictionary<string, string>();
 
-        foreach (var entry in publishedTagValues.OrEmpty(x => x.Entries)) {
+        foreach (var entry in publishedTagValues.Content.OrEmpty(x => x.Entries)) {
             var property = campaign.Content().GetProperty(CampaignTagAlias.For(entry.Key));
             var value = ((string) property?.GetValue()).TrimOrNull();
 
