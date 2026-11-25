@@ -2,11 +2,13 @@
     async function ($scope, editorState, contentEditingHelper) {
         $scope.previousETag = null;
 
-        await loadPreviewAsync(editorState, contentEditingHelper)
-        
+        let platformsJsSettings = null;
+
         window.setInterval(async function() {
             await loadPreviewAsync(editorState, contentEditingHelper)
         }, 10000);
+
+        await loadPreviewAsync(editorState, contentEditingHelper)
 
         async function loadPreviewAsync(editorState, contentEditingHelper) {
             if (!editorState.current.apps.find(x => x.alias === 'platformsPreview')) {
@@ -20,8 +22,11 @@
             
             populateMetadata(apiReq, editorState.current)
 
-            let subscriptionCodeRes = await fetch(`/umbraco/backoffice/api/cloudBackOffice/subscription/code`);
-            let subscriptionCode = await subscriptionCodeRes.json();
+            let settings = await getPlatformsJsSettingsAsync();
+
+            if (settings === null) {
+                return;
+            }
 
             let apiRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/previewHtml/${editorState.current.contentTypeAlias}`, {
                 method: "POST",
@@ -60,8 +65,9 @@
             doc.close();
 
             let script = doc.createElement("script");
-            script.src = `https://cdn.n3o.cloud/connect-${subscriptionCode}/platforms-js/platforms.js`;
+            script.src = settings.url;
             script.type = "module";
+            script.setAttribute("data-subscription", settings.subscriptionCode);
 
             doc.body.appendChild(script);
 
@@ -69,6 +75,26 @@
                 iframe.style.display = "block";
                 container.style.display = "block";
             }, 2000);
+        }
+
+        async function getPlatformsJsSettingsAsync() {
+            if (platformsJsSettings === null) {
+                try {
+                    let subscriptionCodeRes = await fetch(`/umbraco/backoffice/api/cloudBackOffice/subscription/code`);
+                    let urlRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/platformsJs/url`);
+
+                    if (subscriptionCodeRes.ok && urlRes.ok) {
+                        platformsJsSettings = {
+                            subscriptionCode: await subscriptionCodeRes.json(),
+                            url: await urlRes.json()
+                        };
+                    }
+                } catch {
+                    platformsJsSettings = null;
+                }
+            }
+
+            return platformsJsSettings;
         }
 
         function populateMetadata(apiReq, content) {

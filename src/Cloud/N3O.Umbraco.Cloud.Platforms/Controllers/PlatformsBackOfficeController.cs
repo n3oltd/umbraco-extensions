@@ -11,10 +11,17 @@ namespace N3O.Umbraco.Cloud.Platforms.Controllers;
 
 [ApiDocument(PlatformsConstants.BackOfficeApiName)]
 public class PlatformsBackOfficeController : BackofficeAuthorizedApiController {
+    private readonly ICloudUrl _cloudUrl;
     private readonly IMediator _mediator;
 
-    public PlatformsBackOfficeController(IMediator mediator) {
+    public PlatformsBackOfficeController(ICloudUrl cloudUrl, IMediator mediator) {
+        _cloudUrl = cloudUrl;
         _mediator = mediator;
+    }
+
+    [HttpGet("platformsJs/url")]
+    public ActionResult<string> GetPlatformsJsUrl() {
+        return Ok(_cloudUrl.ForPlatforms(PlatformsConstants.PlatformsJs.Path));
     }
 
     [HttpPost("previewHtml/{contentTypeAlias}")]

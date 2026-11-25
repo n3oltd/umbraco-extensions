@@ -32,6 +32,7 @@ public class PlatformsComposer : Composer {
         builder.Services.AddSingleton<ITagValuesAccessor, TagValuesAccessor>();
         
         builder.Services.AddScoped<PlatformsCdnFailureMiddleware>();
+        builder.Services.AddScoped<PlatformsJsMiddleware>();
         builder.Services.AddScoped<PlatformsTemplatesMiddleware>();
         
         RegisterAll(t => t.ImplementsInterface<ICampaignIdProvider>(),
@@ -54,6 +55,20 @@ public class PlatformsComposer : Composer {
 
                 if (runtimeState.Level == RuntimeLevel.Run) {
                     app.UseMiddleware<PlatformsCdnFailureMiddleware>();
+                }
+            };
+
+            opt.AddFilter(filter);
+        });
+
+        builder.Services.Configure<UmbracoPipelineOptions>(opt => {
+            var filter = new UmbracoPipelineFilter(nameof(PlatformsJsMiddleware));
+
+            filter.PrePipeline = app => {
+                var runtimeState = app.ApplicationServices.GetRequiredService<IRuntimeState>();
+
+                if (runtimeState.Level == RuntimeLevel.Run) {
+                    app.UseMiddleware<PlatformsJsMiddleware>();
                 }
             };
 
