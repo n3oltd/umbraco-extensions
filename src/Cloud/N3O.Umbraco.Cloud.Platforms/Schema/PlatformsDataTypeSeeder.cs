@@ -37,6 +37,8 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         Seed(DataTypeNames.QurbaniSeasonCategoryPicker, SeedQurbaniSeasonCategoryPicker);
         Seed(DataTypeNames.SuggestedAmountTitle, SeedSuggestedAmountTitle);
         Seed(DataTypeNames.Summary, SeedSummary);
+        Seed(DataTypeNames.ZakatCalculatorAlias, SeedZakatCalculatorAlias);
+        Seed(DataTypeNames.ZakatCalculatorTooltip, SeedZakatCalculatorTooltip);
     }
 
     private void Seed(string name, Action seed) {
@@ -170,6 +172,26 @@ public class PlatformsDataTypeSeeder : IPlatformsDataTypeSeeder {
         designer.MaxChars(200);
         designer.InFolder(Folders.Platforms);
         designer.WithDeterministicId(DataTypeNames.Summary);
+
+        designer.Save();
+    }
+
+    private void SeedZakatCalculatorAlias() {
+        var designer = _dataTypeEditor.NewTextBox(DataTypeNames.ZakatCalculatorAlias);
+
+        designer.MaxChars(50);
+        designer.InFolder(Folders.Platforms, Folders.Zakat, Folders.Calculator);
+        designer.WithDeterministicId(DataTypeNames.ZakatCalculatorAlias);
+
+        designer.Save();
+    }
+
+    private void SeedZakatCalculatorTooltip() {
+        var designer = _dataTypeEditor.NewTextBox(DataTypeNames.ZakatCalculatorTooltip);
+
+        designer.MaxChars(100);
+        designer.InFolder(Folders.Platforms, Folders.Zakat, Folders.Calculator);
+        designer.WithDeterministicId(DataTypeNames.ZakatCalculatorTooltip);
 
         designer.Save();
     }

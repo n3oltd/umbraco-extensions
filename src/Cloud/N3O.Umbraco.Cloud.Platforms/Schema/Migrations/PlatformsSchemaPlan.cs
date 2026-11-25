@@ -14,12 +14,16 @@ public class PlatformsSchemaPlan : MigrationPlan {
                           .To<PlatformsContentTypesMigrationV3>(States.PlatformsContentTypesMigrationV3)
                           .To<PlatformsContentTypesMigrationV4>(States.PlatformsContentTypesMigrationV4)
                           .To<PlatformsDataTypesMigrationV5>(States.PlatformsDataTypesMigrationV5)
-                          .To<PlatformsContentTypesMigrationV6>(States.PlatformsContentTypesMigrationV6);
+                          .To<PlatformsContentTypesMigrationV6>(States.PlatformsContentTypesMigrationV6)
+                          .To<PlatformsContentTypesMigrationV7>(States.PlatformsContentTypesMigrationV7);
 
         // V6 runs again so its data type takes the configuration Contentment 6 reads.
         From(States.MainPlatformsContentTypesMigrationV6)
             .To<PlatformsDataTypesMigrationV5>(States.MainPlatformsDataTypesMigrationV5)
             .To<PlatformsContentTypesMigrationV6>(States.PlatformsContentTypesMigrationV6);
+
+        From(States.MainPlatformsContentTypesMigrationV7)
+            .To<PlatformsDataTypesMigrationV5>(States.MainPlatformsDataTypesMigrationV5);
     }
 
     public static IReadOnlyList<string> RequiredContentTypes => [
@@ -35,6 +39,8 @@ public class PlatformsSchemaPlan : MigrationPlan {
         DataTypeNames.GiftTypesMultiple,
         DataTypeNames.Percentage,
         Shared.Money,
-        DataTypeNames.SuggestedAmountTitle
+        DataTypeNames.SuggestedAmountTitle,
+        DataTypeNames.ZakatCalculatorAlias,
+        DataTypeNames.ZakatCalculatorTooltip
     ];
 }

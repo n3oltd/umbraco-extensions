@@ -10,7 +10,9 @@ public static class PlatformsSchemaConstants {
         public const string PlatformsContentTypesMigrationV4 = "2026.10.27";
         public const string PlatformsDataTypesMigrationV5 = "2026.10.30";
         public const string PlatformsContentTypesMigrationV6 = "2026.11.08";
+        public const string PlatformsContentTypesMigrationV7 = "2026.11.26";
         public const string MainPlatformsContentTypesMigrationV6 = "2026.11.10";
+        public const string MainPlatformsContentTypesMigrationV7 = "2026.11.25";
         public const string MainPlatformsDataTypesMigrationV5 = "2026.11.10.1";
     }
 
@@ -41,6 +43,8 @@ public static class PlatformsSchemaConstants {
         public const string SuggestedAmounts = "Platforms Suggested Amount Block List (0, 3)";
         public const string SuggestedAmountTitle = "Platforms Suggested Amount Title";
         public const string Summary = "Platforms Summary";
+        public const string ZakatCalculatorAlias = "Platforms Zakat Calculator Alias";
+        public const string ZakatCalculatorTooltip = "Platforms Zakat Calculator Tooltip";
     }
 
     public static class DataTypeKeys {
