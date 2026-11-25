@@ -23,6 +23,9 @@
             let subscriptionCodeRes = await fetch(`/umbraco/backoffice/api/cloudBackOffice/subscription/code`);
             let subscriptionCode = await subscriptionCodeRes.json();
 
+            let platformsJsUrlRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/platformsJs/url`);
+            let platformsJsUrl = await platformsJsUrlRes.json();
+
             let apiRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/previewHtml/${editorState.current.contentTypeAlias}`, {
                 method: "POST",
                 headers: {
@@ -60,8 +63,9 @@
             doc.close();
 
             let script = doc.createElement("script");
-            script.src = `https://cdn.n3o.cloud/connect-${subscriptionCode}/platforms-js/platforms.js`;
+            script.src = platformsJsUrl;
             script.type = "module";
+            script.setAttribute("data-subscription", subscriptionCode);
 
             doc.body.appendChild(script);
 
