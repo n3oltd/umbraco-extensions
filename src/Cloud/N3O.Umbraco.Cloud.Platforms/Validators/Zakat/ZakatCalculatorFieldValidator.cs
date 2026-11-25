@@ -7,7 +7,6 @@ using System.Linq;
 namespace N3O.Umbraco.Cloud.Platforms.Notifications;
 
 public class ZakatCalculatorFieldValidator : ContentValidator {
-    private static readonly string AliasPropertyAlias = AliasHelper<ZakatCalculatorFieldSettingsContent>.PropertyAlias(x => x.Alias);
     private static readonly string MetalPropertyAlias = AliasHelper<ZakatCalculatorFieldSettingsContent>.PropertyAlias(x => x.Metal);
     private static readonly string TypePropertyAlias = AliasHelper<ZakatCalculatorFieldSettingsContent>.PropertyAlias(x => x.Type);
     
@@ -23,7 +22,7 @@ public class ZakatCalculatorFieldValidator : ContentValidator {
     }
 
     private void ValidateAlias(ContentProperties content) {
-        var aliasProperty = content.GetPropertyByAlias(AliasPropertyAlias);
+        var aliasProperty = content.GetPropertyByAlias<ZakatCalculatorFieldSettingsContent>(x => x.Alias);
 
         if (ContentHelper.AnotherSiblingHasSameValue(content, aliasProperty)) {
             ErrorResult(aliasProperty, "must be unique within the section");
