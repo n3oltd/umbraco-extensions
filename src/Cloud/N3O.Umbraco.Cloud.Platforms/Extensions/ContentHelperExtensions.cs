@@ -18,7 +18,7 @@ public static class ContentHelperExtensions {
     public static bool AnotherSiblingHasSameValue(this IContentHelper contentHelper,
                                                   ContentProperties content,
                                                   IContentProperty property) {
-        var value = property.Value as string;
+        var value = (property.Value as string).TrimOrNull();
 
         if (!value.HasValue()) {
             return false;
@@ -26,7 +26,7 @@ public static class ContentHelperExtensions {
 
         return contentHelper.GetAllOfType(content.ContentTypeAlias)
                             .Where(x => !x.Trashed && x.ParentId == content.ParentId && x.Key != content.Id)
-                            .Any(x => x.GetValue<string>(property.Alias).EqualsInvariant(value));
+                            .Any(x => x.GetValue<string>(property.Alias).TrimOrNull().EqualsInvariant(value));
     }
 
     public static IReadOnlyList<IContent> GetCrowdfundingCampaigns(this IContentHelper contentHelper) {
