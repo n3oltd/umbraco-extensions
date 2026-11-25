@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using N3O.Umbraco.Cloud.Lookups;
 using N3O.Umbraco.Constants;
 using Umbraco.Extensions;
 
@@ -19,7 +18,7 @@ public class PlatformsJsPreloadTagHelper : TagHelper {
 
         var linkTag = new TagBuilder("link");
         linkTag.Attributes.Add("rel", "modulepreload");
-        linkTag.Attributes.Add("href", _cloudUrl.ForCdn(CdnRoots.Connect, PlatformsConstants.PlatformsJs.Path));
+        linkTag.Attributes.Add("href", _cloudUrl.ForPlatforms(PlatformsConstants.PlatformsJs.Path));
 
         linkTag.TagRenderMode = TagRenderMode.SelfClosing;
 
