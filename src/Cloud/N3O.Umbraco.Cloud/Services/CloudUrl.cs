@@ -84,14 +84,6 @@ public class CloudUrl : ICloudUrl {
         return url;
     }
 
-    private string GetRegionalApiBaseUrl() {
-        if (UsesQaHosts()) {
-            return $"https://{_subscription.DataRegion.Slug}.qa.n3o.cloud";
-        } else {
-            return $"https://{_subscription.DataRegion.Slug}.n3o.cloud";
-        }
-    }
-
     private Url GetCdnBaseUrl() {
         if (UsesQaHosts()) {
             return new Url("https://cdn.qa.n3o.cloud");
@@ -105,6 +97,14 @@ public class CloudUrl : ICloudUrl {
             return new Url("https://qa.platforms.n3o.cloud");
         } else {
             return new Url("https://platforms.n3o.cloud");
+        }
+    }
+
+    private string GetRegionalApiBaseUrl() {
+        if (UsesQaHosts()) {
+            return $"https://{_subscription.DataRegion.Slug}.qa.n3o.cloud";
+        } else {
+            return $"https://{_subscription.DataRegion.Slug}.n3o.cloud";
         }
     }
 
