@@ -2,6 +2,8 @@
     async function ($scope, editorState, contentEditingHelper) {
         $scope.previousETag = null;
 
+        let platformsJsUrl = null;
+
         await loadPreviewAsync(editorState, contentEditingHelper)
         
         window.setInterval(async function() {
@@ -23,8 +25,10 @@
             let subscriptionCodeRes = await fetch(`/umbraco/backoffice/api/cloudBackOffice/subscription/code`);
             let subscriptionCode = await subscriptionCodeRes.json();
 
-            let platformsJsUrlRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/platformsJs/url`);
-            let platformsJsUrl = await platformsJsUrlRes.json();
+            if (platformsJsUrl === null) {
+                let platformsJsUrlRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/platformsJs/url`);
+                platformsJsUrl = await platformsJsUrlRes.json();
+            }
 
             let apiRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/previewHtml/${editorState.current.contentTypeAlias}`, {
                 method: "POST",
