@@ -1,4 +1,5 @@
 ﻿using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System.Linq;
@@ -16,6 +17,19 @@ public class ZakatCalculatorFieldValidator : ContentValidator {
     }
 
     public override void Validate(ContentProperties content) {
+        ValidateAlias(content);
+        ValidateMetal(content);
+    }
+
+    private void ValidateAlias(ContentProperties content) {
+        var aliasProperty = content.GetPropertyByAlias<ZakatCalculatorFieldSettingsContent>(x => x.Alias);
+
+        if (ContentHelper.AnotherSiblingHasSameValue(content, aliasProperty)) {
+            ErrorResult(aliasProperty, "must be unique within the section");
+        }
+    }
+
+    private void ValidateMetal(ContentProperties content) {
         var typeProperty = content.Properties.Single(x => x.Alias.EqualsInvariant(TypePropertyAlias));
         var type = ContentHelper.GetDataListValue<ZakatCalculatorFieldType>(typeProperty);
         var metalProperty = content.Properties.Single(x => x.Alias.EqualsInvariant(MetalPropertyAlias));

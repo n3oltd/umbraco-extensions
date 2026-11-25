@@ -6,6 +6,7 @@ using N3O.Umbraco.Giving.Allocations.Models;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
 using Folders = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Folders;
 using Groups = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Groups;
 using Shared = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.SharedDataTypes;
@@ -26,9 +27,9 @@ public partial class PlatformsContentTypeSeeder {
 
         var general = designer.Group(Groups.General);
 
-        general.TextBox(x => x.Alias).DataType(Shared.TextBox).Mandatory();
+        general.TextBox(x => x.Alias).DataType(DataTypeNames.ZakatCalculatorAlias).Mandatory();
         general.ContentmentDataList(x => x.Classification).DataType(Shared.ZakatFieldClassification).Mandatory();
-        general.TextBox(x => x.Tooltip).DataType(Shared.TextBox);
+        general.TextBox(x => x.Tooltip).DataType(DataTypeNames.ZakatCalculatorTooltip);
         general.ContentmentDataList(x => x.Type).DataType(Shared.ZakatFieldType).Mandatory();
         general.ContentmentDataList(x => x.Metal).DataType(Shared.Metal);
 
@@ -51,7 +52,7 @@ public partial class PlatformsContentTypeSeeder {
 
         var general = designer.Group(Groups.General);
 
-        general.TextBox(x => x.Alias).DataType(Shared.TextBox).Mandatory();
+        general.TextBox(x => x.Alias).DataType(DataTypeNames.ZakatCalculatorAlias).Mandatory();
 
         var blockContent = BlockContentDataType();
 
