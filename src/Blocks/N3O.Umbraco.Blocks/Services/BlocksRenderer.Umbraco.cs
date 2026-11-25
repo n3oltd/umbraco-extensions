@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Html;
 using Microsoft.Extensions.Options;
+using N3O.Umbraco.Blocks.Extensions;
 using N3O.Umbraco.Content;
 using N3O.Umbraco.Extensions;
 using System;
@@ -79,7 +80,7 @@ public class UmbracoBlocksRenderer : BlocksRenderer<IEnumerable<IBlockReference<
 
     private IEnumerable<string> GetViewPaths(IEnumerable<IBlockReference<IPublishedElement, IPublishedElement>> blockItems) {
         foreach (var blockItem in blockItems) {
-            yield return $"/Views/Partials/Blocks/{blockItem.Content.ContentType.Alias}.cshtml";
+            yield return $"{blockItem.Content.ContentType.Alias.ToBlockViewsPath()}.cshtml";
         }
     }
 }

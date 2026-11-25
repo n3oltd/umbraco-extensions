@@ -26,6 +26,7 @@ public class PlatformsComposer : Composer {
         builder.Services.AddSingleton<IPlatformsPageAccessor, PlatformsPageAccessor>();
         builder.Services.AddTransient<IPlatformsSchemaAudit, PlatformsSchemaAudit>();
         builder.Services.AddSingleton<ITagHelperComponent, PlatformsTagHelperComponent>();
+        builder.Services.AddSingleton<ITagValuesAccessor, TagValuesAccessor>();
         
         builder.Services.AddScoped<PlatformsCdnFailureMiddleware>();
         builder.Services.AddScoped<PlatformsTemplatesMiddleware>();

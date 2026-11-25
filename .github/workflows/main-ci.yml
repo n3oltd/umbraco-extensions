@@ -21,3 +21,4 @@ jobs:
     secrets:
       nuget-api-key: ${{ secrets.MYGET_API_KEY }}
       sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      sixlabors-license: ${{ secrets.SIXLABORS_LICENSE }}

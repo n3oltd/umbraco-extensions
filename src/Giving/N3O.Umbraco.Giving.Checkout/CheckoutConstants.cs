@@ -2,6 +2,7 @@ namespace N3O.Umbraco.Giving.Checkout;
 
 public static class CheckoutConstants {
     public const string ApiName = "Checkout";
+    public const string DevToolsApiName = "CheckoutDevTools";
     
     public static class BlockModuleKeys {
         public static readonly string CheckoutAccount = nameof(CheckoutAccount);

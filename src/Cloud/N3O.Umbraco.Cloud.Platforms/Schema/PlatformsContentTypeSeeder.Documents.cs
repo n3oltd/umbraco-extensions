@@ -8,6 +8,7 @@ using Groups = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Groups;
 using Names = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Names;
 using Shared = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.SharedDataTypes;
 using Tabs = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Tabs;
+using TagKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.TagKeys;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
@@ -77,6 +78,13 @@ public partial class PlatformsContentTypeSeeder {
         embed.ContentmentTemplatedLabel(x => x.DonationFormEmbedCode).DataType(DataTypeNames.ElementEmbedCodeLabel);
         embed.ContentmentTemplatedLabel(x => x.DonationButtonEmbedCode).DataType(DataTypeNames.ElementEmbedCodeLabel);
         embed.ContentmentTemplatedLabel(x => x.DonationPopupEmbedCode).DataType(DataTypeNames.ElementEmbedCodeLabel);
+
+        var tags = designer.Group(Groups.Tags);
+
+        tags.ContentmentTextInput(CampaignTagAlias.For(TagKeys.Fundraiser))
+            .Name(Names.Fundraiser)
+            .DataType(DataTypeNames.FundraiserTag)
+            .Description(Descriptions.CampaignFundraiser);
 
         designer.Save();
     }
