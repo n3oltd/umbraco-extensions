@@ -1,4 +1,5 @@
 using N3O.Umbraco.Content;
+using N3O.Umbraco.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,20 @@ public static class ContentHelperExtensions {
                                                             Guid campaignKey) {
         return contentHelper.GetCrowdfundingCampaigns()
                             .Any(x => x.Key != crowdfundingCampaignKey && x.GetCampaignKey() == campaignKey);
+    }
+
+    public static bool AnotherSiblingHasSameValue(this IContentHelper contentHelper,
+                                                  ContentProperties content,
+                                                  IContentProperty property) {
+        var value = property.Value as string;
+
+        if (!value.HasValue()) {
+            return false;
+        }
+
+        return contentHelper.GetAllOfType(content.ContentTypeAlias)
+                            .Where(x => !x.Trashed && x.ParentId == content.ParentId && x.Key != content.Id)
+                            .Any(x => x.GetValue<string>(property.Alias).EqualsInvariant(value));
     }
 
     public static IReadOnlyList<IContent> GetCrowdfundingCampaigns(this IContentHelper contentHelper) {
