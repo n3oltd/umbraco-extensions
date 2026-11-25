@@ -1,43 +1,42 @@
 using N3O.Umbraco.Cloud.Platforms.Content;
+using N3O.Umbraco.Cloud.Platforms.Extensions;
 using N3O.Umbraco.ContentTypes;
+using N3O.Umbraco.DataTypes;
 using N3O.Umbraco.Extensions;
 using Umbraco.Cms.Infrastructure.Migrations;
 using DataTypeNames = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.DataTypes;
+using Descriptions = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Descriptions;
 using Groups = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Groups;
+using Names = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.Names;
+using TagKeys = N3O.Umbraco.Cloud.Platforms.PlatformsSchemaConstants.TagKeys;
 
 namespace N3O.Umbraco.Cloud.Platforms;
 
 public class PlatformsContentTypesMigrationV6 : PlatformsContentTypesMigration {
-    public PlatformsContentTypesMigrationV6(IMigrationContext context, IContentTypeEditor contentTypeEditor)
-        : base(context, contentTypeEditor) { }
+    private readonly IDataTypeEditor _dataTypeEditor;
+
+    public PlatformsContentTypesMigrationV6(IMigrationContext context,
+                                            IContentTypeEditor contentTypeEditor,
+                                            IDataTypeEditor dataTypeEditor)
+        : base(context, contentTypeEditor) {
+        _dataTypeEditor = dataTypeEditor;
+    }
 
     protected override void Migrate() {
-        if (Exists(PlatformsConstants.Zakat.Settings.Calculator.Field.Alias)) {
-            LimitZakatCalculatorField();
-        }
+        _dataTypeEditor.SaveTagTextInput(DataTypeNames.FundraiserTag, TagKeys.Fundraiser);
 
-        if (Exists(PlatformsConstants.Zakat.Settings.Calculator.Section.Alias)) {
-            LimitZakatCalculatorSection();
-        }
+        AddCampaignFundraiserTag();
     }
 
-    private void LimitZakatCalculatorField() {
-        var designer = ForExistingDocument<ZakatCalculatorFieldSettingsContent>();
+    private void AddCampaignFundraiserTag() {
+        var designer = ForExistingDocument<CampaignContent>();
 
-        var general = designer.Group(Groups.General);
+        var tags = designer.Group(Groups.Tags);
 
-        general.TextBox(x => x.Alias).DataType(DataTypeNames.ZakatCalculatorAlias);
-        general.TextBox(x => x.Tooltip).DataType(DataTypeNames.ZakatCalculatorTooltip);
-
-        designer.Save();
-    }
-
-    private void LimitZakatCalculatorSection() {
-        var designer = ForExistingDocument<ZakatCalculatorSectionSettingsContent>();
-
-        var general = designer.Group(Groups.General);
-
-        general.TextBox(x => x.Alias).DataType(DataTypeNames.ZakatCalculatorAlias);
+        tags.ContentmentTextInput(CampaignTagAlias.For(TagKeys.Fundraiser))
+            .Name(Names.Fundraiser)
+            .DataType(DataTypeNames.FundraiserTag)
+            .Description(Descriptions.CampaignFundraiser);
 
         designer.Save();
     }

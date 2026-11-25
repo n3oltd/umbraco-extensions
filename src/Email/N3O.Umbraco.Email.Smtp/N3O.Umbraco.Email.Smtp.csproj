@@ -36,8 +36,9 @@
         <ProjectReference Include="..\N3O.Umbraco.Email\N3O.Umbraco.Email.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <!-- Umbraco 13 brings MailKit 4.8.0, which has a STARTTLS response injection advisory. -->
-        <PackageReference Include="MailKit" Version="4.16.0" />
+        <!-- Keep at or above the MailKit that Umbraco.Cms.Infrastructure requires: NU1605 is suppressed,
+             so a lower pin here silently downgrades Umbraco's. -->
+        <PackageReference Include="MailKit" Version="4.17.0" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">

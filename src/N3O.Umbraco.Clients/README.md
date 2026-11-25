@@ -7,3 +7,6 @@ applications that call an Umbraco site from outside it. It has no dependency on 
 wires up the accounts, data, giving, cart, checkout, newsletters, payments, cropper and uploader
 clients together. The optional `httpClientFactory` argument replaces the default
 `IHttpClientFactory` client where a caller needs its own handler chain or authentication.
+
+The data types, exports and imports clients call `/umbraco/backoffice/api` routes, so their
+`HttpClient` must carry a signed-in backoffice user's authentication.

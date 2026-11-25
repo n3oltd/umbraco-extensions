@@ -27,15 +27,18 @@ public class UpdateCampaignReqMapping : IMapDefinition {
     private readonly IMediaUrl _mediaUrl;
     private readonly IPlatformsMediaUrlBuilder _mediaUrlBuilder;
     private readonly ISlugHelper _slugHelper;
+    private readonly ITagValuesAccessor _tagValuesAccessor;
 
     public UpdateCampaignReqMapping(ICdnClient cdnClient,
                                     IMediaUrl mediaUrl,
                                     IPlatformsMediaUrlBuilder mediaUrlBuilder,
-                                    ISlugHelper slugHelper) {
+                                    ISlugHelper slugHelper,
+                                    ITagValuesAccessor tagValuesAccessor) {
         _cdnClient = cdnClient;
         _mediaUrl = mediaUrl;
         _mediaUrlBuilder = mediaUrlBuilder;
         _slugHelper = slugHelper;
+        _tagValuesAccessor = tagValuesAccessor;
     }
     
     public void DefineMaps(IUmbracoMapper mapper) {
@@ -49,6 +52,7 @@ public class UpdateCampaignReqMapping : IMapDefinition {
         dest.Name = src.Name;
         dest.Notes = src.Notes;
         dest.Slug = _slugHelper.GeneratePlatformsSlug(src.Name);
+        dest.Tags = GetTags(src).ToTagCollectionReq();
         dest.Target = target == 0 ? null : target;
 
         dest.FormContent = src.FormContent.ToDonationFormContentReq(_mediaUrl, _mediaUrlBuilder);
@@ -114,5 +118,26 @@ public class UpdateCampaignReqMapping : IMapDefinition {
             dest.Telethon.Begin = src.Telethon.BeginAt.ToLocalDateTime().ToString("o", null);
             dest.Telethon.End = src.Telethon.EndAt.ToLocalDateTime().ToString("o", null);
         }
+    }
+
+    private IReadOnlyDictionary<string, string> GetTags(CampaignContent campaign) {
+        var publishedTagValues = _tagValuesAccessor.Get();
+
+        if (publishedTagValues == null) {
+            return null;
+        }
+
+        var tags = new Dictionary<string, string>();
+
+        foreach (var entry in publishedTagValues.OrEmpty(x => x.Entries)) {
+            var property = campaign.Content().GetProperty(CampaignTagAlias.For(entry.Key));
+            var value = ((string) property?.GetValue()).TrimOrNull();
+
+            if (value.HasValue()) {
+                tags[entry.Key] = value;
+            }
+        }
+
+        return tags;
     }
 }

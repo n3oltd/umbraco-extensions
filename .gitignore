@@ -225,3 +225,6 @@ out-tsc/
 
 # n3o CLI local state
 .n3o-switch.json
+
+# Six Labors licence: builds take it from SixLaborsLicenseKey or SixLaborsLicenseFile, never from the repo
+sixlabors.lic

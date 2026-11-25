@@ -42,7 +42,7 @@
         </None>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="AngleSharp" Version="1.5.1" />
-        <PackageReference Include="AngleSharp.Css" Version="0.17.0" />
+        <PackageReference Include="AngleSharp" Version="1.10.4" />
+        <PackageReference Include="AngleSharp.Css" Version="1.4.2" />
     </ItemGroup>
 </Project>

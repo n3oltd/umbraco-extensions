@@ -48,7 +48,7 @@
     <ItemGroup>
         <PackageReference Include="Diplo.GodMode" Version="13.1.0" />
         <PackageReference Include="Our.Umbraco.Community.Contentment" Version="4.7.0" />
-        <PackageReference Include="Umbraco.Cms" Version="13.14.0.0" />
+        <PackageReference Include="Umbraco.Cms" Version="13.16.5" />
     </ItemGroup>
     <ItemGroup>
         <None Update="README.md">

@@ -27,7 +27,7 @@ var DataTypesClient = /** @class */ (function () {
     }
     DataTypesClient.prototype.findDataTypes = function (req) {
         var _this = this;
-        var url_ = this.baseUrl + "/umbraco/api/DataTypes/find";
+        var url_ = this.baseUrl + "/umbraco/backoffice/api/DataTypes/find";
         url_ = url_.replace(/[?&]$/, "");
         var content_ = JSON.stringify(req);
         var options_ = {

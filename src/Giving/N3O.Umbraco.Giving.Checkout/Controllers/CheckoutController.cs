@@ -67,14 +67,7 @@ public class CheckoutController : LookupsController<CheckoutLookupsRes> {
     [HttpPost("{checkoutRevisionId:revisionId}/regularGiving/options")]
     public async Task<ActionResult<CheckoutRes>> UpdateRegularGivingOptions(RegularGivingOptionsReq req) {
         var res = await _mediator.SendAsync<UpdateRegularGivingOptionsCommand, RegularGivingOptionsReq, CheckoutRes>(req);
-         
-        return Ok(res);
-    }
-    
-    [HttpPost("devtools/{checkoutRevisionId:revisionId}/webhooks/resend")]
-    public async Task<ActionResult<CheckoutRes>> ResendCheckoutWebhook() {
-        var res = await _mediator.SendAsync<ResendCheckoutWebhookCommand, None, None>(None.Empty);
-         
+
         return Ok(res);
     }
 }

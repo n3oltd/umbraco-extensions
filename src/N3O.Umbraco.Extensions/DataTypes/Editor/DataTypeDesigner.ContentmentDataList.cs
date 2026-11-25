@@ -13,7 +13,7 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
         "Umbraco.Community.Contentment.DataEditors.ItemPickerDataListEditor, Umbraco.Community.Contentment";
 
     private bool _allowClear;
-    private string _dataSourceKey;
+    private Type _dataSourceType;
     private bool _enableMultiple;
     private int _maxItems;
 
@@ -40,7 +40,7 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
 
     // Contentment stores the source as an assembly-qualified name, so it must survive a rename of the type
     public ContentmentDataListDataTypeDesigner DataSource(Type dataSourceType) {
-        _dataSourceKey = $"{dataSourceType.FullName}, {dataSourceType.Assembly.GetName().Name}";
+        _dataSourceType = dataSourceType;
 
         return this;
     }
@@ -52,7 +52,7 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
     }
 
     protected override object BuildConfiguration(IDataType existing) {
-        if (!_dataSourceKey.HasValue()) {
+        if (!_dataSourceType.HasValue()) {
             throw new Exception($"Data list {Name.Quote()} has no data source");
         }
 
@@ -69,11 +69,6 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
             listEditorValue["enableMultiple"] = "1";
         }
 
-        var dataSource = new Dictionary<string, object>();
-
-        dataSource["key"] = _dataSourceKey;
-        dataSource["value"] = new Dictionary<string, object>();
-
         var listEditor = new Dictionary<string, object>();
 
         listEditor["key"] = ItemPickerEditor;
@@ -81,7 +76,7 @@ public class ContentmentDataListDataTypeDesigner : DataTypeDesigner {
 
         var configuration = new Dictionary<string, object>();
 
-        configuration["dataSource"] = new[] { dataSource };
+        configuration["dataSource"] = BuildContentmentDataSource(_dataSourceType, new Dictionary<string, object>());
         configuration["listEditor"] = new[] { listEditor };
         configuration["preview"] = null;
 

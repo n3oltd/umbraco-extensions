@@ -51,6 +51,10 @@ public class CampaignOfferingsSitemapEntriesProvider : ISitemapEntriesProvider {
 
             AddSitemapEntry(entries, publishedCampaign.Url);
 
+            if (publishedCampaign.Type == CampaignType.Giving) {
+                continue;
+            }
+
             foreach (var publishedOffering in publishedCampaign.Offerings.OrEmpty()) {
                 if (_visibility.IsVisible(publishedOffering)) {
                     AddSitemapEntry(entries, publishedOffering.Url);

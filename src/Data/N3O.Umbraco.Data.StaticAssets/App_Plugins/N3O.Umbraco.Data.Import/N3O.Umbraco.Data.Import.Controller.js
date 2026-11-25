@@ -147,7 +147,7 @@ angular.module("umbraco")
             const data = new FormData();
             data.append("file", input.files[0]);
 
-            var res = await fetch("/umbraco/api/Storage/tempUpload", {
+            var res = await fetch("/umbraco/backoffice/api/Storage/tempUpload", {
                 method: "POST",
                 body: data
             });

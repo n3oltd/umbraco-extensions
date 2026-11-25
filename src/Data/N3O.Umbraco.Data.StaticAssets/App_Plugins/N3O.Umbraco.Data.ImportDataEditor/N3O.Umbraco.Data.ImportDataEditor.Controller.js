@@ -33,7 +33,7 @@ angular.module("umbraco").controller("N3O.Umbraco.Data.ImportDataEditor",
             const data = new FormData();
             data.append("file", uploadInput.files[0]);
 
-            var res = await fetch("/umbraco/api/Storage/tempUpload", {
+            var res = await fetch("/umbraco/backoffice/api/Storage/tempUpload", {
                 method: "POST",
                 body: data
             });

@@ -7,6 +7,7 @@ namespace N3O.Umbraco.Cropper;
 public interface IImageCropper {
     Task CropAllAsync(CropperConfiguration configuration,
                       CropperSource source,
+                      string propertyAlias,
                       CancellationToken cancellationToken = default);
 
     Task CropAsync(CropDefinition definition,

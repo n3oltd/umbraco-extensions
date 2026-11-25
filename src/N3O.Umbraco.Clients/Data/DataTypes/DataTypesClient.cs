@@ -103,8 +103,8 @@ namespace N3O.Umbraco.Clients.Data.DataTypes
 
                     var urlBuilder_ = new System.Text.StringBuilder();
                     if (!string.IsNullOrEmpty(_baseUrl)) urlBuilder_.Append(_baseUrl);
-                    // Operation Path: "umbraco/api/DataTypes/find"
-                    urlBuilder_.Append("umbraco/api/DataTypes/find");
+                    // Operation Path: "umbraco/backoffice/api/DataTypes/find"
+                    urlBuilder_.Append("umbraco/backoffice/api/DataTypes/find");
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
