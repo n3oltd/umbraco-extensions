@@ -24,9 +24,9 @@ namespace N3O.Umbraco.Cloud;
 
 public class CdnClient : ICdnClient {
     private static readonly SemaphoreSlim ConcurrencyLimit = new(10, 10);
-    private static readonly ConcurrentDictionary<string, CdnDownloadResult> Downloads = new(StringComparer.InvariantCultureIgnoreCase);
-    private static readonly ConcurrentDictionary<string, Lazy<Task<CdnDownloadResult>>> Refreshes = new(StringComparer.InvariantCultureIgnoreCase);
-    private static readonly ConcurrentDictionary<string, Instant> InvalidatedAt = new(StringComparer.InvariantCultureIgnoreCase);
+    private static readonly ConcurrentDictionary<string, CdnDownloadResult> Downloads = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, Lazy<Task<CdnDownloadResult>>> Refreshes = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, Instant> InvalidatedAt = new(StringComparer.Ordinal);
 
     private readonly ICloudUrl _cloudUrl;
     private readonly IClock _clock;
