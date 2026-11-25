@@ -20,7 +20,7 @@ public class PlatformsJsMiddleware : IMiddleware {
 
         if (requestPath != null &&
             !requestPath.Contains("..") &&
-            requestPath.StartsWith(PlatformsJsPath, StringComparison.InvariantCultureIgnoreCase)) {
+            requestPath.StartsWith(PlatformsJsPath, StringComparison.Ordinal)) {
             var platformsPath = requestPath.Substring(1);
 
             var content = await _cdnClient.DownloadPlatformsAsync(platformsPath);

@@ -101,9 +101,9 @@ public static class PlatformsConstants {
     }
 
     public static class PlatformsJs {
-        public const string FileName = "platforms.js";
+        public const string Filename = "platforms.js";
         public const string Folder = "v1";
-        public const string Path = $"{Folder}/{FileName}";
+        public const string Path = $"{Folder}/{Filename}";
     }
 
     public static class Qurbani {
