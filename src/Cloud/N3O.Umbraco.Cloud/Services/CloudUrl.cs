@@ -58,6 +58,13 @@ public class CloudUrl : ICloudUrl {
         return url;
     }
 
+    public string ForPlatforms(string path) {
+        var url = GetPlatformsBaseUrl();
+        url.AppendPathSegment(path);
+
+        return url;
+    }
+
     public string ForWebhook(string webhookId) {
         var url = new Url(GetRegionalApiBaseUrl());
         url.AppendPathSegment("hooks");
@@ -77,19 +84,31 @@ public class CloudUrl : ICloudUrl {
         return url;
     }
 
+    private Url GetCdnBaseUrl() {
+        if (UsesQaHosts()) {
+            return new Url("https://cdn.qa.n3o.cloud");
+        } else {
+            return new Url("https://cdn.n3o.cloud");
+        }
+    }
+
+    private Url GetPlatformsBaseUrl() {
+        if (UsesQaHosts()) {
+            return new Url("https://qa.platforms.n3o.cloud");
+        } else {
+            return new Url("https://platforms.n3o.cloud");
+        }
+    }
+
     private string GetRegionalApiBaseUrl() {
-        if (_webHostEnvironment.IsDevelopment() && !DevFlags.IsSet(DevFlags.EnableLiveTesting)) {
+        if (UsesQaHosts()) {
             return $"https://{_subscription.DataRegion.Slug}.qa.n3o.cloud";
         } else {
             return $"https://{_subscription.DataRegion.Slug}.n3o.cloud";
         }
     }
 
-    private Url GetCdnBaseUrl() {
-        if (_webHostEnvironment.IsDevelopment() && !DevFlags.IsSet(DevFlags.EnableLiveTesting)) {
-            return new Url("https://cdn.qa.n3o.cloud");
-        } else {
-            return new Url("https://cdn.n3o.cloud");
-        }
+    private bool UsesQaHosts() {
+        return _webHostEnvironment.IsDevelopment() && !DevFlags.IsSet(DevFlags.EnableLiveTesting);
     }
 }
