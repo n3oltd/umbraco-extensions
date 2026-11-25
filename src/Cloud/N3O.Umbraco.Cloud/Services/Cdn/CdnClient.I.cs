@@ -7,6 +7,8 @@ namespace N3O.Umbraco.Cloud;
 
 public interface ICdnClient {
     Task<string> DownloadAsync(string path, CancellationToken cancellationToken = default);
+
+    Task<string> DownloadPlatformsAsync(string path, CancellationToken cancellationToken = default);
     
     Task<PublishedContentResult<T>> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
                                                                      string path,

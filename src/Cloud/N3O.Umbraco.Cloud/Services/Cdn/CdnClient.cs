@@ -63,6 +63,12 @@ public class CdnClient : ICdnClient {
         return download.Content;
     }
 
+    public async Task<string> DownloadPlatformsAsync(string path, CancellationToken cancellationToken = default) {
+        var download = await FetchAsync(_cloudUrl.ForPlatforms(path), cancellationToken);
+
+        return download.Content;
+    }
+
     public async Task<PublishedContentResult<T>> DownloadPublishedContentAsync<T>(PublishedFileKind kind,
                                                                                   string path,
                                                                                   JsonSerializer jsonSerializer,
