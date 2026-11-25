@@ -8,6 +8,7 @@ public interface ICloudUrl {
     string ForConnectApi(string servicePath);
     string ForEngageApi(string servicePath);
     string ForLinkBuilder(string path);
+    string ForPlatforms(string path);
     string ForWebhook(string webhookId);
 
     string ConnectApiBaseUrl { get; }
