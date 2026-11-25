@@ -2,13 +2,13 @@
     async function ($scope, editorState, contentEditingHelper) {
         $scope.previousETag = null;
 
-        let platformsJsUrl = null;
+        let platformsJsSettings = null;
 
-        await loadPreviewAsync(editorState, contentEditingHelper)
-        
         window.setInterval(async function() {
             await loadPreviewAsync(editorState, contentEditingHelper)
         }, 10000);
+
+        await loadPreviewAsync(editorState, contentEditingHelper)
 
         async function loadPreviewAsync(editorState, contentEditingHelper) {
             if (!editorState.current.apps.find(x => x.alias === 'platformsPreview')) {
@@ -22,12 +22,10 @@
             
             populateMetadata(apiReq, editorState.current)
 
-            let subscriptionCodeRes = await fetch(`/umbraco/backoffice/api/cloudBackOffice/subscription/code`);
-            let subscriptionCode = await subscriptionCodeRes.json();
+            let settings = await getPlatformsJsSettingsAsync();
 
-            if (platformsJsUrl === null) {
-                let platformsJsUrlRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/platformsJs/url`);
-                platformsJsUrl = await platformsJsUrlRes.json();
+            if (settings === null) {
+                return;
             }
 
             let apiRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/previewHtml/${editorState.current.contentTypeAlias}`, {
@@ -67,9 +65,9 @@
             doc.close();
 
             let script = doc.createElement("script");
-            script.src = platformsJsUrl;
+            script.src = settings.url;
             script.type = "module";
-            script.setAttribute("data-subscription", subscriptionCode);
+            script.setAttribute("data-subscription", settings.subscriptionCode);
 
             doc.body.appendChild(script);
 
@@ -77,6 +75,26 @@
                 iframe.style.display = "block";
                 container.style.display = "block";
             }, 2000);
+        }
+
+        async function getPlatformsJsSettingsAsync() {
+            if (platformsJsSettings === null) {
+                try {
+                    let subscriptionCodeRes = await fetch(`/umbraco/backoffice/api/cloudBackOffice/subscription/code`);
+                    let urlRes = await fetch(`/umbraco/backoffice/api/platformsBackOffice/platformsJs/url`);
+
+                    if (subscriptionCodeRes.ok && urlRes.ok) {
+                        platformsJsSettings = {
+                            subscriptionCode: await subscriptionCodeRes.json(),
+                            url: await urlRes.json()
+                        };
+                    }
+                } catch {
+                    platformsJsSettings = null;
+                }
+            }
+
+            return platformsJsSettings;
         }
 
         function populateMetadata(apiReq, content) {
