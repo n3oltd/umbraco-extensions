@@ -6,8 +6,6 @@ using N3O.Umbraco.Extensions;
 namespace N3O.Umbraco.Cloud.Platforms.Validators;
 
 public class ZakatCalculatorSectionValidator : ContentValidator {
-    private static readonly string AliasPropertyAlias = AliasHelper<ZakatCalculatorSectionSettingsContent>.PropertyAlias(x => x.Alias);
-
     public ZakatCalculatorSectionValidator(IContentHelper contentHelper) : base(contentHelper) { }
 
     public override bool IsValidator(ContentProperties content) {
@@ -15,7 +13,7 @@ public class ZakatCalculatorSectionValidator : ContentValidator {
     }
 
     public override void Validate(ContentProperties content) {
-        var aliasProperty = content.GetPropertyByAlias(AliasPropertyAlias);
+        var aliasProperty = content.GetPropertyByAlias<ZakatCalculatorSectionSettingsContent>(x => x.Alias);
 
         if (ContentHelper.AnotherSiblingHasSameValue(content, aliasProperty)) {
             ErrorResult(aliasProperty, "must be unique within the calculator");
