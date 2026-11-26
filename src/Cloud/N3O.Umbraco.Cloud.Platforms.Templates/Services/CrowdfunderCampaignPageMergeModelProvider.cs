@@ -44,14 +44,14 @@ public class CrowdfunderCampaignPageMergeModelProvider : MergeModelsProvider {
             return;
         }
 
-        var result = await _cdnClient.DownloadPlatformsPageAsync(_jsonProvider,
+        var getCampaignPageResult = await _cdnClient.DownloadPlatformsPageAsync(_jsonProvider,
                                                                  PublishedFileKinds.CrowdfundingCampaignPage,
                                                                  page.Parent,
                                                                  campaign.Slug,
                                                                  cancellationToken);
 
-        if (result.HasValue(x => x.Page)) {
-            mergeModels[PlatformsTemplateConstants.ModelKeys.CrowdfunderCampaignPage] = result.Page.Content;
+        if (getCampaignPageResult.HasValue(x => x.Page)) {
+            mergeModels[PlatformsTemplateConstants.ModelKeys.CrowdfunderCampaignPage] = getCampaignPageResult.Page.Content;
         }
     }
 }
