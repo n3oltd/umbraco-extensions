@@ -7,7 +7,7 @@ namespace N3O.Umbraco.Hosting;
 [Order(1)]
 public class UmbracoRedirectsRule : IRule {
     public void ApplyRule(RewriteContext context) {
-        var redirect = UmbracoRedirects.Find(context.HttpContext.Request.Path);
+        var redirect = UmbracoRedirects.Find(context.HttpContext.Request.Path.Value);
 
         if (redirect != null) {
             var url = redirect.GetUrl(context.HttpContext.Request.QueryString);
