@@ -23,6 +23,8 @@ public class PlatformsJsMiddleware : IMiddleware {
             requestPath.StartsWith(PlatformsJsPath, StringComparison.Ordinal)) {
             var platformsPath = requestPath.Substring(1);
 
+            context.Response.Headers["X-Robots-Tag"] = "noindex";
+
             var content = await _cdnClient.DownloadPlatformsAsync(platformsPath);
 
             if (content.HasValue()) {
