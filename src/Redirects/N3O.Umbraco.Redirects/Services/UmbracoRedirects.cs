@@ -7,7 +7,7 @@ public static class UmbracoRedirects {
     private static readonly Dictionary<string, Redirect> Redirects = new(StringComparer.InvariantCultureIgnoreCase);
 
     public static void Add(string oldPath, string newUrlOrPath, bool temporary = false) {
-        Redirects.Add(Normalize(oldPath), new Redirect(GetUrlOrPath(newUrlOrPath), temporary));
+        Redirects[GetKey(oldPath)] = new Redirect(GetUrlOrPath(newUrlOrPath), temporary);
     }
     
     public static void Clear() {
@@ -15,7 +15,11 @@ public static class UmbracoRedirects {
     }
 
     public static Redirect Find(string path) {
-        return Redirects.GetValueOrDefault(Normalize(path));
+        return Redirects.GetValueOrDefault(GetKey(path));
+    }
+
+    private static string GetKey(string path) {
+        return Uri.UnescapeDataString(Normalize(path ?? string.Empty));
     }
 
     private static string GetUrlOrPath(string urlOrPath) {
