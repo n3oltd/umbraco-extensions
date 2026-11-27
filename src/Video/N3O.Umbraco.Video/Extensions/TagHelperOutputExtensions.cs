@@ -47,5 +47,12 @@ public static class TagHelperOutputExtensions {
             output.Attributes.Add("style", ratioStyle);
             output.Content.SetHtmlContent(iframeTag.ToHtmlString());
         }
+
+        if (videoEmbed.Script != null) {
+            var scriptTag = new TagBuilder("script");
+            scriptTag.InnerHtml.AppendHtml(videoEmbed.Script);
+
+            output.Content.AppendHtml(scriptTag);
+        }
     }
 }
